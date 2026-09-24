@@ -16,7 +16,18 @@ type SuperBowlOddsResponse = {
   teams: SuperBowlMarketTeam[];
 };
 
-export default function NflMarketValueSection({ team }: { team: NflGuideTeamNormalized }) {
+export default function NflMarketValueSection({
+  team,
+  currentPowerRank,
+}: {
+  team: NflGuideTeamNormalized;
+  /**
+   * Canonical Current OVR league rank (useNflCurrentRating2026). The ONLY rank the Super Bowl rank gap uses:
+   * the guide's frozen `team.powerRank` is a 2025-preseason snapshot and must never stand in for it.
+   * Null/undefined (board unavailable) renders no gap rather than a stale one.
+   */
+  currentPowerRank?: number | null;
+}) {
   const [status, setStatus] = useState<LoadStatus>("loading");
   const [response, setResponse] = useState<SuperBowlOddsResponse | null>(null);
 
@@ -48,7 +59,7 @@ export default function NflMarketValueSection({ team }: { team: NflGuideTeamNorm
     () => response?.teams.find((entry) => entry.abbr.toLowerCase() === team.abbr) ?? null,
     [response, team.abbr],
   );
-  const rankGap = calculateRankGap(market?.marketRank ?? null, team.powerRank);
+  const rankGap = currentPowerRank == null ? null : calculateRankGap(market?.marketRank ?? null, currentPowerRank);
   const rankSignal = getRankGapSignal(rankGap);
 
   return (

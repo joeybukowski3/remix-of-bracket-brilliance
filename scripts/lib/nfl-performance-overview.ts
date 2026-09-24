@@ -170,6 +170,6 @@ export function buildOverviewSidesSection(sides: SidesOverviewInput, latestGrade
     },
     winner_accuracy: s.winner_accuracy.accuracy,
     latest_grade_timestamp: latestGradeTimestamp,
-    note: "Canonical summary of public/data/nfl/performance/sides.json (jkb-power-number-v1.0.0). Row-level detail, buckets and pregame context live in that artifact.",
+    note: "Canonical summary of public/data/nfl/performance/sides.json (the jkb-power-number side model; live version and per-row model_version are in that artifact). Row-level detail, buckets and pregame context live in that artifact.",
   };
 }

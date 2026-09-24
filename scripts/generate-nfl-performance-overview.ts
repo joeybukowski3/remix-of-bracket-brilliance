@@ -71,7 +71,7 @@ export function buildPerformanceOverviewArtifact(
       season,
       notes: [
         "Thin cross-family rollup for the /nfl/performance dashboard. Every metric here is read verbatim from an already-canonical derived artifact -- no independent grading or aggregation logic exists here.",
-        "sides is the canonical summary of public/data/nfl/performance/sides.json (jkb-power-number-v1.0.0); row-level detail and buckets live in that artifact.",
+        "sides is the canonical summary of public/data/nfl/performance/sides.json (the jkb-power-number side model; live version and per-row model_version are in that artifact); row-level detail and buckets live in that artifact.",
       ],
       generatedAt,
     }),

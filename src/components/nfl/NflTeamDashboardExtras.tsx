@@ -16,7 +16,7 @@ export default function NflTeamDashboardExtras({
 }) {
   return (
     <div className="space-y-5">
-      <NflMarketValueSection team={team} />
+      <NflMarketValueSection team={team} currentPowerRank={ovrByAbbr?.get(team.abbr)?.rank ?? null} />
       <NflScheduleSection team={team} ovrByAbbr={ovrByAbbr} />
       <NflOffseasonSection team={team} />
       <NflWarrenSharpTeamProfile team={team} />

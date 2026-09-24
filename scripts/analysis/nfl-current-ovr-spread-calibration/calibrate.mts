@@ -21,7 +21,7 @@ import {
 import {
   buildPerformanceRatingBoard,
   type TeamPerformanceSeasonEntry,
-} from "../../../src/lib/nfl/performanceComposite2026.ts";
+} from "./legacy-performance-composite-v1.0.0.ts";
 import {
   currentRatingWeightsFor,
   blendCurrentRating,

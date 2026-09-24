@@ -217,6 +217,15 @@ describe("deriveAdvantages — live Current Power Board sourcing", () => {
   });
 });
 
+function liveRatings(teams: { abbr: string; rank: number }[]) {
+  const rows: CurrentRatingRow[] = teams.map(({ abbr, rank }) => ({
+    abbr, team: abbr, division: "AFC East", rating: 50, rank, offenseRating: 50, offenseRank: rank, defenseRating: 50, defenseRank: rank,
+    performanceRating: null, performanceRank: null, gamesPlayed: 0, preseasonWeight: 1, performanceWeight: 0, state: "preseason",
+    preseasonV04Rating: 50, preseasonOffenseRating: 50, preseasonDefenseRating: 50,
+  }));
+  return createHeroModelRatingResolver({ season: 2026, state: "preseason", teams: rows } as CurrentRatingBoard);
+}
+
 describe("deriveAngles", () => {
   it("flags an offense-vs-defense mismatch above threshold", () => {
     const m = makeMatchup(
@@ -253,12 +262,36 @@ describe("deriveAngles", () => {
     expect(angles.find((a) => a.key === "conference")?.label).toBe("Interconference matchup");
   });
 
-  it("is deterministic and honors the power-gap threshold", () => {
-    const m = makeMatchup({ powerRank: 2 }, { powerRank: 2 + POWER_GAP_RANK_MODERATE });
-    const a1 = deriveAngles(m);
-    const a2 = deriveAngles(m);
+  it("is deterministic and honors the power-gap threshold (live Current OVR ranks)", () => {
+    const m = makeMatchup({ abbr: "awy", powerRank: 9 }, { abbr: "hom", powerRank: 9 });
+    const modelRatings = liveRatings([{ abbr: "awy", rank: 2 }, { abbr: "hom", rank: 2 + POWER_GAP_RANK_MODERATE }]);
+    const a1 = deriveAngles(m, modelRatings);
+    const a2 = deriveAngles(m, modelRatings);
     expect(a1).toEqual(a2);
     expect(a1.some((a) => a.key === "powerGap")).toBe(true);
+    const below = liveRatings([{ abbr: "awy", rank: 2 }, { abbr: "hom", rank: 2 + POWER_GAP_RANK_MODERATE - 1 }]);
+    expect(deriveAngles(m, below).some((a) => a.key === "powerGap")).toBe(false);
+  });
+
+  it("REGRESSION: the power-gap angle quotes the canonical Current OVR ranks, never the stale guide-snapshot powerRank", () => {
+    // The guide snapshot says the OPPOSITE of the live board (and a different gap), like the real ATL @ GB page
+    // that showed "#6 versus #19" here while the Advantages list on the same page said "#15 versus #23".
+    const m = makeMatchup({ abbr: "awy", teamName: "Away", powerRank: 19 }, { abbr: "hom", teamName: "Home", powerRank: 6 });
+    const angles = deriveAngles(m, liveRatings([{ abbr: "awy", rank: 23 }, { abbr: "hom", rank: 15 }]));
+    const gap = angles.find((a) => a.key === "powerGap");
+    expect(gap?.explanation).toContain("Home (#15)");
+    expect(gap?.explanation).toContain("Away (#23)");
+    expect(gap?.explanation).not.toMatch(/#6|#19/);
+    expect(gap?.favoredName).toBe("Home");
+    // ...and it matches the ranks the Advantages list quotes for the same two teams.
+    const overall = deriveAdvantages(m, liveRatings([{ abbr: "awy", rank: 23 }, { abbr: "hom", rank: 15 }])).find((n) => n.key === "overallRank");
+    expect(overall?.text).toContain("#15 versus #23");
+  });
+
+  it("never falls back to the guide-snapshot powerRank: without live ratings there is no power-gap angle", () => {
+    const m = makeMatchup({ powerRank: 2 }, { powerRank: 2 + POWER_GAP_RANK_MODERATE });
+    expect(deriveAngles(m).some((a) => a.key === "powerGap")).toBe(false);
+    expect(deriveAngles(m, () => null).some((a) => a.key === "powerGap")).toBe(false);
   });
 
   it("exposes a fallback message constant for empty results", () => {

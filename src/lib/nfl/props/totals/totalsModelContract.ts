@@ -9,7 +9,7 @@
  * and a new model version string.
  *
  * NAMING: follows the established JKB football model-version convention
- * (spread: `jkb-power-number-v1.0.0`; WU4A: `nfl-team-opportunity-ridge-market-v1.0.0`;
+ * (spread: `jkb-power-number-v1.1.0` (v1.0.0 for earlier archived snapshots); WU4A: `nfl-team-opportunity-ridge-market-v1.0.0`;
  * passing: `nfl-passing-direct-ridge-alpha10-production-2022-2025-v1`;
  * receiving: `nfl-receiving-share-x-efficiency-v2.0.0`) -- `<sport-prefix>-<what>-<method>-v<major>.<minor>.<patch>`.
  */

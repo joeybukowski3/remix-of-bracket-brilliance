@@ -7,6 +7,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { buildSidesPerformanceArtifact, SIDES_PERFORMANCE_SCHEMA_VERSION } from "./generate-nfl-sides-performance";
+import { SIDES_LIVE_MODEL_VERSION } from "./lib/nfl-sides-performance";
 
 const AT = "2026-09-05T12:00:00.000Z";
 
@@ -18,7 +19,7 @@ describe("buildSidesPerformanceArtifact", () => {
     expect(Array.isArray(artifact.rows)).toBe(true);
     expect(artifact.summary.graded_games).toBe(artifact.rows.length);
     expect(artifact.performanceMeta.gradedGames).toBe(artifact.rows.length);
-    expect(artifact.performanceMeta.liveModelVersion).toBe("jkb-power-number-v1.0.0");
+    expect(artifact.performanceMeta.liveModelVersion).toBe(SIDES_LIVE_MODEL_VERSION);
   });
 
   it("exposes contextCoverage.coaching as the count of rows with an OK coaching join", () => {

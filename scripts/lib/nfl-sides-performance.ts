@@ -10,7 +10,7 @@
  *
  * This module contains NO file I/O and NO model math. It composes:
  *  - archived `spread` prediction snapshots from the live side model
- *    (jkb-power-number-v1.0.0), already produced by the power-number
+ *    (jkb-power-number-v1.1.0; v1.0.0 history stays graded), already produced by the power-number
  *    generator / archive,
  *  - already-resolved actual outcomes (produced by the canonical
  *    resolvePredictionOutcome() in nfl-prediction-outcome-resolver.ts),
@@ -25,7 +25,15 @@
 import { absPointBucket } from "./nfl-evaluation-cohorts";
 import type { PregameGameContext } from "./nfl-game-context";
 
-export const SIDES_LIVE_MODEL_VERSION = "jkb-power-number-v1.0.0" as const;
+export const SIDES_LIVE_MODEL_VERSION = "jkb-power-number-v1.1.0" as const;
+
+/**
+ * Every side-model version whose archived pregame snapshots are graded here. v1.0.0 predictions
+ * (2026 weeks before the nfl-current-ovr-v1.1.0 change) are immutable production history and stay
+ * on the page under their own version (each row carries model_version); only the LIVE version
+ * changes. A snapshot from any other version (e.g. a stray v0.9.0) is still rejected.
+ */
+export const SIDES_SUPPORTED_MODEL_VERSIONS = ["jkb-power-number-v1.0.0", SIDES_LIVE_MODEL_VERSION] as const;
 
 /** Absolute market-spread magnitude boundaries (field goal / touchdown / two scores). */
 export const MARKET_SPREAD_BUCKET_BOUNDARIES = Object.freeze([3, 7, 10]);
@@ -66,19 +74,22 @@ function latestByPredictionTimestamp(rows: readonly SpreadSnapshot[]): SpreadSna
 
 /**
  * Selects the canonical pregame spread snapshot for one game: the
- * latest-by-`predictionTimestamp` row, requiring the live side model
- * identity (`jkb-power-number-v1.0.0`). Never averages snapshots and never
+ * latest-by-`predictionTimestamp` row, requiring a supported side model
+ * identity (`jkb-power-number-v1.0.0` or `jkb-power-number-v1.1.0`; the LATEST snapshot decides,
+ * so a game whose final pregame snapshot predates the v1.1.0 change is graded under v1.0.0).
+ * Never averages snapshots and never
  * considers a post-kickoff revision -- the archive validator already
  * rejects `prediction_timestamp >= kickoff_utc` for production rows, so
  * every archived row here is already pregame.
  */
 export function selectPregameSpreadSnapshot(
   rows: readonly SpreadSnapshot[],
-  expectedModelVersion: string = SIDES_LIVE_MODEL_VERSION
+  expectedModelVersion: string | readonly string[] = SIDES_SUPPORTED_MODEL_VERSIONS
 ): SpreadSnapshotSelectionResult {
   if (rows.length === 0) return { status: "rejected", reason: "missing" };
   const snapshot = latestByPredictionTimestamp(rows);
-  if (snapshot.modelVersion !== expectedModelVersion) {
+  const accepted = typeof expectedModelVersion === "string" ? [expectedModelVersion] : expectedModelVersion;
+  if (!accepted.includes(snapshot.modelVersion)) {
     return { status: "rejected", reason: "model_version_mismatch" };
   }
   return { status: "selected", snapshot };

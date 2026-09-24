@@ -11,7 +11,8 @@ import {
 import * as currentRatingModule from "@/lib/nfl/currentRating2026";
 import type { NflV03Meta, NflV03PreseasonArtifact, NflV03PreseasonRating } from "@/lib/nfl/v03Review";
 import type { NflPublicProjectionBoard, NflPublicProjectionTeam } from "@/lib/nfl/publicProjection2026";
-import type { TeamPerformanceAnalyticsArtifact, TeamPerformanceAnalyticsRow } from "@/lib/nfl/teamPerformanceAnalytics";
+import { CURRENT_PERFORMANCE_MODEL_META, type TeamPerformanceAnalyticsArtifact, type TeamPerformanceAnalyticsRow } from "@/lib/nfl/teamPerformanceAnalytics";
+import { PERFORMANCE_SCALE_DIVISORS } from "@/lib/nfl/performanceComposite2026";
 
 // ---------------------------------------------------------------------------
 // Fixture factories. buildCurrentRatingBoard consumes already-typed,
@@ -150,7 +151,7 @@ function playedPerformanceRow(
 function performanceArtifact(teams: TeamPerformanceAnalyticsRow[]): TeamPerformanceAnalyticsArtifact {
   return {
     schemaVersion: "nfl-performance-v1",
-    _meta: { season: 2026, generatedAt: "2026-08-18T00:00:00.000Z", source: "test", ratingFormula: "test", scaleDivisors: { offense: 0.92, defense: 0.86, overall: 0.72 } },
+    _meta: { season: 2026, generatedAt: "2026-08-18T00:00:00.000Z", source: "test", ...CURRENT_PERFORMANCE_MODEL_META, ratingFormula: "test", scaleDivisors: PERFORMANCE_SCALE_DIVISORS },
     teams,
   };
 }

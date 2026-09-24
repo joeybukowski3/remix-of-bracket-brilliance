@@ -8,8 +8,21 @@
  */
 
 import type { PerformanceRateBundle } from "@/lib/nfl/performanceMetricsCore2026";
+import { NFL_CURRENT_OVR_MODEL_VERSION, NFL_OPPONENT_ADJUSTMENT_METHOD } from "@/lib/nfl/currentOvrModelVersion";
+import { PERFORMANCE_OVERALL_WEIGHTS, PERFORMANCE_SCALE_DIVISORS } from "@/lib/nfl/performanceComposite2026";
 
 export const TEAM_PERFORMANCE_ANALYTICS_SCHEMA_VERSION = "nfl-performance-v1" as const;
+
+/**
+ * The `_meta` model-identity fields every current artifact must carry: written by the generator and
+ * required by the validator, so an artifact from any other Current OVR methodology cannot be loaded.
+ * (`scaleDivisors` is validated against PERFORMANCE_SCALE_DIVISORS separately.)
+ */
+export const CURRENT_PERFORMANCE_MODEL_META = Object.freeze({
+  currentOvrModelVersion: NFL_CURRENT_OVR_MODEL_VERSION,
+  opponentAdjustment: NFL_OPPONENT_ADJUSTMENT_METHOD,
+  overallWeights: PERFORMANCE_OVERALL_WEIGHTS,
+});
 export const TEAM_PERFORMANCE_ANALYTICS_TEAM_COUNT = 32;
 
 export type TeamPerformanceWindowKey = "last4" | "last8" | "fullSeason";
@@ -64,6 +77,12 @@ export type TeamPerformanceAnalyticsArtifact = {
     throughWeek?: number | null;
     includedGameCount?: number;
     source: string;
+    /** Composed Current OVR model identity the ratings in this artifact were produced under. */
+    currentOvrModelVersion: typeof NFL_CURRENT_OVR_MODEL_VERSION;
+    /** Opponent-adjustment method behind the performance ratings and the fullSeason.adjusted values. */
+    opponentAdjustment: typeof NFL_OPPONENT_ADJUSTMENT_METHOD;
+    /** Top-level live composite weights (offense / defense / pointDifferential). */
+    overallWeights: { offense: number; defense: number; pointDifferential: number };
     ratingFormula: string;
     scaleDivisors: { offense: number; defense: number; overall: number };
   };
@@ -175,6 +194,27 @@ export function validateTeamPerformanceAnalyticsArtifact(value: unknown): TeamPe
   if (typeof meta.source !== "string" || meta.source.length === 0) fail("artifact._meta.source: missing");
   if (typeof meta.ratingFormula !== "string" || meta.ratingFormula.length === 0) fail("artifact._meta.ratingFormula: missing");
   if (!meta.scaleDivisors || typeof meta.scaleDivisors !== "object") fail("artifact._meta.scaleDivisors: missing");
+
+  // Stale-model guard: an artifact generated under a previous Current OVR methodology must never be
+  // silently displayed as the current rating (cached copy, un-regenerated branch, hand edit).
+  if (meta.currentOvrModelVersion !== NFL_CURRENT_OVR_MODEL_VERSION) {
+    fail(`artifact._meta.currentOvrModelVersion: expected "${NFL_CURRENT_OVR_MODEL_VERSION}", got ${JSON.stringify(meta.currentOvrModelVersion)} — regenerate with npm run nfl:performance-analytics`);
+  }
+  if (meta.opponentAdjustment !== NFL_OPPONENT_ADJUSTMENT_METHOD) {
+    fail(`artifact._meta.opponentAdjustment: expected "${NFL_OPPONENT_ADJUSTMENT_METHOD}", got ${JSON.stringify(meta.opponentAdjustment)}`);
+  }
+  const weights = meta.overallWeights as Record<string, unknown> | undefined;
+  for (const key of ["offense", "defense", "pointDifferential"] as const) {
+    if (!weights || weights[key] !== PERFORMANCE_OVERALL_WEIGHTS[key]) {
+      fail(`artifact._meta.overallWeights.${key}: expected ${PERFORMANCE_OVERALL_WEIGHTS[key]}, got ${JSON.stringify(weights?.[key])}`);
+    }
+  }
+  const divisors = meta.scaleDivisors as Record<string, unknown>;
+  for (const key of ["offense", "defense", "overall"] as const) {
+    if (divisors[key] !== PERFORMANCE_SCALE_DIVISORS[key]) {
+      fail(`artifact._meta.scaleDivisors.${key}: expected ${PERFORMANCE_SCALE_DIVISORS[key]}, got ${JSON.stringify(divisors[key])}`);
+    }
+  }
 
   if (!Array.isArray(artifact.teams)) fail("artifact.teams: must be an array");
   if (artifact.teams.length !== TEAM_PERFORMANCE_ANALYTICS_TEAM_COUNT) {

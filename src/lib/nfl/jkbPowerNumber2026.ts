@@ -65,7 +65,14 @@ export const HOME_FIELD_ADVANTAGE_POINTS = 2.0;
 /** Neutral-site games receive exactly zero home-field advantage. */
 export const NEUTRAL_SITE_HOME_FIELD_ADVANTAGE_POINTS = 0.0;
 
-export const JKB_POWER_NUMBER_MODEL_VERSION = "jkb-power-number-v1.0.0";
+/**
+ * MINOR bump from jkb-power-number-v1.0.0 (docs/modeling/MODEL_VERSIONING_GUIDE.md): the spread
+ * transform itself (0.24 x dOVR + 2.0 HFA, 0 neutral) is byte-identical, but its ONLY input, the
+ * canonical Current OVR board, moved to nfl-current-ovr-v1.1.0 (40/20/40 live composite +
+ * leave-one-out opponent adjustment), so every projected number can change. Snapshots archived
+ * under v1.0.0 remain valid and are never rewritten.
+ */
+export const JKB_POWER_NUMBER_MODEL_VERSION = "jkb-power-number-v1.1.0";
 
 export type PowerNumberTeamRow = {
   abbr: string;

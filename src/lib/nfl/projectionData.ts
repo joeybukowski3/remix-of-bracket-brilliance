@@ -1,5 +1,5 @@
 /**
- * JKB projected spread consumption (jkb-power-number-v1.0.0).
+ * JKB projected spread consumption (jkb-power-number-v1.1.0).
  *
  * Reads the generated public/data/nfl/matchup-projections.json artifact. No
  * modelling happens in the browser and nflverse is never called from it.
@@ -26,7 +26,8 @@
 import type { MarketCurrentGame } from "@/lib/nfl/marketData";
 
 export const PROJECTIONS_ARTIFACT_PATH = "/data/nfl/matchup-projections.json";
-export const JKB_POWER_NUMBER_MODEL_VERSION = "jkb-power-number-v1.0.0";
+// One definition only: the model module owns the identity (previously duplicated here).
+export { JKB_POWER_NUMBER_MODEL_VERSION } from "@/lib/nfl/jkbPowerNumber2026";
 
 const NA = "N/A";
 
@@ -65,6 +66,8 @@ export type ProjectionsArtifact = {
     homeFieldAdvantage: number;
     neutralSiteHomeFieldAdvantage: number;
     leagueAverageOVR: number;
+    /** Composed Current OVR model identity (nfl-current-ovr-vX.Y.Z) the strength input was produced under. */
+    currentOvrModelVersion: string;
     strengthInput: string;
     fittedParameters: string[];
     marketInputUsed: boolean;

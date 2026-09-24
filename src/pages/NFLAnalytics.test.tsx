@@ -2,7 +2,8 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import NFLAnalytics from "@/pages/NFLAnalytics";
-import type { TeamPerformanceAnalyticsArtifact, TeamPerformanceAnalyticsRow } from "@/lib/nfl/teamPerformanceAnalytics";
+import { CURRENT_PERFORMANCE_MODEL_META, type TeamPerformanceAnalyticsArtifact, type TeamPerformanceAnalyticsRow } from "@/lib/nfl/teamPerformanceAnalytics";
+import { PERFORMANCE_SCALE_DIVISORS } from "@/lib/nfl/performanceComposite2026";
 
 const TEAM_CODES = [
   "ari", "atl", "bal", "buf", "car", "chi", "cin", "cle", "dal", "den", "det",
@@ -57,7 +58,7 @@ function zeroTeamRow(team: string): TeamPerformanceAnalyticsRow {
 function zeroGameArtifact(): TeamPerformanceAnalyticsArtifact {
   return {
     schemaVersion: "nfl-performance-v1",
-    _meta: { season: 2026, generatedAt: "2026-08-18T00:00:00.000Z", source: "test", ratingFormula: "test", scaleDivisors: { offense: 0.92, defense: 0.86, overall: 0.72 } },
+    _meta: { season: 2026, generatedAt: "2026-08-18T00:00:00.000Z", source: "test", ...CURRENT_PERFORMANCE_MODEL_META, ratingFormula: "test", scaleDivisors: PERFORMANCE_SCALE_DIVISORS },
     teams: TEAM_CODES.map(zeroTeamRow),
   };
 }
@@ -119,7 +120,7 @@ function populatedArtifact(): TeamPerformanceAnalyticsArtifact {
 
   return {
     schemaVersion: "nfl-performance-v1",
-    _meta: { season: 2026, generatedAt: "2026-08-18T00:00:00.000Z", source: "test", ratingFormula: "test", scaleDivisors: { offense: 0.92, defense: 0.86, overall: 0.72 } },
+    _meta: { season: 2026, generatedAt: "2026-08-18T00:00:00.000Z", source: "test", ...CURRENT_PERFORMANCE_MODEL_META, ratingFormula: "test", scaleDivisors: PERFORMANCE_SCALE_DIVISORS },
     teams: TEAM_CODES.map((t) => byTeam.get(t)!),
   };
 }

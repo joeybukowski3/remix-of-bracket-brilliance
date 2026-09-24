@@ -19,6 +19,8 @@ export type CurrentRatingSourceProvenance = {
   projectedCutoff: string;
   observedVersion: string;
   observedGeneratedAt: string;
+  /** Composed Current OVR model identity (nfl-current-ovr-vX.Y.Z) the live performance evidence was produced under. */
+  ratingModelVersion?: string;
 };
 
 /**
@@ -65,6 +67,7 @@ export function useNflCurrentRating2026(): State {
         projectedCutoff: v04.data.offseasonSnapshotVerifiedThrough,
         observedVersion: performance.data.schemaVersion,
         observedGeneratedAt: performance.data._meta.generatedAt,
+        ratingModelVersion: performance.data._meta.currentOvrModelVersion,
       } };
     } catch (error) {
       return {

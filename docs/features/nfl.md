@@ -97,7 +97,7 @@ projection. Fantasy authority is documented in
 ## Current, research, presentation, and historical status
 
 **Production/current:** the public routes above; the canonical Current OVR
-consumer path; `jkb-power-number-v1.0.0` projected-spread artifact; schedule,
+consumer path; `jkb-power-number-v1.1.0` projected-spread artifact; schedule,
 market, matchup-context, and fantasy weekly artifacts consumed by those routes.
 “Current” describes committed product behavior, not a claim that every
 underlying research model cleared a promotion gate.
