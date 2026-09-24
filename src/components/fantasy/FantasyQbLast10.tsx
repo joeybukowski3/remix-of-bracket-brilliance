@@ -1,15 +1,15 @@
 /**
- * QB "Last 10" pair for the weekly fantasy player detail.
+ * Position-aware "Last 10" pair for the weekly fantasy player detail.
  *
  * Renders the SAME shared `NflLast10TablesSection` (and therefore the same
  * `NflPlayerLast10Table` / `NflOpponentLast10Table`) the NFL Yardage Props
  * Review uses -- no fantasy-specific copy of those tables. The per-game data,
- * including the `Fantasy PPR Points` column, comes from the one shared
- * `yardage-history.json` artifact (passing/QB slice) via the existing
+ * including the QB `Fantasy PPR Points` column, comes from the one shared
+ * `yardage-history.json` artifact via the existing
  * `yardageHistoryView` selectors; there is no second fantasy-history fetch.
  *
- * QB only: only the passing slice of the artifact carries the QB comp/att,
- * TD/INT and `fantasyPointsPpr` fields these tables show.
+ * QB uses passing; RB uses rushing; WR/TE use receiving. Only the passing
+ * slice carries QB comp/att, TD/INT and `fantasyPointsPpr` fields.
  */
 import { useMemo } from "react";
 import { useNflYardageHistory } from "@/hooks/useNflYardageHistory";
@@ -25,6 +25,7 @@ import type { NflYardageOpponentCurrentMatchup } from "@/components/nfl/history/
 
 export default function FantasyQbLast10({
   season,
+  position = "QB",
   playerId,
   playerName,
   team,
@@ -34,6 +35,7 @@ export default function FantasyQbLast10({
   unwrapped,
 }: {
   season: number;
+  position?: "QB" | "RB" | "WR" | "TE";
   playerId: string;
   playerName: string;
   team: string;
@@ -45,12 +47,13 @@ export default function FantasyQbLast10({
   unwrapped?: boolean;
 }) {
   const history = useNflYardageHistory(season, true);
-  const playerHistory = lookupPlayerHistory(history.data, playerId, "passing");
-  const opponentHistory = lookupOpponentHistory(history.data, opponent, "passing", "QB");
+  const market = position === "QB" ? "passing" : position === "RB" ? "rushing" : "receiving";
+  const playerHistory = lookupPlayerHistory(history.data, playerId, market);
+  const opponentHistory = lookupOpponentHistory(history.data, opponent, market, position);
 
   const teamByGame = useMemo(
-    () => buildOpponentGameTimeTeamByGame(history.data, opponent, "passing", "QB"),
-    [history.data, opponent],
+    () => buildOpponentGameTimeTeamByGame(history.data, opponent, market, position),
+    [history.data, opponent, market, position],
   );
 
   const opponentWeekRank = lookupCurrentWeekEpaRank(history.data, opponent);
@@ -76,7 +79,7 @@ export default function FantasyQbLast10({
     <NflLast10TablesSection
       playerName={playerName}
       opponentAbbr={opponent}
-      position="QB"
+      position={position}
       playerHistory={playerHistory}
       opponentHistory={opponentHistory}
       currentLine={null}

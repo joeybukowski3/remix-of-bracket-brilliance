@@ -446,9 +446,9 @@ function MobileAccordionSection({ title, children }: { title: string; children: 
  */
 function MobileDetail({ presentation }: { presentation: WeeklyResearchPresentationRow }) {
   const { row } = presentation;
-  const isQb = row.position === "QB";
   const qbLast10Props = {
     season: WEEKLY_RANKINGS_SEASON,
+    position: row.position,
     playerId: row.playerId,
     playerName: row.playerName,
     team: row.team,
@@ -466,12 +466,12 @@ function MobileDetail({ presentation }: { presentation: WeeklyResearchPresentati
       <MobileAccordionSection title="Matchups">
         <CompositeMatchupSummary presentation={presentation} />
       </MobileAccordionSection>
-      {isQb && (
+      {(
         <MobileAccordionSection title="EPA">
           <EdgeDetail title="EPA advantage" category="epa" edge={row.matchupEdges.epa} metric={presentation.matchupEdges.epa} />
         </MobileAccordionSection>
       )}
-      {isQb && (
+      {(
         <MobileAccordionSection title="Success Rate">
           <EdgeDetail title="Success advantage" category="success" edge={row.matchupEdges.success} metric={presentation.matchupEdges.success} />
         </MobileAccordionSection>
@@ -479,12 +479,12 @@ function MobileDetail({ presentation }: { presentation: WeeklyResearchPresentati
       <MobileAccordionSection title="Context">
         <ProjectionContextContent presentation={presentation} />
       </MobileAccordionSection>
-      {isQb && (
+      {(
         <MobileAccordionSection title="Last 10">
           <FantasyQbLast10 {...qbLast10Props} only="player" unwrapped />
         </MobileAccordionSection>
       )}
-      {isQb && (
+      {(
         <MobileAccordionSection title="Opponent Last 10">
           <FantasyQbLast10 {...qbLast10Props} only="opponent" unwrapped />
         </MobileAccordionSection>
@@ -514,11 +514,12 @@ function DesktopDetail({ presentation }: { presentation: WeeklyResearchPresentat
         <h3 id={`projection-${row.playerId}`} className="border-b border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-black uppercase tracking-[0.05em] text-slate-950">Projection context</h3>
         <ProjectionContextContent presentation={presentation} />
       </section>
-      {row.position === "QB" && (
+      {(
         <section aria-labelledby={`last10-${row.playerId}`}>
           <h3 id={`last10-${row.playerId}`} className="mb-1 px-1 text-[9px] font-black uppercase tracking-[0.04em] text-slate-950 sm:mb-1.5 sm:text-[11px]">Last 10 games</h3>
           <FantasyQbLast10
             season={WEEKLY_RANKINGS_SEASON}
+            position={row.position}
             playerId={row.playerId}
             playerName={row.playerName}
             team={row.team}
@@ -531,7 +532,7 @@ function DesktopDetail({ presentation }: { presentation: WeeklyResearchPresentat
   );
 }
 
-function Detail({ presentation }: { presentation: WeeklyResearchPresentationRow }) {
+export function WeeklyFantasyPlayerDetail({ presentation }: { presentation: WeeklyResearchPresentationRow }) {
   const compact = useIsCompactLayout();
   return compact ? <MobileDetail presentation={presentation} /> : <DesktopDetail presentation={presentation} />;
 }
@@ -671,7 +672,7 @@ function MobileRow({ presentation, displayName, columns, mode, expanded, onToggl
       {expanded && (
         <div data-mobile-expanded-container className="sticky left-0 w-[calc(100vw-2rem)] space-y-1.5 border-t border-slate-300 bg-slate-50 p-1.5 sm:w-[calc(100vw-3rem)]">
           <MobileExpandedSummary presentation={presentation} />
-          <Detail presentation={presentation} />
+          <WeeklyFantasyPlayerDetail presentation={presentation} />
         </div>
       )}
     </article>
@@ -818,7 +819,7 @@ export default function WeeklyFantasyRankingsTable({ rows, displayMode }: { rows
                     })}
                     {evidence.map((column) => <MetricCell key={column.key} metric={presentation.evidence[column.key]} mode={displayMode} statValue={formatEvidenceValue(column.key, presentation.evidence[column.key].rawValue)} />)}
                   </tr>
-                  {expanded && <tr className="bg-slate-50"><td colSpan={columnCount} className="border-b border-slate-200 px-4 py-3"><Detail presentation={presentation} /></td></tr>}
+                  {expanded && <tr className="bg-slate-50"><td colSpan={columnCount} className="border-b border-slate-200 px-4 py-3"><WeeklyFantasyPlayerDetail presentation={presentation} /></td></tr>}
                 </Fragment>
               );
             })}

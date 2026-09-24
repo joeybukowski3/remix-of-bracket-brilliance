@@ -191,6 +191,14 @@ export const NFL_SECTION_NAV_CATEGORIES: NflSectionNavCategory[] = [
         match: "prefix",
       },
       {
+        to: "/fantasy-football/start-sit",
+        label: "Start/Sit",
+        shortLabel: "Start/Sit",
+        description: "Compare your Sleeper lineup with JKB weekly fantasy projections.",
+        icon: "↔",
+        status: "new",
+      },
+      {
         to: "/nfl/fantasy-points-allowed",
         label: "Fantasy Points Allowed",
         shortLabel: "Points Allowed",
@@ -221,6 +229,7 @@ export const NFL_SECTION_NAV_CATEGORIES: NflSectionNavCategory[] = [
 export const NFL_SECTION_NAV_ITEMS: NflSectionNavItem[] = NFL_SECTION_NAV_CATEGORIES.flatMap((category) => category.items);
 
 export function isNflSectionPathActive(pathname: string, to: string) {
+  if (pathname === "/fantasy-football/start-sit" && to === "/fantasy-football") return false;
   if (to === "/nfl/guide") {
     return pathname === to || pathname.startsWith("/nfl/guide/team/");
   }
