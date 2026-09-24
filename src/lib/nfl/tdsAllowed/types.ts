@@ -5,14 +5,28 @@
  * docs/research/nfl-fantasy-points-allowed for the audit this contract
  * extends to touchdown counts.
  *
- * Position keys are UI-facing labels, not raw nflverse positions. Unlike
- * Fantasy Points Allowed, there is no trustworthy alignment-split touchdown
- * source (the Razzball slot/wide snapshot only carries PPG-allowed, not TD
- * counts -- re-audited and reconfirmed against every public nflverse release
- * plus NGS/PFF/Fantasy Points/SIS; none publish a slot/wide tag joinable to a
- * touchdown event), so this table uses a single combined "wr" column
- * (nflverse position "WR", rushingTouchdowns + receivingTouchdowns) instead
- * of a wideWr/slotWr split -- see buildRows.ts.
+ * Columns are scoring-method categories (scorer position + touchdown type),
+ * not raw nflverse positions:
+ *   qbPass  = passing TDs thrown by QBs        (QB row, passing_tds)
+ *   qbRush  = rushing TDs scored by QBs        (QB row, rushing_tds)
+ *   rbRush  = rushing TDs scored by RBs        (RB row, rushing_tds)
+ *   rbRec   = receiving TDs scored by RBs      (RB row, receiving_tds)
+ *   wrRec   = receiving TDs scored by WRs      (WR row, receiving_tds)
+ *   teRec   = receiving TDs scored by TEs      (TE row, receiving_tds)
+ * Each category reads exactly one stat field of exactly one position, so a
+ * single stat can never land in two categories. A completed touchdown pass is
+ * intentionally represented on BOTH sides -- qbPass (passer) and one of
+ * rbRec/wrRec/teRec (receiver) -- because the columns answer "how many TDs of
+ * this kind does this defense allow", not "how many scoring plays"; the
+ * columns must never be summed into a single offense-TD total.
+ * WR/TE rushing, non-QB passing and QB receiving TDs (a few per season) are
+ * outside all six categories. Two-point conversions, special-teams and
+ * defensive TDs are separate nflverse columns and never enter any category.
+ *
+ * There is no trustworthy alignment-split (wide/slot) touchdown source (the
+ * Razzball slot/wide snapshot only carries PPG-allowed; re-audited against
+ * every public nflverse release plus NGS/PFF/Fantasy Points/SIS), so WR REC is
+ * one combined column.
  *
  * `rank` is always computed from touchdownsAllowedPerGame (comparable across
  * samples with different game counts); the table's Raw display mode instead
@@ -23,11 +37,12 @@ export type TdsAllowedSampleKey = "2026" | "2025" | "last5" | "last8";
 
 export const TDS_ALLOWED_SAMPLE_KEYS: readonly TdsAllowedSampleKey[] = ["2026", "2025", "last5", "last8"];
 
-export type TdsAllowedPositionKey = "qb" | "rb" | "wr" | "te";
+export type TdsAllowedCategoryKey = "qbPass" | "qbRush" | "rbRush" | "rbRec" | "wrRec" | "teRec";
 
-export const TDS_ALLOWED_POSITION_KEYS: readonly TdsAllowedPositionKey[] = ["qb", "rb", "wr", "te"];
+/** Desktop column order. */
+export const TDS_ALLOWED_CATEGORY_KEYS: readonly TdsAllowedCategoryKey[] = ["qbPass", "qbRush", "rbRush", "rbRec", "wrRec", "teRec"];
 
-/** Provenance of a single position-sample cell. Only one source exists today. */
+/** Provenance of a single category-sample cell. Only one source exists today. */
 export type TdsAllowedSource = "nflverse-player-week";
 
 /**
@@ -42,19 +57,19 @@ export type TdsAllowedPositionSample = {
   source: TdsAllowedSource;
 };
 
-export type TdsAllowedPositionRanks = Record<TdsAllowedPositionKey, TdsAllowedPositionSample | null>;
+export type TdsAllowedCategoryRanks = Record<TdsAllowedCategoryKey, TdsAllowedPositionSample | null>;
 
 export type TdsAllowedRow = {
   team: string;
   opponent: string | null;
   location: "@" | "vs" | null;
-  samples: Record<TdsAllowedSampleKey, TdsAllowedPositionRanks>;
+  samples: Record<TdsAllowedSampleKey, TdsAllowedCategoryRanks>;
 };
 
 export const TDS_ALLOWED_ARTIFACT_PATH = "/data/nfl/tds-allowed-by-position.json";
 
 export type TdsAllowedArtifact = {
-  schemaVersion: "nfl-tds-allowed-by-position-v1";
+  schemaVersion: "nfl-tds-allowed-by-position-v2";
   generatedAt: string;
   /** Season/week the "current opponent" column and the "2026" sample are anchored to. */
   season: number;

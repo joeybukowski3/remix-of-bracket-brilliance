@@ -21,16 +21,19 @@ function row(
   return {
     opponent: null,
     location: null,
+    // Rank values are distinct across every column and sample so getByText assertions stay unambiguous.
     samples: {
       "2026": {
-        qb: sample(qb2026, qb2026Total ?? qb2026),
-        rb: sample(2),
-        wr: sample(wr2026, wr2026Total ?? wr2026),
-        te: sample(3),
+        qbPass: sample(qb2026, qb2026Total ?? qb2026),
+        qbRush: sample(8),
+        rbRush: sample(2),
+        rbRec: sample(5),
+        wrRec: sample(wr2026, wr2026Total ?? wr2026),
+        teRec: sample(3),
       },
-      "2025": { qb: sample(30), rb: sample(31), wr: sample(29), te: sample(32) },
-      last5: { qb: sample(10), rb: sample(11), wr: sample(9), te: sample(12) },
-      last8: { qb: sample(15), rb: sample(16), wr: sample(14), te: sample(17) },
+      "2025": { qbPass: sample(30), qbRush: sample(27), rbRush: sample(31), rbRec: sample(26), wrRec: sample(29), teRec: sample(32) },
+      last5: { qbPass: sample(10), qbRush: sample(18), rbRush: sample(11), rbRec: sample(19), wrRec: sample(9), teRec: sample(12) },
+      last8: { qbPass: sample(15), qbRush: sample(21), rbRush: sample(16), rbRec: sample(23), wrRec: sample(14), teRec: sample(17) },
     },
     ...rest,
   };
@@ -38,7 +41,7 @@ function row(
 
 function artifact(): TdsAllowedArtifact {
   return {
-    schemaVersion: "nfl-tds-allowed-by-position-v1",
+    schemaVersion: "nfl-tds-allowed-by-position-v2",
     generatedAt: "2026-09-17T00:00:00.000Z",
     season: 2026,
     week: 2,
@@ -73,19 +76,67 @@ describe("NFLTdsAllowedByPosition", () => {
     expect(within(dalRow).getByText("vs WAS")).toBeInTheDocument();
   });
 
-  it("renders exactly the QB/RB/WR/TE columns, with no Wide WR / Slot WR headers", async () => {
+  it("renders exactly the six scoring-method columns in order, with no old QB/RB/WR/TE or Wide/Slot WR headers", async () => {
     stubFetch(artifact());
     render(<NFLTdsAllowedByPosition />);
     await waitFor(() => screen.getByText("BUF"));
 
-    expect(screen.getByRole("button", { name: "Sort by QB" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Sort by RB" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Sort by WR" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Sort by TE" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Sort by Wide WR" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Sort by Slot WR" })).not.toBeInTheDocument();
-    expect(screen.queryByText("Wide WR")).not.toBeInTheDocument();
-    expect(screen.queryByText("Slot WR")).not.toBeInTheDocument();
+    const sortButtons = screen
+      .getAllByRole("button", { name: /^Sort by / })
+      .map((button) => button.getAttribute("aria-label"));
+    expect(sortButtons).toEqual([
+      "Sort by Team",
+      "Sort by Opp",
+      "Sort by QB PASS",
+      "Sort by QB RUSH",
+      "Sort by RB RUSH",
+      "Sort by RB REC",
+      "Sort by WR REC",
+      "Sort by TE REC",
+    ]);
+    for (const old of ["QB", "RB", "WR", "TE", "Wide WR", "Slot WR"]) {
+      expect(screen.queryByRole("button", { name: `Sort by ${old}` })).not.toBeInTheDocument();
+    }
+  });
+
+  it("renders each scoring-method header as a compact two-line label", async () => {
+    stubFetch(artifact());
+    render(<NFLTdsAllowedByPosition />);
+    await waitFor(() => screen.getByText("BUF"));
+
+    const header = screen.getByRole("button", { name: "Sort by QB RUSH" });
+    expect(within(header).getByText("QB")).toBeInTheDocument();
+    expect(within(header).getByText("RUSH")).toBeInTheDocument();
+  });
+
+  it("explains that a touchdown pass appears in both QB PASS and the receiver column", async () => {
+    stubFetch(artifact());
+    render(<NFLTdsAllowedByPosition />);
+    await waitFor(() => screen.getByText("BUF"));
+
+    expect(screen.getByText(/touchdown pass appears in both QB PASS and the receiver's column/)).toBeInTheDocument();
+  });
+
+  it("notes that touchdown types outside the six categories are not shown, without adding columns for them", async () => {
+    stubFetch(artifact());
+    render(<NFLTdsAllowedByPosition />);
+    await waitFor(() => screen.getByText("BUF"));
+
+    expect(screen.getByText(/outside these six scoring-method categories/)).toHaveTextContent(
+      /non-QB passing TDs, WR\/TE rushing TDs, QB receiving TDs, other-position offensive TDs\) are not shown/,
+    );
+    expect(screen.getAllByRole("columnheader")).toHaveLength(8); // Team, Opp + exactly six categories
+  });
+
+  it("renders every category cell's rank for a team (2026 sample)", async () => {
+    stubFetch(artifact());
+    render(<NFLTdsAllowedByPosition />);
+    await waitFor(() => screen.getByText("BUF"));
+
+    const bufRow = screen.getByText("BUF").closest("tr") as HTMLElement;
+    for (const rank of ["20", "8", "2", "5", "22", "3"]) {
+      expect(within(bufRow).getByText(rank)).toBeInTheDocument();
+    }
   });
 
   it("no longer shows the old Wide/Slot WR unavailable notice", async () => {
@@ -121,7 +172,7 @@ describe("NFLTdsAllowedByPosition", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("shows a Last 8 sample tab and switches to it without refetching, with WR populated", async () => {
+  it("shows a Last 8 sample tab and switches to it without refetching, with WR REC populated", async () => {
     const fetchSpy = vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve(artifact()) } as Response));
     vi.stubGlobal("fetch", fetchSpy);
     render(<NFLTdsAllowedByPosition />);
@@ -135,7 +186,7 @@ describe("NFLTdsAllowedByPosition", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("Last 5 also exposes a populated WR value", async () => {
+  it("Last 5 also exposes a populated WR REC value", async () => {
     stubFetch(artifact());
     render(<NFLTdsAllowedByPosition />);
     await waitFor(() => screen.getByText("BUF"));
@@ -157,7 +208,7 @@ describe("NFLTdsAllowedByPosition", () => {
     expect(within(bufRow).queryByText("4")).not.toBeInTheDocument();
   });
 
-  it("Raw mode renders the whole-number total touchdown count with rank in parentheses (no decimal), including WR", async () => {
+  it("Raw mode renders the whole-number total touchdown count with rank in parentheses (no decimal), including WR REC", async () => {
     stubFetch(artifact());
     render(<NFLTdsAllowedByPosition />);
     await waitFor(() => screen.getByText("BUF"));
@@ -194,10 +245,10 @@ describe("NFLTdsAllowedByPosition", () => {
     const bodyTeams = () => screen.getAllByRole("row").slice(1).map((tr) => within(tr).getByText(/^(BUF|DAL)$/).textContent);
 
     // Raw total: buf=4, dal=29 -- ascending should put buf first, the opposite of rank-mode order (dal first).
-    fireEvent.click(screen.getByRole("button", { name: "Sort by QB" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sort by QB PASS" }));
     expect(bodyTeams()).toEqual(["BUF", "DAL"]);
 
-    fireEvent.click(screen.getByRole("button", { name: "Sort by QB" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sort by QB PASS" }));
     expect(bodyTeams()).toEqual(["DAL", "BUF"]);
   });
 
@@ -211,10 +262,10 @@ describe("NFLTdsAllowedByPosition", () => {
     const bodyTeams = () => screen.getAllByRole("row").slice(1).map((tr) => within(tr).getByText(/^(BUF|DAL)$/).textContent);
 
     // WR raw total: buf=3, dal=27 -- ascending should put buf first, the opposite of rank-mode order (dal first, rank 2 vs 22).
-    fireEvent.click(screen.getByRole("button", { name: "Sort by WR" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sort by WR REC" }));
     expect(bodyTeams()).toEqual(["BUF", "DAL"]);
 
-    fireEvent.click(screen.getByRole("button", { name: "Sort by WR" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sort by WR REC" }));
     expect(bodyTeams()).toEqual(["DAL", "BUF"]);
   });
 
@@ -226,7 +277,7 @@ describe("NFLTdsAllowedByPosition", () => {
     const bodyTeams = () => screen.getAllByRole("row").slice(1).map((tr) => within(tr).getByText(/^(BUF|DAL)$/).textContent);
 
     // WR rank: dal=2, buf=22 -- ascending should put dal first.
-    fireEvent.click(screen.getByRole("button", { name: "Sort by WR" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sort by WR REC" }));
     expect(bodyTeams()).toEqual(["DAL", "BUF"]);
   });
 
@@ -248,7 +299,7 @@ describe("NFLTdsAllowedByPosition", () => {
 
     const bodyTeams = () => screen.getAllByRole("row").slice(1).map((tr) => within(tr).getByText(/^(BUF|DAL)$/).textContent);
 
-    fireEvent.click(screen.getByRole("button", { name: "Sort by QB" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sort by QB PASS" }));
     // Rank ascending: dal (rank 1) before buf (rank 20).
     expect(bodyTeams()).toEqual(["DAL", "BUF"]);
   });

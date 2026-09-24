@@ -1,16 +1,21 @@
 /**
- * Combines the per-position aggregation core (aggregate.ts) into the full
- * TdsAllowedRow[] the artifact/page consume, one row per team.
- *
- * WR is a single combined column (nflverse position "WR", rushing + receiving
- * touchdowns) -- there is no trustworthy per-game alignment-split (wide vs.
- * slot) touchdown source in this repo, so this table never attempts that
- * split (see the work-unit data audit and types.ts doc comment).
+ * Combines the per-category aggregation core (aggregate.ts) into the full
+ * TdsAllowedRow[] the artifact/page consume, one row per team. Categories are
+ * scoring-method splits (QB PASS / QB RUSH / RB RUSH / RB REC / WR REC /
+ * TE REC) -- see types.ts for the exact definitions and the alignment-split
+ * (wide/slot) limitation.
  */
 
 import type { HistoricalPlayerWeek } from "@/lib/fantasy/weekly/history";
-import { buildDefenseTouchdownGameLog, computeTouchdownPositionSample, type DefenseGameTouchdowns } from "./aggregate";
-import { TDS_ALLOWED_SAMPLE_KEYS, type TdsAllowedPositionRanks, type TdsAllowedRow, type TdsAllowedSampleKey } from "./types";
+import { TDS_ALLOWED_CATEGORIES, buildDefenseTouchdownGameLog, computeTouchdownPositionSample } from "./aggregate";
+import {
+  TDS_ALLOWED_SAMPLE_KEYS,
+  type TdsAllowedCategoryKey,
+  type TdsAllowedCategoryRanks,
+  type TdsAllowedPositionSample,
+  type TdsAllowedRow,
+  type TdsAllowedSampleKey,
+} from "./types";
 
 export type CurrentOpponentLookup = ReadonlyMap<string, { opponent: string | null; location: "@" | "vs" | null }>;
 
@@ -37,41 +42,29 @@ function selectorForSample(sampleKey: TdsAllowedSampleKey, currentSeason: number
 }
 
 export function buildTdsAllowedRows(input: BuildTdsAllowedRowsInput): TdsAllowedRow[] {
-  const gameLogs: Record<"QB" | "RB" | "WR" | "TE", DefenseGameTouchdowns[]> = {
-    QB: buildDefenseTouchdownGameLog(input.historicalRows, "QB"),
-    RB: buildDefenseTouchdownGameLog(input.historicalRows, "RB"),
-    WR: buildDefenseTouchdownGameLog(input.historicalRows, "WR"),
-    TE: buildDefenseTouchdownGameLog(input.historicalRows, "TE"),
-  };
+  const gameLogs = TDS_ALLOWED_CATEGORIES.map((category) => ({
+    key: category.key,
+    log: buildDefenseTouchdownGameLog(input.historicalRows, category),
+  }));
 
-  const samplesByKey = new Map<TdsAllowedSampleKey, Record<"qb" | "rb" | "wr" | "te", ReturnType<typeof computeTouchdownPositionSample>>>();
+  const samplesByKey = new Map<TdsAllowedSampleKey, Map<TdsAllowedCategoryKey, Map<string, TdsAllowedPositionSample>>>();
   for (const sampleKey of TDS_ALLOWED_SAMPLE_KEYS) {
     const selector = selectorForSample(sampleKey, input.currentSeason, input.priorSeason);
-    samplesByKey.set(sampleKey, {
-      qb: computeTouchdownPositionSample(gameLogs.QB, input.teams, selector, SOURCE),
-      rb: computeTouchdownPositionSample(gameLogs.RB, input.teams, selector, SOURCE),
-      wr: computeTouchdownPositionSample(gameLogs.WR, input.teams, selector, SOURCE),
-      te: computeTouchdownPositionSample(gameLogs.TE, input.teams, selector, SOURCE),
-    });
+    samplesByKey.set(
+      sampleKey,
+      new Map(gameLogs.map(({ key, log }) => [key, computeTouchdownPositionSample(log, input.teams, selector, SOURCE)])),
+    );
   }
 
   return input.teams.map((team): TdsAllowedRow => {
     const opponent = input.opponents.get(team) ?? { opponent: null, location: null };
-    const samples = {} as Record<TdsAllowedSampleKey, TdsAllowedPositionRanks>;
+    const samples = {} as Record<TdsAllowedSampleKey, TdsAllowedCategoryRanks>;
     for (const sampleKey of TDS_ALLOWED_SAMPLE_KEYS) {
-      const positionSamples = samplesByKey.get(sampleKey)!;
-      samples[sampleKey] = {
-        qb: positionSamples.qb.get(team) ?? null,
-        rb: positionSamples.rb.get(team) ?? null,
-        wr: positionSamples.wr.get(team) ?? null,
-        te: positionSamples.te.get(team) ?? null,
-      };
+      const categorySamples = samplesByKey.get(sampleKey)!;
+      samples[sampleKey] = Object.fromEntries(
+        TDS_ALLOWED_CATEGORIES.map(({ key }) => [key, categorySamples.get(key)!.get(team) ?? null]),
+      ) as TdsAllowedCategoryRanks;
     }
-    return {
-      team,
-      opponent: opponent.opponent,
-      location: opponent.location,
-      samples,
-    };
+    return { team, opponent: opponent.opponent, location: opponent.location, samples };
   });
 }

@@ -172,3 +172,49 @@ describe("AllowedByPositionTable responsive column widths and sticky header", ()
     expect(bodyCells[1].className).toContain("z-10");
   });
 });
+
+describe("AllowedByPositionTable stacked headers and column density", () => {
+  const stacked: readonly AllowedByPositionColumn<Col>[] = [
+    { key: "qb", label: "QB PASS", stackLabel: true },
+    { key: "rb", label: "RB REC", stackLabel: true },
+  ];
+
+  function renderStacked(columnSet: readonly AllowedByPositionColumn<Col>[]) {
+    return render(
+      <AllowedByPositionTable
+        columns={columnSet}
+        rows={[row("kc", { rank: 5 })]}
+        sort={sort}
+        onSortChange={vi.fn()}
+        scrollLabel="test table"
+        rankTone={rankTone}
+        renderTeam={(r) => r.team.toUpperCase()}
+      />,
+    );
+  }
+
+  it("splits a stackLabel header into two lines while keeping the full accessible sort name", () => {
+    renderStacked(stacked);
+    const button = screen.getByRole("button", { name: "Sort by QB PASS" });
+    expect(within(button).getByText("QB")).toBeInTheDocument();
+    expect(within(button).getByText("PASS")).toBeInTheDocument();
+  });
+
+  it("renders a plain single-line label when stackLabel is not set", () => {
+    renderStacked(columns);
+    expect(within(screen.getByRole("button", { name: "Sort by QB" })).getByText("QB")).toBeInTheDocument();
+  });
+
+  it("uses the narrower mobile metric-column width only when there are more than five metric columns", () => {
+    const manyColumns = ["a", "b", "c", "d", "e", "f"] as const;
+    const many = manyColumns.map((key) => ({ key, label: key.toUpperCase() })) as unknown as readonly AllowedByPositionColumn<Col>[];
+    const { unmount } = renderStacked(many);
+    expect(screen.getAllByRole("columnheader")[2].className).toContain("w-[38px]");
+    // The six-column layout also stacks the TEAM sort icon under the label on mobile.
+    expect(screen.getByRole("button", { name: "Sort by Team" }).className).toContain("flex-col");
+    unmount();
+    renderStacked(columns);
+    expect(screen.getAllByRole("columnheader")[2].className).toContain("w-[46px]");
+    expect(screen.getByRole("button", { name: "Sort by Team" }).className).not.toContain("flex-col");
+  });
+});

@@ -11,6 +11,8 @@ export type AllowedByPositionColumn<ColumnKey extends string> = {
   label: string;
   /** Understated header background/text accent, e.g. "bg-rose-50 text-rose-700". */
   headerClassName?: string;
+  /** Render "QB PASS" as a compact two-line header ("QB" over "PASS"); `label` stays the accessible/sort name. */
+  stackLabel?: boolean;
 };
 
 export type AllowedByPositionCell = {

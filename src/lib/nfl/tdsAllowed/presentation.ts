@@ -10,13 +10,19 @@ import type { AllowedByPositionColumn, AllowedByPositionRow } from "@/components
 import type { RankTone } from "@/components/nfl/allowed-by-position/AllowedByPositionTable";
 import { ALLOWED_BY_POSITION_HEADER_CLASSNAMES } from "@/components/nfl/allowed-by-position/headerColors";
 import { jkbHeatStyle, weeklyRankHeatTone } from "@/lib/shared/jkbHeat";
-import { TDS_ALLOWED_POSITION_KEYS, type TdsAllowedArtifact, type TdsAllowedPositionKey, type TdsAllowedSampleKey } from "./types";
+import { TDS_ALLOWED_CATEGORY_KEYS, type TdsAllowedArtifact, type TdsAllowedCategoryKey, type TdsAllowedSampleKey } from "./types";
 
-export const TDS_ALLOWED_COLUMNS: readonly AllowedByPositionColumn<TdsAllowedPositionKey>[] = [
-  { key: "qb", label: "QB", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.qb },
-  { key: "rb", label: "RB", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.rb },
-  { key: "wr", label: "WR", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.wr },
-  { key: "te", label: "TE", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.te },
+/**
+ * Scoring-method columns, in desktop order. `label` is the accessible/sort
+ * name; `stackLabel` renders it as a compact two-line header (QB / PASS).
+ */
+export const TDS_ALLOWED_COLUMNS: readonly AllowedByPositionColumn<TdsAllowedCategoryKey>[] = [
+  { key: "qbPass", label: "QB PASS", stackLabel: true, headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.qbPass },
+  { key: "qbRush", label: "QB RUSH", stackLabel: true, headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.qbRush },
+  { key: "rbRush", label: "RB RUSH", stackLabel: true, headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.rbRush },
+  { key: "rbRec", label: "RB REC", stackLabel: true, headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.rbRec },
+  { key: "wrRec", label: "WR REC", stackLabel: true, headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.wrRec },
+  { key: "teRec", label: "TE REC", stackLabel: true, headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.teRec },
 ];
 
 /**
@@ -42,18 +48,18 @@ function formatTouchdownsAllowedTotal(total: number | null | undefined): string 
 export function buildTdsAllowedTableRows(
   artifact: TdsAllowedArtifact | null,
   sample: TdsAllowedSampleKey,
-): AllowedByPositionRow<TdsAllowedPositionKey>[] {
+): AllowedByPositionRow<TdsAllowedCategoryKey>[] {
   if (!artifact) return [];
-  return artifact.rows.map((row): AllowedByPositionRow<TdsAllowedPositionKey> => {
-    const positionSamples = row.samples[sample];
-    const cells = {} as AllowedByPositionRow<TdsAllowedPositionKey>["cells"];
-    for (const key of TDS_ALLOWED_POSITION_KEYS) {
-      const positionSample = positionSamples[key];
+  return artifact.rows.map((row): AllowedByPositionRow<TdsAllowedCategoryKey> => {
+    const categorySamples = row.samples[sample];
+    const cells = {} as AllowedByPositionRow<TdsAllowedCategoryKey>["cells"];
+    for (const key of TDS_ALLOWED_CATEGORY_KEYS) {
+      const categorySample = categorySamples[key];
       // Rank always reflects touchdownsAllowedPerGame (see aggregate.ts) so it stays comparable
       // across samples with different game counts; only the displayed raw value/sort key is the total.
-      const total = positionSample?.touchdownsAllowedTotal ?? null;
+      const total = categorySample?.touchdownsAllowedTotal ?? null;
       cells[key] = {
-        rank: positionSample?.rank ?? null,
+        rank: categorySample?.rank ?? null,
         rawValue: total,
         rawDisplay: formatTouchdownsAllowedTotal(total),
       };
