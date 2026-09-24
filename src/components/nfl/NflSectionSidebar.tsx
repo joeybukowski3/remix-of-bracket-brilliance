@@ -50,8 +50,8 @@ export default function NflSectionSidebar({ mobile = false, onNavigate }: NflSec
 
   return (
     <aside className={mobile ? "" : "hidden xl:block"} aria-label="NFL platform navigation">
-      <div className={mobile ? "" : "sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto"}>
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <div>
+        <div className="overflow-clip rounded-lg border border-slate-200 bg-white">
           <div className="flex items-center gap-2.5 border-b border-slate-200 bg-slate-950 px-3 py-3 text-white">
             <Link
               to="/nfl"
