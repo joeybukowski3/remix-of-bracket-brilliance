@@ -1,182 +1,211 @@
 import { describe, expect, it } from "vitest";
 import {
+  TDS_ALLOWED_CATEGORIES,
   buildDefenseTouchdownGameLog,
   computeTouchdownPositionSample,
   selectDefenseTouchdownGames,
-  touchdownsForPosition,
+  touchdownsForCategory,
+  type TdsAllowedCategory,
 } from "./aggregate";
+import type { TdsAllowedCategoryKey } from "./types";
+import type { HistoricalPlayerWeek } from "@/lib/fantasy/weekly/history";
 import { makeHistoricalPlayerWeek } from "../fantasyAllowed/__fixtures__/historicalPlayerWeek";
 
-describe("touchdownsForPosition", () => {
-  it("counts a QB's passing touchdowns", () => {
-    const row = makeHistoricalPlayerWeek({
-      position: "QB",
-      stats: { ...makeHistoricalPlayerWeek().stats, passingTouchdowns: 2, rushingTouchdowns: 0 },
-    });
-    expect(touchdownsForPosition(row)).toBe(2);
+const category = (key: TdsAllowedCategoryKey): TdsAllowedCategory => TDS_ALLOWED_CATEGORIES.find((entry) => entry.key === key)!;
+
+/** A player-week with every touchdown-bearing stat set to a distinct value, so any mis-routed field shows up as a wrong count. */
+function playerWeek(position: HistoricalPlayerWeek["position"], stats: Partial<HistoricalPlayerWeek["stats"]>): HistoricalPlayerWeek {
+  return makeHistoricalPlayerWeek({
+    position,
+    stats: {
+      ...makeHistoricalPlayerWeek().stats,
+      passingTouchdowns: 0,
+      rushingTouchdowns: 0,
+      receivingTouchdowns: 0,
+      specialTeamsTouchdowns: 0,
+      passingTwoPointConversions: 0,
+      rushingTwoPointConversions: 0,
+      receivingTwoPointConversions: 0,
+      ...stats,
+    },
+  });
+}
+
+/** Touchdowns one player-week contributes to every category, keyed by category. */
+function contributions(row: HistoricalPlayerWeek): Record<TdsAllowedCategoryKey, number> {
+  return Object.fromEntries(TDS_ALLOWED_CATEGORIES.map((entry) => [entry.key, touchdownsForCategory(row, entry)])) as Record<
+    TdsAllowedCategoryKey,
+    number
+  >;
+}
+
+const NONE: Record<TdsAllowedCategoryKey, number> = { qbPass: 0, qbRush: 0, rbRush: 0, rbRec: 0, wrRec: 0, teRec: 0 };
+
+describe("TDS_ALLOWED_CATEGORIES", () => {
+  it("defines the six scoring-method categories in desktop column order", () => {
+    expect(TDS_ALLOWED_CATEGORIES.map((entry) => entry.key)).toEqual(["qbPass", "qbRush", "rbRush", "rbRec", "wrRec", "teRec"]);
   });
 
-  it("counts a QB's rushing touchdowns", () => {
-    const row = makeHistoricalPlayerWeek({
-      position: "QB",
-      stats: { ...makeHistoricalPlayerWeek().stats, passingTouchdowns: 0, rushingTouchdowns: 1 },
-    });
-    expect(touchdownsForPosition(row)).toBe(1);
+  it("reads exactly one stat field per category, and never a two-point/special-teams field", () => {
+    expect(TDS_ALLOWED_CATEGORIES.map((entry) => [entry.position, entry.statField])).toEqual([
+      ["QB", "passingTouchdowns"],
+      ["QB", "rushingTouchdowns"],
+      ["RB", "rushingTouchdowns"],
+      ["RB", "receivingTouchdowns"],
+      ["WR", "receivingTouchdowns"],
+      ["TE", "receivingTouchdowns"],
+    ]);
+  });
+});
+
+describe("touchdownsForCategory", () => {
+  it("QB PASS: counts a QB's passing touchdowns only", () => {
+    const row = playerWeek("QB", { passingTouchdowns: 2, rushingTouchdowns: 1 });
+    expect(touchdownsForCategory(row, category("qbPass"))).toBe(2);
   });
 
-  it("combines a QB's passing + rushing touchdowns in the same game (Josh Allen example: 2 pass + 1 rush = 3)", () => {
-    const row = makeHistoricalPlayerWeek({
-      position: "QB",
-      stats: { ...makeHistoricalPlayerWeek().stats, passingTouchdowns: 2, rushingTouchdowns: 1 },
-    });
-    expect(touchdownsForPosition(row)).toBe(3);
+  it("QB RUSH: counts a QB's rushing touchdowns only", () => {
+    const row = playerWeek("QB", { passingTouchdowns: 2, rushingTouchdowns: 1 });
+    expect(touchdownsForCategory(row, category("qbRush"))).toBe(1);
   });
 
-  it("ignores a QB's receiving touchdowns (should never occur, but the field is not summed)", () => {
-    const row = makeHistoricalPlayerWeek({
-      position: "QB",
-      stats: { ...makeHistoricalPlayerWeek().stats, passingTouchdowns: 1, rushingTouchdowns: 0, receivingTouchdowns: 5 },
-    });
-    expect(touchdownsForPosition(row)).toBe(1);
+  it("keeps a dual-threat QB's passing and rushing TDs in separate buckets (Josh Allen: 2 pass + 1 rush)", () => {
+    expect(contributions(playerWeek("QB", { passingTouchdowns: 2, rushingTouchdowns: 1 }))).toEqual({ ...NONE, qbPass: 2, qbRush: 1 });
   });
 
-  it("counts an RB's rushing touchdowns", () => {
-    const row = makeHistoricalPlayerWeek({
-      position: "RB",
-      stats: { ...makeHistoricalPlayerWeek().stats, rushingTouchdowns: 2, receivingTouchdowns: 0 },
-    });
-    expect(touchdownsForPosition(row)).toBe(2);
+  it("ignores a QB's receiving touchdowns (a rare trick-play catch is outside all six categories)", () => {
+    expect(contributions(playerWeek("QB", { receivingTouchdowns: 2 }))).toEqual(NONE);
   });
 
-  it("counts an RB's receiving touchdowns", () => {
-    const row = makeHistoricalPlayerWeek({
-      position: "RB",
-      stats: { ...makeHistoricalPlayerWeek().stats, rushingTouchdowns: 0, receivingTouchdowns: 1 },
-    });
-    expect(touchdownsForPosition(row)).toBe(1);
+  it("RB RUSH: counts an RB's rushing touchdowns only", () => {
+    const row = playerWeek("RB", { rushingTouchdowns: 2, receivingTouchdowns: 1 });
+    expect(touchdownsForCategory(row, category("rbRush"))).toBe(2);
   });
 
-  it("combines an RB's rushing + receiving touchdowns in the same game without double counting either field", () => {
-    const row = makeHistoricalPlayerWeek({
-      position: "RB",
-      stats: { ...makeHistoricalPlayerWeek().stats, rushingTouchdowns: 1, receivingTouchdowns: 1 },
-    });
-    expect(touchdownsForPosition(row)).toBe(2);
+  it("RB REC: counts an RB's receiving touchdowns only", () => {
+    const row = playerWeek("RB", { rushingTouchdowns: 2, receivingTouchdowns: 1 });
+    expect(touchdownsForCategory(row, category("rbRec"))).toBe(1);
   });
 
-  it("ignores an RB's passing touchdowns (e.g. a trick-play pass is not a rushing/receiving score)", () => {
-    const row = makeHistoricalPlayerWeek({
-      position: "RB",
-      stats: { ...makeHistoricalPlayerWeek().stats, rushingTouchdowns: 1, receivingTouchdowns: 0, passingTouchdowns: 1 },
-    });
-    expect(touchdownsForPosition(row)).toBe(1);
+  it("keeps a dual-threat RB's rushing and receiving TDs in separate buckets without double counting", () => {
+    expect(contributions(playerWeek("RB", { rushingTouchdowns: 1, receivingTouchdowns: 1 }))).toEqual({ ...NONE, rbRush: 1, rbRec: 1 });
   });
 
-  it("counts a WR's receiving touchdowns", () => {
-    const row = makeHistoricalPlayerWeek({
-      position: "WR",
-      stats: { ...makeHistoricalPlayerWeek().stats, receivingTouchdowns: 2 },
-    });
-    expect(touchdownsForPosition(row)).toBe(2);
+  it("ignores an RB's passing touchdowns (a trick-play pass is not a QB PASS, RB RUSH or RB REC score)", () => {
+    expect(contributions(playerWeek("RB", { passingTouchdowns: 1 }))).toEqual(NONE);
   });
 
-  it("counts a WR's rushing touchdowns (jet sweep / end-around scores)", () => {
-    const row = makeHistoricalPlayerWeek({
-      position: "WR",
-      stats: { ...makeHistoricalPlayerWeek().stats, rushingTouchdowns: 1 },
-    });
-    expect(touchdownsForPosition(row)).toBe(1);
+  it("WR REC: counts a WR's receiving touchdowns", () => {
+    expect(contributions(playerWeek("WR", { receivingTouchdowns: 2 }))).toEqual({ ...NONE, wrRec: 2 });
   });
 
-  it("combines a WR's receiving + rushing touchdowns without double counting", () => {
-    const row = makeHistoricalPlayerWeek({
-      position: "WR",
-      stats: { ...makeHistoricalPlayerWeek().stats, receivingTouchdowns: 1, rushingTouchdowns: 1 },
-    });
-    expect(touchdownsForPosition(row)).toBe(2);
+  it("WR REC: excludes a WR's rushing touchdowns (jet sweep / end-around scores are not receiving TDs)", () => {
+    expect(contributions(playerWeek("WR", { receivingTouchdowns: 1, rushingTouchdowns: 1 }))).toEqual({ ...NONE, wrRec: 1 });
   });
 
-  it("counts a TE's receiving touchdowns", () => {
-    const row = makeHistoricalPlayerWeek({
-      position: "TE",
-      stats: { ...makeHistoricalPlayerWeek().stats, receivingTouchdowns: 3 },
-    });
-    expect(touchdownsForPosition(row)).toBe(3);
+  it("TE REC: counts a TE's receiving touchdowns", () => {
+    expect(contributions(playerWeek("TE", { receivingTouchdowns: 3 }))).toEqual({ ...NONE, teRec: 3 });
   });
 
-  it("combines a TE's receiving + rushing touchdowns without double counting", () => {
-    const row = makeHistoricalPlayerWeek({
-      position: "TE",
-      stats: { ...makeHistoricalPlayerWeek().stats, receivingTouchdowns: 1, rushingTouchdowns: 1 },
-    });
-    expect(touchdownsForPosition(row)).toBe(2);
+  it("TE REC: excludes a TE's rushing touchdowns", () => {
+    expect(contributions(playerWeek("TE", { receivingTouchdowns: 1, rushingTouchdowns: 1 }))).toEqual({ ...NONE, teRec: 1 });
   });
 
-  it("never includes special-teams touchdowns or two-point conversions in any position's count", () => {
-    const row = makeHistoricalPlayerWeek({
-      position: "WR",
-      stats: {
-        ...makeHistoricalPlayerWeek().stats,
-        receivingTouchdowns: 1,
-        specialTeamsTouchdowns: 4,
-        receivingTwoPointConversions: 2,
-        rushingTwoPointConversions: 1,
-      },
-    });
-    expect(touchdownsForPosition(row)).toBe(1);
+  it("excludes special-teams touchdowns from every category", () => {
+    for (const position of ["QB", "RB", "WR", "TE"] as const) {
+      expect(contributions(playerWeek(position, { specialTeamsTouchdowns: 4 }))).toEqual(NONE);
+    }
+  });
+
+  it("excludes two-point conversions (passing, rushing and receiving) from every category", () => {
+    for (const position of ["QB", "RB", "WR", "TE"] as const) {
+      const row = playerWeek(position, { passingTwoPointConversions: 1, rushingTwoPointConversions: 1, receivingTwoPointConversions: 1 });
+      expect(contributions(row)).toEqual(NONE);
+    }
+  });
+
+  it("never lets one player-week contribute more than its own touchdown stats across all categories", () => {
+    // Every stat set at once: each stat lands in at most one category, so the total is the sum of the
+    // stats the six categories read for that position -- no field is counted twice.
+    const total = (row: HistoricalPlayerWeek) => Object.values(contributions(row)).reduce((sum, value) => sum + value, 0);
+    expect(total(playerWeek("QB", { passingTouchdowns: 3, rushingTouchdowns: 2, receivingTouchdowns: 5 }))).toBe(5);
+    expect(total(playerWeek("RB", { passingTouchdowns: 3, rushingTouchdowns: 2, receivingTouchdowns: 1 }))).toBe(3);
+    expect(total(playerWeek("WR", { passingTouchdowns: 3, rushingTouchdowns: 2, receivingTouchdowns: 1 }))).toBe(1);
+    expect(total(playerWeek("TE", { passingTouchdowns: 3, rushingTouchdowns: 2, receivingTouchdowns: 1 }))).toBe(1);
   });
 });
 
 describe("buildDefenseTouchdownGameLog", () => {
+  const game = { opponent: "buf", season: 2025, week: 1 };
+
   it("sums multiple players of the same position into one per-game total, without double counting either player", () => {
     const rows = [
-      makeHistoricalPlayerWeek({
-        position: "RB",
-        opponent: "buf",
-        season: 2025,
-        week: 1,
-        stats: { ...makeHistoricalPlayerWeek().stats, rushingTouchdowns: 1, receivingTouchdowns: 1 },
-      }),
-      makeHistoricalPlayerWeek({
-        position: "RB",
-        opponent: "buf",
-        season: 2025,
-        week: 1,
-        stats: { ...makeHistoricalPlayerWeek().stats, rushingTouchdowns: 2 },
-      }),
-      makeHistoricalPlayerWeek({
-        position: "WR",
-        opponent: "buf",
-        season: 2025,
-        week: 1,
-        stats: { ...makeHistoricalPlayerWeek().stats, receivingTouchdowns: 9 },
-      }),
+      makeHistoricalPlayerWeek({ ...playerWeek("RB", { rushingTouchdowns: 1, receivingTouchdowns: 1 }), ...game }),
+      makeHistoricalPlayerWeek({ ...playerWeek("RB", { rushingTouchdowns: 2 }), ...game }),
+      makeHistoricalPlayerWeek({ ...playerWeek("WR", { receivingTouchdowns: 9 }), ...game }),
     ];
-    const log = buildDefenseTouchdownGameLog(rows, "RB");
-    expect(log).toHaveLength(1);
-    // Player 1: 1 rush + 1 rec = 2. Player 2: 2 rush = 2. Total = 4 (WR row is excluded).
-    expect(log[0]).toMatchObject({ team: "buf", season: 2025, week: 1, touchdownsAllowed: 4 });
+    const rush = buildDefenseTouchdownGameLog(rows, category("rbRush"));
+    const rec = buildDefenseTouchdownGameLog(rows, category("rbRec"));
+    expect(rush).toHaveLength(1);
+    // Rushing: 1 + 2 = 3. Receiving: 1. The WR row feeds neither RB category.
+    expect(rush[0]).toMatchObject({ team: "buf", season: 2025, week: 1, touchdownsAllowed: 3 });
+    expect(rec[0]).toMatchObject({ team: "buf", season: 2025, week: 1, touchdownsAllowed: 1 });
   });
 
-  it("keeps a QB's passing TD to a WR represented in both the QB and WR game logs (cross-position, not a bug)", () => {
+  it("represents a touchdown pass on both sides: QB PASS for the passer and WR REC for the receiver (intentional, documented)", () => {
     const rows = [
-      makeHistoricalPlayerWeek({
-        position: "QB",
-        opponent: "buf",
-        season: 2025,
-        week: 1,
-        stats: { ...makeHistoricalPlayerWeek().stats, passingTouchdowns: 1 },
-      }),
-      makeHistoricalPlayerWeek({
-        position: "WR",
-        opponent: "buf",
-        season: 2025,
-        week: 1,
-        stats: { ...makeHistoricalPlayerWeek().stats, receivingTouchdowns: 1 },
-      }),
+      makeHistoricalPlayerWeek({ ...playerWeek("QB", { passingTouchdowns: 1 }), ...game }),
+      makeHistoricalPlayerWeek({ ...playerWeek("WR", { receivingTouchdowns: 1 }), ...game }),
     ];
-    expect(buildDefenseTouchdownGameLog(rows, "QB")[0].touchdownsAllowed).toBe(1);
-    expect(buildDefenseTouchdownGameLog(rows, "WR")[0].touchdownsAllowed).toBe(1);
+    expect(buildDefenseTouchdownGameLog(rows, category("qbPass"))[0].touchdownsAllowed).toBe(1);
+    expect(buildDefenseTouchdownGameLog(rows, category("wrRec"))[0].touchdownsAllowed).toBe(1);
+    // ...but neither leaks into the QB rushing or other receiving categories. With no TE row the
+    // game still exists for TE REC (0 touchdowns), because the defense played it.
+    expect(buildDefenseTouchdownGameLog(rows, category("qbRush"))[0].touchdownsAllowed).toBe(0);
+    expect(buildDefenseTouchdownGameLog(rows, category("teRec"))).toEqual([{ team: "buf", season: 2025, week: 1, touchdownsAllowed: 0 }]);
+  });
+
+  it("keeps a zero-touchdown game in the log so the per-game denominator counts it", () => {
+    const rows = [makeHistoricalPlayerWeek({ ...playerWeek("TE", { receivingTouchdowns: 0 }), ...game })];
+    expect(buildDefenseTouchdownGameLog(rows, category("teRec"))).toEqual([{ team: "buf", season: 2025, week: 1, touchdownsAllowed: 0 }]);
+  });
+
+  it("counts a defensive game with no row of the category's position as a 0-touchdown game (no TE row -> TE REC still has the game)", () => {
+    const rows = [
+      makeHistoricalPlayerWeek({ ...playerWeek("QB", { passingTouchdowns: 2 }), ...game, week: 1 }),
+      makeHistoricalPlayerWeek({ ...playerWeek("TE", { receivingTouchdowns: 1 }), ...game, week: 1 }),
+      // Week 2: the defense played, but no TE has a player-week row.
+      makeHistoricalPlayerWeek({ ...playerWeek("QB", { passingTouchdowns: 1 }), ...game, week: 2 }),
+    ];
+    const log = buildDefenseTouchdownGameLog(rows, category("teRec")).sort((x, y) => x.week - y.week);
+    expect(log.map((entry) => [entry.week, entry.touchdownsAllowed])).toEqual([
+      [1, 1],
+      [2, 0],
+    ]);
+  });
+
+  it("counts a defensive game with no RB row for RB REC / RB RUSH", () => {
+    const rows = [makeHistoricalPlayerWeek({ ...playerWeek("WR", { receivingTouchdowns: 1 }), ...game })];
+    expect(buildDefenseTouchdownGameLog(rows, category("rbRec"))).toEqual([{ team: "buf", season: 2025, week: 1, touchdownsAllowed: 0 }]);
+    expect(buildDefenseTouchdownGameLog(rows, category("rbRush"))).toHaveLength(1);
+  });
+
+  it("gives every category the same game log length for a defense", () => {
+    const rows = [
+      makeHistoricalPlayerWeek({ ...playerWeek("QB", { passingTouchdowns: 1 }), ...game, week: 1 }),
+      makeHistoricalPlayerWeek({ ...playerWeek("RB", { rushingTouchdowns: 1 }), ...game, week: 2 }),
+      makeHistoricalPlayerWeek({ ...playerWeek("WR", { receivingTouchdowns: 1 }), ...game, week: 3 }),
+    ];
+    const lengths = TDS_ALLOWED_CATEGORIES.map((entry) => buildDefenseTouchdownGameLog(rows, entry).length);
+    expect(lengths).toEqual([3, 3, 3, 3, 3, 3]);
+  });
+
+  it("keeps different games and seasons as separate entries", () => {
+    const rows = [
+      makeHistoricalPlayerWeek({ ...playerWeek("WR", { receivingTouchdowns: 1 }), opponent: "buf", season: 2025, week: 1 }),
+      makeHistoricalPlayerWeek({ ...playerWeek("WR", { receivingTouchdowns: 2 }), opponent: "buf", season: 2026, week: 1 }),
+    ];
+    expect(buildDefenseTouchdownGameLog(rows, category("wrRec"))).toHaveLength(2);
   });
 });
 

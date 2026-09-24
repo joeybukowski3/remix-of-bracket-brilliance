@@ -1,16 +1,12 @@
 /**
- * Core aggregation/ranking library for defense touchdowns-allowed-by-position
- * tables. Pure and testable: takes already-normalized per-game player rows
+ * Core aggregation/ranking library for defense touchdowns-allowed tables,
+ * split by scoring method (scorer position + touchdown type). Pure and
+ * testable: takes already-normalized per-game player rows
  * (HistoricalPlayerWeek) and produces ranked samples of touchdowns allowed.
  *
  * Structurally this mirrors src/lib/nfl/fantasyAllowed/aggregate.ts (same
  * game-log -> sample-selection -> per-game-rank pipeline), but the metric is
- * touchdown counts, not fantasy points, and each position sums a different
- * pair of raw stat fields -- see touchdownsForPosition below. Kept as its
- * own module rather than sharing aggregate.ts because the two positions'
- * "value" extraction differs (a fixed fantasy-points field vs. per-position
- * summed TD stat fields); only the position sample record shape and rank
- * direction (1 = fewest allowed) are the same.
+ * touchdown counts, not fantasy points -- see TDS_ALLOWED_CATEGORIES below.
  *
  * Rank direction is fixed: rank 1 = fewest touchdowns allowed per game
  * (toughest matchup), rank N = most allowed. Ties are broken deterministically
@@ -20,7 +16,7 @@
 
 import type { HistoricalPlayerWeek } from "@/lib/fantasy/weekly/history";
 import type { FantasyPosition } from "@/lib/fantasy/rankings";
-import type { TdsAllowedPositionSample, TdsAllowedSource } from "./types";
+import type { TdsAllowedCategoryKey, TdsAllowedPositionSample, TdsAllowedSource } from "./types";
 
 export type DefenseGameTouchdowns = {
   /** Defense that allowed these touchdowns (i.e. the opponent the offense played). */
@@ -34,45 +30,62 @@ export type TdsAllowedSampleSelector =
   | { kind: "season"; season: number }
   | { kind: "last-n"; n: number };
 
+export type TdsAllowedCategory = {
+  key: TdsAllowedCategoryKey;
+  /** Scorer position (nflverse position of the player row the stat belongs to). */
+  position: FantasyPosition;
+  /** The single stat field this category reads -- passing_tds / rushing_tds / receiving_tds only. */
+  statField: "passingTouchdowns" | "rushingTouchdowns" | "receivingTouchdowns";
+};
+
 /**
- * Positional touchdown-allowed rule (see work-unit spec):
- *  - QB: passing TDs thrown + QB's own rushing TDs (fantasy-position framing,
- *    not "real" QB touchdowns only).
- *  - RB/WR/TE: rushing TDs + receiving TDs scored by that position.
- * Each row's two stat fields are summed exactly once -- no field is read
- * twice, so a dual-threat player (e.g. a rushing + receiving TD in the same
- * game) cannot be double-counted within a position.
+ * The six scoring-method categories. Each reads exactly ONE stat field from
+ * rows of exactly ONE position, so no stat can be counted in two categories.
+ * Two-point conversions, special-teams and defensive touchdowns live in
+ * separate nflverse columns (passing_2pt_conversions, special_teams_tds, ...)
+ * that no category reads, so they are excluded by construction.
  */
-export function touchdownsForPosition(row: HistoricalPlayerWeek): number {
-  if (row.position === "QB") {
-    return row.stats.passingTouchdowns + row.stats.rushingTouchdowns;
-  }
-  return row.stats.rushingTouchdowns + row.stats.receivingTouchdowns;
+export const TDS_ALLOWED_CATEGORIES: readonly TdsAllowedCategory[] = [
+  { key: "qbPass", position: "QB", statField: "passingTouchdowns" },
+  { key: "qbRush", position: "QB", statField: "rushingTouchdowns" },
+  { key: "rbRush", position: "RB", statField: "rushingTouchdowns" },
+  { key: "rbRec", position: "RB", statField: "receivingTouchdowns" },
+  { key: "wrRec", position: "WR", statField: "receivingTouchdowns" },
+  { key: "teRec", position: "TE", statField: "receivingTouchdowns" },
+];
+
+/** Touchdowns this player-week contributes to one category (0 when the row is another position). */
+export function touchdownsForCategory(row: HistoricalPlayerWeek, category: TdsAllowedCategory): number {
+  return row.position === category.position ? row.stats[category.statField] : 0;
 }
 
 /**
  * Collapses per-player HistoricalPlayerWeek rows into one touchdowns-allowed
- * total per (defense, game, position). A "game" here is identified by
+ * total per (defense, game) for one category. A "game" here is identified by
  * (opponent, season, week); HistoricalPlayerWeek only ever contains
  * REG-season rows (preseason/playoffs are filtered upstream by
- * normalizeHistoricalPlayerWeek), so no extra season-type filtering is
- * needed here.
+ * normalizeHistoricalPlayerWeek).
+ *
+ * The denominator is the defense's COMPLETE game count: every game in which
+ * the defense faced any offensive player row registers a game, and a game
+ * with no row of the category's position (e.g. no TE row) contributes 0
+ * touchdowns rather than dropping out of the sample. Consequently all six
+ * categories share the same game log length for a given defense, and
+ * last-N windows mean the defense's last N games.
  */
 export function buildDefenseTouchdownGameLog(
   rows: readonly HistoricalPlayerWeek[],
-  position: FantasyPosition,
+  category: TdsAllowedCategory,
 ): DefenseGameTouchdowns[] {
   const byGame = new Map<string, DefenseGameTouchdowns>();
   for (const row of rows) {
-    if (row.position !== position) continue;
-    const touchdowns = touchdownsForPosition(row);
     const key = `${row.opponent}|${row.season}|${row.week}`;
-    const existing = byGame.get(key);
-    if (existing) {
-      existing.touchdownsAllowed += touchdowns;
-    } else {
-      byGame.set(key, { team: row.opponent, season: row.season, week: row.week, touchdownsAllowed: touchdowns });
+    let game = byGame.get(key);
+    if (!game) {
+      game = { team: row.opponent, season: row.season, week: row.week, touchdownsAllowed: 0 };
+      byGame.set(key, game);
     }
+    game.touchdownsAllowed += touchdownsForCategory(row, category);
   }
   return [...byGame.values()];
 }
@@ -126,9 +139,9 @@ function round1(value: number): number {
 }
 
 /**
- * Computes the ranked touchdowns-allowed sample for one position across a
+ * Computes the ranked touchdowns-allowed sample for one category across a
  * fixed set of teams (e.g. all 32 franchises), given a game log already
- * filtered to that position by buildDefenseTouchdownGameLog.
+ * built for that category by buildDefenseTouchdownGameLog.
  */
 export function computeTouchdownPositionSample(
   gameLog: readonly DefenseGameTouchdowns[],

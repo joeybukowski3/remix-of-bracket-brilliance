@@ -1,17 +1,17 @@
 /**
  * Generates public/data/nfl/tds-allowed-by-position.json -- defense rank
- * tables for touchdowns allowed by position (QB/RB/wideWr/slotWr/TE), across
- * three samples: current season to date ("2026"), full prior season
- * ("2025"), and each team's rolling last-5 completed REG games ("last5").
- * Sibling of generate-nfl-fantasy-points-allowed.ts -- see that script's doc
- * comment for the shared loading pipeline.
+ * tables for touchdowns allowed by scoring method (QB PASS / QB RUSH /
+ * RB RUSH / RB REC / WR REC / TE REC), across four samples: current season to
+ * date ("2026"), full prior season ("2025"), and each team's rolling last-5
+ * and last-8 completed REG games. Sibling of
+ * generate-nfl-fantasy-points-allowed.ts -- see that script's doc comment for
+ * the shared loading pipeline.
  *
- * QB/RB/TE are aggregated here from per-game nflverse player stats (passing/
- * rushing/receiving touchdown counts -- see
- * src/lib/nfl/tdsAllowed/aggregate.ts for the positional counting rules).
- * wideWr/slotWr are always null: there is no trustworthy per-game historical
- * alignment-split touchdown source in this repo (the Razzball slot/wide
- * snapshot only carries PPG-allowed, not touchdown counts).
+ * Categories are aggregated from per-game nflverse player stats (passing_tds /
+ * rushing_tds / receiving_tds by the scorer's position -- see
+ * src/lib/nfl/tdsAllowed/aggregate.ts TDS_ALLOWED_CATEGORIES). There is no
+ * trustworthy per-game alignment-split (wide/slot) touchdown source in this
+ * repo, so WR REC is one combined column.
  *
  * Reads only committed caches (never touches the network) via
  * scripts/lib/nflAllowedByPositionIo.ts (shared with
@@ -38,7 +38,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DATA_DIR = join(ROOT, "public", "data", "nfl");
 const OUT_FILE = join(DATA_DIR, "tds-allowed-by-position.json");
 
-export const TDS_ALLOWED_BY_POSITION_SCHEMA_VERSION = "nfl-tds-allowed-by-position-v1" as const;
+export const TDS_ALLOWED_BY_POSITION_SCHEMA_VERSION = "nfl-tds-allowed-by-position-v2" as const;
 
 function parseArgs(argv: string[]) {
   const args = { dryRun: false, season: 2026, week: null as number | null, generatedAt: new Date().toISOString() };

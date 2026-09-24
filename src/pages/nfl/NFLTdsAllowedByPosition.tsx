@@ -24,7 +24,7 @@ const DISPLAY_MODE_LABEL: Record<AllowedByPositionDisplayMode, string> = { rank:
 export default function NFLTdsAllowedByPosition() {
   usePageSeo({
     title: "Touchdowns Allowed by Position | Joe Knows Ball",
-    description: "Defense ranks for touchdowns allowed by position: QB, RB, WR, TE.",
+    description: "Defense ranks for touchdowns allowed by scoring method: QB pass, QB rush, RB rush, RB rec, WR rec, TE rec.",
     path: "/nfl/tds-allowed-by-position",
   });
   const source = useNflTdsAllowedByPosition();
@@ -57,7 +57,10 @@ export default function NFLTdsAllowedByPosition() {
       <section className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
         <p className="text-[11px] text-slate-500">
           Raw mode shows total touchdowns allowed for the selected sample; rank is always based on
-          touchdowns allowed per game.
+          touchdowns allowed per game. QB PASS counts TDs thrown; the REC columns count TDs caught, so a
+          touchdown pass appears in both QB PASS and the receiver's column &mdash; don&rsquo;t add them together.
+          Touchdown types outside these six scoring-method categories (non-QB passing TDs, WR/TE rushing TDs,
+          QB receiving TDs, other-position offensive TDs) are not shown.
         </p>
         <div aria-label="Rank heat legend" className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10px] text-slate-500">
           {JKB_HEAT_LEGEND.map((entry) => (
@@ -80,7 +83,7 @@ export default function NFLTdsAllowedByPosition() {
             rows={rows}
             sort={sort}
             onSortChange={setSort}
-            scrollLabel="Touchdowns allowed by position"
+            scrollLabel="Touchdowns allowed by scoring method"
             rankTone={tdsAllowedRankTone}
             displayMode={displayMode}
             renderTeam={(row) => renderAllowedByPositionTeamCell(row.team)}

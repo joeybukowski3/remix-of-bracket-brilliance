@@ -24,6 +24,9 @@ const OPPONENT_COL_WIDTH_CLASS = "w-14 min-w-[56px] sm:w-[68px] sm:min-w-[68px]"
 const OPPONENT_LEFT_CLASS = "left-11 sm:left-[92px]";
 /** Equal width for every position column (QB/RB/Wide WR/Slot WR/TE) so none absorbs extra space from its label. */
 const POSITION_COL_WIDTH_CLASS = "w-[46px] min-w-[46px] sm:w-20 sm:min-w-[80px]";
+/** Tables with more than five metric columns (TDs Allowed: six) use a narrower mobile column so Team + Opp + all metrics still fit a 375px viewport without page-level scroll. */
+const MANY_COLUMNS_THRESHOLD = 5;
+const POSITION_COL_WIDTH_CLASS_MANY = "w-[38px] min-w-[38px] sm:w-20 sm:min-w-[80px]";
 
 export type RankTone = { className?: string; style?: CSSProperties };
 export type RankToneResolver = (rank: number | null) => RankTone;
@@ -35,6 +38,8 @@ function SortHeaderButton({
   sort,
   onSortChange,
   emphasis = false,
+  stack = false,
+  stackIcon = false,
 }: {
   sortKey: string;
   label: string;
@@ -43,6 +48,10 @@ function SortHeaderButton({
   onSortChange: (next: AllowedByPositionSortState) => void;
   /** Larger, bolder, always-white treatment for the position columns' dark header cells. */
   emphasis?: boolean;
+  /** Split "QB PASS" into two lines ("QB" / "PASS"); the button's accessible name stays the full label. */
+  stack?: boolean;
+  /** Mobile only: drop the sort icon under the label so it stays inside a very narrow (44px) column. */
+  stackIcon?: boolean;
 }) {
   const active = sort.key === sortKey;
   const Icon = active ? (sort.direction === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
@@ -54,12 +63,25 @@ function SortHeaderButton({
       className={cn(
         "flex w-full items-center gap-1 uppercase tracking-wide focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-1",
         align === "center" ? "justify-center" : "justify-start",
+        stackIcon && "flex-col items-start gap-0.5 sm:flex-row sm:items-center sm:gap-1",
         emphasis
-          ? "flex-col gap-0.5 whitespace-normal text-center text-[11px] font-bold leading-tight text-white sm:text-[13px]"
+          ? cn(
+              "flex-col gap-0.5 whitespace-normal text-center text-[11px] font-bold leading-tight text-white sm:text-[13px]",
+              // Stacked two-line labels sit in the narrow six-column mobile cells: 10px/tight tracking keeps "RUSH" inside its 26px content box.
+              stack && "text-[10px] tracking-tight sm:text-[13px] sm:tracking-wide",
+            )
           : cn("whitespace-nowrap text-[10px] font-bold", active ? "text-slate-950" : "text-current"),
       )}
     >
-      {label}
+      {stack ? (
+        <span aria-hidden className="flex flex-col items-center leading-[1.05]">
+          {label.split(" ").map((line) => (
+            <span key={line}>{line}</span>
+          ))}
+        </span>
+      ) : (
+        label
+      )}
       <Icon aria-hidden className={cn("h-3 w-3 shrink-0", emphasis && "text-white/80")} />
     </button>
   );
@@ -114,6 +136,8 @@ export default function AllowedByPositionTable<ColumnKey extends string>({
   displayMode?: AllowedByPositionDisplayMode;
 }) {
   const sortedRows = sortAllowedByPositionRows(rows, sort.key, sort.direction, displayMode);
+  const hasManyColumns = columns.length > MANY_COLUMNS_THRESHOLD;
+  const positionColWidthClass = hasManyColumns ? POSITION_COL_WIDTH_CLASS_MANY : POSITION_COL_WIDTH_CLASS;
 
   return (
     // `overflow-visible` overrides DenseTableScroller's default `overflow-x-auto` -- same
@@ -140,7 +164,7 @@ export default function AllowedByPositionTable<ColumnKey extends string>({
                 frozenDenseColumn({ isHeader: true, surface: "bg-slate-100" }),
               )}
             >
-              <SortHeaderButton sortKey="team" label="Team" align="left" sort={sort} onSortChange={onSortChange} />
+              <SortHeaderButton sortKey="team" label="Team" align="left" sort={sort} onSortChange={onSortChange} stackIcon={hasManyColumns} />
             </th>
             <th
               scope="col"
@@ -159,7 +183,7 @@ export default function AllowedByPositionTable<ColumnKey extends string>({
                 scope="col"
                 className={cn(
                   "border-y-2 border-r-2 border-black/20 px-1 py-2 text-center sm:py-3",
-                  POSITION_COL_WIDTH_CLASS,
+                  positionColWidthClass,
                   positionHeaderDividerClassName(index),
                   column.headerClassName,
                 )}
@@ -171,6 +195,7 @@ export default function AllowedByPositionTable<ColumnKey extends string>({
                   sort={sort}
                   onSortChange={onSortChange}
                   emphasis
+                  stack={column.stackLabel}
                 />
               </th>
             ))}
@@ -207,7 +232,7 @@ export default function AllowedByPositionTable<ColumnKey extends string>({
                     key={column.key}
                     className={cn(
                       "px-1 py-1.5 text-center text-xs tabular-nums font-semibold text-slate-800 sm:px-1.5 sm:text-sm",
-                      POSITION_COL_WIDTH_CLASS,
+                      positionColWidthClass,
                       positionDividerClassName(index),
                       tone.className,
                     )}
