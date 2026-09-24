@@ -64,6 +64,7 @@ import NFLFantasyPositionMatchupsRedirect from "./pages/nfl/NFLFantasyPositionMa
 import FantasyFootball from "./pages/FantasyFootball";
 import FantasyPointsAllowed from "./pages/FantasyPointsAllowed";
 import FantasyWeeklyRankings from "./pages/FantasyWeeklyRankings";
+import StartSit from "./pages/StartSit";
 import FantasyDraftPreview from "./pages/FantasyDraftPreview";
 import ComingSoon from "./pages/ComingSoon";
 import WorldCup2026 from "./pages/WorldCup2026";
@@ -196,6 +197,7 @@ const App = () => (
             <Route path="/fantasy-football" element={<FantasyFootball />} />
             <Route path="/fantasy-football/points-allowed" element={<FantasyPointsAllowed />} />
             <Route path="/fantasy-football/weekly-rankings" element={<FantasyWeeklyRankings />} />
+            <Route path="/fantasy-football/start-sit" element={<StartSit />} />
             <Route path="/fantasy-football/draft-preview" element={<FantasyDraftPreview />} />
           </Route>
           <Route

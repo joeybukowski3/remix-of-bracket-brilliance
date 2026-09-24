@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
 import { render, screen, within } from "@testing-library/react";
 import type { NflYardageHistoryArtifact } from "@/lib/nfl/props/types/yardageHistory";
 
@@ -66,5 +67,19 @@ describe("FantasyQbLast10 renders the shared Last 10 tables from the Fantasy con
       <FantasyQbLast10 season={2026} playerId="gsis:00-1" playerName="Test QB" team="kc" opponent="buf" homeAway="home" />,
     );
     expect(screen.getAllByText(/Last-10 history unavailable/i).length).toBeGreaterThan(0);
+  });
+
+  it.each([
+    ["RB", "gsis:00-0032764", "Derrick Henry", "rushing"],
+    ["WR", "gsis:00-0030279", "Keenan Allen", "receiving"],
+    ["TE", "gsis:00-0030506", "Travis Kelce", "receiving"],
+  ] as const)("reuses the published %s Last 10 market slice", (position, playerId, playerName, market) => {
+    const data = JSON.parse(readFileSync("public/data/nfl/2026/yardage-history.json", "utf8")) as NflYardageHistoryArtifact;
+    mockHistory.mockReturnValue({ loading: false, error: null, data });
+    render(<FantasyQbLast10 season={2026} position={position} playerId={playerId} playerName={playerName} team="buf" opponent="bal" homeAway="home" />);
+    const playerRegion = screen.getByRole("region", { name: new RegExp(`${playerName} last`, "i") });
+    expect(within(playerRegion).getAllByRole("row").length).toBeGreaterThan(1);
+    expect(data.players[`${playerId}:${market}`]?.games.length).toBeGreaterThan(0);
+    expect(screen.getByRole("region", { name: new RegExp(`defense last .* vs ${position}`, "i") })).toBeInTheDocument();
   });
 });
