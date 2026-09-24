@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
 import { NFL_DIVISION_ORDER, nflLogoUrl } from "@/data/nflPreseason2026";
+import RankHeatCell from "@/components/nfl/standings/RankHeatCell";
 import LastUpdated from "@/components/nfl/LastUpdated";
 import StaleWarning from "@/components/nfl/StaleWarning";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
@@ -28,22 +29,40 @@ import { buildSosBoard, type SosBoardRow, type SosMetric } from "@/lib/nfl/sosMe
 const SEASONS = [2026, 2025, 2024, 2023, 2022];
 const CURRENT_SEASON = 2026;
 
-function TeamLogo({ abbr, color }: { abbr: string; color: string }) {
+/** Fixed mobile column widths for the in-season table (`table-fixed`); `sm:w-auto` hands sizing back to the desktop table. */
+const MOBILE_STAT_COL = "w-[32px] min-[360px]:w-[42px] sm:w-auto";
+const MOBILE_RANK_COL = "w-[44px] min-[360px]:w-[46px] sm:w-auto";
+
+function TeamLogo({ abbr, color, compactOnMobile = false }: { abbr: string; color: string; compactOnMobile?: boolean }) {
   const [failed, setFailed] = useState(false);
-  if (failed) return <span className="flex h-7 w-7 items-center justify-center rounded-full text-[8px] font-black text-white" style={{ background: color }}>{abbr.toUpperCase()}</span>;
-  return <img src={nflLogoUrl(abbr)} alt="" className="h-7 w-7 object-contain" loading="lazy" onError={() => setFailed(true)} />;
+  const size = compactOnMobile ? "h-6 w-6 sm:h-7 sm:w-7" : "h-7 w-7";
+  if (failed) return <span className={`flex ${size} shrink-0 items-center justify-center rounded-full text-[8px] font-black text-white`} style={{ background: color }}>{abbr.toUpperCase()}</span>;
+  return <img src={nflLogoUrl(abbr)} alt="" className={`${size} shrink-0 object-contain`} loading="lazy" onError={() => setFailed(true)} />;
 }
 
-function TeamLink({ row, color, children }: { row: TeamStanding; color: string; children?: ReactNode }) {
+/**
+ * `compactOnMobile` swaps the full team name for the standard abbreviation and
+ * tightens padding below `sm`; desktop is identical either way.
+ */
+function TeamLink({ row, color, children, compactOnMobile = false }: { row: TeamStanding; color: string; children?: ReactNode; compactOnMobile?: boolean }) {
   return (
     <Link
       to={`/nfl/guide/team/${row.slug}`}
-      className="flex items-center gap-2 px-2 py-1.5 font-semibold text-slate-800 hover:text-sky-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500"
+      className={`flex items-center font-semibold text-slate-800 hover:text-sky-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500 ${
+        compactOnMobile ? "justify-center gap-1.5 px-1.5 py-1 min-[400px]:justify-start sm:gap-2 sm:px-2 sm:py-1.5" : "gap-2 px-2 py-1.5"
+      }`}
       aria-label={`Open ${row.name} team dashboard`}
     >
       <span className="h-6 w-[3px] shrink-0 rounded-full" style={{ background: color }} aria-hidden />
-      <TeamLogo abbr={row.abbr} color={color} />
-      <span className="min-w-0 truncate whitespace-nowrap">{row.name}</span>
+      <TeamLogo abbr={row.abbr} color={color} compactOnMobile={compactOnMobile} />
+      {compactOnMobile ? (
+        <>
+          <span className="min-w-0 truncate whitespace-nowrap hidden text-xs min-[400px]:inline sm:hidden">{row.abbr.toUpperCase()}</span>
+          <span className="hidden min-w-0 truncate whitespace-nowrap sm:inline sm:max-w-[8.5rem]">{row.name}</span>
+        </>
+      ) : (
+        <span className="min-w-0 truncate whitespace-nowrap">{row.name}</span>
+      )}
       {children}
     </Link>
   );
@@ -106,28 +125,6 @@ type InSeasonOvr = {
   defenseRank: number;
 };
 
-/** Power Ranking OVR cell: league rank primary, current rating secondary. Never the preseason rank once live. */
-function OvrCell({ ovr }: { ovr: InSeasonOvr | null }) {
-  if (!ovr) return <span className="text-slate-400">{"—"}</span>;
-  return (
-    <span className="flex flex-col items-center leading-tight">
-      <span className="text-sm font-bold tabular-nums text-slate-900">#{ovr.rank}</span>
-      <span className="text-[10px] font-medium text-slate-500 tabular-nums">{ovr.rating.toFixed(1)}</span>
-    </span>
-  );
-}
-
-/** OFF/DEF cell, same rank-primary/rating-secondary shape as OvrCell -- both from the Current Power Board. */
-function UnitRatingCell({ rating, rank }: { rating: number | null; rank: number | null }) {
-  if (rating === null || rank === null) return <span className="text-slate-400">{"—"}</span>;
-  return (
-    <span className="flex flex-col items-center leading-tight">
-      <span className="text-sm font-bold tabular-nums text-slate-900">#{rank}</span>
-      <span className="text-[10px] font-medium text-slate-500 tabular-nums">{rating.toFixed(1)}</span>
-    </span>
-  );
-}
-
 /** SOS To Date / Future SOS cell: league rank primary, average opponent OVR secondary. N/A renders as plain text, never a fabricated rank. */
 function InSeasonSosCell({
   metric,
@@ -145,11 +142,12 @@ function InSeasonSosCell({
   const tone = sosTone(rank);
   return (
     <span
-      className={`inline-flex flex-col items-center rounded px-1.5 py-0.5 text-[11px] font-semibold tabular-nums ${SOS_BADGE_CLASSES[tone]}`}
+      className={`inline-flex flex-col items-center rounded px-1 py-0.5 text-[11px] font-semibold tabular-nums sm:px-1.5 ${SOS_BADGE_CLASSES[tone]}`}
       title={`${ordinalLabel(rank)}-hardest ${scheduleLabel} · average opponent rating ${metric.value.toFixed(1)}`}
     >
       #{rank}
-      <span className="text-[9px] font-medium text-slate-400">Avg {metric.value.toFixed(1)}</span>
+      {/* Avg opponent rating stays in the title on mobile; the secondary line would break the one-row grid. */}
+      <span className="hidden text-[9px] font-medium text-slate-400 sm:block">Avg {metric.value.toFixed(1)}</span>
     </span>
   );
 }
@@ -365,53 +363,32 @@ function InSeasonDivisionCard({
     <article className="overflow-hidden rounded-lg border border-slate-200 bg-white">
       <h2 className="border-b border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">{name}</h2>
 
-      {/* Mobile: compact card rows keep Team + Record + OVR primary, both SOS metrics on a secondary line -- no horizontal scroll required. */}
-      <ul className="sm:hidden">
-        {sorted.map((row) => {
-          const ovr = ovrByAbbr.get(row.abbr) ?? null;
-          const sos = sosByAbbr.get(row.abbr);
-          const color = colorByAbbr.get(row.abbr) ?? "#334155";
-          return (
-            <li key={row.abbr} className="border-t border-slate-100 first:border-t-0">
-              <TeamLink row={row} color={color}>
-                <span className="ml-auto flex shrink-0 items-center gap-3 pl-2">
-                  <span className="text-sm font-bold tabular-nums text-slate-800">{formatStandingRecord(row)}</span>
-                  <OvrCell ovr={ovr} />
-                </span>
-              </TeamLink>
-              <div className="flex items-center gap-3 px-2 pb-2 pl-[46px] text-[11px] text-slate-500">
-                <span>
-                  OFF <UnitRatingCell rating={ovr?.offenseRating ?? null} rank={ovr?.offenseRank ?? null} />
-                </span>
-                <span>
-                  DEF <UnitRatingCell rating={ovr?.defenseRating ?? null} rank={ovr?.defenseRank ?? null} />
-                </span>
-              </div>
-              <div className="flex items-center gap-3 px-2 pb-2 pl-[46px] text-[11px] text-slate-500">
-                <span>
-                  SOS <InSeasonSosCell metric={sos?.sosToDate ?? null} rank={sos?.sosToDateRank ?? null} scheduleLabel="schedule to date" />
-                </span>
-                <span className="ml-auto">
-                  Future <InSeasonSosCell metric={sos?.futureSos ?? null} rank={sos?.futureSosRank ?? null} scheduleLabel="remaining schedule" />
-                </span>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-
-      {/* Desktop/tablet: real table. */}
-      <NflTableScroller label={`${name} in-season standings`} className="hidden sm:block">
-        <table className="w-full min-w-[460px] text-xs">
+      {/*
+        One table at every width. Below `sm` it is a fixed-layout, seven-column
+        grid (TEAM | W-L | OVR | OFF | DEF | SOS | FUT) that always fits without
+        horizontal scroll; from `sm` up it restores the full labels, full team
+        names and the original 460px-minimum desktop geometry.
+      */}
+      <NflTableScroller label={`${name} in-season standings`}>
+        <table className="w-full table-fixed text-xs sm:table-auto">
           <thead>
             <tr className={NFL_TABLE_HEAD_ROW}>
-              <th scope="col" className="px-2 py-2 text-left">Team</th>
-              <th scope="col" className="px-1 py-2">Record</th>
-              <th scope="col" className="px-1 py-2">OVR</th>
-              <th scope="col" className="px-1 py-2">OFF</th>
-              <th scope="col" className="px-1 py-2">DEF</th>
-              <th scope="col" className="px-1 py-2">SOS To Date</th>
-              <th scope="col" className="px-1 py-2">Future SOS</th>
+              <th scope="col" className="px-1.5 py-1.5 text-left sm:px-2 sm:py-2">Team</th>
+              <th scope="col" className={`${MOBILE_STAT_COL} px-0.5 py-1.5 sm:py-2`}>
+                <span className="sm:hidden">W-L</span>
+                <span className="hidden sm:inline">Record</span>
+              </th>
+              <th scope="col" className={`${MOBILE_RANK_COL} px-0.5 py-1.5 sm:py-2`}>OVR</th>
+              <th scope="col" className={`${MOBILE_RANK_COL} px-0.5 py-1.5 sm:py-2`}>OFF</th>
+              <th scope="col" className={`${MOBILE_RANK_COL} px-0.5 py-1.5 sm:py-2`}>DEF</th>
+              <th scope="col" className={`${MOBILE_STAT_COL} px-0.5 py-1.5 sm:py-2`}>
+                <span className="sm:hidden">SOS</span>
+                <span className="hidden sm:inline">SOS To Date</span>
+              </th>
+              <th scope="col" className={`${MOBILE_STAT_COL} px-0.5 py-1.5 sm:py-2`}>
+                <span className="sm:hidden">FUT</span>
+                <span className="hidden sm:inline">Future SOS</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -422,22 +399,22 @@ function InSeasonDivisionCard({
               return (
                 <tr key={row.abbr} className={NFL_TABLE_ROW}>
                   <td className="p-0">
-                    <TeamLink row={row} color={color} />
+                    <TeamLink row={row} color={color} compactOnMobile />
                   </td>
-                  <td className="px-1 text-center font-semibold tabular-nums text-slate-800">{formatStandingRecord(row)}</td>
-                  <td className="px-1 text-center">
-                    <OvrCell ovr={ovr} />
+                  <td className="px-0.5 text-center text-[13px] font-semibold tabular-nums text-slate-800 sm:px-1 sm:text-xs">{formatStandingRecord(row)}</td>
+                  <td className="px-0.5 py-0.5 text-center">
+                    <RankHeatCell label="OVR" rank={ovr?.rank ?? null} rating={ovr?.rating ?? null} />
                   </td>
-                  <td className="px-1 text-center">
-                    <UnitRatingCell rating={ovr?.offenseRating ?? null} rank={ovr?.offenseRank ?? null} />
+                  <td className="px-0.5 py-0.5 text-center">
+                    <RankHeatCell label="OFF" rank={ovr?.offenseRank ?? null} rating={ovr?.offenseRating ?? null} />
                   </td>
-                  <td className="px-1 text-center">
-                    <UnitRatingCell rating={ovr?.defenseRating ?? null} rank={ovr?.defenseRank ?? null} />
+                  <td className="px-0.5 py-0.5 text-center">
+                    <RankHeatCell label="DEF" rank={ovr?.defenseRank ?? null} rating={ovr?.defenseRating ?? null} />
                   </td>
-                  <td className="px-1 text-center">
+                  <td className="px-0.5 text-center sm:px-1">
                     <InSeasonSosCell metric={sos?.sosToDate ?? null} rank={sos?.sosToDateRank ?? null} scheduleLabel="schedule to date" />
                   </td>
-                  <td className="px-1 text-center">
+                  <td className="px-0.5 text-center sm:px-1">
                     <InSeasonSosCell metric={sos?.futureSos ?? null} rank={sos?.futureSosRank ?? null} scheduleLabel="remaining schedule" />
                   </td>
                 </tr>

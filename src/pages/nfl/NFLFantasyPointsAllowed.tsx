@@ -1,87 +1,63 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
-import AllowedByPositionTable from "@/components/nfl/allowed-by-position/AllowedByPositionTable";
-import { renderAllowedByPositionTeamCell } from "@/components/nfl/allowed-by-position/TeamCell";
-import {
-  DEFAULT_ALLOWED_BY_POSITION_DISPLAY_MODE,
-  DEFAULT_ALLOWED_BY_POSITION_SORT,
-  type AllowedByPositionDisplayMode,
-  type AllowedByPositionSortState,
-} from "@/components/nfl/allowed-by-position/types";
-import { useNflFantasyPointsAllowed } from "@/hooks/useNflFantasyPointsAllowed";
 import { usePageSeo } from "@/hooks/usePageSeo";
-import { JKB_HEAT_LEGEND, jkbHeatStyle } from "@/lib/shared/jkbHeat";
-import { FANTASY_ALLOWED_COLUMNS, buildFantasyAllowedTableRows, fantasyAllowedRankTone } from "@/lib/nfl/fantasyAllowed/presentation";
+import { DEFAULT_ALLOWED_BY_POSITION_DISPLAY_MODE, type AllowedByPositionDisplayMode } from "@/components/nfl/allowed-by-position/types";
 import type { FantasyAllowedSampleKey } from "@/lib/nfl/fantasyAllowed/types";
+import FantasyPointsAllowedView from "./FantasyPointsAllowedView";
+import FantasyPositionMatchupView from "./FantasyPositionMatchupView";
 
-const SAMPLE_OPTIONS: readonly FantasyAllowedSampleKey[] = ["2026", "2025", "last5", "last8"];
-const SAMPLE_LABEL: Record<FantasyAllowedSampleKey, string> = { "2026": "2026", "2025": "2025", last5: "Last 5", last8: "Last 8" };
+/**
+ * Top-level view tabs for /nfl/fantasy-points-allowed. "Matchup Comparison"
+ * used to be its own nav destination (/nfl/fantasy-position-matchups); it now
+ * lives here as a second tab so the two related tables share one page shell.
+ */
+export type FantasyPointsAllowedViewKey = "points" | "matchups";
 
-const DISPLAY_MODE_OPTIONS: readonly AllowedByPositionDisplayMode[] = ["rank", "raw"];
-const DISPLAY_MODE_LABEL: Record<AllowedByPositionDisplayMode, string> = { rank: "Rank", raw: "Raw" };
+const VIEW_OPTIONS: readonly FantasyPointsAllowedViewKey[] = ["points", "matchups"];
+const VIEW_LABEL: Record<FantasyPointsAllowedViewKey, string> = { points: "Points Allowed", matchups: "Matchup Comparison" };
+
+function parseView(raw: string | null): FantasyPointsAllowedViewKey {
+  return raw === "matchups" ? "matchups" : "points";
+}
 
 export default function NFLFantasyPointsAllowed() {
   usePageSeo({
     title: "Fantasy Points Allowed by Position | Joe Knows Ball",
-    description: "Defense ranks for fantasy points allowed by position: QB, RB, Wide WR, Slot WR, TE.",
+    description: "Defense ranks for fantasy points allowed by position, plus a FOR vs. ALLOWED matchup comparison -- QB, RB, WR, TE.",
     path: "/nfl/fantasy-points-allowed",
   });
-  const source = useNflFantasyPointsAllowed();
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view = parseView(searchParams.get("view"));
+
+  // Shared across both tabs: switching sample/display-mode carries over when you switch views.
   const [sample, setSample] = useState<FantasyAllowedSampleKey>("2026");
-  const [sort, setSort] = useState<AllowedByPositionSortState>(DEFAULT_ALLOWED_BY_POSITION_SORT);
   const [displayMode, setDisplayMode] = useState<AllowedByPositionDisplayMode>(DEFAULT_ALLOWED_BY_POSITION_DISPLAY_MODE);
 
-  const rows = useMemo(() => buildFantasyAllowedTableRows(source.artifact, sample), [source.artifact, sample]);
+  function handleViewChange(next: FantasyPointsAllowedViewKey) {
+    const params = new URLSearchParams(searchParams);
+    if (next === "points") params.delete("view");
+    else params.set("view", next);
+    setSearchParams(params, { replace: true });
+  }
 
   return (
     <div className="w-full">
       <NflPageHeader
         eyebrow="Markets & Predictions"
         title="Fantasy Points Allowed by Position"
-        description="(1st is least, 32nd is most PPG)"
+        description="Defense ranks for fantasy points allowed by position, or a team's own production matched against the opponent's allowed ranks. (1st is least, 32nd is most PPG)"
       >
-        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-          <NflFilterChips label="Sample" options={SAMPLE_OPTIONS} value={sample} onChange={setSample} formatOption={(option) => SAMPLE_LABEL[option]} tone="sky" />
-          <NflFilterChips
-            label="Display mode"
-            options={DISPLAY_MODE_OPTIONS}
-            value={displayMode}
-            onChange={setDisplayMode}
-            formatOption={(option) => DISPLAY_MODE_LABEL[option]}
-            size="sm"
-          />
-        </div>
+        <NflFilterChips label="View" options={VIEW_OPTIONS} value={view} onChange={handleViewChange} formatOption={(option) => VIEW_LABEL[option]} />
       </NflPageHeader>
 
-      <section className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-        <p className="text-[11px] text-slate-500">Wide/Slot WR splits are available for 2026 only.</p>
-        <div aria-label="Rank heat legend" className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[10px] text-slate-500">
-          {JKB_HEAT_LEGEND.map((entry) => (
-            <span key={entry.id} className="inline-flex items-center gap-1">
-              <span aria-hidden className="h-2 w-2 rounded-sm" style={jkbHeatStyle(entry.tone)} />
-              {entry.label}
-            </span>
-          ))}
-        </div>
-      </section>
-
       <section className="mt-3">
-        {source.loading ? (
-          <div className="rounded-lg border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">Loading…</div>
-        ) : source.error ? (
-          <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">{source.error}</div>
+        {view === "points" ? (
+          <FantasyPointsAllowedView sample={sample} onSampleChange={setSample} displayMode={displayMode} onDisplayModeChange={setDisplayMode} />
         ) : (
-          <AllowedByPositionTable
-            columns={FANTASY_ALLOWED_COLUMNS}
-            rows={rows}
-            sort={sort}
-            onSortChange={setSort}
-            scrollLabel="Fantasy points allowed by position"
-            rankTone={fantasyAllowedRankTone}
-            displayMode={displayMode}
-            renderTeam={(row) => renderAllowedByPositionTeamCell(row.team)}
-          />
+          <FantasyPositionMatchupView sample={sample} onSampleChange={setSample} displayMode={displayMode} onDisplayModeChange={setDisplayMode} />
         )}
       </section>
     </div>

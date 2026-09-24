@@ -1,0 +1,1194 @@
+{
+  "historical_rows": 2174,
+  "complete_case_rows": 1601,
+  "train_rows": 632,
+  "validation_rows": 969,
+  "per_season_complete": {
+    "2022": 167,
+    "2023": 465,
+    "2024": 488,
+    "2025": 481
+  },
+  "opponent_adjustment_games": 2034,
+  "pregame_adjustment_rows": 1906,
+  "qb_change_segments": 34,
+  "stable_qb_control_windows": 815,
+  "qb_team_change_segments": 21,
+  "qb_change_abs_hit_rate_mean": 0.06979549194517423,
+  "stable_qb_abs_hit_rate_mean": 0.047588763039209,
+  "qb_change_control_difference": {
+    "changed_n": 34,
+    "stable_qb_windows_n": 815,
+    "changed_mean_abs_hit_rate_change": 0.06979549194517423,
+    "stable_mean_abs_hit_rate_change": 0.047588763039209,
+    "difference": 0.02220672890596523,
+    "ci_low": 0.00561456760955722,
+    "ci_high": 0.0384404921543701,
+    "method": "team-season cluster percentile bootstrap, 1000 draws"
+  },
+  "overlay_rows": 32,
+  "correlations": [
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "raw protection",
+      "outcome": "actual_hit_rate",
+      "n": 632,
+      "pearson": 0.3089781793240186,
+      "spearman": 0.27703379047174376
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "raw protection",
+      "outcome": "team_sack_rate",
+      "n": 632,
+      "pearson": 0.25991064140266595,
+      "spearman": 0.21915474410169114
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "raw protection",
+      "outcome": "team_sacks",
+      "n": 632,
+      "pearson": 0.2548682944201979,
+      "spearman": 0.2142127441536064
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "raw protection",
+      "outcome": "team_pass_epa_db",
+      "n": 632,
+      "pearson": -0.16211360766965677,
+      "spearman": -0.1664852776352661
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "raw protection",
+      "outcome": "team_pass_success_rate",
+      "n": 632,
+      "pearson": -0.16199727935009264,
+      "spearman": -0.18150534871587715
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "raw protection",
+      "outcome": "team_explosive_pass_rate",
+      "n": 632,
+      "pearson": -0.07745307427383553,
+      "spearman": -0.08700089528044888
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "raw protection",
+      "outcome": "team_points",
+      "n": 632,
+      "pearson": -0.15354889620076576,
+      "spearman": -0.16227175309980205
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "raw protection",
+      "outcome": "team_total_margin",
+      "n": 632,
+      "pearson": -0.022205420387819037,
+      "spearman": -0.03254042310791256
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "adjusted protection",
+      "outcome": "actual_hit_rate",
+      "n": 632,
+      "pearson": 0.310143809180574,
+      "spearman": 0.27687374422810024
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "adjusted protection",
+      "outcome": "team_sack_rate",
+      "n": 632,
+      "pearson": 0.25151325662082213,
+      "spearman": 0.2100880336523211
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "adjusted protection",
+      "outcome": "team_sacks",
+      "n": 632,
+      "pearson": 0.24846864783250683,
+      "spearman": 0.2102081830570711
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "adjusted protection",
+      "outcome": "team_pass_epa_db",
+      "n": 632,
+      "pearson": -0.15849763442285766,
+      "spearman": -0.15819352644037124
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "adjusted protection",
+      "outcome": "team_pass_success_rate",
+      "n": 632,
+      "pearson": -0.15600841607130359,
+      "spearman": -0.1673475759091221
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "adjusted protection",
+      "outcome": "team_explosive_pass_rate",
+      "n": 632,
+      "pearson": -0.09570355060415553,
+      "spearman": -0.11016373449515175
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "adjusted protection",
+      "outcome": "team_points",
+      "n": 632,
+      "pearson": -0.1591694646520817,
+      "spearman": -0.16551429506483636
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "adjusted protection",
+      "outcome": "team_total_margin",
+      "n": 632,
+      "pearson": -0.01964298443277395,
+      "spearman": -0.028751344419743554
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "QB vulnerability",
+      "outcome": "actual_hit_rate",
+      "n": 632,
+      "pearson": -0.06278076245879044,
+      "spearman": -0.0859180265855094
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "QB vulnerability",
+      "outcome": "team_sack_rate",
+      "n": 632,
+      "pearson": 0.12395429707515027,
+      "spearman": 0.11128580735162627
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "QB vulnerability",
+      "outcome": "team_sacks",
+      "n": 632,
+      "pearson": 0.11675950039958694,
+      "spearman": 0.10210891855230257
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "QB vulnerability",
+      "outcome": "team_pass_epa_db",
+      "n": 632,
+      "pearson": -0.10573786020463699,
+      "spearman": -0.1087142411789766
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "QB vulnerability",
+      "outcome": "team_pass_success_rate",
+      "n": 632,
+      "pearson": -0.1469973115303206,
+      "spearman": -0.14212800750230994
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "QB vulnerability",
+      "outcome": "team_explosive_pass_rate",
+      "n": 632,
+      "pearson": -0.03177178917534178,
+      "spearman": -0.05542453224033296
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "QB vulnerability",
+      "outcome": "team_points",
+      "n": 632,
+      "pearson": -0.09449312182193041,
+      "spearman": -0.10449290536325016
+    },
+    {
+      "window": "2022-2023 exploratory",
+      "metric": "QB vulnerability",
+      "outcome": "team_total_margin",
+      "n": 632,
+      "pearson": 0.008981786086239044,
+      "spearman": -0.010891585990734115
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "raw protection",
+      "outcome": "actual_hit_rate",
+      "n": 969,
+      "pearson": 0.30608329173904303,
+      "spearman": 0.2965993429509033
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "raw protection",
+      "outcome": "team_sack_rate",
+      "n": 969,
+      "pearson": 0.21968448988173445,
+      "spearman": 0.2012415463220072
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "raw protection",
+      "outcome": "team_sacks",
+      "n": 969,
+      "pearson": 0.21911845918503048,
+      "spearman": 0.20999617617162408
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "raw protection",
+      "outcome": "team_pass_epa_db",
+      "n": 969,
+      "pearson": -0.1621664445163968,
+      "spearman": -0.1496027755548619
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "raw protection",
+      "outcome": "team_pass_success_rate",
+      "n": 969,
+      "pearson": -0.11866308554761675,
+      "spearman": -0.11337802321554764
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "raw protection",
+      "outcome": "team_explosive_pass_rate",
+      "n": 969,
+      "pearson": -0.07178121275446077,
+      "spearman": -0.06799212658841583
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "raw protection",
+      "outcome": "team_points",
+      "n": 969,
+      "pearson": -0.14402806203147134,
+      "spearman": -0.14842068456395413
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "raw protection",
+      "outcome": "team_total_margin",
+      "n": 969,
+      "pearson": -0.048987116526225616,
+      "spearman": -0.06754735457194265
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "adjusted protection",
+      "outcome": "actual_hit_rate",
+      "n": 969,
+      "pearson": 0.30550357375567394,
+      "spearman": 0.29519281123061825
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "adjusted protection",
+      "outcome": "team_sack_rate",
+      "n": 969,
+      "pearson": 0.21719338955141193,
+      "spearman": 0.19818514244894403
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "adjusted protection",
+      "outcome": "team_sacks",
+      "n": 969,
+      "pearson": 0.21447160734179604,
+      "spearman": 0.20509279482727993
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "adjusted protection",
+      "outcome": "team_pass_epa_db",
+      "n": 969,
+      "pearson": -0.15811688147435943,
+      "spearman": -0.14423729725609072
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "adjusted protection",
+      "outcome": "team_pass_success_rate",
+      "n": 969,
+      "pearson": -0.11179233991325443,
+      "spearman": -0.10475947998912902
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "adjusted protection",
+      "outcome": "team_explosive_pass_rate",
+      "n": 969,
+      "pearson": -0.06946386984542069,
+      "spearman": -0.06494966512583593
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "adjusted protection",
+      "outcome": "team_points",
+      "n": 969,
+      "pearson": -0.13967625517430843,
+      "spearman": -0.1428963382436071
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "adjusted protection",
+      "outcome": "team_total_margin",
+      "n": 969,
+      "pearson": -0.04215258081823716,
+      "spearman": -0.06042554674501479
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "QB vulnerability",
+      "outcome": "actual_hit_rate",
+      "n": 969,
+      "pearson": -0.08632636269963398,
+      "spearman": -0.08934572045320717
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "QB vulnerability",
+      "outcome": "team_sack_rate",
+      "n": 969,
+      "pearson": 0.07538107304128444,
+      "spearman": 0.07147487501194882
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "QB vulnerability",
+      "outcome": "team_sacks",
+      "n": 969,
+      "pearson": 0.06069029124985541,
+      "spearman": 0.06115040374555224
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "QB vulnerability",
+      "outcome": "team_pass_epa_db",
+      "n": 969,
+      "pearson": -0.024352202745152197,
+      "spearman": -0.03323835527403879
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "QB vulnerability",
+      "outcome": "team_pass_success_rate",
+      "n": 969,
+      "pearson": -0.05278233193272878,
+      "spearman": -0.052476337983234526
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "QB vulnerability",
+      "outcome": "team_explosive_pass_rate",
+      "n": 969,
+      "pearson": -0.01759968158970259,
+      "spearman": -0.013909941365262461
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "QB vulnerability",
+      "outcome": "team_points",
+      "n": 969,
+      "pearson": -0.039217727541923125,
+      "spearman": -0.03893940112823909
+    },
+    {
+      "window": "2024-2025 heldout",
+      "metric": "QB vulnerability",
+      "outcome": "team_total_margin",
+      "n": 969,
+      "pearson": 0.02716019719488752,
+      "spearman": 0.026189060891599284
+    },
+    {
+      "window": "2022",
+      "metric": "raw protection",
+      "outcome": "actual_hit_rate",
+      "n": 167,
+      "pearson": 0.3181782580026241,
+      "spearman": 0.3068307595237537
+    },
+    {
+      "window": "2022",
+      "metric": "raw protection",
+      "outcome": "team_sack_rate",
+      "n": 167,
+      "pearson": 0.3257700834065758,
+      "spearman": 0.31361534344764574
+    },
+    {
+      "window": "2022",
+      "metric": "raw protection",
+      "outcome": "team_sacks",
+      "n": 167,
+      "pearson": 0.33237690676006443,
+      "spearman": 0.3095229314268474
+    },
+    {
+      "window": "2022",
+      "metric": "raw protection",
+      "outcome": "team_pass_epa_db",
+      "n": 167,
+      "pearson": -0.22984098478244364,
+      "spearman": -0.2517495130221485
+    },
+    {
+      "window": "2022",
+      "metric": "raw protection",
+      "outcome": "team_pass_success_rate",
+      "n": 167,
+      "pearson": -0.1728240744934093,
+      "spearman": -0.22330003960831354
+    },
+    {
+      "window": "2022",
+      "metric": "raw protection",
+      "outcome": "team_explosive_pass_rate",
+      "n": 167,
+      "pearson": -0.11638240803447898,
+      "spearman": -0.14709142668464015
+    },
+    {
+      "window": "2022",
+      "metric": "raw protection",
+      "outcome": "team_points",
+      "n": 167,
+      "pearson": -0.14985586422640831,
+      "spearman": -0.1963932621555671
+    },
+    {
+      "window": "2022",
+      "metric": "raw protection",
+      "outcome": "team_total_margin",
+      "n": 167,
+      "pearson": -0.019972308594872267,
+      "spearman": -0.06734651478410075
+    },
+    {
+      "window": "2022",
+      "metric": "adjusted protection",
+      "outcome": "actual_hit_rate",
+      "n": 167,
+      "pearson": 0.3124453486662651,
+      "spearman": 0.29496322339701986
+    },
+    {
+      "window": "2022",
+      "metric": "adjusted protection",
+      "outcome": "team_sack_rate",
+      "n": 167,
+      "pearson": 0.2950123106460938,
+      "spearman": 0.2869223418981747
+    },
+    {
+      "window": "2022",
+      "metric": "adjusted protection",
+      "outcome": "team_sacks",
+      "n": 167,
+      "pearson": 0.3079114785844047,
+      "spearman": 0.2960111197354618
+    },
+    {
+      "window": "2022",
+      "metric": "adjusted protection",
+      "outcome": "team_pass_epa_db",
+      "n": 167,
+      "pearson": -0.20503745601173048,
+      "spearman": -0.21746524163377207
+    },
+    {
+      "window": "2022",
+      "metric": "adjusted protection",
+      "outcome": "team_pass_success_rate",
+      "n": 167,
+      "pearson": -0.1363585393197332,
+      "spearman": -0.17157600149229796
+    },
+    {
+      "window": "2022",
+      "metric": "adjusted protection",
+      "outcome": "team_explosive_pass_rate",
+      "n": 167,
+      "pearson": -0.1743575347148758,
+      "spearman": -0.21898890159407383
+    },
+    {
+      "window": "2022",
+      "metric": "adjusted protection",
+      "outcome": "team_points",
+      "n": 167,
+      "pearson": -0.15599113837631118,
+      "spearman": -0.1974715593594975
+    },
+    {
+      "window": "2022",
+      "metric": "adjusted protection",
+      "outcome": "team_total_margin",
+      "n": 167,
+      "pearson": -0.005496667331066455,
+      "spearman": -0.044322582881653826
+    },
+    {
+      "window": "2022",
+      "metric": "QB vulnerability",
+      "outcome": "actual_hit_rate",
+      "n": 167,
+      "pearson": -0.07848818341640038,
+      "spearman": -0.11039733286496509
+    },
+    {
+      "window": "2022",
+      "metric": "QB vulnerability",
+      "outcome": "team_sack_rate",
+      "n": 167,
+      "pearson": 0.14401105135875325,
+      "spearman": 0.06475082307885995
+    },
+    {
+      "window": "2022",
+      "metric": "QB vulnerability",
+      "outcome": "team_sacks",
+      "n": 167,
+      "pearson": 0.07942389761488752,
+      "spearman": 0.02639794294623197
+    },
+    {
+      "window": "2022",
+      "metric": "QB vulnerability",
+      "outcome": "team_pass_epa_db",
+      "n": 167,
+      "pearson": -0.1625113870781925,
+      "spearman": -0.16412441897616128
+    },
+    {
+      "window": "2022",
+      "metric": "QB vulnerability",
+      "outcome": "team_pass_success_rate",
+      "n": 167,
+      "pearson": -0.23595434193938675,
+      "spearman": -0.21617906220914004
+    },
+    {
+      "window": "2022",
+      "metric": "QB vulnerability",
+      "outcome": "team_explosive_pass_rate",
+      "n": 167,
+      "pearson": 0.011865531821350016,
+      "spearman": -0.002574808748168136
+    },
+    {
+      "window": "2022",
+      "metric": "QB vulnerability",
+      "outcome": "team_points",
+      "n": 167,
+      "pearson": -0.1786299904667957,
+      "spearman": -0.1729493267744201
+    },
+    {
+      "window": "2022",
+      "metric": "QB vulnerability",
+      "outcome": "team_total_margin",
+      "n": 167,
+      "pearson": -0.048200790570985634,
+      "spearman": -0.02074846804102653
+    },
+    {
+      "window": "2023",
+      "metric": "raw protection",
+      "outcome": "actual_hit_rate",
+      "n": 465,
+      "pearson": 0.30779193824729917,
+      "spearman": 0.2639163139205246
+    },
+    {
+      "window": "2023",
+      "metric": "raw protection",
+      "outcome": "team_sack_rate",
+      "n": 465,
+      "pearson": 0.23769791455307296,
+      "spearman": 0.18132779602309204
+    },
+    {
+      "window": "2023",
+      "metric": "raw protection",
+      "outcome": "team_sacks",
+      "n": 465,
+      "pearson": 0.23008730237299505,
+      "spearman": 0.17802774743218397
+    },
+    {
+      "window": "2023",
+      "metric": "raw protection",
+      "outcome": "team_pass_epa_db",
+      "n": 465,
+      "pearson": -0.14087264850719097,
+      "spearman": -0.13692014356200188
+    },
+    {
+      "window": "2023",
+      "metric": "raw protection",
+      "outcome": "team_pass_success_rate",
+      "n": 465,
+      "pearson": -0.15777119630867903,
+      "spearman": -0.16712467984355167
+    },
+    {
+      "window": "2023",
+      "metric": "raw protection",
+      "outcome": "team_explosive_pass_rate",
+      "n": 465,
+      "pearson": -0.06041276096874449,
+      "spearman": -0.0629265711215106
+    },
+    {
+      "window": "2023",
+      "metric": "raw protection",
+      "outcome": "team_points",
+      "n": 465,
+      "pearson": -0.15656822462111536,
+      "spearman": -0.15105065369003826
+    },
+    {
+      "window": "2023",
+      "metric": "raw protection",
+      "outcome": "team_total_margin",
+      "n": 465,
+      "pearson": -0.023998907053499042,
+      "spearman": -0.02067111080989493
+    },
+    {
+      "window": "2023",
+      "metric": "adjusted protection",
+      "outcome": "actual_hit_rate",
+      "n": 465,
+      "pearson": 0.3110042597552743,
+      "spearman": 0.2648196098643075
+    },
+    {
+      "window": "2023",
+      "metric": "adjusted protection",
+      "outcome": "team_sack_rate",
+      "n": 465,
+      "pearson": 0.23694720245909373,
+      "spearman": 0.17660898120627602
+    },
+    {
+      "window": "2023",
+      "metric": "adjusted protection",
+      "outcome": "team_sacks",
+      "n": 465,
+      "pearson": 0.2293058033235422,
+      "spearman": 0.17484272699198564
+    },
+    {
+      "window": "2023",
+      "metric": "adjusted protection",
+      "outcome": "team_pass_epa_db",
+      "n": 465,
+      "pearson": -0.14396814957396176,
+      "spearman": -0.13678908849604
+    },
+    {
+      "window": "2023",
+      "metric": "adjusted protection",
+      "outcome": "team_pass_success_rate",
+      "n": 465,
+      "pearson": -0.16281042969574072,
+      "spearman": -0.16610128885457992
+    },
+    {
+      "window": "2023",
+      "metric": "adjusted protection",
+      "outcome": "team_explosive_pass_rate",
+      "n": 465,
+      "pearson": -0.06569152400362668,
+      "spearman": -0.06647871667764345
+    },
+    {
+      "window": "2023",
+      "metric": "adjusted protection",
+      "outcome": "team_points",
+      "n": 465,
+      "pearson": -0.16167690705675206,
+      "spearman": -0.1525984809761413
+    },
+    {
+      "window": "2023",
+      "metric": "adjusted protection",
+      "outcome": "team_total_margin",
+      "n": 465,
+      "pearson": -0.02536472436985948,
+      "spearman": -0.019994406306755835
+    },
+    {
+      "window": "2023",
+      "metric": "QB vulnerability",
+      "outcome": "actual_hit_rate",
+      "n": 465,
+      "pearson": -0.06140530833373645,
+      "spearman": -0.07288994012636771
+    },
+    {
+      "window": "2023",
+      "metric": "QB vulnerability",
+      "outcome": "team_sack_rate",
+      "n": 465,
+      "pearson": 0.11235176337017021,
+      "spearman": 0.1157615299128797
+    },
+    {
+      "window": "2023",
+      "metric": "QB vulnerability",
+      "outcome": "team_sacks",
+      "n": 465,
+      "pearson": 0.12283760381657814,
+      "spearman": 0.11776579860306943
+    },
+    {
+      "window": "2023",
+      "metric": "QB vulnerability",
+      "outcome": "team_pass_epa_db",
+      "n": 465,
+      "pearson": -0.09472017754663213,
+      "spearman": -0.1031484673003385
+    },
+    {
+      "window": "2023",
+      "metric": "QB vulnerability",
+      "outcome": "team_pass_success_rate",
+      "n": 465,
+      "pearson": -0.12086391754836602,
+      "spearman": -0.1259110469248145
+    },
+    {
+      "window": "2023",
+      "metric": "QB vulnerability",
+      "outcome": "team_explosive_pass_rate",
+      "n": 465,
+      "pearson": -0.057408148149430877,
+      "spearman": -0.08679745717410368
+    },
+    {
+      "window": "2023",
+      "metric": "QB vulnerability",
+      "outcome": "team_points",
+      "n": 465,
+      "pearson": -0.06452687301549558,
+      "spearman": -0.07762640535023053
+    },
+    {
+      "window": "2023",
+      "metric": "QB vulnerability",
+      "outcome": "team_total_margin",
+      "n": 465,
+      "pearson": 0.029901855963783263,
+      "spearman": 0.0009155397176737115
+    },
+    {
+      "window": "2024",
+      "metric": "raw protection",
+      "outcome": "actual_hit_rate",
+      "n": 488,
+      "pearson": 0.30463265968968123,
+      "spearman": 0.3028373149726082
+    },
+    {
+      "window": "2024",
+      "metric": "raw protection",
+      "outcome": "team_sack_rate",
+      "n": 488,
+      "pearson": 0.20224168175607557,
+      "spearman": 0.1980522328992933
+    },
+    {
+      "window": "2024",
+      "metric": "raw protection",
+      "outcome": "team_sacks",
+      "n": 488,
+      "pearson": 0.22096328342737834,
+      "spearman": 0.21559278498166
+    },
+    {
+      "window": "2024",
+      "metric": "raw protection",
+      "outcome": "team_pass_epa_db",
+      "n": 488,
+      "pearson": -0.1813792303329195,
+      "spearman": -0.18107257004227414
+    },
+    {
+      "window": "2024",
+      "metric": "raw protection",
+      "outcome": "team_pass_success_rate",
+      "n": 488,
+      "pearson": -0.14006364481039774,
+      "spearman": -0.1434623414274862
+    },
+    {
+      "window": "2024",
+      "metric": "raw protection",
+      "outcome": "team_explosive_pass_rate",
+      "n": 488,
+      "pearson": -0.07204315238494868,
+      "spearman": -0.07529508754867512
+    },
+    {
+      "window": "2024",
+      "metric": "raw protection",
+      "outcome": "team_points",
+      "n": 488,
+      "pearson": -0.15182563978688404,
+      "spearman": -0.1580628653273927
+    },
+    {
+      "window": "2024",
+      "metric": "raw protection",
+      "outcome": "team_total_margin",
+      "n": 488,
+      "pearson": -0.06245471391551098,
+      "spearman": -0.07769510035761079
+    },
+    {
+      "window": "2024",
+      "metric": "adjusted protection",
+      "outcome": "actual_hit_rate",
+      "n": 488,
+      "pearson": 0.30008232862593515,
+      "spearman": 0.29514476214977425
+    },
+    {
+      "window": "2024",
+      "metric": "adjusted protection",
+      "outcome": "team_sack_rate",
+      "n": 488,
+      "pearson": 0.1959077431301802,
+      "spearman": 0.18993756175667573
+    },
+    {
+      "window": "2024",
+      "metric": "adjusted protection",
+      "outcome": "team_sacks",
+      "n": 488,
+      "pearson": 0.2117264980471045,
+      "spearman": 0.20560442397547882
+    },
+    {
+      "window": "2024",
+      "metric": "adjusted protection",
+      "outcome": "team_pass_epa_db",
+      "n": 488,
+      "pearson": -0.17872746682334908,
+      "spearman": -0.17438774732608314
+    },
+    {
+      "window": "2024",
+      "metric": "adjusted protection",
+      "outcome": "team_pass_success_rate",
+      "n": 488,
+      "pearson": -0.13567286168089523,
+      "spearman": -0.1334503510361237
+    },
+    {
+      "window": "2024",
+      "metric": "adjusted protection",
+      "outcome": "team_explosive_pass_rate",
+      "n": 488,
+      "pearson": -0.07300982063841,
+      "spearman": -0.07142949222789045
+    },
+    {
+      "window": "2024",
+      "metric": "adjusted protection",
+      "outcome": "team_points",
+      "n": 488,
+      "pearson": -0.14890852980083774,
+      "spearman": -0.15187840948186354
+    },
+    {
+      "window": "2024",
+      "metric": "adjusted protection",
+      "outcome": "team_total_margin",
+      "n": 488,
+      "pearson": -0.0596291267515093,
+      "spearman": -0.07225778364762987
+    },
+    {
+      "window": "2024",
+      "metric": "QB vulnerability",
+      "outcome": "actual_hit_rate",
+      "n": 488,
+      "pearson": -0.047208212594837304,
+      "spearman": -0.058068982292539845
+    },
+    {
+      "window": "2024",
+      "metric": "QB vulnerability",
+      "outcome": "team_sack_rate",
+      "n": 488,
+      "pearson": 0.07780155922257428,
+      "spearman": 0.07308235834537301
+    },
+    {
+      "window": "2024",
+      "metric": "QB vulnerability",
+      "outcome": "team_sacks",
+      "n": 488,
+      "pearson": 0.09201247446345014,
+      "spearman": 0.08612763424219112
+    },
+    {
+      "window": "2024",
+      "metric": "QB vulnerability",
+      "outcome": "team_pass_epa_db",
+      "n": 488,
+      "pearson": 0.01490880170466867,
+      "spearman": 0.011639135681185636
+    },
+    {
+      "window": "2024",
+      "metric": "QB vulnerability",
+      "outcome": "team_pass_success_rate",
+      "n": 488,
+      "pearson": 0.0018796542898264473,
+      "spearman": -0.01369717560764628
+    },
+    {
+      "window": "2024",
+      "metric": "QB vulnerability",
+      "outcome": "team_explosive_pass_rate",
+      "n": 488,
+      "pearson": -0.014977287590528871,
+      "spearman": 0.0043538592891283305
+    },
+    {
+      "window": "2024",
+      "metric": "QB vulnerability",
+      "outcome": "team_points",
+      "n": 488,
+      "pearson": -0.0016821977501037268,
+      "spearman": -0.003176247862272935
+    },
+    {
+      "window": "2024",
+      "metric": "QB vulnerability",
+      "outcome": "team_total_margin",
+      "n": 488,
+      "pearson": 0.04318616247576021,
+      "spearman": 0.044086505687317805
+    },
+    {
+      "window": "2025",
+      "metric": "raw protection",
+      "outcome": "actual_hit_rate",
+      "n": 481,
+      "pearson": 0.3094765356258928,
+      "spearman": 0.29001833131116667
+    },
+    {
+      "window": "2025",
+      "metric": "raw protection",
+      "outcome": "team_sack_rate",
+      "n": 481,
+      "pearson": 0.23687070912053104,
+      "spearman": 0.20310865600571756
+    },
+    {
+      "window": "2025",
+      "metric": "raw protection",
+      "outcome": "team_sacks",
+      "n": 481,
+      "pearson": 0.2165317144934341,
+      "spearman": 0.19947927161226434
+    },
+    {
+      "window": "2025",
+      "metric": "raw protection",
+      "outcome": "team_pass_epa_db",
+      "n": 481,
+      "pearson": -0.1456572783599564,
+      "spearman": -0.11924004278776064
+    },
+    {
+      "window": "2025",
+      "metric": "raw protection",
+      "outcome": "team_pass_success_rate",
+      "n": 481,
+      "pearson": -0.09957299399108395,
+      "spearman": -0.08291129262983699
+    },
+    {
+      "window": "2025",
+      "metric": "raw protection",
+      "outcome": "team_explosive_pass_rate",
+      "n": 481,
+      "pearson": -0.07205093372760034,
+      "spearman": -0.060143974505472264
+    },
+    {
+      "window": "2025",
+      "metric": "raw protection",
+      "outcome": "team_points",
+      "n": 481,
+      "pearson": -0.13570432859565612,
+      "spearman": -0.1336314882517948
+    },
+    {
+      "window": "2025",
+      "metric": "raw protection",
+      "outcome": "team_total_margin",
+      "n": 481,
+      "pearson": -0.0359590505278992,
+      "spearman": -0.05542172413216191
+    },
+    {
+      "window": "2025",
+      "metric": "adjusted protection",
+      "outcome": "actual_hit_rate",
+      "n": 481,
+      "pearson": 0.31267874162167386,
+      "spearman": 0.2938206177071776
+    },
+    {
+      "window": "2025",
+      "metric": "adjusted protection",
+      "outcome": "team_sack_rate",
+      "n": 481,
+      "pearson": 0.23812826038872176,
+      "spearman": 0.20351672534132648
+    },
+    {
+      "window": "2025",
+      "metric": "adjusted protection",
+      "outcome": "team_sacks",
+      "n": 481,
+      "pearson": 0.2165937320736178,
+      "spearman": 0.19804627239593725
+    },
+    {
+      "window": "2025",
+      "metric": "adjusted protection",
+      "outcome": "team_pass_epa_db",
+      "n": 481,
+      "pearson": -0.14022690473709903,
+      "spearman": -0.11536358813329768
+    },
+    {
+      "window": "2025",
+      "metric": "adjusted protection",
+      "outcome": "team_pass_success_rate",
+      "n": 481,
+      "pearson": -0.09039552069462264,
+      "spearman": -0.07492043261933307
+    },
+    {
+      "window": "2025",
+      "metric": "adjusted protection",
+      "outcome": "team_explosive_pass_rate",
+      "n": 481,
+      "pearson": -0.06634010051231289,
+      "spearman": -0.05702222815564957
+    },
+    {
+      "window": "2025",
+      "metric": "adjusted protection",
+      "outcome": "team_points",
+      "n": 481,
+      "pearson": -0.1299449455852988,
+      "spearman": -0.12901633487092587
+    },
+    {
+      "window": "2025",
+      "metric": "adjusted protection",
+      "outcome": "team_total_margin",
+      "n": 481,
+      "pearson": -0.025106584128933365,
+      "spearman": -0.04651415485398981
+    },
+    {
+      "window": "2025",
+      "metric": "QB vulnerability",
+      "outcome": "actual_hit_rate",
+      "n": 481,
+      "pearson": -0.1262123992416536,
+      "spearman": -0.12333218635613416
+    },
+    {
+      "window": "2025",
+      "metric": "QB vulnerability",
+      "outcome": "team_sack_rate",
+      "n": 481,
+      "pearson": 0.07296173242027743,
+      "spearman": 0.0697041600133013
+    },
+    {
+      "window": "2025",
+      "metric": "QB vulnerability",
+      "outcome": "team_sacks",
+      "n": 481,
+      "pearson": 0.027760252515205926,
+      "spearman": 0.034209236496932804
+    },
+    {
+      "window": "2025",
+      "metric": "QB vulnerability",
+      "outcome": "team_pass_epa_db",
+      "n": 481,
+      "pearson": -0.06218262128612277,
+      "spearman": -0.07155713805091399
+    },
+    {
+      "window": "2025",
+      "metric": "QB vulnerability",
+      "outcome": "team_pass_success_rate",
+      "n": 481,
+      "pearson": -0.10464060464777053,
+      "spearman": -0.0890915970421284
+    },
+    {
+      "window": "2025",
+      "metric": "QB vulnerability",
+      "outcome": "team_explosive_pass_rate",
+      "n": 481,
+      "pearson": -0.020255925554835127,
+      "spearman": -0.03139845305942593
+    },
+    {
+      "window": "2025",
+      "metric": "QB vulnerability",
+      "outcome": "team_points",
+      "n": 481,
+      "pearson": -0.07788363815430922,
+      "spearman": -0.07281004757413016
+    },
+    {
+      "window": "2025",
+      "metric": "QB vulnerability",
+      "outcome": "team_total_margin",
+      "n": 481,
+      "pearson": 0.010739547151582702,
+      "spearman": 0.012066578544266477
+    }
+  ],
+  "opponent_model": "Weighted linear regression of hit rate on opponent's pregame prior-eight generated-hit rate; fit from >=64 completed prior offense-games; weights=dropbacks; no same-kickoff outcomes",
+  "adjusted_window": "Dropback-weighted mean residual of last eight prior offense games, >=4 valid residuals",
+  "qb_primary": "Phase 2 pregame expected-QB excess sack susceptibility z, >=100 prior dropbacks; not a pure QB trait",
+  "inputs": [
+    "data/nfl/research/protection-vs-pass-rush/game_level.csv",
+    "data/nfl/research/trench-offensive-disruption/game_level.csv",
+    "data/nfl/research/qb-pressure-trench/game_interactions.csv",
+    "data/nfl/research/qb-pressure-trench/qb_stability.csv",
+    "scripts/research/nfl-trench-offensive-disruption-study.py"
+  ]
+}

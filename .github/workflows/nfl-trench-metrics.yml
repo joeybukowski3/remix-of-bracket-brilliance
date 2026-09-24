@@ -1,0 +1,122 @@
+name: NFL Trenches Refresh
+
+run-name: NFL Trenches Refresh • ${{ github.event_name }} • ${{ github.ref_name }}
+
+on:
+  schedule:
+    # 8:30 AM ET Wednesdays during the NFL season window (Sep-Feb). ESPN
+    # publishes its weekly trench win-rate update on Tuesday morning ET, after
+    # the 7:40 AM Tuesday team-ratings run, so this refresh runs the next day.
+    - cron: "30 8 * 1,2,9,10,11,12 3"
+      timezone: "America/New_York"
+  workflow_dispatch:
+
+# Share one lock with the other automated workflows that commit generated data to main.
+concurrency:
+  group: main-data-writers-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-trench-metrics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Deliberately not guarded with `|| true`: if ESPN's source or schema
+      # breaks, this step fails visibly and every later step is skipped. The
+      # generator validates and writes atomically, so a failed run leaves the
+      # committed artifact untouched and nothing is committed.
+      - name: Generate ESPN trench metrics
+        run: npm run nfl:trench-metrics
+
+      - name: Detect data changes
+        id: changes
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain -- public/data/nfl/matchup-trench-metrics.json)" ]; then
+            echo "No NFL trench metrics changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "NFL trench metrics changes detected."
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Validate generated JSON
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          node -e "
+            const { readFileSync } = require('fs');
+            const file = 'public/data/nfl/matchup-trench-metrics.json';
+            const parsed = JSON.parse(readFileSync(file, 'utf8'));
+            if (parsed.schemaVersion !== 'nfl-matchup-trench-metrics-v1') {
+              throw new Error(\`\${file} has an unexpected schemaVersion\`);
+            }
+            const seasons = Object.entries(parsed.seasons || {});
+            if (seasons.length === 0) {
+              throw new Error(\`\${file} contains no seasons\`);
+            }
+            for (const [season, entry] of seasons) {
+              const teamCount = Object.keys(entry.teams || {}).length;
+              if (teamCount !== 32) {
+                throw new Error(\`\${file} season \${season} has \${teamCount} teams, expected 32\`);
+              }
+            }
+            console.log('Generated NFL trench metrics are valid.');
+          "
+
+      - name: Commit and push refreshed data
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/nfl/matchup-trench-metrics.json
+
+          if git diff --cached --quiet; then
+            echo "No staged NFL trench metrics changes."
+            exit 0
+          fi
+
+          git commit -m "chore: refresh NFL trench metrics"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed — NFL trench metrics were not committed." >&2
+            exit 1
+          fi
+
+          echo "NFL trench metrics pushed successfully."

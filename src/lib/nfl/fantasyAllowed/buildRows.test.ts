@@ -22,6 +22,26 @@ describe("buildFantasyAllowedRows", () => {
     expect(buf.samples["2026"].rb?.fantasyPointsAllowedPerGame).toBe(40);
   });
 
+  it("aggregates raw WR player-week points per defense game for every sample", () => {
+    const historicalRows = [
+      makeHistoricalPlayerWeek({ position: "WR", opponent: "buf", season: 2025, week: 17, actualFantasyPoints: 12 }),
+      makeHistoricalPlayerWeek({ position: "WR", opponent: "buf", season: 2025, week: 17, actualFantasyPoints: 8 }),
+      makeHistoricalPlayerWeek({ position: "WR", opponent: "buf", season: 2026, week: 1, actualFantasyPoints: 10 }),
+      makeHistoricalPlayerWeek({ position: "WR", opponent: "mia", season: 2025, week: 17, actualFantasyPoints: 30 }),
+      makeHistoricalPlayerWeek({ position: "WR", opponent: "mia", season: 2026, week: 1, actualFantasyPoints: 40 }),
+    ];
+    const result = buildFantasyAllowedRows({ historicalRows, teams: ["buf", "mia"], currentSeason: 2026, priorSeason: 2025, opponents: new Map(),
+      slotWideSnapshot: new Map([["buf", { widePpgAllowed: 99, slotPpgAllowed: 88 }], ["mia", { widePpgAllowed: 77, slotPpgAllowed: 66 }]]),
+    });
+    const buf = result[0];
+    for (const [sampleKey, total, games] of [["2026", 10, 1], ["2025", 20, 1], ["last5", 30, 2], ["last8", 30, 2]] as const) {
+      expect(buf.samples[sampleKey].wr).toMatchObject({ rank: 1, fantasyPointsAllowedTotal: total, gamesSampled: games,
+        fantasyPointsAllowedPerGame: total / games, source: "jkb-full-ppr-player-week" });
+    }
+    expect(buf.samples["2026"].wideWr?.fantasyPointsAllowedPerGame).toBe(99);
+    expect(buf.samples["2026"].slotWr?.fantasyPointsAllowedPerGame).toBe(88);
+  });
+
   it("rolls the last5 sample backward from 2026 into 2025 when 2026 has fewer than 5 games", () => {
     const rows = [
       makeHistoricalPlayerWeek({ position: "QB", opponent: "buf", season: 2025, week: 15, actualFantasyPoints: 15 }),

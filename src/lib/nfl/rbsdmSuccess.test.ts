@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import {
   LAST5_GAME_COUNT,
@@ -17,6 +18,8 @@ import {
   validateRbsdmResponse,
 } from "../../../scripts/lib/nfl-rbsdm-success.mjs";
 import { buildCompletedGameIndex } from "../../../scripts/lib/nfl-matchup-metrics.mjs";
+import { buildPeriod } from "../../../scripts/generate-nfl-rbsdm-success-rates.mjs";
+import { expectedFinalTeamGames, validateTeamGameCoverage } from "../../../scripts/lib/nfl-current-season-coverage.mjs";
 import { getMetricDef } from "@/lib/nfl/matchupMetrics";
 
 const ROOT = resolve(__dirname, "../../..");
@@ -45,6 +48,46 @@ function row(code: string, overrides: Record<string, unknown> = {}) {
 
 const ALL_CODES = [...TEAM_MAP.keys()];
 const fullResponse = () => ({ rows: ALL_CODES.map((c) => row(c)) });
+
+describe("current-season generation", () => {
+  it("fails coverage when 2026 is absent despite a populated 2025 fallback", () => {
+    const expected = expectedFinalTeamGames([{ gameId: "2026_02_GB_NYJ", seasonType: "REG", final: true, awayAbbr: "gb", homeAbbr: "nyj" }]);
+    const periods: Record<string, Record<string, { gameIds?: string[]; gamesIncluded: number }>> = { "2025-last8": { gb: { gamesIncluded: 8 } } };
+    const included = Object.entries(periods["2026-season"] ?? {}).flatMap(([team, value]) =>
+      (value.gameIds ?? []).map((gameId) => ({ team, gameId }))
+    );
+    expect(validateTeamGameCoverage(expected, included, "RBSDM").problems).not.toEqual([]);
+  });
+
+  it("emits 2026 offense/defense values and ranks for completed games", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "jkb-rbsdm-"));
+    try {
+      const payload = fullResponse();
+      payload.rows.find((entry) => entry.team_abbr === "GB")!.off_suc = 0.54;
+      payload.rows.find((entry) => entry.team_abbr === "GB")!.def_suc = 0.39;
+      payload.rows.find((entry) => entry.team_abbr === "MIN")!.off_suc = 0.42;
+      payload.rows.find((entry) => entry.team_abbr === "MIN")!.def_suc = 0.48;
+      writeFileSync(join(dir, "team-tiers_2026_w1-2.json"), JSON.stringify(payload));
+      const teams = [...TEAM_MAP.values()];
+      const gameIdsByTeam = Object.fromEntries(teams.map((team) => [team, [`2026_01_${team}`, `2026_02_${team}`]]));
+      const period = await buildPeriod({
+        periodKey: "2026-season",
+        ranges: [{ season: 2026, weekMin: 1, weekMax: 2, teams, gameIdsByTeam }],
+        teamMap: TEAM_MAP,
+        offlineDir: dir,
+        gamesIncluded: Object.fromEntries(teams.map((team) => [team, 2])),
+        requestLog: [],
+      });
+      expect(Object.keys(period)).toHaveLength(32);
+      expect(period.gb.gamesIncluded).toBe(2);
+      expect(period.gb.metrics["off.successRate"]).toEqual({ raw: 0.54, pct: 54, rank: 1 });
+      expect(period.gb.metrics["def.successRateAllowed"]).toEqual({ raw: 0.39, pct: 39, rank: 1 });
+      expect(period.min.metrics["def.successRateAllowed"].rank).toBe(32);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});
 
 describe("team mapping", () => {
   it("maps all 32 RBSDM codes onto canonical abbreviations", () => {

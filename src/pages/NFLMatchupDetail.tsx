@@ -119,8 +119,7 @@ const GUIDE = getNflSeasonGuide(CURRENT_SEASON)!;
  * season artifact; it remains separate from every projection and comparison
  * resolver on this page.
  *
- * Metrics absent from the artifacts (first downs, third down, time of
- * possession) resolve to null and keep rendering "N/A". Nothing is ever
+ * Metrics absent from the artifacts (e.g. time of possession) resolve to null and keep rendering "N/A". Nothing is ever
  * estimated to fill a cell.
  */
 export default function NFLMatchupDetail() {

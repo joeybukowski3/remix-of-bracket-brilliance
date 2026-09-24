@@ -15,7 +15,7 @@ function luminance([r, g, b]: [number, number, number]): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-for (const width of [390, 430, 768, 1440]) {
+for (const width of [390, 430, 768, 1150, 1440]) {
   const isMobile = width < 768;
 
   test(`${width}px Stitch visualization shell stays substantial and viewport-safe`, async ({ page }) => {
@@ -33,33 +33,58 @@ for (const width of [390, 430, 768, 1440]) {
     expect(await shell.evaluate((node) => getComputedStyle(node).backgroundColor)).toBe("rgb(15, 19, 28)");
 
     const towers = shell.locator(".matchup-rank-towers:visible");
-    const towerViewport = towers.locator(".matchup-rank-towers__viewport");
-    const firstCard = towers.locator("[data-rank-tower-group]").first();
-    await expect(firstCard).toBeVisible();
-    const cardBox = await firstCard.boundingBox();
-    expect(cardBox).not.toBeNull();
-    expect(cardBox!.width).toBeGreaterThanOrEqual(width >= 1024 ? 199 : width >= 640 ? 175 : 163);
-    expect(cardBox!.height).toBeGreaterThanOrEqual(width >= 1024 ? 250 : 210);
+    const towerViewport = towers.locator(".matchup-unified-chart__viewport");
+    const groups = towers.locator("[data-rank-tower-group]");
+    const firstGroup = groups.first();
+    const lastGroup = groups.last();
+    await expect(firstGroup).toBeVisible();
+    await expect(towers.locator(".matchup-rank-towers__card")).toHaveCount(0);
+    const groupCount = await groups.count();
+    expect(groupCount).toBeGreaterThan(1);
+    await expect(towers).toHaveAttribute("data-metric-count", String(groupCount));
+    for (const group of await groups.all()) {
+      await expect(group.locator(".matchup-unified-chart__caption")).toBeVisible();
+      await expect(group.locator(".matchup-unified-chart__value")).toHaveCount(2);
+      for (const value of await group.locator(".matchup-unified-chart__value").all()) {
+        await expect(value).toBeVisible();
+      }
+    }
+
+    const fitMode = (await towers.getAttribute("data-fit")) === "true";
+    const initialTowerScroll = await towerViewport.evaluate((node) => ({
+      clientWidth: node.clientWidth,
+      scrollWidth: node.scrollWidth,
+    }));
 
     if (isMobile) {
-      // Rank Towers keep their internal horizontal swipe on mobile, with a
-      // visible swipe hint and fade.
-      const initialTowerScroll = await towerViewport.evaluate((node) => ({
-        clientWidth: node.clientWidth,
-        scrollWidth: node.scrollWidth,
-      }));
-      expect(initialTowerScroll.scrollWidth).toBeGreaterThan(initialTowerScroll.clientWidth);
-      await expect(towers.locator(".matchup-viz-swipe-hint")).toBeVisible();
-      await towerViewport.evaluate((node) => { node.scrollLeft = 100; });
-      await expect.poll(() => towerViewport.evaluate((node) => node.scrollLeft)).toBeGreaterThan(0);
+      if (fitMode) {
+        expect(groupCount).toBeLessThanOrEqual(6);
+        expect(initialTowerScroll.scrollWidth - initialTowerScroll.clientWidth).toBeLessThanOrEqual(1);
+        await expect(towers.locator(".matchup-viz-swipe-hint")).toHaveCount(0);
+
+        const visibleBounds = await towerViewport.evaluate((viewport) => {
+          const viewportBox = viewport.getBoundingClientRect();
+          const metricGroups = viewport.querySelectorAll<HTMLElement>("[data-rank-tower-group]");
+          const firstBox = metricGroups[0].getBoundingClientRect();
+          const lastBox = metricGroups[metricGroups.length - 1].getBoundingClientRect();
+          return {
+            firstInset: firstBox.left - viewportBox.left,
+            lastInset: viewportBox.right - lastBox.right,
+          };
+        });
+        expect(visibleBounds.firstInset).toBeGreaterThanOrEqual(-1);
+        expect(visibleBounds.lastInset).toBeGreaterThanOrEqual(-1);
+        await expect(lastGroup).toBeVisible();
+      } else {
+        expect(groupCount).toBeGreaterThan(6);
+        expect(initialTowerScroll.scrollWidth).toBeGreaterThan(initialTowerScroll.clientWidth);
+        await expect(towers.locator(".matchup-viz-swipe-hint")).toBeVisible();
+        await towerViewport.evaluate((node) => { node.scrollLeft = 100; });
+        await expect.poll(() => towerViewport.evaluate((node) => node.scrollLeft)).toBeGreaterThan(0);
+      }
     } else {
-      // Desktop/tablet: cards wrap into rows instead of swiping, so the
-      // viewport never overflows and no swipe hint renders.
-      const desktopTowerScroll = await towerViewport.evaluate((node) => ({
-        clientWidth: node.clientWidth,
-        scrollWidth: node.scrollWidth,
-      }));
-      expect(desktopTowerScroll.scrollWidth - desktopTowerScroll.clientWidth).toBeLessThanOrEqual(1);
+      // Desktop/laptop: metrics share one continuous plot without page overflow.
+      if (width >= 1150) expect(initialTowerScroll.scrollWidth - initialTowerScroll.clientWidth).toBeLessThanOrEqual(1);
       await expect(towers.locator(".matchup-viz-swipe-hint")).toHaveCount(0);
     }
 
@@ -128,9 +153,32 @@ for (const width of [390, 430, 768, 1440]) {
     expect(await allMetrics.evaluate((node) => (node as HTMLDetailsElement).open)).toBe(isMobile);
     if (isMobile) {
       await expect(allMetrics.locator(".matchup-comparison-card, .matchup-metric-table").first()).toBeVisible();
+      if (width <= 480) {
+        const teamHeader = allMetrics.locator(".matchup-comparison-team-header--sticky");
+        const columnHeader = allMetrics.locator(".matchup-metric-table thead");
+        const rows = allMetrics.locator(".matchup-metric-table tbody tr");
+        await expect(teamHeader).toHaveCSS("position", "static");
+        await expect(rows.first()).toBeVisible();
+        await expect(rows.nth(1)).toBeVisible();
+
+        const geometry = await Promise.all([
+          teamHeader.boundingBox(),
+          columnHeader.boundingBox(),
+          rows.first().boundingBox(),
+          rows.nth(1).boundingBox(),
+        ]);
+        const [teamBox, columnBox, firstRowBox, secondRowBox] = geometry;
+        expect(teamBox).not.toBeNull();
+        expect(columnBox).not.toBeNull();
+        expect(firstRowBox).not.toBeNull();
+        expect(secondRowBox).not.toBeNull();
+        expect(teamBox!.y + teamBox!.height).toBeLessThanOrEqual(columnBox!.y + 1);
+        expect(columnBox!.y + columnBox!.height).toBeLessThanOrEqual(firstRowBox!.y + 1);
+        expect(firstRowBox!.y + firstRowBox!.height).toBeLessThanOrEqual(secondRowBox!.y + 1);
+      }
     } else {
       await allMetrics.locator("summary").click();
-      await expect(allMetrics.locator(".matchup-rank-towers__card").first()).toBeVisible();
+      await expect(allMetrics.locator(".matchup-unified-chart [data-rank-tower-group]").first()).toBeVisible();
       // Context-only metrics render as neutral cards, never leader/tower semantics.
       const contextCard = allMetrics.locator(".matchup-context-metric").first();
       if (await contextCard.count()) {
@@ -146,11 +194,11 @@ for (const width of [390, 430, 768, 1440]) {
       await expect(toggle.first()).toBeVisible();
       await expect(successSection.locator(".matchup-mobile-view-control [role=\"tab\"][aria-selected=\"true\"]")).toHaveText("Comparison");
       // Comparison is the default: no Rank Towers card yet, the comparison grid is showing.
-      await expect(successSection.locator(".matchup-rank-towers__card")).toHaveCount(0);
+      await expect(successSection.locator(".matchup-unified-chart")).toHaveCount(0);
       await expect(successSection.locator(".matchup-comparison-card").first()).toBeVisible();
     } else {
       await expect(successSection.locator(".matchup-mobile-view-control")).toHaveCount(0);
-      await expect(successSection.locator(".matchup-rank-towers__card").first()).toBeVisible();
+      await expect(successSection.locator(".matchup-unified-chart").first()).toBeVisible();
     }
 
     // Unit by Unit.
@@ -158,13 +206,12 @@ for (const width of [390, 430, 768, 1440]) {
     await unitSection.scrollIntoViewIfNeeded();
     if (isMobile) {
       await expect(unitSection.locator(".matchup-mobile-view-control [role=\"tab\"][aria-selected=\"true\"]")).toHaveText("Comparison");
-      await expect(unitSection.locator(".matchup-rank-towers__card")).toHaveCount(0);
+      await expect(unitSection.locator(".matchup-unified-chart")).toHaveCount(0);
       await expect(unitSection.locator(".matchup-comparison-card").first()).toBeVisible();
     } else {
       await expect(unitSection.locator(".matchup-mobile-view-control")).toHaveCount(0);
-      await expect(unitSection.locator(".matchup-rank-towers__card").first()).toBeVisible();
-      // Attacking/defending identity is explicit in the pairing label, not only colour.
-      await expect(unitSection.locator(".matchup-rank-towers__pairing").first()).toContainText(/OFF vs .* DEF|DEF vs .* OFF/);
+      await expect(unitSection.locator(".matchup-unified-chart").first()).toBeVisible();
+      await expect(unitSection.locator(".matchup-unified-chart__identity").first()).toContainText(/OFF|DEF/);
     }
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -196,5 +243,32 @@ for (const width of [390, 430, 768, 1440]) {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(1);
     await expect(page.locator(".vite-error-overlay")).toHaveCount(0);
+  });
+}
+
+for (const width of [390, 430, 768, 1440] as const) {
+  test(`${width}px tower identity keeps the legend while adapting the per-tower label`, async ({ page }) => {
+    await page.setViewportSize({ width, height: width <= 430 ? 844 : 900 });
+    await page.goto(`${baseUrl}${route}`);
+    await page.getByRole("tab", { name: "Team Comparison" }).click();
+
+    const towers = page.locator(".matchup-visualization-shell .matchup-rank-towers:visible");
+    const firstTeam = towers.locator(".matchup-unified-chart__team").first();
+    const identity = firstTeam.locator(".matchup-unified-chart__identity");
+    const identityLabel = identity.locator(".matchup-unified-chart__identity-label");
+    const firstLegendTeam = towers.locator(".matchup-unified-chart__legend > span").first();
+
+    await expect(identity.locator(".rank-tower-team-crest")).toBeVisible();
+    await expect(firstLegendTeam).toContainText(/NE.*Away/i);
+    await expect(firstTeam).toHaveAttribute("aria-label", /New England|NE/i);
+    if (width <= 480) {
+      await expect(identityLabel).toBeHidden();
+    } else {
+      await expect(identityLabel).toBeVisible();
+      await expect(identityLabel).toContainText("NE");
+    }
+
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(1);
   });
 }

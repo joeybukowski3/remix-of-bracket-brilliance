@@ -23,6 +23,7 @@ import Bracket from "./pages/Bracket";
 import BettingEdge from "./pages/BettingEdge";
 import Donate from "./pages/Donate";
 import Support from "./pages/Support";
+import ResearchStudies from "./pages/ResearchStudies";
 import TeamPage from "./pages/TeamPage";
 import MlbLayout from "@/components/mlb/MlbLayout";
 import MlbGameDetail from "./pages/MlbGameDetail";
@@ -59,6 +60,7 @@ import NFLDfsContestAnalyzer from "./pages/nfl/NFLDfsContestAnalyzer";
 import NFLPerformance from "./pages/nfl/NFLPerformance";
 import NFLFantasyPointsAllowed from "./pages/nfl/NFLFantasyPointsAllowed";
 import NFLTdsAllowedByPosition from "./pages/nfl/NFLTdsAllowedByPosition";
+import NFLFantasyPositionMatchupsRedirect from "./pages/nfl/NFLFantasyPositionMatchupsRedirect";
 import FantasyFootball from "./pages/FantasyFootball";
 import FantasyPointsAllowed from "./pages/FantasyPointsAllowed";
 import FantasyWeeklyRankings from "./pages/FantasyWeeklyRankings";
@@ -154,6 +156,8 @@ const App = () => (
           <Route path={NCAA_BRACKET_PATH} element={<Bracket />} />
           <Route path="/donate" element={<Donate />} />
           <Route path="/support" element={<Support />} />
+          <Route path="/research-studies" element={<ResearchStudies />} />
+          <Route path="/research-studies/:studySlug" element={<ResearchStudies />} />
           <Route
             path="/16-0/*"
             element={
@@ -179,6 +183,7 @@ const App = () => (
             <Route path="td-scorer" element={<NFLTouchdownScorer />} />
             <Route path="fantasy-points-allowed" element={<NFLFantasyPointsAllowed />} />
             <Route path="tds-allowed-by-position" element={<NFLTdsAllowedByPosition />} />
+            <Route path="fantasy-position-matchups" element={<NFLFantasyPositionMatchupsRedirect />} />
             <Route path="dfs" element={<NFLDfsContestAnalyzer />} />
             <Route path="super-bowl" element={<NFLSuperBowlOdds />} />
             <Route path="coach-of-year" element={<NFLCoachOfYear2026 />} />

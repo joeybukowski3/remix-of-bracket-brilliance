@@ -128,8 +128,14 @@ describe("2026 observed adapter", () => {
     expect(resolve("bal", "off.yardsPerPlay")).toBeNull();
   });
   it("never takes populated 2025 or historical blended windows", () => {
-    const resolve = createObservedComparisonResolver({ conventional: read("matchup-metrics.json"), epa: read("matchup-epa.json"), success: read("matchup-success-rates.json"), trench: read("matchup-trench-metrics.json") }, 2026);
-    expect(resolve("bal", key)?.value ?? null).toBeNull();
+    const epa = read("matchup-epa.json");
+    const resolve = createObservedComparisonResolver({ conventional: read("matchup-metrics.json"), epa, success: read("matchup-success-rates.json"), trench: read("matchup-trench-metrics.json") }, 2026);
+    // The 2026 lens answers only from the 2026-only window (empty before kickoff, 2026 games alone afterwards),
+    // never from a populated 2025 or historical-blend window.
+    const current = epa.windows["season-current"].teams.bal;
+    const expected = current ? current.totals.offense.offEpa / current.totals.offense.offPlays : null;
+    if (current) expect(current.seasons).toEqual([2026]);
+    expect(resolve("bal", key)?.value ?? null).toBe(expected);
     const result = createBlendedMatchupMetrics({ teams, completed: games({ bal: 5 }), projected: null, currentRating: null, observed: resolve });
     expect(result.resolve("bal", key)).toBeNull();
   });
@@ -149,7 +155,9 @@ describe("2026 observed adapter", () => {
   it("explicit full-2025 lens uses the full season instead of Last 8", () => {
     const artifact = read("matchup-metrics.json");
     const resolve = createSeasonComparisonMetrics(teams, createObservedComparisonResolver({ ...empty, conventional: artifact }, 2025));
-    expect(resolve("bal", "off.yardsPerPlay")?.value).toBe(artifact.windows["prior-season-full"].teams.bal.metrics["off.yardsPerPlay"][0]);
+    const bal = artifact.windows["prior-season-full"].teams.bal;
+    // The producer now publishes unrounded rawMetrics; the resolver prefers them over the rounded tuple.
+    expect(resolve("bal", "off.yardsPerPlay")?.value).toBe(bal.rawMetrics?.["off.yardsPerPlay"] ?? bal.metrics["off.yardsPerPlay"][0]);
   });
   it("observed-only trench presentation retains official finer-precision ranks", () => {
     const trench = read("matchup-trench-metrics.json");

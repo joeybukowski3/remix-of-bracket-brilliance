@@ -16,13 +16,23 @@ import {
   type FantasyAllowedSampleKey,
 } from "./types";
 
-export const FANTASY_ALLOWED_COLUMNS: readonly AllowedByPositionColumn<FantasyAllowedPositionKey>[] = [
-  { key: "qb", label: "QB", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.qb },
-  { key: "rb", label: "RB", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.rb },
-  { key: "wideWr", label: "Wide WR", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.wideWr },
-  { key: "slotWr", label: "Slot WR", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.slotWr },
-  { key: "te", label: "TE", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.te },
-];
+const COLUMN = {
+  qb: { key: "qb", label: "QB", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.qb },
+  rb: { key: "rb", label: "RB", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.rb },
+  wr: { key: "wr", label: "WR", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.wr },
+  wideWr: { key: "wideWr", label: "Wide WR", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.wideWr },
+  slotWr: { key: "slotWr", label: "Slot WR", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.slotWr },
+  te: { key: "te", label: "TE", headerClassName: ALLOWED_BY_POSITION_HEADER_CLASSNAMES.te },
+} satisfies Record<FantasyAllowedPositionKey, AllowedByPositionColumn<FantasyAllowedPositionKey>>;
+
+export function fantasyAllowedColumns(artifact: FantasyAllowedArtifact | null, sample: FantasyAllowedSampleKey): readonly AllowedByPositionColumn<FantasyAllowedPositionKey>[] {
+  const hasSplit = sample === "2026" && artifact != null && artifact.rows.length > 0 && artifact.rows.every((row) =>
+    row.samples["2026"].wideWr?.fantasyPointsAllowedPerGame != null && row.samples["2026"].slotWr?.fantasyPointsAllowedPerGame != null,
+  );
+  return hasSplit
+    ? [COLUMN.qb, COLUMN.rb, COLUMN.wideWr, COLUMN.slotWr, COLUMN.te]
+    : [COLUMN.qb, COLUMN.rb, COLUMN.wr, COLUMN.te];
+}
 
 /**
  * Direct (un-inverted) reading of the shared 32-team JKB Heat rank scale:

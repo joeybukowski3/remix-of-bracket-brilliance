@@ -1,0 +1,57 @@
+name: NFL Success Rates Refresh
+
+on:
+  schedule:
+    # After Tuesday's schedules/results and matchup-stat refreshes.
+    - cron: "15 9 * 1,2,9,10,11,12 2"
+      timezone: "America/New_York"
+  workflow_dispatch:
+
+concurrency:
+  group: main-data-writers-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-success-rates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      # The generator checks every final 2026 REG team-game against its
+      # 2026-season period before writing. RBSDM failure leaves the old file.
+      - name: Generate and validate RBSDM success rates
+        run: npm run nfl:success-rates
+      - name: Commit and push refreshed data
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain -- public/data/nfl/matchup-success-rates.json)" ]; then
+            echo "No NFL success-rate changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- public/data/nfl/matchup-success-rates.json
+          git commit -m "data(nfl): refresh success rates"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            if git rebase origin/main && git push origin HEAD:main; then
+              exit 0
+            fi
+            git rebase --abort || true
+            sleep $((attempt * 10))
+          done
+          echo "NFL success-rate push failed" >&2
+          exit 1

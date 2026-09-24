@@ -7,9 +7,11 @@ import {
   TEAM_MODULE_HEADLINE,
   TRENCH_COLUMN_MAP,
   TRENCH_METRIC_KEYS,
+  FINAL_REGULAR_SEASON_WEEK,
   articleIdFromUrl,
   buildEspnTeamMap,
   findTeamModule,
+  isSeasonInProgress,
   newsUrl,
   parseFreshness,
   parseLeaderboardHeadline,
@@ -175,6 +177,7 @@ describe("article discovery", () => {
   it("exposes known ids usable as historical fixtures", () => {
     expect(KNOWN_ARTICLE_IDS[2025]).toBe("46138675");
     expect(KNOWN_ARTICLE_IDS[2024]).toBe("41040723");
+    expect(KNOWN_ARTICLE_IDS[2026]).toBe("49742016");
   });
 });
 
@@ -324,6 +327,54 @@ describe("table validation", () => {
     expect(() => parseTeamModule(makeTeamModule({ body }), { teamMap: TEAM_MAP, label: "t" })).toThrow(
       /official ranks are not distinct/
     );
+  });
+
+  describe("in-progress season tied ranks", () => {
+    // Competition-style ties as ESPN publishes early in a season: 1,2,2,4,...
+    const tiedBody = ALL_ABBRS.map((a, i) => [
+      teamCell(a),
+      `30% (${i + 1})`,
+      `28% (${i + 1})`,
+      `60% (${i === 2 ? 2 : i + 1})`,
+      `68% (${i + 1})`,
+    ]);
+
+    it("accepts tied official ranks when allowTiedRanks is set and keeps them verbatim", () => {
+      const teams = parseTeamModule(makeTeamModule({ body: tiedBody }), {
+        teamMap: TEAM_MAP,
+        label: "t",
+        allowTiedRanks: true,
+      });
+      expect(teams[ALL_ABBRS[1]].metrics["off.passBlockWinRate"].espnRank).toBe(2);
+      expect(teams[ALL_ABBRS[2]].metrics["off.passBlockWinRate"].espnRank).toBe(2);
+      expect(teams[ALL_ABBRS[3]].metrics["off.passBlockWinRate"].espnRank).toBe(4);
+    });
+
+    it("still rejects tied ranks by default (completed seasons)", () => {
+      expect(() => parseTeamModule(makeTeamModule({ body: tiedBody }), { teamMap: TEAM_MAP, label: "t" })).toThrow(
+        /official ranks are not distinct/
+      );
+    });
+
+    it("still rejects out-of-range and malformed ranks when ties are allowed", () => {
+      const bad = ALL_ABBRS.map((a, i) => [teamCell(a), `30% (${i === 0 ? 33 : i + 1})`, `28% (${i + 1})`, `60% (${i + 1})`, `68% (${i + 1})`]);
+      expect(() =>
+        parseTeamModule(makeTeamModule({ body: bad }), { teamMap: TEAM_MAP, label: "t", allowTiedRanks: true })
+      ).toThrow(/outside 1-32/);
+    });
+
+    it("still requires all 32 teams when ties are allowed", () => {
+      expect(() =>
+        parseTeamModule(makeTeamModule({ body: tiedBody.slice(0, 31) }), { teamMap: TEAM_MAP, label: "t", allowTiedRanks: true })
+      ).toThrow(/expected 32 team rows/);
+    });
+
+    it("treats a season as in progress only for a parsed week before the final week", () => {
+      expect(isSeasonInProgress(1)).toBe(true);
+      expect(isSeasonInProgress(FINAL_REGULAR_SEASON_WEEK - 1)).toBe(true);
+      expect(isSeasonInProgress(FINAL_REGULAR_SEASON_WEEK)).toBe(false);
+      expect(isSeasonInProgress(null)).toBe(false);
+    });
   });
 
   it("rejects a missing metric cell", () => {

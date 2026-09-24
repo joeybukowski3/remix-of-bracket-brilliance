@@ -170,8 +170,18 @@ describe("generated artifact", () => {
     expect(ARTIFACT.seasons["2025"].sourceUpdatedText).toMatch(/Through all Week 18/);
   });
 
-  it("has no 2026 season yet", () => {
-    expect(ARTIFACT.seasons["2026"]).toBeUndefined();
+  it("contains the 2026 season for all 32 teams with all four metrics", () => {
+    const season = ARTIFACT.seasons["2026"];
+    expect(season.articleId).toBe("49742016");
+    expect(Object.keys(season.teams)).toHaveLength(32);
+    for (const [abbr, team] of Object.entries(season.teams)) {
+      expect(Object.keys(team.metrics).sort(), abbr).toEqual([...TRENCH_METRIC_KEYS].sort());
+      for (const key of TRENCH_METRIC_KEYS) {
+        const { valuePct, espnRank } = team.metrics[key];
+        expect(Number.isInteger(valuePct), `${abbr} ${key} value`).toBe(true);
+        expect(Number.isInteger(espnRank) && espnRank >= 1 && espnRank <= 32, `${abbr} ${key} rank`).toBe(true);
+      }
+    }
   });
 
   it("stores whole-number percentages, not invented decimals", () => {
@@ -208,8 +218,14 @@ describe("resolver", () => {
     expect(resolve0("buf", "def.runStopWinRate", "2025-season")).toEqual({ valuePct: 30, espnRank: 22 });
   });
 
-  it("returns null for the absent 2026 season rather than reusing 2025", () => {
-    expect(resolve0("buf", "off.passBlockWinRate", "2026-season")).toBeNull();
+  it("resolves 2026 values from the 2026 season, not from 2025", () => {
+    const value = resolve0("buf", "off.passBlockWinRate", "2026-season");
+    expect(value).toEqual(ARTIFACT.seasons["2026"].teams.buf.metrics["off.passBlockWinRate"]);
+  });
+
+  it("returns null for an absent 2026 season rather than reusing 2025", () => {
+    const only2025 = { ...ARTIFACT, seasons: { "2025": ARTIFACT.seasons["2025"] } };
+    expect(createTrenchResolver(only2025)("buf", "off.passBlockWinRate", "2026-season")).toBeNull();
   });
 
   it("returns null for unknown teams and non-trench metrics", () => {
@@ -222,12 +238,22 @@ describe("resolver", () => {
   });
 
   it("collects one value per visible period, leaving absent periods null", () => {
-    const values = collectTrenchPeriodValues(resolve0, "buf", "off.passBlockWinRate", [
+    const only2025 = createTrenchResolver({ ...ARTIFACT, seasons: { "2025": ARTIFACT.seasons["2025"] } });
+    const values = collectTrenchPeriodValues(only2025, "buf", "off.passBlockWinRate", [
       "2025-season",
       "2026-season",
     ]);
     expect(values["2025-season"]).not.toBeNull();
     expect(values["2026-season"]).toBeNull();
+  });
+
+  it("collects a value for every visible period when both seasons exist", () => {
+    const values = collectTrenchPeriodValues(resolve0, "buf", "off.passBlockWinRate", [
+      "2025-season",
+      "2026-season",
+    ]);
+    expect(values["2025-season"]).not.toBeNull();
+    expect(values["2026-season"]).not.toBeNull();
   });
 });
 

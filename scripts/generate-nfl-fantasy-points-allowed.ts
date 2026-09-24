@@ -1,17 +1,16 @@
 /**
  * Generates public/data/nfl/fantasy-points-allowed.json -- defense rank
- * tables for fantasy points allowed by position (QB/RB/wideWr/slotWr/TE),
- * across three samples: current season to date ("2026"), full prior season
- * ("2025"), and each team's rolling last-5 completed REG games ("last5").
+ * tables for fantasy points allowed by position (QB/RB/WR/wideWr/slotWr/TE),
+ * across current season, prior season, last-5, and last-8 samples.
  *
- * QB/RB/TE are aggregated here from per-game nflverse player stats using the
+ * QB/RB/WR/TE are aggregated here from per-game nflverse player stats using the
  * site's JKB Full PPR scoring (same scoring `HistoricalPlayerWeek` rows use).
  * wideWr/slotWr can only be populated for the "2026" sample, from the
  * defense-level Razzball slot/wide PPG-allowed snapshot
  * (public/data/nfl/<season>/slot-wide-defense-context.json) -- there is no
  * per-game historical slot/wide split in this repo's nflverse cache, so
- * 2025/last5 are intentionally left null for those two columns. See the WU1
- * audit notes for this gap.
+ * 2025/last5/last8 are intentionally left null for those two columns. Combined
+ * WR remains available from player-week rows in every sample.
  *
  * Reads only committed caches (never touches the network) via
  * scripts/lib/nflAllowedByPositionIo.ts (shared with
@@ -42,7 +41,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DATA_DIR = join(ROOT, "public", "data", "nfl");
 const OUT_FILE = join(DATA_DIR, "fantasy-points-allowed.json");
 
-export const FANTASY_POINTS_ALLOWED_SCHEMA_VERSION = "nfl-fantasy-points-allowed-v1" as const;
+export const FANTASY_POINTS_ALLOWED_SCHEMA_VERSION = "nfl-fantasy-points-allowed-v2" as const;
 
 function parseArgs(argv: string[]) {
   const args = { dryRun: false, season: 2026, week: null as number | null, generatedAt: new Date().toISOString() };

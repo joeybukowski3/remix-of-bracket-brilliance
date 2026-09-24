@@ -42,6 +42,33 @@ vi.mock("@/hooks/useNflMatchupMarket", () => {
   return { useNflMatchupMarket: () => ({ loading: false, error: null, artifact }) };
 });
 
+// The matrix's live-record column reads the current-season v0.3 full-season
+// artifact. Mocked empty (no completed games) so records render the
+// deliberate "—" fallback rather than inventing a record.
+vi.mock("@/hooks/useNflV03Artifacts", () => ({
+  useNflV03Artifacts: () => ({
+    loading: false,
+    error: null,
+    data: { season: 2026, artifacts: { fullSeason: { teams: [] } }, slots: {} },
+  }),
+}));
+
+// EPA/YPP/Success Rate/Trench pipelines are independent optional enrichments;
+// mocked null so the matrix renders deterministically from the mocked OVR
+// board alone, with every other matrix cell at its deliberate "N/A" state.
+vi.mock("@/hooks/useNflMatchupEpa", () => ({
+  useNflMatchupEpa: () => ({ loading: false, error: null, artifact: null }),
+}));
+vi.mock("@/hooks/useNflMatchupMetrics", () => ({
+  useNflMatchupMetrics: () => ({ loading: false, error: null, artifact: null }),
+}));
+vi.mock("@/hooks/useNflSuccessRates", () => ({
+  useNflSuccessRates: () => ({ loading: false, error: null, artifact: null }),
+}));
+vi.mock("@/hooks/useNflTrenchMetrics", () => ({
+  useNflTrenchMetrics: () => ({ loading: false, error: null, artifact: null }),
+}));
+
 vi.mock("@/hooks/useNflSituationalTrends", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { readFileSync } = require("node:fs") as typeof import("node:fs");
@@ -116,31 +143,88 @@ describe("NFLMatchups landing", () => {
     expect(screen.getByRole("navigation", { name: "NFL sitemap" })).toBeTruthy();
   });
 
-  it("renders all 16 Week 1 games", () => {
+  it("renders all 16 Week 1 games as matrix rows", () => {
     renderRoute("/nfl/matchups");
-    expect(screen.getAllByText(/View matchup breakdown/i)).toHaveLength(16);
+    expect(screen.getAllByText("Matchup →")).toHaveLength(16);
     expect(screen.getAllByText("Seattle Seahawks").length).toBeGreaterThan(0);
   });
 
   it("honors an explicit week query from the shared resolver", () => {
     renderRoute("/nfl/matchups?week=2");
     expect(screen.getByRole("button", { name: "W2" }).getAttribute("aria-pressed")).toBe("true");
-    expect(screen.getAllByText(/View matchup breakdown/i)).toHaveLength(16);
+    expect(screen.getAllByText("Matchup →")).toHaveLength(16);
   });
 
-  it("links each game card to its detail page", () => {
-    renderRoute("/nfl/matchups");
-    const link = screen.getByRole("link", { name: /New England Patriots at Seattle Seahawks/i });
-    expect(link.getAttribute("href")).toBe(`/nfl/matchups/${OPENER}`);
+  function linksToMatchup(slug: string) {
+    return screen
+      .getAllByRole("link")
+      .filter((link) => link.getAttribute("href") === `/nfl/matchups/${slug}`);
+  }
+
+  it("links each game's matchup control to its detail page", () => {
+    // Forced to week 1 explicitly: the default week resolves relative to
+    // today's date, which may no longer be week 1 by the time this suite
+    // runs, but OPENER is specifically the week 1 NE-at-SEA game.
+    renderRoute("/nfl/matchups?week=1");
+    expect(linksToMatchup(OPENER).length).toBeGreaterThan(0);
   });
 
-  it("shows the universal current OVR/rank on each card, not the legacy guide powerRank/overallPct", () => {
+  it("links the header control and both team identity cells to the same matchup detail page, not the stat cells", () => {
+    renderRoute("/nfl/matchups?week=1");
+    // Header "Matchup →" control + away team identity cell + home team
+    // identity cell, all pointing at the same detail page.
+    expect(linksToMatchup(OPENER).length).toBe(3);
+    // Stat cells are plain <td> content and are never their own link — total
+    // links stay well under one per stat cell across all 16 games.
+    expect(screen.getAllByRole("link").length).toBeLessThan(16 * 5);
+  });
+
+  it("shows the universal current OVR rank on each matrix row, not the legacy guide powerRank/overallPct", () => {
     renderRoute("/nfl/matchups");
-    const link = screen.getByRole("link", { name: /New England Patriots at Seattle Seahawks/i });
     // Mocked useNflCurrentRating2026 values above; the guide's own powerRank/
-    // overallPct for these teams differ from these figures.
-    expect(within(link).getByText("#3 · 68.4")).toBeTruthy();
-    expect(within(link).getByText("#2 · 74.5")).toBeTruthy();
+    // overallPct for these teams differ from these figures. Rankings mode is
+    // the default, so the OVR cell shows the board's own rank (#3 / #2), not
+    // the raw rating value.
+    const ovrCells = screen.getAllByText("OVR");
+    expect(ovrCells.length).toBeGreaterThan(0);
+    expect(screen.getAllByText("3").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("2").length).toBeGreaterThan(0);
+    expect(screen.queryByText("68.4")).toBeNull();
+  });
+
+  it("exposes page-wide Rankings/Values and Data Window controls", () => {
+    renderRoute("/nfl/matchups");
+    expect(screen.getByRole("tab", { name: "Rankings" })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Values" })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Blended" })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "2026 Only" })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Last 8" })).toBeTruthy();
+  });
+
+  it("switches every matrix row to Values display when the Values tab is selected, showing OVR's native scale", () => {
+    renderRoute("/nfl/matchups");
+    fireEvent.click(screen.getByRole("tab", { name: "Values" }));
+    // OVR shows its own native JKB rating in Values mode, never the league
+    // rank — the mocked 68.4-rated team's OVR cell reads 68.4, not "3".
+    expect(screen.getAllByText("68.4").length).toBeGreaterThan(0);
+    expect(screen.queryByText("+18.4")).toBeNull();
+  });
+
+  it("shows a compact page-level note that Success Rate and trench metrics never move with the Data Window toggle, instead of implying every cell changed", () => {
+    renderRoute("/nfl/matchups");
+    expect(screen.getByText(/always season-to-date/i)).toBeTruthy();
+  });
+
+  it("notes the OVR Last 8 limitation in the UI once Last 8 is selected", () => {
+    renderRoute("/nfl/matchups");
+    expect(screen.queryByText(/no rolling 8-game composite/i)).toBeNull();
+    fireEvent.click(screen.getByRole("tab", { name: "Last 8" }));
+    expect(screen.getByText(/no rolling 8-game composite/i)).toBeTruthy();
+  });
+
+  it("falls back to a deliberate '—' record rather than inventing one when no live record data exists", () => {
+    renderRoute("/nfl/matchups");
+    expect(screen.getAllByText("—").length).toBeGreaterThan(0);
   });
 
   it("highlights Weekly Matchups in the sidebar on the index route", () => {

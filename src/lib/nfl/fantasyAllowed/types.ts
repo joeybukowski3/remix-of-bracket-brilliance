@@ -2,23 +2,23 @@
  * Shared data contract for the "Fantasy Points Allowed by Position" family
  * of pages (defense rank tables). Deliberately generic so a future
  * "TDs Allowed by Position" metric or a player-matchup table can reuse the
- * same row/sample/rank shell -- see docs/research/nfl-fantasy-points-allowed
- * for the WU1 audit this contract was built from.
+ * same row/sample/rank shell -- see docs/features/nfl-fantasy-points-allowed.md.
  *
- * Position keys are UI-facing labels, not raw nflverse positions: "wideWr"
- * and "slotWr" both source from nflverse position "WR", split by alignment
- * where that data exists (see FantasyAllowedPositionSample.source).
+ * Position keys are UI-facing labels, not raw nflverse positions: "wr" is
+ * aggregated from player-week WR rows, while "wideWr" and "slotWr" are
+ * separate current-season defense snapshot measures.
  */
 
 export type FantasyAllowedSampleKey = "2026" | "2025" | "last5" | "last8";
 
 export const FANTASY_ALLOWED_SAMPLE_KEYS: readonly FantasyAllowedSampleKey[] = ["2026", "2025", "last5", "last8"];
 
-export type FantasyAllowedPositionKey = "qb" | "rb" | "wideWr" | "slotWr" | "te";
+export type FantasyAllowedPositionKey = "qb" | "rb" | "wr" | "wideWr" | "slotWr" | "te";
 
 export const FANTASY_ALLOWED_POSITION_KEYS: readonly FantasyAllowedPositionKey[] = [
   "qb",
   "rb",
+  "wr",
   "wideWr",
   "slotWr",
   "te",
@@ -59,7 +59,7 @@ export type FantasyAllowedRow = {
 export const FANTASY_ALLOWED_ARTIFACT_PATH = "/data/nfl/fantasy-points-allowed.json";
 
 export type FantasyAllowedArtifact = {
-  schemaVersion: "nfl-fantasy-points-allowed-v1";
+  schemaVersion: "nfl-fantasy-points-allowed-v2";
   generatedAt: string;
   /** Season/week the "current opponent" column and the "2026" sample are anchored to. */
   season: number;

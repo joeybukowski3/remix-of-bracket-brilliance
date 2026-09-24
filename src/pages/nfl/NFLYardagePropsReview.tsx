@@ -6,16 +6,18 @@ import { useNflYardageProjections } from "@/hooks/useNflYardageProjections";
 import { useNflYardageMarket } from "@/hooks/useNflYardageMarket";
 import { useNflYardageAltMarket } from "@/hooks/useNflYardageAltMarket";
 import { useNflYardageOpponentContext } from "@/hooks/useNflYardageOpponentContext";
+import { useNflCarryShare } from "@/hooks/useNflCarryShare";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
 import NflYardageReviewTable from "@/components/nfl/yardage-review/NflYardageReviewTable";
+import NflYardageMatchupStack from "@/components/nfl/yardage-review/NflYardageMatchupStack";
 import NflYardageReviewMobileTable from "@/components/nfl/yardage-review/NflYardageReviewMobileTable";
 import NflYardageFreshnessStatus from "@/components/nfl/yardage-review/NflYardageFreshnessStatus";
 import { NflYardageMatchupFilterChips } from "@/components/nfl/yardage-review/NflYardageMatchupFilterChips";
 import { NflYardageBandFilterChips, BAND_FILTER_OPTIONS } from "@/components/nfl/yardage-review/NflYardageBandFilterChips";
 import NflYardageMobilePropTypeRow from "@/components/nfl/yardage-review/NflYardageMobilePropTypeRow";
 import NflYardageMobileFilterDropdowns from "@/components/nfl/yardage-review/NflYardageMobileFilterDropdowns";
-import { buildYardageReviewRows, type NflMatchupScoreBand } from "@/lib/nfl/props/review/yardageMarketJoin";
+import { buildYardageReviewRows, type NflMatchupScoreBand, type NflYardageReviewRow } from "@/lib/nfl/props/review/yardageMarketJoin";
 import { buildYardageReviewFreshness } from "@/lib/nfl/props/review/freshness";
 import { buildYardageOpponentContext } from "@/lib/nfl/props/review/opponentContext";
 import { buildYardageWeekMatchups } from "@/lib/nfl/props/review/yardageWeekMatchups";
@@ -83,16 +85,21 @@ export default function NFLYardagePropsReview() {
   const marketData = useNflYardageMarket();
   const altMarketData = useNflYardageAltMarket();
   const opponentContextData = useNflYardageOpponentContext();
+  const carryShareSamples = useNflCarryShare(SEASON);
 
-  const marketRows = useMemo(
-    () => (projections.data ? projections.data.rows.filter((r) => r.market === market && r.week === week) : []),
-    [projections.data, market, week],
-  );
+  // Every market's review rows are built up front: the selected-matchup view stacks QB/RB/WR/TE
+  // sections across markets, while All Matchups keeps using only the active market's rows.
+  const entriesByMarket = useMemo<Record<NflProjectionMarket, NflYardageReviewRow[]>>(() => {
+    const rows = projections.data ? projections.data.rows.filter((r) => r.week === week) : [];
+    const build = (m: NflProjectionMarket) =>
+      buildYardageReviewRows(rows.filter((r) => r.market === m), marketData.data, altMarketData.data);
+    return { passing: build("passing"), rushing: build("rushing"), receiving: build("receiving") };
+  }, [projections.data, week, marketData.data, altMarketData.data]);
 
-  const reviewEntries = useMemo(
-    () => buildYardageReviewRows(marketRows, marketData.data, altMarketData.data),
-    [marketRows, marketData.data, altMarketData.data],
-  );
+  const reviewEntries = entriesByMarket[market];
+  // Keys are `${market}-${playerId}`, so one map/heat lookup over every market serves both views.
+  const allEntries = useMemo(() => MARKET_TABS.flatMap((m) => entriesByMarket[m]), [entriesByMarket]);
+  const isMatchupView = filters.matchup !== "all";
 
   const freshnessSources = useMemo(
     () =>
@@ -115,7 +122,7 @@ export default function NFLYardagePropsReview() {
   // rows so a missing/failed artifact never blocks the base projection row.
   const opponentContextByKey = useMemo(() => {
     const map = new Map<string, NflYardageOpponentContextWithHeat>();
-    for (const entry of reviewEntries) {
+    for (const entry of allEntries) {
       const { row } = entry;
       const context = buildYardageOpponentContext({
         team: row.team,
@@ -138,12 +145,12 @@ export default function NFLYardagePropsReview() {
       );
     }
     return map;
-  }, [reviewEntries, opponentContextData]);
+  }, [allEntries, opponentContextData]);
 
   // Computed from the full, unfiltered market entries -- each row's Proj
   // Yds pool (market+position) and therefore its heat stays stable as
   // position/band/line filters are applied.
-  const projectedYardsHeatByKey = useMemo(() => buildProjectedYardsHeatByKey(reviewEntries), [reviewEntries]);
+  const projectedYardsHeatByKey = useMemo(() => buildProjectedYardsHeatByKey(allEntries), [allEntries]);
 
   // Derived from every market's rows for the week (not just the active market tab) so
   // all 16 games render as filter pills regardless of which market is selected -- never
@@ -161,8 +168,8 @@ export default function NFLYardagePropsReview() {
 
   const filtered = useMemo(() => applyYardageReviewFilters(reviewEntries, filters), [reviewEntries, filters]);
   const sorted = useMemo(
-    () => sortYardageReviewRows(filtered, sort, opponentContextByKey),
-    [filtered, sort, opponentContextByKey],
+    () => sortYardageReviewRows(filtered, sort, opponentContextByKey, carryShareSamples),
+    [filtered, sort, opponentContextByKey, carryShareSamples],
   );
 
   const handleSort = (key: Parameters<typeof nextYardageReviewSort>[1]) => {
@@ -196,13 +203,17 @@ export default function NFLYardagePropsReview() {
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-xs font-semibold">{week === null ? "Current week" : `Week ${week}`}</span>
           {/* Market stays a chip group on desktop; mobile gets its own dedicated prop-type row below (NflYardageMobilePropTypeRow). */}
+          {isMatchupView ? (
+            <span className="hidden text-xs text-slate-500 md:inline">Selected matchup · QB / RB / WR / TE</span>
+          ) : (
           <div className="hidden md:flex md:items-center">
             <NflFilterChips label="Market" options={MARKET_TABS} value={market} onChange={handleMarketChange} formatOption={(m) => MARKET_LABEL[m]} />
           </div>
+          )}
         </div>
       </NflPageHeader>
 
-      <NflYardageMobilePropTypeRow value={market} onChange={handleMarketChange} />
+      {!isMatchupView && <NflYardageMobilePropTypeRow value={market} onChange={handleMarketChange} />}
 
       <NflYardageFreshnessStatus sources={freshnessSources} />
 
@@ -235,6 +246,7 @@ export default function NFLYardagePropsReview() {
             >
               <NflYardageMobileFilterDropdowns
                 matchups={weekMatchups}
+                hidePosition={isMatchupView}
                 positionOptions={positionOptions.map((o) => ({ value: o, label: o === "all" ? "All Positions" : o }))}
                 bandOptions={BAND_FILTER_OPTIONS.map((o) => ({ value: o, label: BAND_FILTER_LABEL[o] }))}
                 lineOptions={LINE_DROPDOWN_ORDER.map((o) => ({ value: o, label: LINE_LABEL[o] }))}
@@ -249,7 +261,7 @@ export default function NFLYardagePropsReview() {
                   onChange={(v) => setFilters((f) => ({ ...f, matchup: v }))}
                 />
                 <div className="flex flex-wrap items-center gap-3">
-                  {positionOptions.length > 2 && (
+                  {!isMatchupView && positionOptions.length > 2 && (
                     <NflFilterChips
                       label="Position"
                       options={positionOptions}
@@ -267,6 +279,19 @@ export default function NFLYardagePropsReview() {
             </div>
           </div>
 
+          {isMatchupView ? (
+            <NflYardageMatchupStack
+              entriesByMarket={entriesByMarket}
+              filters={filters}
+              sort={sort}
+              onSort={handleSort}
+              opponentContextByKey={opponentContextByKey}
+              projectedYardsHeatByKey={projectedYardsHeatByKey}
+              season={SEASON}
+              carryShareSamples={carryShareSamples}
+            />
+          ) : (
+          <>
           <p className="text-[11px] text-slate-500">
             {sorted.length} of {reviewEntries.length} {MARKET_LABEL[market].toLowerCase()} candidates shown · {sportsbookLineCount} with a
             sportsbook line{kalshiLineCount > 0 ? ` · ${kalshiLineCount} with a Kalshi fallback line` : ""}
@@ -288,6 +313,7 @@ export default function NFLYardagePropsReview() {
                 opponentContextByKey={opponentContextByKey}
                 projectedYardsHeatByKey={projectedYardsHeatByKey}
                 season={SEASON}
+                carryShareSamples={carryShareSamples}
               />
               <NflYardageReviewMobileTable
                 entries={sorted}
@@ -298,6 +324,8 @@ export default function NFLYardagePropsReview() {
                 season={SEASON}
               />
             </>
+          )}
+          </>
           )}
         </>
       )}

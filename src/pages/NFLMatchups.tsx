@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { getSeoMeta } from "@/lib/seo";
@@ -6,16 +6,20 @@ import LastUpdated from "@/components/nfl/LastUpdated";
 import StaleWarning from "@/components/nfl/StaleWarning";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
+import { useNflMatchupEpa } from "@/hooks/useNflMatchupEpa";
+import { useNflMatchupMetrics } from "@/hooks/useNflMatchupMetrics";
+import { useNflSuccessRates } from "@/hooks/useNflSuccessRates";
+import { useNflTrenchMetrics } from "@/hooks/useNflTrenchMetrics";
+import { deriveStandings, formatStandingRecord } from "@/lib/nfl/standings";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { buildWeekMatchups, type NflMatchup } from "@/lib/nfl/matchups";
 import { resolveNflWeekSelection } from "@/lib/nfl/weekSelection";
-import MatchupCard, { type MatchupCardOvr } from "@/components/nfl/matchups/MatchupCard";
+import MatchupMatrixRow from "@/components/nfl/matchups/MatchupMatrixRow";
+import MatchupMatrixControls, { type NflMatrixDisplayMode } from "@/components/nfl/matchups/MatchupMatrixControls";
+import { buildMatchupMatrixBoard } from "@/lib/nfl/matchupMatrixData";
+import { DEFAULT_MATRIX_DATA_WINDOW_MODE, type NflMatrixDataWindowMode } from "@/lib/nfl/matchupMatrixWindow";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
-import { useNflMatchupMarket } from "@/hooks/useNflMatchupMarket";
-import { currentMarketFor } from "@/lib/nfl/marketData";
-import { useNflMatchupProjections } from "@/hooks/useNflMatchupProjections";
-import { projectionFor } from "@/lib/nfl/projectionData";
 
 const CURRENT_SEASON = 2026;
 const GUIDE = getNflSeasonGuide(CURRENT_SEASON)!;
@@ -58,17 +62,18 @@ export default function NFLMatchups() {
   const navigate = useNavigate();
   const seo = getSeoMeta("nfl");
   const { loading, error, data } = useNflSeasonData(CURRENT_SEASON);
-  // Optional enrichment, loaded independently of the schedule: a missing or
-  // malformed market artifact leaves each card's spread at N/A and changes
-  // nothing else on the page.
-  const { artifact: marketArtifact } = useNflMatchupMarket();
-  // Optional enrichment, loaded independently of the schedule: a missing or
-  // malformed projections artifact leaves each card's JKB spread at N/A and
-  // changes nothing else on the page.
-  const { artifact: projectionsArtifact } = useNflMatchupProjections();
-  // Universal current 2026 OVR/rank -- the only source for the "Power" line
-  // on each card. Never the guide's frozen 2025-preseason powerRank/overallPct.
+  // Universal current 2026 OVR/rank/performance -- the only source for the
+  // matrix's OVR column. Never the guide's frozen 2025-preseason values.
   const currentRating = useNflCurrentRating2026();
+  // Independent optional enrichments: each pipeline outage leaves only its own
+  // columns at "N/A" rather than breaking the matrix.
+  const { artifact: epaArtifact } = useNflMatchupEpa();
+  const { artifact: conventionalArtifact } = useNflMatchupMetrics();
+  const { artifact: successArtifact } = useNflSuccessRates();
+  const { artifact: trenchArtifact } = useNflTrenchMetrics();
+
+  const [displayMode, setDisplayMode] = useState<NflMatrixDisplayMode>("rankings");
+  const [dataWindow, setDataWindow] = useState<NflMatrixDataWindowMode>(DEFAULT_MATRIX_DATA_WINDOW_MODE);
 
   usePageSeo({
     title: `${CURRENT_SEASON} NFL Weekly Matchups | Joe Knows Ball`,
@@ -90,11 +95,31 @@ export default function NFLMatchups() {
   const dayGroups = useMemo(() => groupByDay(matchups), [matchups]);
   const hasResults = (data?.results.length ?? 0) > 0;
 
-  const ovrByAbbr = useMemo(() => {
-    const map = new Map<string, MatchupCardOvr>();
-    for (const team of currentRating.data?.teams ?? []) map.set(team.abbr, { rating: team.rating, rank: team.rank });
-    return map;
-  }, [currentRating.data]);
+  // Live 2026 win-loss record, from the same canonical results/standings
+  // pipeline that powers /nfl/standings and /nfl/power-ratings -- NOT the v03
+  // Stage-1 fullSeason artifact, whose `teams` array stays empty until it is
+  // manually regenerated post-preseason.
+  const recordByAbbr = useMemo(() => {
+    if (!data) return new Map<string, string>();
+    return new Map(deriveStandings(data.results, data.teams).map((row) => [row.abbr, formatStandingRecord(row)]));
+  }, [data]);
+
+  // Ratings mode and rank computation both need the WHOLE league's values,
+  // not just the two teams in a given card, so the board is built once per
+  // render from every team the schedule knows about.
+  const board = useMemo(
+    () =>
+      buildMatchupMatrixBoard({
+        teamAbbrs: (data?.teams ?? []).map((team) => team.abbr),
+        mode: dataWindow,
+        currentRating: currentRating.data,
+        epaArtifact,
+        conventionalArtifact,
+        successArtifact,
+        trenchArtifact,
+      }),
+    [data?.teams, dataWindow, currentRating.data, epaArtifact, conventionalArtifact, successArtifact, trenchArtifact]
+  );
 
   return (
     <>
@@ -131,18 +156,27 @@ export default function NFLMatchups() {
         <p className="text-sm text-slate-500">No games are scheduled for this week yet.</p>
       )}
 
+      {!loading && !error && matchups.length > 0 && (
+        <MatchupMatrixControls
+          displayMode={displayMode}
+          onDisplayModeChange={setDisplayMode}
+          dataWindow={dataWindow}
+          onDataWindowChange={setDataWindow}
+        />
+      )}
+
       {!loading && !error && dayGroups.map((group) => (
-        <section key={group.key} aria-label={group.label}>
+        <section key={group.key} aria-label={group.label} className="mb-4">
           <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{group.label}</h2>
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <div className="flex flex-col gap-2.5">
             {group.matchups.map((matchup) => (
-              <MatchupCard
+              <MatchupMatrixRow
                 key={matchup.gameId}
                 matchup={matchup}
-                market={currentMarketFor(marketArtifact, matchup.gameId)}
-                projection={projectionFor(projectionsArtifact, matchup.gameId)}
-                awayOvr={ovrByAbbr.get(matchup.away.abbr) ?? null}
-                homeOvr={ovrByAbbr.get(matchup.home.abbr) ?? null}
+                board={board}
+                displayMode={displayMode}
+                awayRecord={recordByAbbr.get(matchup.away.abbr) ?? null}
+                homeRecord={recordByAbbr.get(matchup.home.abbr) ?? null}
               />
             ))}
           </div>

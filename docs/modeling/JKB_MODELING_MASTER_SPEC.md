@@ -1,5 +1,7 @@
 # JKB Football Modeling Master Specification
 
+The [NFL Fantasy Points Allowed by Position](../features/nfl-fantasy-points-allowed.md) contract owns the `nfl-fantasy-points-allowed-v2` artifact extension: combined WR allowed points are aggregated from raw WR player-week rows for every sample, while the current-season Wide/Slot snapshot remains separate. This adds a valid fallback column without changing fantasy scoring, projections, model edges, archives, or evaluation.
+
 The offline [2026 Week 1 Spread + ATS Audit](../research/nfl-week1-spread-ats-audit-2026/REPORT.md)
 selects the final valid immutable pre-kickoff production snapshot per game,
 joins separately archived outcomes, and preserves closing/pick evidence gaps.
@@ -344,7 +346,7 @@ The tested three-way targets x catch rate x yards/reception model lost to the tw
 | nflverse/ESPN depth charts | 2025-2026 latest snapshots | Pregame role evidence, but only latest snapshot per season; 48-hour staleness gate | Live QB/RB/WR/TE eligibility and role provenance |
 | nflverse injuries | 2023-2025 cache; current public matchup snapshot may be stale | Useful pregame only with observed-at archive; currently not model input | Display/join infrastructure only |
 | nflverse snap counts | 2023-2025 | Target-game snaps are postgame leakage | Diagnostics only; not current yardage inputs |
-| Team Performance Analytics | Current 2026 aggregate plus backtest tooling | Contains completed outcomes; current artifact lacks per-prediction cutoff/hash | Current OVR and public spread |
+| Team Performance Analytics | Current 2026 aggregate plus backtest tooling | Contains completed outcomes; current artifact lacks per-prediction cutoff/hash. Additive `throughWeek` and `includedGameCount` metadata describe source coverage, while generation fails if final result team-games are absent from the performance cache. | Current OVR and public spread |
 | Historical game market context | 2022-2025 settled nflverse spread/total | Pregame market in broad sense, but provider and exact timestamp are absent; can leak closing information into an early-week simulation | Passing fitted inputs; encoded but non-load-bearing for rushing/receiving formula |
 | Game betting-line store | 2026 append-oriented JSONL by game/book/provider | Has captured/provider update times and spread/total/prices; first-observed is not opening, and no explicit closing designation exists | Market product; not joined to model archive |
 | Player yardage market archive | Began 2026-08-26; change-only JSONL by player/market/book | Timestamped pregame observations; final pre-kickoff can be derived, not yet persisted as a closing label | Yardage market UI/history and Phase 11A join attempt |

@@ -466,15 +466,35 @@ describe("generator/UI catalogue consistency", () => {
 
   it("does not implement any explicitly deferred metric", () => {
     const deferred = [
-      "off.epaPerPlay", "off.successRate", "off.firstDownsPerPlay", "off.thirdDownConversion",
+      "off.epaPerPlay", "off.successRate",
       "off.timeOfPossession", "off.passBlockWinRate", "off.runBlockWinRate",
-      "def.epaPerPlayAllowed", "def.successRateAllowed", "def.firstDownsPerPlayAllowed",
-      "def.thirdDownConversionAllowed", "def.passRushWinRate", "def.runStopWinRate",
+      "def.epaPerPlayAllowed", "def.successRateAllowed",
+      "def.passRushWinRate", "def.runStopWinRate",
       "mkt.atsRecord", "mkt.overUnderRecord",
     ];
     for (const key of deferred) {
       expect(MATCHUP_METRIC_KEYS, `${key} must stay deferred`).not.toContain(key);
     }
+  });
+
+  it("catalogues the four play-by-play down metrics with the UI's ranking directions", () => {
+    const expected = {
+      "off.firstDownsPerPlay": "higher-is-better",
+      "def.firstDownsPerPlayAllowed": "lower-is-better",
+      "off.thirdDownConversion": "higher-is-better",
+      "def.thirdDownConversionAllowed": "lower-is-better",
+    };
+    for (const [key, direction] of Object.entries(expected)) {
+      expect(MATCHUP_METRIC_KEYS, key).toContain(key);
+      expect(MATCHUP_METRIC_DEFS[key].direction, key).toBe(direction);
+      expect(getMetricDef(key)?.direction, `${key} UI direction`).toBe(direction);
+    }
+  });
+
+  it("ranks the down metrics through the shared competition ranking", () => {
+    const values = { a: 45, b: 38, c: 45 };
+    expect(computeRanks(values, MATCHUP_METRIC_DEFS["off.thirdDownConversion"].direction)).toEqual({ a: 1, c: 1, b: 3 });
+    expect(computeRanks(values, MATCHUP_METRIC_DEFS["def.thirdDownConversionAllowed"].direction)).toEqual({ b: 1, a: 2, c: 2 });
   });
 
   it("builds the window id the resolver expects", () => {

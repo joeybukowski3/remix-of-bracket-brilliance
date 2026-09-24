@@ -50,18 +50,20 @@ function selectorForSample(sampleKey: FantasyAllowedSampleKey, currentSeason: nu
 }
 
 export function buildFantasyAllowedRows(input: BuildFantasyAllowedRowsInput): FantasyAllowedRow[] {
-  const gameLogs: Record<"QB" | "RB" | "TE", DefenseGamePoints[]> = {
+  const gameLogs: Record<"QB" | "RB" | "WR" | "TE", DefenseGamePoints[]> = {
     QB: buildDefenseGameLog(input.historicalRows, "QB"),
     RB: buildDefenseGameLog(input.historicalRows, "RB"),
+    WR: buildDefenseGameLog(input.historicalRows, "WR"),
     TE: buildDefenseGameLog(input.historicalRows, "TE"),
   };
 
-  const samplesByKey = new Map<FantasyAllowedSampleKey, Record<"qb" | "rb" | "te", ReturnType<typeof computePositionSample>>>();
+  const samplesByKey = new Map<FantasyAllowedSampleKey, Record<"qb" | "rb" | "wr" | "te", ReturnType<typeof computePositionSample>>>();
   for (const sampleKey of FANTASY_ALLOWED_SAMPLE_KEYS) {
     const selector = selectorForSample(sampleKey, input.currentSeason, input.priorSeason);
     samplesByKey.set(sampleKey, {
       qb: computePositionSample(gameLogs.QB, input.teams, selector, JKB_SOURCE),
       rb: computePositionSample(gameLogs.RB, input.teams, selector, JKB_SOURCE),
+      wr: computePositionSample(gameLogs.WR, input.teams, selector, JKB_SOURCE),
       te: computePositionSample(gameLogs.TE, input.teams, selector, JKB_SOURCE),
     });
   }
@@ -89,6 +91,7 @@ export function buildFantasyAllowedRows(input: BuildFantasyAllowedRowsInput): Fa
       samples[sampleKey] = {
         qb: positionSamples.qb.get(team) ?? null,
         rb: positionSamples.rb.get(team) ?? null,
+        wr: positionSamples.wr.get(team) ?? null,
         te: positionSamples.te.get(team) ?? null,
         // Slot/wide only has a current-season snapshot, so only the "2026"
         // sample is ever populated -- 2025/last5 are intentionally null.

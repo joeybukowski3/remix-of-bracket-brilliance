@@ -106,23 +106,37 @@ describe("preseason — 2025 only", () => {
     expect(screen.queryByText(/2026 Through Week/)).toBeNull();
   });
 
-  it("renders all four battles across both possessions", () => {
-    renderTrenches(resolveTrenchPeriods(0, 0));
-    // One "Pass Block vs Pass Rush" / "Run Block vs Run Stop" row per possession.
+  it("renders two unified charts with a group and two towers for each battle", () => {
+    const { container } = renderTrenches(resolveTrenchPeriods(0, 0));
     expect(screen.getAllByText("Pass Block vs Pass Rush")).toHaveLength(2);
     expect(screen.getAllByText("Run Block vs Run Stop")).toHaveLength(2);
     expect(screen.getByText("New England Patriots has the ball")).toBeInTheDocument();
     expect(screen.getByText("Seattle Seahawks has the ball")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "NE Offense vs SEA Defense" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "SEA Offense vs NE Defense" })).toBeInTheDocument();
+    const charts = container.querySelectorAll("#trenches .matchup-unified-chart");
+    expect(charts).toHaveLength(2);
+    for (const chart of charts) {
+      expect(chart.querySelectorAll("[data-rank-tower-group]")).toHaveLength(2);
+      expect(chart.querySelectorAll("[data-rank-tower]")).toHaveLength(4);
+    }
+    expect(container.querySelector("#trenches .matchup-comparison-card")).toBeNull();
   });
 
-  it("shows ESPN official ranks in the team cells with the raw percentage on the title", () => {
-    renderTrenches(resolveTrenchPeriods(0, 0));
-    // NE PBWR 64 (#13) vs SEA PRWR 41 (#25) — the rank is shown, the raw
-    // percentage is preserved on the cell hover title.
-    expect(screen.getAllByText("13th").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("25th").length).toBeGreaterThan(0);
-    expect(screen.getAllByTitle(/· 64%/).length).toBeGreaterThan(0);
-    expect(screen.getAllByTitle(/· 41%/).length).toBeGreaterThan(0);
+  it("uses ESPN ranks for height and keeps percentages visible and accessible", () => {
+    const { container } = renderTrenches(resolveTrenchPeriods(0, 0));
+    const group = container.querySelector("#trenches .matchup-unified-chart [data-rank-tower-group]")!;
+    const towers = group.querySelectorAll<HTMLElement>(".matchup-unified-chart__team");
+    expect(towers).toHaveLength(2);
+    expect(towers[0]).toHaveAttribute("aria-label", expect.stringContaining("Pass Block vs Pass Rush — 2025 Season"));
+    expect(towers[0]).toHaveAttribute("aria-label", expect.stringContaining("New England Patriots offense — rank 13 of 32 — value 64%"));
+    expect(towers[1]).toHaveAttribute("aria-label", expect.stringContaining("Seattle Seahawks defense — rank 25 of 32 — value 41%"));
+    expect(towers[0].querySelector(".matchup-unified-chart__value")).toHaveTextContent("64%");
+    expect(towers[1].querySelector(".matchup-unified-chart__value")).toHaveTextContent("41%");
+    expect(towers[0].querySelector("[data-rank-badge]")).toHaveTextContent("#13");
+    expect(towers[1].querySelector("[data-rank-badge]")).toHaveTextContent("#25");
+    expect((towers[0].querySelector(".matchup-rank-towers__bar-fill") as HTMLElement).style.height).toBe("61.29032258064516%");
+    expect((towers[1].querySelector(".matchup-rank-towers__bar-fill") as HTMLElement).style.height).toBe("22.580645161290324%");
   });
 
   it("shows whole-number percentages without invented decimals", () => {
@@ -130,29 +144,20 @@ describe("preseason — 2025 only", () => {
     expect(screen.queryByText(/\d+\.\d%/)).toBeNull();
   });
 
-  it("labels each possession with which team has the ball and each side's role", () => {
+  it("labels each possession with the teams' roles", () => {
     const { container } = renderTrenches(resolveTrenchPeriods(0, 0));
-    // Possession identity is announced to assistive tech via the shared compact header.
     expect(screen.getByText("New England Patriots has the ball")).toBeInTheDocument();
     expect(screen.getByText("Seattle Seahawks has the ball")).toBeInTheDocument();
-    // Across the two possession headers each role word appears once per side.
-    expect(screen.getAllByText("Attacking")).toHaveLength(2);
-    expect(screen.getAllByText("Defending")).toHaveLength(2);
-    // Away team is always the left side regardless of who is on offense.
-    const headers = Array.from(container.querySelectorAll(".matchup-comparison-card__team-header"));
-    expect(headers.map((header) => header.textContent)).toEqual(
-      expect.arrayContaining([expect.stringContaining("NE Off"), expect.stringContaining("NE Def")])
-    );
+    expect(container.querySelectorAll(".matchup-unified-chart__legend")).toHaveLength(2);
   });
 
   it("keeps NE (away) left and SEA (home) right across both reciprocal possessions", () => {
     const { container } = renderTrenches(resolveTrenchPeriods(0, 0));
-    // Both possession tables use the same column order: away team then home team.
-    const tables = container.querySelectorAll(".matchup-metric-table table");
-    expect(tables).toHaveLength(2);
-    for (const header of container.querySelectorAll(".matchup-comparison-card__team-header")) {
-      const text = header.textContent ?? "";
-      expect(text.indexOf("NE")).toBeLessThan(text.indexOf("SEA"));
+    for (const chart of container.querySelectorAll("#trenches .matchup-unified-chart")) {
+      const pair = chart.querySelector(".matchup-unified-chart__pair")!;
+      const labels = Array.from(pair.querySelectorAll(".matchup-unified-chart__identity"), (node) => node.textContent);
+      expect(labels[0]).toMatch(/^NE /);
+      expect(labels[1]).toMatch(/^SEA /);
     }
   });
 });
@@ -166,11 +171,11 @@ describe("early 2026 — two separate periods", () => {
 
   it("keeps both seasons' values distinct and unblended", () => {
     renderTrenches(resolveTrenchPeriods(3, 2));
-    // 2025 NE PBWR is ESPN rank 13; 2026 NE PBWR is rank 3 — separate rows.
-    expect(screen.getAllByText("13th").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("3rd").length).toBeGreaterThan(0);
-    expect(screen.getAllByTitle(/· 64%/).length).toBeGreaterThan(0);
-    expect(screen.getAllByTitle(/· 70%/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("#13").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("#3").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("64%").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("70%").length).toBeGreaterThan(0);
+    expect(document.querySelectorAll("#trenches [data-rank-tower-group]")).toHaveLength(8);
   });
 
   it("holds the two-period state when only one team has six games", () => {
@@ -181,8 +186,7 @@ describe("early 2026 — two separate periods", () => {
   it("shows N/A for the 2026 period when that season is unavailable", () => {
     const only2025 = { ...ARTIFACT, seasons: { "2025": ARTIFACT.seasons["2025"] } };
     renderTrenches(["2025-season", "2026-season"], only2025);
-    // 2025 values still render (rank shown, raw % on title); the 2026 line is N/A.
-    expect(screen.getAllByText("13th").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("#13").length).toBeGreaterThan(0);
     expect(screen.getAllByText("N/A").length).toBeGreaterThan(0);
     expect(screen.getAllByText("2026 Season to Date").length).toBeGreaterThan(0);
   });
@@ -193,9 +197,8 @@ describe("established 2026 — 2026 only", () => {
     renderTrenches(resolveTrenchPeriods(6, 6));
     expect(screen.queryByText("2025 Season")).toBeNull();
     expect(screen.getAllByText("2026 Through Week 4").length).toBeGreaterThan(0);
-    // The 2025 raw values are gone from the titles; the 2026 values are shown.
-    expect(screen.queryAllByTitle(/· 64%/)).toHaveLength(0);
-    expect(screen.getAllByTitle(/· 70%/).length).toBeGreaterThan(0);
+    expect(screen.queryAllByText("64%")).toHaveLength(0);
+    expect(screen.getAllByText("70%").length).toBeGreaterThan(0);
   });
 });
 
@@ -235,8 +238,8 @@ describe("integrity", () => {
     );
     expect(screen.getAllByText("Pass Block vs Pass Rush")).toHaveLength(2);
     expect(screen.getAllByText("Run Block vs Run Stop")).toHaveLength(2);
-    // Every battle reads a neutral "Not compared" state; no fabricated value.
-    expect(screen.getAllByTitle("Not compared")).toHaveLength(4);
+    expect(document.querySelectorAll("#trenches [data-rank-tower-group]")).toHaveLength(4);
+    expect(document.querySelectorAll("#trenches .matchup-unified-chart__missing")).toHaveLength(8);
     expect(screen.getAllByText("N/A").length).toBeGreaterThan(0);
   });
 });

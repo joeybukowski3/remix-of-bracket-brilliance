@@ -49,6 +49,7 @@ const SECTIONS = [
     emoji: "🔗",
     links: [
       { label: "Home",             to: "/" },
+      { label: "Research Studies", to: "/research-studies" },
       { label: "Support the Site", to: "/support" },
     ],
   },

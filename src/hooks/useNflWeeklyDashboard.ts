@@ -6,6 +6,7 @@ import { useNflMatchupTotals } from "@/hooks/useNflMatchupTotals";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { useWeeklyFantasyProjectionArtifact } from "@/hooks/useWeeklyFantasyProjectionArtifact";
 import { fantasyRowsFromArtifact } from "@/lib/fantasy/weeklyDashboardFantasyAdapter";
+import { deriveUnavailableModules } from "@/lib/nfl/moduleAvailability";
 import { buildWeeklyDashboard } from "@/lib/nfl/weeklyDashboard";
 import { resolveNflWeekSelection } from "@/lib/nfl/weekSelection";
 
@@ -42,7 +43,16 @@ export function useNflWeeklyDashboard(search: string) {
     }, [season.data, weekSelection.week, market.artifact, projections.artifact, totals.artifact, ratings.data, fantasyRows],
   );
 
-  const fantasyContextErrors = fantasy.status === "error" || fantasy.status === "missing" ? [fantasy.error.message] : [];
+  const unavailableModules = useMemo(
+    () => deriveUnavailableModules({
+      market,
+      spreadProjections: projections,
+      jkbTotals: totals,
+      currentPowerRatings: ratings,
+      fantasyStatus: fantasy.status,
+    }),
+    [market, projections, totals, ratings, fantasy.status],
+  );
 
-  return { dashboard, weekSelection, season, market, projections, totals, ratings, fantasy: { ...fantasy, contextErrors: fantasyContextErrors } };
+  return { dashboard, weekSelection, season, market, projections, totals, ratings, fantasy, unavailableModules };
 }

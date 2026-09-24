@@ -404,6 +404,68 @@ jobs:
 
           echo "NFL yardage projections pushed successfully to ${target_branch}."
 
+      # DFS yardage history (public/data/nfl/yardage-history/<season>/week-NN/).
+      # /nfl/dfs fetches exactly this folder for the resolved current week, so
+      # a week with no folder shows "History unavailable" for every player.
+      # It used to be generated only by a manual local run. It is generated
+      # here, on the same resolved (season, week) as the projections above and
+      # AFTER core publication: the generator reads this run's
+      # yardage-projections.json (player universe) plus the player-week stats
+      # cache refreshed just below. Every step is fail-closed (no
+      # continue-on-error) so a missing/invalid folder can never ship silently.
+      #
+      # data/nfl/nflverse/stats-player-week is the generator's stat source.
+      # No scheduled workflow committed it: the weekly fantasy workflow
+      # refreshes it on its runner but publishes only public/data/fantasy, and
+      # nfl-schedules-results.yml refreshes a different directory
+      # (player-week-stats). It therefore stayed at Week 1 while Week 2 was
+      # already upstream. Refresh the current season only (prior seasons are
+      # static) and commit it together with the history it feeds.
+      - name: Refresh player-week stats cache for DFS history (current season)
+        run: npm run fantasy:player-week-cache -- --seasons=${{ steps.current-week.outputs.season }} --partial-season=${{ steps.current-week.outputs.season }}
+
+      - name: Generate DFS yardage history
+        run: npm run nfl:dfs-yardage-history -- --season=${{ steps.current-week.outputs.season }}
+
+      - name: Validate DFS yardage history folder
+        run: npm run nfl:validate-dfs-history -- --season=${{ steps.current-week.outputs.season }} --week=${{ steps.current-week.outputs.week }}
+
+      - name: Commit and push validated DFS yardage history
+        shell: bash
+        run: |
+          set -euo pipefail
+          target_branch="${{ steps.target-branch.outputs.branch }}"
+          test "$(git branch --show-current)" = "$target_branch"
+          season="${{ steps.current-week.outputs.season }}"
+          history_dir="public/data/nfl/yardage-history/${season}/week-$(printf '%02d' "${{ steps.current-week.outputs.week }}")"
+          git add -- "$history_dir" \
+            "data/nfl/nflverse/stats-player-week/stats_player_week_${season}.csv" \
+            data/nfl/nflverse/stats-player-week/manifest.json
+          if git diff --cached --quiet; then
+            echo "No DFS yardage history changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "data(nfl): refresh DFS yardage history (season ${season} week ${{ steps.current-week.outputs.week }})"
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5 -> ${target_branch}"
+            git fetch origin "$target_branch"
+            if ! git rebase "origin/$target_branch"; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin "HEAD:$target_branch"; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed — DFS yardage history was not committed to ${target_branch}." >&2
+            exit 1
+          fi
+
       # Regenerate the DFS lineup-context artifact
       # (public/data/nfl/dfs/<season>/week-<NN>.json) on this same fresh
       # runner, AFTER every input it reads has been refreshed above: the

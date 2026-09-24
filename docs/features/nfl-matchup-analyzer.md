@@ -74,8 +74,16 @@ to present:
 - completed-opponent schedule-strength context; and
 - descriptive category advantages.
 
-Unavailable metrics remain `N/A`; first downs, third-down rate, and time of
-possession are not estimated. Schedule context is descriptive and adjusts no
+Unavailable metrics remain `N/A`; time of possession is not estimated.
+First Downs / Play and 3rd Down Conversion (offense and opponent) are
+play-by-play metrics in the conventional artifact: `first_down == 1` plays over
+eligible plays, and `third_down_converted` over `third_down_converted +
+third_down_failed`, both from nflverse/nflfastR, regular season, with `no_play`
+(replayed-down) rows excluded from numerator and denominator. Offense and
+defense are read from the same play rows. Exact definitions live in
+[`nfl-downs-core.mjs`](../../scripts/lib/nfl-downs-core.mjs); the compact
+per-team-game cache is `data/nfl/nflverse/downs-team-game/`, refreshed by
+`npm run nfl:downs-cache` before `npm run nfl:matchup-metrics`. Schedule context is descriptive and adjusts no
 rating, metric, or projection.
 
 ### Samples and periods
@@ -143,6 +151,25 @@ the linked model docs and must not be copied or independently recomputed here.
 Except for the schedule needed to identify the matchup, enrichment artifacts
 are independent failure domains. A missing/malformed enrichment leaves only its
 own rows or panels unavailable; no fallback recomputes it from another source.
+
+Current-season EPA, conventional/YPP, RBSDM success, and Team Performance
+Analytics generation now checks every final regular-season team-game in the
+canonical results feed against its input or published sample before writing.
+The matchup EPA/YPP alignment check also compares both artifacts independently
+against results, so two equally stale artifacts fail. RBSDM refresh runs in its
+own weekly job because an RBSDM outage must not block nflverse EPA/YPP updates.
+Success metadata records the requested current-season through-week and included
+game count. RBSDM does not return source game IDs or a source-through marker, so
+its gate verifies the requested period and team coverage, not publication of
+each underlying game. Performance metadata records the included game count and cache
+through-week. ESPN trench data remains provider season-to-date and retains its
+published `throughWeek` marker rather than asserting every final game is covered.
+The Tuesday nflverse jobs refresh performance, EPA, and conventional/YPP data;
+the separate Tuesday RBSDM job refreshes Success Rate. ESPN trench data refreshes
+on Wednesday. RBSDM failure does not block the nflverse jobs.
+
+Historical matchup views still use latest available analytics rather than a
+selected-week pregame snapshot. Point-in-time snapshots require separate work.
 
 ## Boundaries
 

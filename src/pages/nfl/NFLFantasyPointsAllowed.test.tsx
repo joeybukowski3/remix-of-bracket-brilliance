@@ -1,7 +1,18 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { MemoryRouter } from "react-router-dom";
 import type { FantasyAllowedArtifact, FantasyAllowedPositionSample, FantasyAllowedRow } from "@/lib/nfl/fantasyAllowed/types";
+import { fantasyAllowedRankTone } from "@/lib/nfl/fantasyAllowed/presentation";
+import type { PositionMatchupArtifact, PositionMatchupCell, PositionMatchupCells, PositionMatchupRow } from "@/lib/nfl/positionMatchups/types";
 import NFLFantasyPointsAllowed from "./NFLFantasyPointsAllowed";
+
+function renderPage(initialEntry = "/nfl/fantasy-points-allowed") {
+  return render(
+    <MemoryRouter initialEntries={[initialEntry]}>
+      <NFLFantasyPointsAllowed />
+    </MemoryRouter>,
+  );
+}
 
 function sample(
   rank: number | null,
@@ -14,6 +25,8 @@ function sample(
 
 function row(overrides: Partial<FantasyAllowedRow> & { team: string; qb2026?: number; qb2026PerGame?: number | null }): FantasyAllowedRow {
   const { qb2026 = 1, qb2026PerGame = null, ...rest } = overrides;
+  const wrRank = overrides.team === "buf" ? 20 : 1;
+  const wrPerGame = overrides.team === "buf" ? 5.4 : 18.7;
   return {
     opponent: null,
     location: null,
@@ -21,13 +34,14 @@ function row(overrides: Partial<FantasyAllowedRow> & { team: string; qb2026?: nu
       "2026": {
         qb: sample(qb2026, "jkb-full-ppr-player-week", qb2026PerGame ?? qb2026),
         rb: sample(2),
+        wr: sample(wrRank, "jkb-full-ppr-player-week", wrPerGame),
         te: sample(3),
         wideWr: sample(4, "razzball-slot-wide-snapshot"),
         slotWr: sample(5, "razzball-slot-wide-snapshot"),
       },
-      "2025": { qb: sample(30), rb: sample(31), te: sample(32), wideWr: null, slotWr: null },
-      last5: { qb: sample(10), rb: sample(11), te: sample(12), wideWr: null, slotWr: null },
-      last8: { qb: sample(15), rb: sample(16), te: sample(17), wideWr: null, slotWr: null },
+      "2025": { qb: sample(30), rb: sample(31), wr: sample(wrRank, "jkb-full-ppr-player-week", wrPerGame), te: sample(32), wideWr: null, slotWr: null },
+      last5: { qb: sample(10), rb: sample(11), wr: sample(wrRank, "jkb-full-ppr-player-week", wrPerGame), te: sample(12), wideWr: null, slotWr: null },
+      last8: { qb: sample(15), rb: sample(16), wr: sample(wrRank, "jkb-full-ppr-player-week", wrPerGame), te: sample(17), wideWr: null, slotWr: null },
     },
     ...rest,
   };
@@ -35,7 +49,7 @@ function row(overrides: Partial<FantasyAllowedRow> & { team: string; qb2026?: nu
 
 function artifact(): FantasyAllowedArtifact {
   return {
-    schemaVersion: "nfl-fantasy-points-allowed-v1",
+    schemaVersion: "nfl-fantasy-points-allowed-v2",
     generatedAt: "2026-09-17T00:00:00.000Z",
     season: 2026,
     week: 2,
@@ -49,8 +63,44 @@ function artifact(): FantasyAllowedArtifact {
   };
 }
 
-function stubFetch(data: FantasyAllowedArtifact) {
-  vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve(data) } as Response)));
+function matchupCell(overrides: Partial<PositionMatchupCell> = {}): PositionMatchupCell {
+  return { forRank: null, forPerGame: null, forGamesSampled: 0, allowedRank: null, allowedPerGame: null, allowedGamesSampled: 0, edge: null, rating: null, ...overrides };
+}
+
+function matchupCells(overrides: Partial<Record<"qb" | "rb" | "wr" | "te", Partial<PositionMatchupCell>>> = {}): PositionMatchupCells {
+  return { qb: matchupCell(overrides.qb), rb: matchupCell(overrides.rb), wr: matchupCell(overrides.wr), te: matchupCell(overrides.te) };
+}
+
+function matchupRow(overrides: Partial<PositionMatchupRow> & { team: string; qbCell?: Partial<PositionMatchupCell> }): PositionMatchupRow {
+  const { qbCell, ...rest } = overrides;
+  return { opponent: null, location: null, samples: { "2026": matchupCells({ qb: qbCell }), "2025": matchupCells(), last5: matchupCells(), last8: matchupCells() }, ...rest };
+}
+
+function matchupArtifact(): PositionMatchupArtifact {
+  return {
+    schemaVersion: "nfl-fantasy-position-matchups-v1",
+    generatedAt: "2026-09-17T00:00:00.000Z",
+    season: 2026,
+    week: 2,
+    scoringVersion: "jkb-full-ppr-v1.0.0",
+    rows: [
+      matchupRow({ team: "buf", opponent: "mia", location: "@", qbCell: { forRank: 25, forPerGame: 22.4, allowedRank: 29, allowedPerGame: 25.1, edge: 21, rating: "very-strong" } }),
+      matchupRow({ team: "dal", opponent: "was", location: "vs", qbCell: { forRank: 3, forPerGame: 8.2, allowedRank: 4, allowedPerGame: 9.1, edge: -26, rating: "very-weak" } }),
+    ],
+  };
+}
+
+/** Routes fetch by URL: the Points Allowed and Matchup Comparison views hit different artifact paths. */
+function stubFetch(data: FantasyAllowedArtifact, matchup: PositionMatchupArtifact = matchupArtifact()) {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((url: string) =>
+      Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(String(url).includes("fantasy-position-matchups") ? matchup : data),
+      } as Response),
+    ),
+  );
 }
 
 beforeEach(() => {
@@ -60,7 +110,7 @@ beforeEach(() => {
 describe("NFLFantasyPointsAllowed", () => {
   it("renders the 2026 sample by default with team/opponent formatting", async () => {
     stubFetch(artifact());
-    render(<NFLFantasyPointsAllowed />);
+    renderPage();
 
     const bufRow = await waitFor(() => screen.getByText("BUF").closest("tr"));
     expect(bufRow).not.toBeNull();
@@ -74,7 +124,7 @@ describe("NFLFantasyPointsAllowed", () => {
   it("switches sample values when a tab is clicked, without refetching", async () => {
     const fetchSpy = vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve(artifact()) } as Response));
     vi.stubGlobal("fetch", fetchSpy);
-    render(<NFLFantasyPointsAllowed />);
+    renderPage();
 
     await waitFor(() => screen.getByText("BUF"));
     // 2026 QB rank for BUF is 20
@@ -90,7 +140,7 @@ describe("NFLFantasyPointsAllowed", () => {
   it("shows a Last 8 sample tab and switches to it without refetching", async () => {
     const fetchSpy = vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve(artifact()) } as Response));
     vi.stubGlobal("fetch", fetchSpy);
-    render(<NFLFantasyPointsAllowed />);
+    renderPage();
     await waitFor(() => screen.getByText("BUF"));
 
     fireEvent.click(screen.getByRole("button", { name: "Last 8" }));
@@ -100,21 +150,54 @@ describe("NFLFantasyPointsAllowed", () => {
     expect(fetchSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("renders em dash for null Wide WR / Slot WR ranks outside the 2026 sample", async () => {
+  it.each(["2025", "Last 5", "Last 8"])("renders combined WR and no unsupported splits for %s", async (sampleLabel) => {
     stubFetch(artifact());
-    render(<NFLFantasyPointsAllowed />);
+    renderPage();
     await waitFor(() => screen.getByText("BUF"));
 
-    fireEvent.click(screen.getByRole("button", { name: "2025" }));
+    expect(screen.getByRole("button", { name: "Sort by Wide WR" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Sort by Slot WR" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sort by WR" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: sampleLabel }));
 
     const bufRow = screen.getByText("BUF").closest("tr") as HTMLElement;
-    const dashCells = within(bufRow).getAllByText("—");
-    expect(dashCells.length).toBeGreaterThanOrEqual(2); // wideWr + slotWr
+    expect(screen.getByRole("button", { name: "Sort by WR" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sort by Wide WR" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sort by Slot WR" })).not.toBeInTheDocument();
+    expect(within(bufRow).getByText("20")).toBeInTheDocument();
+  });
+
+  it("shows WR raw PPG with rank, sorts by raw or rank, and colors by rank", async () => {
+    stubFetch(artifact());
+    renderPage();
+    await waitFor(() => screen.getByText("BUF"));
+    fireEvent.click(screen.getByRole("button", { name: "2025" }));
+    const teamOrder = () => [...screen.getAllByRole("row")].slice(1).map((tr) => tr.querySelector("td")?.textContent?.trim());
+    const wrCell = (team: string) => {
+      const bodyRow = screen.getByText(team).closest("tr") as HTMLElement;
+      return within(bodyRow).getAllByRole("cell")[4] as HTMLElement; // Team, Opp, QB, RB, WR
+    };
+    expect(wrCell("BUF")).toHaveStyle({ backgroundColor: fantasyAllowedRankTone(20).style?.backgroundColor });
+    expect(wrCell("DAL")).toHaveStyle({ backgroundColor: fantasyAllowedRankTone(1).style?.backgroundColor });
+    fireEvent.click(screen.getByRole("button", { name: "Sort by WR" }));
+    expect(teamOrder()).toEqual(["DAL", "BUF"]); // rank 1 before rank 20
+    fireEvent.click(screen.getByRole("button", { name: "Raw" }));
+    expect(within(wrCell("BUF")).getByText("5.4")).toBeInTheDocument();
+    expect(within(wrCell("BUF")).getByText("(20)")).toBeInTheDocument();
+    expect(teamOrder()).toEqual(["BUF", "DAL"]); // PPG 5.4 before 18.7
+    expect(wrCell("BUF")).toHaveStyle({ backgroundColor: fantasyAllowedRankTone(20).style?.backgroundColor });
+  });
+
+  it("explains that other samples use combined WR", async () => {
+    stubFetch(artifact());
+    renderPage();
+    await waitFor(() => screen.getByText("BUF"));
+    expect(screen.getByText("Wide/Slot WR splits are available for 2026; other samples use combined WR.")).toBeInTheDocument();
   });
 
   it("sorts by a position column ascending then descending on repeat clicks", async () => {
     stubFetch(artifact());
-    render(<NFLFantasyPointsAllowed />);
+    renderPage();
     await waitFor(() => screen.getByText("BUF"));
 
     const bodyTeams = () => screen.getAllByRole("row").slice(1).map((tr) => within(tr).getByText(/^(BUF|DAL)$/).textContent);
@@ -133,7 +216,7 @@ describe("NFLFantasyPointsAllowed", () => {
 
   it("defaults to Rank display mode", async () => {
     stubFetch(artifact());
-    render(<NFLFantasyPointsAllowed />);
+    renderPage();
     await waitFor(() => screen.getByText("BUF"));
 
     expect(screen.getByRole("button", { name: "Rank" })).toHaveAttribute("aria-pressed", "true");
@@ -145,7 +228,7 @@ describe("NFLFantasyPointsAllowed", () => {
 
   it("Raw mode renders the per-game value with rank in parentheses, one decimal place", async () => {
     stubFetch(artifact());
-    render(<NFLFantasyPointsAllowed />);
+    renderPage();
     await waitFor(() => screen.getByText("BUF"));
 
     fireEvent.click(screen.getByRole("button", { name: "Raw" }));
@@ -160,7 +243,7 @@ describe("NFLFantasyPointsAllowed", () => {
     // Null out BUF's QB sample entirely for the 2026 slice.
     data.rows[0].samples["2026"].qb = null;
     stubFetch(data);
-    render(<NFLFantasyPointsAllowed />);
+    renderPage();
     await waitFor(() => screen.getByText("BUF"));
 
     fireEvent.click(screen.getByRole("button", { name: "Raw" }));
@@ -173,7 +256,7 @@ describe("NFLFantasyPointsAllowed", () => {
   it("switching display mode does not refetch the artifact", async () => {
     const fetchSpy = vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve(artifact()) } as Response));
     vi.stubGlobal("fetch", fetchSpy);
-    render(<NFLFantasyPointsAllowed />);
+    renderPage();
     await waitFor(() => screen.getByText("BUF"));
 
     fireEvent.click(screen.getByRole("button", { name: "Raw" }));
@@ -184,7 +267,7 @@ describe("NFLFantasyPointsAllowed", () => {
 
   it("sample switching works while in Raw mode", async () => {
     stubFetch(artifact());
-    render(<NFLFantasyPointsAllowed />);
+    renderPage();
     await waitFor(() => screen.getByText("BUF"));
 
     fireEvent.click(screen.getByRole("button", { name: "Raw" }));
@@ -198,7 +281,7 @@ describe("NFLFantasyPointsAllowed", () => {
 
   it("Raw mode position sorting uses the raw per-game value, not rank", async () => {
     stubFetch(artifact());
-    render(<NFLFantasyPointsAllowed />);
+    renderPage();
     await waitFor(() => screen.getByText("BUF"));
 
     fireEvent.click(screen.getByRole("button", { name: "Raw" }));
@@ -215,7 +298,7 @@ describe("NFLFantasyPointsAllowed", () => {
 
   it("renders all four sample controls (mobile chip row wraps, never hides options)", async () => {
     stubFetch(artifact());
-    render(<NFLFantasyPointsAllowed />);
+    renderPage();
     await waitFor(() => screen.getByText("BUF"));
 
     expect(screen.getByRole("button", { name: "2026" })).toBeInTheDocument();
@@ -226,7 +309,7 @@ describe("NFLFantasyPointsAllowed", () => {
 
   it("Rank mode position sorting still uses rank when raw values are present", async () => {
     stubFetch(artifact());
-    render(<NFLFantasyPointsAllowed />);
+    renderPage();
     await waitFor(() => screen.getByText("BUF"));
 
     const bodyTeams = () => screen.getAllByRole("row").slice(1).map((tr) => within(tr).getByText(/^(BUF|DAL)$/).textContent);
@@ -234,5 +317,79 @@ describe("NFLFantasyPointsAllowed", () => {
     fireEvent.click(screen.getByRole("button", { name: "Sort by QB" }));
     // Rank ascending: dal (rank 1) before buf (rank 20).
     expect(bodyTeams()).toEqual(["DAL", "BUF"]);
+  });
+});
+
+describe("NFLFantasyPointsAllowed view tabs", () => {
+  it("defaults to the Points Allowed tab", async () => {
+    stubFetch(artifact());
+    renderPage();
+    await waitFor(() => screen.getByText("BUF"));
+
+    expect(screen.getByRole("button", { name: "Points Allowed" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Matchup Comparison" })).toHaveAttribute("aria-pressed", "false");
+    // Points Allowed-only column header ("Allow" for Wide/Slot WR positions doesn't exist on the matchup table).
+    expect(screen.getByRole("button", { name: "Sort by QB" })).toBeInTheDocument();
+  });
+
+  it("switches to the Matchup Comparison tab and renders its table", async () => {
+    stubFetch(artifact());
+    renderPage();
+    await waitFor(() => screen.getByText("BUF"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Matchup Comparison" }));
+
+    const bufRow = await waitFor(() => screen.getByText("BUF").closest("tr"));
+    expect(within(bufRow as HTMLElement).getByText("25")).toBeInTheDocument(); // QB FOR rank
+    expect(within(bufRow as HTMLElement).getByText("29")).toBeInTheDocument(); // QB ALLOWED rank
+    expect(within(bufRow as HTMLElement).getByText("Very Strong (+21)")).toBeInTheDocument(); // combined EDGE cell
+  });
+
+  it("hides the Points Allowed table once the Matchup Comparison tab is active", async () => {
+    stubFetch(artifact());
+    renderPage();
+    await waitFor(() => screen.getByText("BUF"));
+    expect(screen.getByRole("button", { name: "Sort by QB" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Matchup Comparison" }));
+    await waitFor(() => screen.getByText("Very Strong (+21)"));
+
+    expect(screen.queryByRole("button", { name: "Sort by QB" })).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Rank heat legend")).not.toBeInTheDocument();
+  });
+
+  it("switches back to the Points Allowed tab and restores its table", async () => {
+    stubFetch(artifact());
+    renderPage();
+    await waitFor(() => screen.getByText("BUF"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Matchup Comparison" }));
+    await waitFor(() => screen.getByText("Very Strong (+21)"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Points Allowed" }));
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "Sort by QB" })).toBeInTheDocument());
+    expect(screen.queryByText("Very Strong (+21)")).not.toBeInTheDocument();
+  });
+
+  it("loads directly into the Matchup Comparison tab from ?view=matchups", async () => {
+    stubFetch(artifact());
+    renderPage("/nfl/fantasy-points-allowed?view=matchups");
+
+    const bufRow = await waitFor(() => screen.getByText("BUF").closest("tr"));
+    expect(within(bufRow as HTMLElement).getByText("Very Strong (+21)")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Matchup Comparison" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("shares the sample selection across tabs", async () => {
+    stubFetch(artifact());
+    renderPage();
+    await waitFor(() => screen.getByText("BUF"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Last 8" }));
+    fireEvent.click(screen.getByRole("button", { name: "Matchup Comparison" }));
+
+    await waitFor(() => screen.getByText("BUF"));
+    expect(screen.getByRole("button", { name: "Last 8" })).toHaveAttribute("aria-pressed", "true");
   });
 });
