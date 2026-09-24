@@ -359,17 +359,27 @@ function offenseDefenseAngle(
   };
 }
 
-function powerGapAngle(matchup: NflMatchup): MatchupAngle | null {
+/**
+ * "Overall power gap" is a power-rating claim, so it reads the canonical Current OVR rank
+ * (the live Current Power Board, via the model-ratings resolver) exactly like the Advantages
+ * list and Team Comparison do. The static NflMatchupTeam.powerRank is a frozen guide-snapshot
+ * rank; it is never used here, and without live ratings the angle is simply not produced.
+ */
+function powerGapAngle(matchup: NflMatchup, modelRatings?: HeroModelRatingResolver): MatchupAngle | null {
   const { away, home } = matchup;
-  if (away.powerRank == null || home.powerRank == null) return null;
-  const gap = Math.abs(away.powerRank - home.powerRank);
+  const awayRank = modelRatings?.(away.abbr)?.rank ?? null;
+  const homeRank = modelRatings?.(home.abbr)?.rank ?? null;
+  if (awayRank == null || homeRank == null) return null;
+  const gap = Math.abs(awayRank - homeRank);
   if (gap < POWER_GAP_RANK_MODERATE) return null;
-  const favored = away.powerRank < home.powerRank ? away : home;
+  const favored = awayRank < homeRank ? away : home;
   const other = favored === away ? home : away;
+  const favoredRank = Math.min(awayRank, homeRank);
+  const otherRank = Math.max(awayRank, homeRank);
   return {
     key: "powerGap",
     label: "Overall power gap",
-    explanation: `${favored.teamName} (#${favored.powerRank}) carries a clear power-rating edge over ${other.teamName} (#${other.powerRank}).`,
+    explanation: `${favored.teamName} (#${favoredRank}) carries a clear power-rating edge over ${other.teamName} (#${otherRank}).`,
     favoredSlug: favored.slug,
     favoredName: favored.teamName,
     sourceMetrics: ["overallRank"],
@@ -453,12 +463,12 @@ function conferenceAngle(matchup: NflMatchup): MatchupAngle {
  * Deterministic, conservative set of angles for a matchup.
  * Returns [] when nothing model-defined applies; consumers show NO_ANGLE_MESSAGE.
  */
-export function deriveAngles(matchup: NflMatchup): MatchupAngle[] {
+export function deriveAngles(matchup: NflMatchup, modelRatings?: HeroModelRatingResolver): MatchupAngle[] {
   const { away, home } = matchup;
   const candidates: (MatchupAngle | null)[] = [
     offenseDefenseAngle(away, home, "awayOffenseVsHomeDefense"),
     offenseDefenseAngle(home, away, "homeOffenseVsAwayDefense"),
-    powerGapAngle(matchup),
+    powerGapAngle(matchup, modelRatings),
     modelMarketAngle(away, "awayModelMarket"),
     modelMarketAngle(home, "homeModelMarket"),
     regressionAngle(away, "awayRegression"),

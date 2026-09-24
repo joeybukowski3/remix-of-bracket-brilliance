@@ -3,7 +3,7 @@
 ## Current authority and relationship to the power rating
 
 This document is the current methodology authority for the canonical NFL
-margin system, `jkb-power-number-v1.0.0`. It has produced the public JKB
+margin system, `jkb-power-number-v1.1.0` (v1.0.0 until 2026-09-24). It has produced the public JKB
 projected spread since 2026-08-19. Its implementation is
 [`jkbPowerNumber2026.ts`](../../src/lib/nfl/jkbPowerNumber2026.ts), its producer
 is
@@ -153,6 +153,13 @@ validation gate.
 
 ## Validation and performance framing
 
+Under `jkb-power-number-v1.1.0` (Current OVR `nfl-current-ovr-v1.1.0`) the same
+fixed transform scores MAE 10.101, RMSE 12.986, correlation 0.429 and
+straight-up 65.9% on the 544 out-of-sample 2024-2025 games, versus 10.275 /
+13.139 / 0.397 / 64.8% for v1.0.0 (paired MAE -0.174, 95% CI [-0.283, -0.065]).
+The market benchmark below remains stronger. The v1.0.0 figures that follow
+describe the earlier calibration run and are retained as provenance.
+
 The committed 2024–2025 walk-forward evaluation contains 544 games. For the
 Current-OVR model at HFA 1.5—the calibration run's lowest-MAE grid point—it
 records pooled MAE `10.2555`, RMSE `13.1498`, straight-up winner accuracy
@@ -170,7 +177,7 @@ guarantee of future performance or a calibrated uncertainty interval.
 ## Artifact, producer, and consumers
 
 The production artifact uses schema `nfl-matchup-projections-v2` and model
-version `jkb-power-number-v1.0.0`. For every game it carries the two Current
+version `jkb-power-number-v1.1.0`. For every game it carries the two Current
 OVRs, league-average OVR, Power Numbers, neutral margin, HFA, unrounded expected
 home margin, and display spread. The producer rebuilds Current OVR from:
 

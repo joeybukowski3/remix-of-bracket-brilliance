@@ -42,9 +42,11 @@ import {
 import {
   buildPerformanceRatingBoard,
   PERFORMANCE_SCALE_DIVISORS,
+  type TeamPerformanceGameEvidence,
   type TeamPerformanceSeasonEntry,
 } from "../src/lib/nfl/performanceComposite2026.ts";
 import {
+  CURRENT_PERFORMANCE_MODEL_META,
   OFFENSE_METRIC_RANK_DIRECTIONS,
   DEFENSE_METRIC_RANK_DIRECTIONS,
   TEAM_PERFORMANCE_ANALYTICS_SCHEMA_VERSION,
@@ -239,18 +241,29 @@ export async function generateTeamPerformanceAnalytics(season: number): Promise<
 
   // Build the composite board only from teams with at least 1 completed game.
   const playedTeams = allAbbrs.filter((t) => (rowsByTeam.get(t)?.length ?? 0) > 0);
+  // Per-game evidence for the leave-one-out opponent adjustment. The team-game CSV rows are the
+  // source of truth for which games exist (they also feed the season metrics); the final margin is
+  // joined from results.json by game id, and the opponent's row for the same game is what this
+  // team's defense allowed. A game without a final result or opponent row is a hard error: a
+  // silently shorter sample would corrupt both the raw metrics and the exclusion.
   const seasonEntries: TeamPerformanceSeasonEntry[] = playedTeams.map((team) => {
-    const games = finalGamesByTeam.get(team) ?? [];
-    const pointDifferentialPerGame = games.length > 0 ? games.reduce((s, g) => s + g.margin, 0) / games.length : 0;
-    return {
-      team,
-      metrics: fullSeasonMetricsByTeam.get(team)!,
-      opponents: games.map((g) => g.opponent),
-      pointDifferentialPerGame,
-    };
+    const finalByGameId = new Map((finalGamesByTeam.get(team) ?? []).map((g) => [g.gameId, g]));
+    const games: TeamPerformanceGameEvidence[] = (rowsByTeam.get(team) ?? []).map((row) => {
+      const final = finalByGameId.get(row.gameId);
+      const opponentRow = rowsByGameTeam.get(`${row.gameId}|${row.opponent}`);
+      if (!final) throw new Error(`performance analytics ${team}: no final result for ${row.gameId}`);
+      if (!opponentRow) throw new Error(`performance analytics ${team}: no opponent team-game row for ${row.gameId}`);
+      return {
+        opponent: row.opponent,
+        margin: final.margin,
+        offense: { all: row.all, filtered: row.filtered },
+        defenseAllowed: { all: opponentRow.all, filtered: opponentRow.filtered },
+      };
+    });
+    return { team, metrics: fullSeasonMetricsByTeam.get(team)!, games };
   });
-  const board = playedTeams.length > 0 ? buildPerformanceRatingBoard(seasonEntries) : { rows: [], scaleDivisors: PERFORMANCE_SCALE_DIVISORS };
-  const boardRowByTeam = new Map(board.rows.map((r) => [r.team, r]));
+  const board = playedTeams.length > 0 ? buildPerformanceRatingBoard(seasonEntries) : null;
+  const boardRowByTeam = new Map((board?.rows ?? []).map((r) => [r.team, r]));
 
   // Full-season 9+9 metric ranks (played teams only), with correct direction per metric.
   function collect(pick: (team: string) => number | null): Map<string, number | null> {
@@ -350,10 +363,11 @@ export async function generateTeamPerformanceAnalytics(season: number): Promise<
       throughWeek: compactRows.length ? Math.max(...compactRows.map((row) => row.week)) : null,
       includedGameCount: new Set(compactRows.map((row) => row.gameId)).size,
       source: "nflverse (play-by-play, nflfastR EPA + traditional Success Rate + drives) + public/data/nfl results.json",
+      ...CURRENT_PERFORMANCE_MODEL_META,
       ratingFormula:
         "OFF = mean(z(EPA/Play, garbage-time-filtered, opponent-adjusted), z(Traditional Success Rate, filtered, adjusted), z(Explosive Rate, unfiltered, adjusted)); " +
-        "DEF = mean(-z(same 3 metrics, allowed)); Overall = 0.40*OFF + 0.40*DEF + 0.20*z(opponent-adjusted Point Differential/Game); " +
-        "opponent adjustment applied only at the fullSeason window (v0.3.1-style: raw - (opponentMean - leagueMean)); " +
+        "DEF = mean(-z(same 3 metrics, allowed)); Overall = 0.40*OFF + 0.20*DEF + 0.40*z(opponent-adjusted Point Differential/Game); " +
+        "opponent adjustment applied only at the fullSeason window and leave-one-out: raw - (mean over the team's games of the opponent's comparison value EXCLUDING that game - leagueMean); " +
         "scale = 50 + 15*(compositeZ / divisor), clamped [1, 99].",
       scaleDivisors: PERFORMANCE_SCALE_DIVISORS,
     },

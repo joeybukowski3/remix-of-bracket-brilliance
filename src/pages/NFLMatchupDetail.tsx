@@ -373,7 +373,7 @@ export default function NFLMatchupDetail() {
     () => (matchup ? deriveAdvantages(matchup, modelRatings) : []),
     [matchup, modelRatings]
   );
-  const angles = useMemo(() => (matchup ? deriveAngles(matchup) : []), [matchup]);
+  const angles = useMemo(() => (matchup ? deriveAngles(matchup, modelRatings) : []), [matchup, modelRatings]);
 
   if (loading) {
     return <p className="text-sm text-slate-500">Loading matchup…</p>;

@@ -1,4 +1,5 @@
 import MatchupSection from "@/components/nfl/matchups/MatchupSection";
+import { JKB_POWER_NUMBER_MODEL_VERSION } from "@/lib/nfl/jkbPowerNumber2026";
 import MatchupPendingNote from "@/components/nfl/matchups/MatchupPendingNote";
 import {
   compareToMarket,
@@ -159,7 +160,7 @@ export default function MatchupModelAnalysis({
       </div>
 
       <MatchupPendingNote>
-        {modelVersion ?? "jkb-power-number-v1.0.0"} projects scoring margin from each team's Power
+        {modelVersion ?? JKB_POWER_NUMBER_MODEL_VERSION} projects scoring margin from each team's Power
         Number — how many points better or worse than the current league-average NFL team it is,
         derived from the canonical Current OVR board — plus a fixed 2.0-point home-field adjustment.
         No sportsbook line, moneyline, total or ATS record is used as an input. Backtesting has not

@@ -26,7 +26,7 @@ const COACHING_AGREEMENT_OPTIONS = ["all", "agree", "disagree", "even"] as const
 /**
  * WU6 -- detailed Sides (spread) performance view, backed by the dedicated
  * canonical artifact public/data/nfl/performance/sides.json (live side model
- * jkb-power-number-v1.0.0). It never parses the raw spread archive; every
+ * jkb-power-number-v1.1.0; v1.0.0 history included). It never parses the raw spread archive; every
  * row/metric/bucket is read verbatim from that artifact.
  */
 export default function NflPerformanceSidesTab({
@@ -80,6 +80,9 @@ export default function NflPerformanceSidesTab({
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
         <span>
           Model: <span className="font-semibold text-slate-700">{performanceMeta.liveModelVersion}</span>
+          {performanceMeta.modelVersions.length > 1 && (
+            <span className="text-slate-400"> · results span {performanceMeta.modelVersions.join(", ")}</span>
+          )}
         </span>
         {performanceMeta.latestOutcomeTimestamp && (
           <span>Latest grade: {formatNflMetadataTimestamp(performanceMeta.latestOutcomeTimestamp)}</span>

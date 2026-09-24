@@ -1,6 +1,20 @@
 /**
- * Performance Rating engine — composite + 1-99 public scale.
- * Model identity: nfl-current-ovr-v1.1.0 (see currentOvrModelVersion.ts).
+ * FROZEN LEGACY COPY — nfl-current-ovr-v1.0.0 performance composite.
+ *
+ * Verbatim copy of src/lib/nfl/performanceComposite2026.ts as it stood on
+ * 2026-09-24 (40% OFF / 40% DEF / 20% PD, one-pass season-to-date opponent
+ * adjustment, overall divisor 0.7224159319378768), kept ONLY so that
+ * historical analysis scripts in scripts/analysis/ (the 2026-08-19
+ * Current-OVR spread calibration and the nfl-current-ovr-v1.1.0 backtest's
+ * "old model" baseline) remain reproducible.
+ *
+ * This is NOT a production path: nothing under src/ or the production
+ * generators may import it (enforced by
+ * src/lib/nfl/currentOvrCanonicalPath.test.ts). The live composite is
+ * src/lib/nfl/performanceComposite2026.ts.
+ */
+/**
+ * Performance Rating engine (Phase 5) — composite + 1-99 public scale.
  *
  * Consumes the full 9+9 metric bundle from performanceMetricsCore2026.ts but
  * the APPROVED composite (Model C from the 2026 Performance Model Backtest)
@@ -8,19 +22,15 @@
  *
  *   OFF Performance = mean( z(EPA/Play), z(Traditional Success Rate), z(Explosive Rate) )
  *   DEF Performance = mean( z(-EPA/Play Allowed), z(-Success Rate Allowed), z(-Explosive Rate Allowed) )
- *   Overall Performance = 0.40 * OFF + 0.20 * DEF + 0.40 * z(opponent-adjusted Point Differential/Game)
- *
- * (v1.1.0 re-weighted the top-level composite from 40/40/20 to 40/20/40 after
- * the 2026-09 Current-OVR forensic audit: opponent-adjusted defense carried
- * almost no forward signal, point differential the most. OFF/DEF component
- * calculations and sub-weights are unchanged.)
+ *   Overall Performance = 0.40 * OFF + 0.40 * DEF + 0.20 * z(opponent-adjusted Point Differential/Game)
  *
  * All other 6 offense + 6 defense metrics (Points/Drive, Early Down,
  * Passing/Rushing Efficiency, Third-Down Performance, Sack Rate, and the
  * EPA>0 diagnostic) remain fully computable via performanceMetricsCore2026.ts
  * but do NOT enter this composite — the backtest found they add no
- * out-of-sample predictive value once EPA + SR + Explosive are present.
- * Display-only, by design.
+ * out-of-sample predictive value once EPA + SR + Explosive are present
+ * (Points/Drive is r=0.96 collinear with EPA/Play; the rest tested flat-to-
+ * negative marginal lift). Display-only, by design.
  *
  * GARBAGE-TIME FILTER TREATMENT (backtest §6/§22 — empirically decided, not
  * assumed): EPA/Play and Success Rate use the garbage-time-FILTERED bundle
@@ -28,52 +38,38 @@
  * UNFILTERED bundle (`offense.all` / `defenseAllowed.all`) because filtering
  * measurably hurt its out-of-sample predictive power in the backtest.
  *
- * OPPONENT ADJUSTMENT — LEAVE-ONE-OUT (v1.1.0). Applied ONLY at full-season
- * granularity (the backtest found opponent adjustment harmful at 9-game
- * half-season granularity, so no L4/L8 variant exists here):
- *
- *   adjusted = raw - (mean over the team's games of the opponent's comparison
- *                     value EXCLUDING that game  -  league mean comparison)
- *
- * Offense compares against opponents' matching defense-allowed metric, defense
- * against opponents' matching offense metric, point differential against
- * opponents' own point differential. The exclusion is the whole point: the
- * pre-v1.1.0 one-pass method used each opponent's season-to-date aggregate,
- * which INCLUDES the game against the team being adjusted, so the game
- * partially graded itself (100% at one game played, 50% at two, 1/n in general).
- * After Week 1 that subtracted each team's entire offensive and defensive
- * signal, leaving only the league mean — dozens of teams received identical
- * ratings and one outlier pinned at 99. With leave-one-out, a game contributes
- * NO adjustment when the opponent has no other evidence (one-game samples
- * therefore equal the raw values), and a missing opponent likewise
- * contributes no adjustment rather than being silently dropped.
+ * OPPONENT ADJUSTMENT (backtest §7/§21): applied ONLY at full-season
+ * granularity, mirroring the proven scripts/lib/nfl-power-v03-metrics.mjs
+ * method exactly (adjusted = raw - (opponentMean - leagueMean), computed
+ * against the *comparison* side — offense adjusts by opponents' matching
+ * defense-allowed metric, defense adjusts by opponents' matching offense
+ * metric, point differential adjusts by opponents' own point differential).
+ * The backtest found this same adjustment measurably *hurt* predictive power
+ * at half-season (9-game) granularity, so it is intentionally NOT offered
+ * here for L4/L8 windows — this module only opponent-adjusts full-season
+ * input. Callers building L4/L8 boards should pass raw (unadjusted) metrics
+ * and skip buildPerformanceRatingBoard for those windows.
  *
  * 1-99 SCALE: same formula family as v0.3.1
  * (`50 + 15 * (compositeZ / pooledDivisor)`, clamped [1, 99] — see
  * scripts/lib/nfl-power-v03-metrics.mjs toPublicRating /
- * src/lib/nfl/v03Review.ts publicScaleEquivalent). The offense and defense
- * divisors were fitted 2026-08-18 from the 2023-2025 historical composite
- * distribution (96 team-seasons) via
- * scripts/analysis/nfl-performance-backtest/fit-scale.mjs. The OVERALL divisor
- * was refit for v1.1.0 (scripts/analysis/nfl-current-ovr-v1.1.0/
- * fit-overall-divisor.mts) because the 40/20/40 composite is ~11% wider than
- * the 40/40/20 composite the original 0.7224 was fitted for; keeping the old
- * constant would have widened the public rating scale. The refit preserves
- * the same calibration the previous divisor had (see that script).
+ * src/lib/nfl/v03Review.ts publicScaleEquivalent). The three divisors below
+ * are refit from the real 2023-2025 historical composite distribution (96
+ * team-seasons) via scripts/analysis/nfl-performance-backtest/fit-scale.mjs,
+ * not guessed: each is the empirical population standard deviation of its
+ * own composite, so by construction the pooled historical distribution has
+ * mean exactly 50 and standard deviation exactly 15, with zero seasons
+ * clamped at 1 or 99 across 2023-2025.
  */
 
-import type { PerformancePlaySums, TeamPerformanceMetrics } from "@/lib/nfl/performanceMetricsCore2026";
-import { rankByDescending } from "@/lib/nfl/publicPowerRatings";
-import { NFL_OPPONENT_ADJUSTMENT_METHOD } from "@/lib/nfl/currentOvrModelVersion";
+import type { TeamPerformanceMetrics } from "../../../src/lib/nfl/performanceMetricsCore2026";
+import { rankByDescending } from "../../../src/lib/nfl/publicPowerRatings";
 
-/**
- * Fitted constants. offense/defense: 2026-08-18, 2023-2025 nflverse play-by-play
- * (96 team-seasons). overall: refit for nfl-current-ovr-v1.1.0. Do not hand-tune.
- */
+/** Fitted 2026-08-18 from 2023-2025 nflverse play-by-play (96 team-seasons). Do not hand-tune. */
 export const PERFORMANCE_SCALE_DIVISORS = Object.freeze({
   offense: 0.9248507883569935,
   defense: 0.8648390483639914,
-  overall: 0.8015993487311668,
+  overall: 0.7224159319378768,
 });
 
 export const PERFORMANCE_PUBLIC_SCALE = Object.freeze({
@@ -83,11 +79,10 @@ export const PERFORMANCE_PUBLIC_SCALE = Object.freeze({
   maximum: 99,
 });
 
-/** nfl-current-ovr-v1.1.0 top-level live composite weights (v1.0.0 was 0.40 / 0.40 / 0.20). */
 export const PERFORMANCE_OVERALL_WEIGHTS = Object.freeze({
   offense: 0.4,
-  defense: 0.2,
-  pointDifferential: 0.4,
+  defense: 0.4,
+  pointDifferential: 0.2,
 });
 
 const isFiniteNumber = (value: unknown): value is number =>
@@ -112,117 +107,27 @@ function stableZScore(value: number | null, league: { mean: number; standardDevi
   return (value - league.mean) / league.standardDeviation;
 }
 
-// ---------------------------------------------------------------------------
-// Inputs
-// ---------------------------------------------------------------------------
+/** v0.3.1-style opponent adjustment: raw minus (opponent mean minus league mean) of the comparison metric. */
+function adjustForOpponents(
+  raw: number | null,
+  opponentComparisonValues: readonly (number | null)[],
+  leagueComparisonMean: number | null
+): number | null {
+  if (!isFiniteNumber(raw) || !isFiniteNumber(leagueComparisonMean)) return null;
+  const finiteOpponents = opponentComparisonValues.filter(isFiniteNumber);
+  if (finiteOpponents.length === 0) return null;
+  const opponentMean = finiteOpponents.reduce((sum, v) => sum + v, 0) / finiteOpponents.length;
+  return raw - (opponentMean - leagueComparisonMean);
+}
 
-/** One side's play sums for one game: the unfiltered (`all`) and garbage-time-filtered bundles. */
-export type TeamPerformanceGameSide = { all: PerformancePlaySums; filtered: PerformancePlaySums };
-
-/**
- * Per-game evidence for one team's game — what leave-one-out needs that a
- * season aggregate cannot supply. `defenseAllowed` is by construction the
- * opponent's offense in the same game, and `offense` is the opponent's
- * defense-allowed in that game.
- */
-export type TeamPerformanceGameEvidence = {
-  opponent: string;
-  /** This team's final margin in the game (own points - opponent points). */
-  margin: number;
-  offense: TeamPerformanceGameSide;
-  defenseAllowed: TeamPerformanceGameSide;
-};
-
-/** One team's full-season input: its own season metrics plus the per-game evidence they were aggregated from. */
+/** One team's full-season input: its own metrics, the opponents it faced, and its raw point differential/game. */
 export type TeamPerformanceSeasonEntry = {
   team: string;
-  /** Season-to-date metrics; MUST be the aggregation of `games` (checked via `metrics.gamesPlayed`). */
   metrics: TeamPerformanceMetrics;
-  games: readonly TeamPerformanceGameEvidence[];
+  /** One team code per game played this season (duplicates for rematches expected). */
+  opponents: readonly string[];
+  pointDifferentialPerGame: number;
 };
-
-// ---------------------------------------------------------------------------
-// Leave-one-out opponent adjustment
-// ---------------------------------------------------------------------------
-
-type Family = "epa" | "sr" | "explosive";
-type Pair = readonly [numerator: number, denominator: number];
-
-/** Numerator/denominator for one metric family from one side's game sums (same bundles the rate math uses). */
-function pairOf(side: TeamPerformanceGameSide, family: Family): Pair {
-  switch (family) {
-    case "epa":
-      return [side.filtered.offEpa, side.filtered.offPlays];
-    case "sr":
-      return [side.filtered.successNum, side.filtered.successDen];
-    case "explosive":
-      return [side.all.explosivePass + side.all.explosiveRush, side.all.offPlays];
-  }
-}
-
-type TeamTotals = {
-  games: number;
-  margin: number;
-  /** This team's own offense, summed over its games. */
-  offense: Record<Family, Pair>;
-  /** What this team's defense allowed, summed over its games. */
-  allowed: Record<Family, Pair>;
-};
-
-const FAMILIES: readonly Family[] = ["epa", "sr", "explosive"];
-
-function addPair(a: Pair, b: Pair): Pair {
-  return [a[0] + b[0], a[1] + b[1]];
-}
-
-function totalsFor(entry: TeamPerformanceSeasonEntry): TeamTotals {
-  const zero: Pair = [0, 0];
-  const offense: Record<Family, Pair> = { epa: zero, sr: zero, explosive: zero };
-  const allowed: Record<Family, Pair> = { epa: zero, sr: zero, explosive: zero };
-  let margin = 0;
-  for (const game of entry.games) {
-    margin += game.margin;
-    for (const family of FAMILIES) {
-      offense[family] = addPair(offense[family], pairOf(game.offense, family));
-      allowed[family] = addPair(allowed[family], pairOf(game.defenseAllowed, family));
-    }
-  }
-  return { games: entry.games.length, margin, offense, allowed };
-}
-
-/**
- * The opponent's comparison value for ONE of this team's games, computed over
- * the opponent's OTHER games. Returns `leagueMean` (i.e. contributes zero
- * adjustment) when the opponent has no other evidence — the one-game case —
- * or is absent from the board entirely.
- *
- * `own` is this team's evidence for the game being excluded: the opponent's
- * defense-allowed in that game equals this team's offense there, and the
- * opponent's offense equals this team's defense-allowed.
- */
-function comparisonExcludingGame(
-  kind: { side: "offense" | "defense"; family: Family } | "pointDifferential",
-  game: TeamPerformanceGameEvidence,
-  opponent: TeamTotals | undefined,
-  leagueMean: number
-): number {
-  if (!opponent) return leagueMean;
-  if (kind === "pointDifferential") {
-    const remaining = opponent.games - 1;
-    // The opponent's margin in this game is the negative of this team's margin.
-    return remaining > 0 ? (opponent.margin + game.margin) / remaining : leagueMean;
-  }
-  const { side, family } = kind;
-  // Offense is compared with the opponent's defense-allowed; defense with the opponent's offense.
-  const totals = side === "offense" ? opponent.allowed[family] : opponent.offense[family];
-  const excluded = pairOf(side === "offense" ? game.offense : game.defenseAllowed, family);
-  const denominator = totals[1] - excluded[1];
-  return denominator > 0 ? (totals[0] - excluded[0]) / denominator : leagueMean;
-}
-
-// ---------------------------------------------------------------------------
-// Board
-// ---------------------------------------------------------------------------
 
 export type PerformanceRatingRow = {
   team: string;
@@ -263,7 +168,6 @@ export type PerformanceRatingRow = {
 export type PerformanceRatingBoard = {
   rows: PerformanceRatingRow[];
   scaleDivisors: typeof PERFORMANCE_SCALE_DIVISORS;
-  opponentAdjustment: typeof NFL_OPPONENT_ADJUSTMENT_METHOD;
 };
 
 function toPublicRating(compositeZ: number | null, divisor: number): number | null {
@@ -276,23 +180,11 @@ function toPublicRating(compositeZ: number | null, divisor: number): number | nu
 
 /**
  * Build the full-season Performance Rating board (OFF/DEF/Overall, 1-99
- * scale, ranks) from already-aggregated full-season team metrics and the
- * per-game evidence they came from. Never fetches, never mutates its inputs.
- *
- * Throws when an entry's `games` do not match its `metrics.gamesPlayed`: a
- * leave-one-out comparison against a mismatched sample would be silently wrong.
+ * scale, ranks) from already-aggregated full-season team metrics. Never
+ * fetches, never mutates its inputs.
  */
 export function buildPerformanceRatingBoard(entries: readonly TeamPerformanceSeasonEntry[]): PerformanceRatingBoard {
-  for (const entry of entries) {
-    if (entry.games.length !== entry.metrics.gamesPlayed) {
-      throw new Error(
-        `buildPerformanceRatingBoard: ${entry.team} has ${entry.games.length} game(s) of evidence but metrics.gamesPlayed=${entry.metrics.gamesPlayed}`
-      );
-    }
-  }
-
-  const totalsByTeam = new Map(entries.map((e) => [e.team, totalsFor(e)]));
-  const pointDiffRaw = entries.map((e) => (e.games.length > 0 ? totalsByTeam.get(e.team)!.margin / e.games.length : null));
+  const byTeam = new Map(entries.map((e) => [e.team, e]));
 
   const offEpaRaw = entries.map((e) => e.metrics.offense.filtered.epaPerPlay);
   const offSrRaw = entries.map((e) => e.metrics.offense.filtered.successRate);
@@ -300,6 +192,7 @@ export function buildPerformanceRatingBoard(entries: readonly TeamPerformanceSea
   const defEpaRaw = entries.map((e) => e.metrics.defenseAllowed.filtered.epaPerPlay);
   const defSrRaw = entries.map((e) => e.metrics.defenseAllowed.filtered.successRate);
   const defExpRaw = entries.map((e) => e.metrics.defenseAllowed.all.explosiveRate);
+  const pointDiffRaw = entries.map((e) => e.pointDifferentialPerGame);
 
   const leagueOffEpa = leagueMeanAndStandardDeviation(offEpaRaw);
   const leagueOffSr = leagueMeanAndStandardDeviation(offSrRaw);
@@ -309,29 +202,48 @@ export function buildPerformanceRatingBoard(entries: readonly TeamPerformanceSea
   const leagueDefExp = leagueMeanAndStandardDeviation(defExpRaw);
   const leaguePointDiff = leagueMeanAndStandardDeviation(pointDiffRaw);
 
-  /** raw - (mean opponent comparison excluding the game - league comparison mean). Null when raw or the league mean is unavailable. */
-  function adjust(
-    entry: TeamPerformanceSeasonEntry,
-    raw: number | null,
-    kind: { side: "offense" | "defense"; family: Family } | "pointDifferential",
-    leagueComparisonMean: number | null
-  ): number | null {
-    if (!isFiniteNumber(raw) || !isFiniteNumber(leagueComparisonMean) || entry.games.length === 0) return null;
-    const comparisons = entry.games.map((game) =>
-      comparisonExcludingGame(kind, game, totalsByTeam.get(game.opponent), leagueComparisonMean)
-    );
-    const mean = comparisons.reduce((sum, v) => sum + v, 0) / comparisons.length;
-    return raw - (mean - leagueComparisonMean);
+  function opponentValues(team: string, pick: (m: TeamPerformanceMetrics) => number | null): (number | null)[] {
+    const entry = byTeam.get(team);
+    if (!entry) return [];
+    return entry.opponents.map((opp) => {
+      const oppEntry = byTeam.get(opp);
+      return oppEntry ? pick(oppEntry.metrics) : null;
+    });
   }
 
-  const adjusted = entries.map((entry, i) => {
-    const offEpaAdj = adjust(entry, offEpaRaw[i], { side: "offense", family: "epa" }, leagueDefEpa?.mean ?? null);
-    const offSrAdj = adjust(entry, offSrRaw[i], { side: "offense", family: "sr" }, leagueDefSr?.mean ?? null);
-    const offExpAdj = adjust(entry, offExpRaw[i], { side: "offense", family: "explosive" }, leagueDefExp?.mean ?? null);
-    const defEpaAdj = adjust(entry, defEpaRaw[i], { side: "defense", family: "epa" }, leagueOffEpa?.mean ?? null);
-    const defSrAdj = adjust(entry, defSrRaw[i], { side: "defense", family: "sr" }, leagueOffSr?.mean ?? null);
-    const defExpAdj = adjust(entry, defExpRaw[i], { side: "defense", family: "explosive" }, leagueOffExp?.mean ?? null);
-    const pointDiffAdj = adjust(entry, pointDiffRaw[i], "pointDifferential", leaguePointDiff?.mean ?? null);
+  const adjusted = entries.map((entry) => {
+    const offEpaAdj = adjustForOpponents(
+      entry.metrics.offense.filtered.epaPerPlay,
+      opponentValues(entry.team, (m) => m.defenseAllowed.filtered.epaPerPlay),
+      leagueDefEpa?.mean ?? null
+    );
+    const offSrAdj = adjustForOpponents(
+      entry.metrics.offense.filtered.successRate,
+      opponentValues(entry.team, (m) => m.defenseAllowed.filtered.successRate),
+      leagueDefSr?.mean ?? null
+    );
+    const offExpAdj = adjustForOpponents(
+      entry.metrics.offense.all.explosiveRate,
+      opponentValues(entry.team, (m) => m.defenseAllowed.all.explosiveRate),
+      leagueDefExp?.mean ?? null
+    );
+    const defEpaAdj = adjustForOpponents(
+      entry.metrics.defenseAllowed.filtered.epaPerPlay,
+      opponentValues(entry.team, (m) => m.offense.filtered.epaPerPlay),
+      leagueOffEpa?.mean ?? null
+    );
+    const defSrAdj = adjustForOpponents(
+      entry.metrics.defenseAllowed.filtered.successRate,
+      opponentValues(entry.team, (m) => m.offense.filtered.successRate),
+      leagueOffSr?.mean ?? null
+    );
+    const defExpAdj = adjustForOpponents(
+      entry.metrics.defenseAllowed.all.explosiveRate,
+      opponentValues(entry.team, (m) => m.offense.all.explosiveRate),
+      leagueOffExp?.mean ?? null
+    );
+    const opponentPointDiffs = entry.opponents.map((opp) => byTeam.get(opp)?.pointDifferentialPerGame ?? null);
+    const pointDiffAdj = adjustForOpponents(entry.pointDifferentialPerGame, opponentPointDiffs, leaguePointDiff?.mean ?? null);
     return { team: entry.team, offEpaAdj, offSrAdj, offExpAdj, defEpaAdj, defSrAdj, defExpAdj, pointDiffAdj };
   });
 
@@ -407,7 +319,7 @@ export function buildPerformanceRatingBoard(entries: readonly TeamPerformanceSea
         compositeZ: defCompositeZ,
       },
       pointDifferential: {
-        raw: pointDiffRaw[i] ?? 0,
+        raw: entry.pointDifferentialPerGame,
         adjusted: a.pointDiffAdj,
         z: c.pointDiffZ,
       },
@@ -437,5 +349,5 @@ export function buildPerformanceRatingBoard(entries: readonly TeamPerformanceSea
     row.performanceRank = overallRanks.get(row.team) ?? null;
   }
 
-  return { rows, scaleDivisors: PERFORMANCE_SCALE_DIVISORS, opponentAdjustment: NFL_OPPONENT_ADJUSTMENT_METHOD };
+  return { rows, scaleDivisors: PERFORMANCE_SCALE_DIVISORS };
 }

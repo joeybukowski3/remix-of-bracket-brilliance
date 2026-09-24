@@ -86,16 +86,29 @@ describe("generateTeamPerformanceAnalytics — 2026", () => {
     expect(() => validateTeamPerformanceAnalyticsArtifact(artifact)).not.toThrow();
   });
 
-  it("9. divisors in the artifact exactly match the approved Phase 5 constants (no re-fit)", async () => {
+  it("9. divisors in the artifact exactly match the committed constants (offense/defense unchanged, overall = v1.1.0 refit)", async () => {
     const artifact = await generateTeamPerformanceAnalytics(2026);
     expect(artifact._meta.scaleDivisors).toEqual(PERFORMANCE_SCALE_DIVISORS);
     expect(PERFORMANCE_SCALE_DIVISORS.offense).toBeCloseTo(0.92485, 5);
     expect(PERFORMANCE_SCALE_DIVISORS.defense).toBeCloseTo(0.86484, 5);
-    expect(PERFORMANCE_SCALE_DIVISORS.overall).toBeCloseTo(0.72242, 5);
+    expect(PERFORMANCE_SCALE_DIVISORS.overall).toBeCloseTo(0.8016, 4);
   });
 
-  it("10. Overall weights are exactly 40/40/20", async () => {
-    expect(PERFORMANCE_OVERALL_WEIGHTS).toEqual({ offense: 0.4, defense: 0.4, pointDifferential: 0.2 });
+  it("10. Overall weights are exactly 40/20/40 (nfl-current-ovr-v1.1.0) and the artifact says so", async () => {
+    expect(PERFORMANCE_OVERALL_WEIGHTS).toEqual({ offense: 0.4, defense: 0.2, pointDifferential: 0.4 });
+    const artifact = await generateTeamPerformanceAnalytics(2026);
+    expect(artifact._meta.overallWeights).toEqual({ offense: 0.4, defense: 0.2, pointDifferential: 0.4 });
+    expect(artifact._meta.currentOvrModelVersion).toBe("nfl-current-ovr-v1.1.0");
+    expect(artifact._meta.opponentAdjustment).toBe("leave-one-out-v1");
+    expect(artifact._meta.ratingFormula).toMatch(/0\.40\*OFF \+ 0\.20\*DEF \+ 0\.40\*z/);
+    expect(artifact._meta.ratingFormula).toMatch(/EXCLUDING that game/);
+  });
+
+  it("10b. the published performance ratings are the production board's, not a second calculation (per-team OFF/DEF/overall ratings are finite and consistently ranked)", async () => {
+    const artifact = await generateTeamPerformanceAnalytics(2026);
+    const played = artifact.teams.filter((t) => t.gamesPlayed > 0);
+    const byRating = [...played].sort((a, b) => (b.performance.performanceRating as number) - (a.performance.performanceRating as number));
+    byRating.forEach((team, i) => expect(team.performance.performanceRank).toBe(i + 1));
   });
 
   it("11. the generator is deterministic for the same input (ignoring generatedAt)", async () => {

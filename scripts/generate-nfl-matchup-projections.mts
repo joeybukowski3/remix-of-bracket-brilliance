@@ -1,6 +1,6 @@
 /**
  * Generate public/data/nfl/matchup-projections.json — the canonical public
- * JKB Projected Spread (jkb-power-number-v1.0.0).
+ * JKB Projected Spread (jkb-power-number-v1.1.0).
  *
  * REPLACES the nfl-spread-v0.1.0 shadow composite as the authoritative
  * public spread generator. That model's own code (scripts/lib/nfl-spread-
@@ -37,6 +37,7 @@ import { validateNflV03ReviewArtifact } from "../src/lib/nfl/v03Review.ts";
 import { validateNflV04ProjectionArtifact } from "../src/lib/nfl/v04Projection.ts";
 import { buildPublicProjectionBoard } from "../src/lib/nfl/publicProjection2026.ts";
 import { validateTeamPerformanceAnalyticsArtifact } from "../src/lib/nfl/teamPerformanceAnalytics.ts";
+import { NFL_CURRENT_OVR_MODEL_VERSION } from "../src/lib/nfl/currentOvrModelVersion.ts";
 import {
   HOME_FIELD_ADVANTAGE_POINTS,
   JKB_POWER_NUMBER_MODEL_VERSION,
@@ -220,6 +221,7 @@ function main() {
       homeFieldAdvantage: HOME_FIELD_ADVANTAGE_POINTS,
       neutralSiteHomeFieldAdvantage: 0,
       leagueAverageOVR: powerBoard.leagueAverageOVR,
+      currentOvrModelVersion: NFL_CURRENT_OVR_MODEL_VERSION,
       strengthInput: "canonical universal Current OVR (src/lib/nfl/currentRating2026.ts)",
       fittedParameters: [] as string[],
       marketInputUsed: false,
@@ -269,7 +271,7 @@ function main() {
         home_power_number: projection.homePowerNumber, away_power_number: projection.awayPowerNumber, home_field_adjustment: projection.homeFieldAdvantage,
       },
       feature_snapshot: {
-        values: { home_current_rating: homeState as unknown as JsonValue, away_current_rating: awayState as unknown as JsonValue, league_average_ovr: powerBoard.leagueAverageOVR, ovr_to_points_coefficient: OVR_TO_POINTS_COEFFICIENT, home_field_adjustment: projection.homeFieldAdvantage },
+        values: { home_current_rating: homeState as unknown as JsonValue, away_current_rating: awayState as unknown as JsonValue, league_average_ovr: powerBoard.leagueAverageOVR, ovr_to_points_coefficient: OVR_TO_POINTS_COEFFICIENT, home_field_adjustment: projection.homeFieldAdvantage, current_ovr_model_version: NFL_CURRENT_OVR_MODEL_VERSION },
         source_manifest_hashes: { spread_run: sourceManifest.hash }, fitted_model_hash: null,
       },
       market_reference_status: marketRefs.length > 0 ? "available" : "missing", market_snapshot_refs: marketRefs,

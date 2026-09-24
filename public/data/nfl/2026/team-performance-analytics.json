@@ -2,15 +2,22 @@
   "schemaVersion": "nfl-performance-v1",
   "_meta": {
     "season": 2026,
-    "generatedAt": "2026-09-22T20:21:23.806Z",
+    "generatedAt": "2026-09-24T17:00:49.270Z",
     "throughWeek": 2,
     "includedGameCount": 32,
     "source": "nflverse (play-by-play, nflfastR EPA + traditional Success Rate + drives) + public/data/nfl results.json",
-    "ratingFormula": "OFF = mean(z(EPA/Play, garbage-time-filtered, opponent-adjusted), z(Traditional Success Rate, filtered, adjusted), z(Explosive Rate, unfiltered, adjusted)); DEF = mean(-z(same 3 metrics, allowed)); Overall = 0.40*OFF + 0.40*DEF + 0.20*z(opponent-adjusted Point Differential/Game); opponent adjustment applied only at the fullSeason window (v0.3.1-style: raw - (opponentMean - leagueMean)); scale = 50 + 15*(compositeZ / divisor), clamped [1, 99].",
+    "currentOvrModelVersion": "nfl-current-ovr-v1.1.0",
+    "opponentAdjustment": "leave-one-out-v1",
+    "overallWeights": {
+      "offense": 0.4,
+      "defense": 0.2,
+      "pointDifferential": 0.4
+    },
+    "ratingFormula": "OFF = mean(z(EPA/Play, garbage-time-filtered, opponent-adjusted), z(Traditional Success Rate, filtered, adjusted), z(Explosive Rate, unfiltered, adjusted)); DEF = mean(-z(same 3 metrics, allowed)); Overall = 0.40*OFF + 0.20*DEF + 0.40*z(opponent-adjusted Point Differential/Game); opponent adjustment applied only at the fullSeason window and leave-one-out: raw - (mean over the team's games of the opponent's comparison value EXCLUDING that game - leagueMean); scale = 50 + 15*(compositeZ / divisor), clamped [1, 99].",
     "scaleDivisors": {
       "offense": 0.9248507883569935,
       "defense": 0.8648390483639914,
-      "overall": 0.7224159319378768
+      "overall": 0.8015993487311668
     }
   },
   "teams": [
@@ -286,18 +293,18 @@
           "pointsPerDriveAllowed": 2.25,
           "adjusted": {
             "offense": {
-              "epaPerPlay": 0.07421731800993903,
-              "successRate": 0.4910390011507659,
-              "explosiveRate": 0.11174106424139636
+              "epaPerPlay": 0.11756331974187294,
+              "successRate": 0.5186209202751368,
+              "explosiveRate": 0.10423320718168272
             },
             "defenseAllowed": {
-              "epaPerPlay": 0.07309411216235355,
-              "successRate": 0.45652918602972753,
-              "explosiveRate": 0.12442229745840797
+              "epaPerPlay": 0.1200796311872357,
+              "successRate": 0.45107582704377874,
+              "explosiveRate": 0.13326530126134828
             },
             "pointDifferentialPerGame": {
               "raw": -6,
-              "adjusted": -6.75
+              "adjusted": -1.5
             }
           },
           "metricRanks": {
@@ -329,12 +336,12 @@
         }
       },
       "performance": {
-        "offenseRating": 55.70783377151723,
-        "offenseRank": 12,
-        "defenseRating": 44.1476509649566,
+        "offenseRating": 54.47135866880454,
+        "offenseRank": 13,
+        "defenseRating": 45.34000658028761,
         "defenseRank": 19,
-        "performanceRating": 48.30850227979593,
-        "performanceRank": 18
+        "performanceRating": 50.279819984694385,
+        "performanceRank": 14
       }
     },
     {
@@ -609,18 +616,18 @@
           "pointsPerDriveAllowed": 1.6666666666666667,
           "adjusted": {
             "offense": {
-              "epaPerPlay": -0.28987563123235716,
-              "successRate": 0.36807539378465537,
-              "explosiveRate": 0.08793292059378532
+              "epaPerPlay": -0.5514693880466326,
+              "successRate": 0.2878212097311713,
+              "explosiveRate": 0.06259208739959596
             },
             "defenseAllowed": {
-              "epaPerPlay": 0.03204231365831975,
-              "successRate": 0.4302997244644631,
-              "explosiveRate": 0.10441089801798756
+              "epaPerPlay": 0.08415205673620552,
+              "successRate": 0.40817518531894154,
+              "explosiveRate": 0.09257493556283006
             },
             "pointDifferentialPerGame": {
               "raw": -19,
-              "adjusted": -18.75
+              "adjusted": 0.5
             }
           },
           "metricRanks": {
@@ -652,12 +659,12 @@
         }
       },
       "performance": {
-        "offenseRating": 12.906826372552935,
+        "offenseRating": 16.469474658762756,
         "offenseRank": 32,
-        "defenseRating": 56.922797660640086,
+        "defenseRating": 55.44393442166956,
         "defenseRank": 13,
-        "performanceRating": 29.286873854095777,
-        "performanceRank": 30
+        "performanceRating": 35.95965274249459,
+        "performanceRank": 29
       }
     },
     {
@@ -932,18 +939,18 @@
           "pointsPerDriveAllowed": 2.238095238095238,
           "adjusted": {
             "offense": {
-              "epaPerPlay": 0.0764411800059841,
-              "successRate": 0.500191054525498,
-              "explosiveRate": 0.11920424229953182
+              "epaPerPlay": 0.1262486030276737,
+              "successRate": 0.5267709665489583,
+              "explosiveRate": 0.119267104395976
             },
             "defenseAllowed": {
-              "epaPerPlay": -0.05292306989013261,
-              "successRate": 0.42811033128878007,
-              "explosiveRate": 0.10759276087477301
+              "epaPerPlay": -0.12221893943761374,
+              "successRate": 0.4125675574139563,
+              "explosiveRate": 0.10282987670012414
             },
             "pointDifferentialPerGame": {
               "raw": 5.5,
-              "adjusted": 9.25
+              "adjusted": 7.5
             }
           },
           "metricRanks": {
@@ -975,12 +982,12 @@
         }
       },
       "performance": {
-        "offenseRating": 59.04297078814652,
-        "offenseRank": 10,
-        "defenseRating": 62.938197512754805,
-        "defenseRank": 7,
-        "performanceRating": 63.3094233561795,
-        "performanceRank": 5
+        "offenseRating": 57.25680776832477,
+        "offenseRank": 11,
+        "defenseRating": 60.68869630119717,
+        "defenseRank": 10,
+        "performanceRating": 59.546419257419345,
+        "performanceRank": 8
       }
     },
     {
@@ -1255,18 +1262,18 @@
           "pointsPerDriveAllowed": 3.1,
           "adjusted": {
             "offense": {
-              "epaPerPlay": 0.21906485891117036,
-              "successRate": 0.5260127297095573,
-              "explosiveRate": 0.13834975713338632
+              "epaPerPlay": 0.38678060779695045,
+              "successRate": 0.5709530946760918,
+              "explosiveRate": 0.16271502460622284
             },
             "defenseAllowed": {
-              "epaPerPlay": 0.11872039791840178,
-              "successRate": 0.47332411058594287,
-              "explosiveRate": 0.1223150603522716
+              "epaPerPlay": 0.2236197848455071,
+              "successRate": 0.49275750742646046,
+              "explosiveRate": 0.12780253062847427
             },
             "pointDifferentialPerGame": {
               "raw": 7.5,
-              "adjusted": 14.5
+              "adjusted": 14
             }
           },
           "metricRanks": {
@@ -1298,12 +1305,12 @@
         }
       },
       "performance": {
-        "offenseRating": 75.61360818276455,
+        "offenseRating": 72.82303707738384,
         "offenseRank": 2,
-        "defenseRating": 38.47311379117846,
+        "defenseRating": 39.19910787630857,
         "defenseRank": 22,
-        "performanceRating": 61.489009089178936,
-        "performanceRank": 7
+        "performanceRating": 65.46548230090079,
+        "performanceRank": 2
       }
     },
     {
@@ -1578,18 +1585,18 @@
           "pointsPerDriveAllowed": 2.1538461538461537,
           "adjusted": {
             "offense": {
-              "epaPerPlay": 0.18429046359052736,
-              "successRate": 0.5213293425835397,
-              "explosiveRate": 0.12286351795052354
+              "epaPerPlay": 0.31843781092991646,
+              "successRate": 0.571205150351954,
+              "explosiveRate": 0.13087633846334404
             },
             "defenseAllowed": {
-              "epaPerPlay": 0.21802630354159425,
-              "successRate": 0.5510925508862493,
-              "explosiveRate": 0.11048795557913325
+              "epaPerPlay": 0.3108774193430102,
+              "successRate": 0.6023590407543304,
+              "explosiveRate": 0.10071401311165781
             },
             "pointDifferentialPerGame": {
               "raw": 4.5,
-              "adjusted": 10
+              "adjusted": 11
             }
           },
           "metricRanks": {
@@ -1621,12 +1628,12 @@
         }
       },
       "performance": {
-        "offenseRating": 68.8324433183742,
-        "offenseRank": 3,
-        "defenseRating": 21.32650692790252,
-        "defenseRank": 31,
-        "performanceRating": 48.5976735750201,
-        "performanceRank": 17
+        "offenseRating": 66.7282121223428,
+        "offenseRank": 4,
+        "defenseRating": 30.990900872692734,
+        "defenseRank": 28,
+        "performanceRating": 59.32515298614962,
+        "performanceRank": 9
       }
     },
     {
@@ -1901,18 +1908,18 @@
           "pointsPerDriveAllowed": 2.090909090909091,
           "adjusted": {
             "offense": {
-              "epaPerPlay": 0.13071899439294957,
-              "successRate": 0.4757529323643468,
-              "explosiveRate": 0.13236775402950768
+              "epaPerPlay": 0.36277794782152856,
+              "successRate": 0.5237919505366735,
+              "explosiveRate": 0.149312054876581
             },
             "defenseAllowed": {
-              "epaPerPlay": -0.04890643199122289,
-              "successRate": 0.47661867912636574,
-              "explosiveRate": 0.15851610942408392
+              "epaPerPlay": -0.1134842692952991,
+              "successRate": 0.4947064106710232,
+              "explosiveRate": 0.19591711732834835
             },
             "pointDifferentialPerGame": {
               "raw": 8,
-              "adjusted": 0
+              "adjusted": -16
             }
           },
           "metricRanks": {
@@ -1944,12 +1951,12 @@
         }
       },
       "performance": {
-        "offenseRating": 62.54788783400685,
-        "offenseRank": 9,
-        "defenseRating": 41.101575725048676,
+        "offenseRating": 67.36213702504332,
+        "offenseRank": 3,
+        "defenseRating": 41.34881016350553,
         "defenseRank": 20,
-        "performanceRating": 52.16452544900108,
-        "performanceRank": 13
+        "performanceRating": 47.84514979330726,
+        "performanceRank": 18
       }
     },
     {
@@ -2224,18 +2231,18 @@
           "pointsPerDriveAllowed": 1.1818181818181819,
           "adjusted": {
             "offense": {
-              "epaPerPlay": -0.06064081710415767,
-              "successRate": 0.49309987231631575,
-              "explosiveRate": 0.12110982682782769
+              "epaPerPlay": -0.12638615926848765,
+              "successRate": 0.5215373181841219,
+              "explosiveRate": 0.12673016108593282
             },
             "defenseAllowed": {
-              "epaPerPlay": -0.030293899462763563,
-              "successRate": 0.4560273921528608,
-              "explosiveRate": 0.11996823529417894
+              "epaPerPlay": -0.06031344758050841,
+              "successRate": 0.45484987148539224,
+              "explosiveRate": 0.11926893459487824
             },
             "pointDifferentialPerGame": {
               "raw": 10,
-              "adjusted": 17.25
+              "adjusted": 14.5
             }
           },
           "metricRanks": {
@@ -2267,11 +2274,11 @@
         }
       },
       "performance": {
-        "offenseRating": 50.92811281024214,
+        "offenseRating": 51.28214173954431,
         "offenseRank": 16,
-        "defenseRating": 53.33892874286006,
+        "defenseRating": 52.98769384994272,
         "defenseRank": 14,
-        "performanceRating": 56.70470963845294,
+        "performanceRating": 58.758977835348574,
         "performanceRank": 10
       }
     },
@@ -2547,18 +2554,18 @@
           "pointsPerDriveAllowed": 2.65,
           "adjusted": {
             "offense": {
-              "epaPerPlay": -0.13068377563371625,
-              "successRate": 0.3811850481342157,
-              "explosiveRate": 0.06050605092847794
+              "epaPerPlay": -0.2419644687391187,
+              "successRate": 0.3340703166613927,
+              "explosiveRate": 0.01180748572941423
             },
             "defenseAllowed": {
-              "epaPerPlay": 0.03717760685141721,
-              "successRate": 0.4978777287787392,
-              "explosiveRate": 0.1349797443763076
+              "epaPerPlay": 0.0900371585727569,
+              "successRate": 0.5245191429201533,
+              "explosiveRate": 0.1564054677757152
             },
             "pointDifferentialPerGame": {
               "raw": -10,
-              "adjusted": -11.75
+              "adjusted": -3.5
             }
           },
           "metricRanks": {
@@ -2590,12 +2597,12 @@
         }
       },
       "performance": {
-        "offenseRating": 16.085745248302537,
+        "offenseRating": 20.695677478606957,
         "offenseRank": 31,
-        "defenseRating": 37.32507446320788,
-        "defenseRank": 24,
-        "performanceRating": 23.409272954866985,
-        "performanceRank": 32
+        "defenseRating": 37.328258371461374,
+        "defenseRank": 25,
+        "performanceRating": 31.925889602329566,
+        "performanceRank": 31
       }
     },
     {
@@ -2870,18 +2877,18 @@
           "pointsPerDriveAllowed": 3,
           "adjusted": {
             "offense": {
-              "epaPerPlay": 0.07830908086875282,
-              "successRate": 0.5007924349936272,
-              "explosiveRate": 0.06328651093462827
+              "epaPerPlay": 0.12870160994900295,
+              "successRate": 0.5258273887006075,
+              "explosiveRate": 0.010194870172200235
             },
             "defenseAllowed": {
-              "epaPerPlay": 0.16163483533496065,
-              "successRate": 0.5586724930025652,
-              "explosiveRate": 0.13416049373241296
+              "epaPerPlay": 0.35910889074784946,
+              "successRate": 0.6724677364065043,
+              "explosiveRate": 0.15540471033378966
             },
             "pointDifferentialPerGame": {
               "raw": 4.5,
-              "adjusted": 12.75
+              "adjusted": 16.5
             }
           },
           "metricRanks": {
@@ -2913,12 +2920,12 @@
         }
       },
       "performance": {
-        "offenseRating": 43.987064841457006,
+        "offenseRating": 42.49004055189566,
         "offenseRank": 22,
-        "defenseRating": 18.082566436269627,
+        "defenseRating": 16.40506138705409,
         "defenseRank": 32,
-        "performanceRating": 35.05947433892516,
-        "performanceRank": 27
+        "performanceRating": 47.845255715323916,
+        "performanceRank": 17
       }
     },
     {
@@ -3193,18 +3200,18 @@
           "pointsPerDriveAllowed": 2.0952380952380953,
           "adjusted": {
             "offense": {
-              "epaPerPlay": 0.0047282011359319545,
-              "successRate": 0.44659280178407984,
-              "explosiveRate": 0.12872904366966964
+              "epaPerPlay": 0.40248559726372,
+              "successRate": 0.4761698285309179,
+              "explosiveRate": 0.14226644403571453
             },
             "defenseAllowed": {
-              "epaPerPlay": -0.09850658600006182,
-              "successRate": 0.3797236987816214,
-              "explosiveRate": 0.08470695780215118
+              "epaPerPlay": -0.2730108457681227,
+              "successRate": 0.26927473237335275,
+              "explosiveRate": 0.05247028259053002
             },
             "pointDifferentialPerGame": {
               "raw": -7,
-              "adjusted": -17.25
+              "adjusted": -20.5
             }
           },
           "metricRanks": {
@@ -3236,12 +3243,12 @@
         }
       },
       "performance": {
-        "offenseRating": 50.711168107064346,
-        "offenseRank": 17,
-        "defenseRating": 80.44701176907469,
+        "offenseRating": 64.40996118343895,
+        "offenseRank": 8,
+        "defenseRating": 84.0826905142242,
         "defenseRank": 2,
-        "performanceRating": 60.31345927522856,
-        "performanceRank": 9
+        "performanceRating": 53.369164299591155,
+        "performanceRank": 13
       }
     },
     {
@@ -3516,18 +3523,18 @@
           "pointsPerDriveAllowed": 3.0869565217391304,
           "adjusted": {
             "offense": {
-              "epaPerPlay": -0.0262603308543342,
-              "successRate": 0.42783526266388455,
-              "explosiveRate": 0.12865009325466575
+              "epaPerPlay": -0.06067225049821265,
+              "successRate": 0.38273998183182206,
+              "explosiveRate": 0.1440570068876998
             },
             "defenseAllowed": {
-              "epaPerPlay": -0.027944819153678246,
-              "successRate": 0.49432149815116927,
-              "explosiveRate": 0.10749894976542362
+              "epaPerPlay": -0.036604577303170655,
+              "successRate": 0.5493005321298547,
+              "explosiveRate": 0.09754223980871365
             },
             "pointDifferentialPerGame": {
               "raw": -4.5,
-              "adjusted": -9.75
+              "adjusted": -10.5
             }
           },
           "metricRanks": {
@@ -3559,12 +3566,12 @@
         }
       },
       "performance": {
-        "offenseRating": 46.53350680447208,
+        "offenseRating": 46.48852384560865,
         "offenseRank": 19,
-        "defenseRating": 50.237049589837106,
-        "defenseRank": 16,
-        "performanceRating": 45.72109338145633,
-        "performanceRank": 21
+        "defenseRating": 47.436693476303866,
+        "defenseRank": 18,
+        "performanceRating": 42.37894795526729,
+        "performanceRank": 25
       }
     },
     {
@@ -3839,18 +3846,18 @@
           "pointsPerDriveAllowed": 1.9230769230769231,
           "adjusted": {
             "offense": {
-              "epaPerPlay": 0.023699772216109583,
-              "successRate": 0.45164609043647347,
-              "explosiveRate": 0.13860295648978777
+              "epaPerPlay": 0.049180004377958275,
+              "successRate": 0.4247888552943546,
+              "explosiveRate": 0.16103225510459412
             },
             "defenseAllowed": {
-              "epaPerPlay": -0.03246078582737241,
-              "successRate": 0.442494621811132,
-              "explosiveRate": 0.09138392418377429
+              "epaPerPlay": -0.09814315116057071,
+              "successRate": 0.4137627940059097,
+              "explosiveRate": 0.06134368875871232
             },
             "pointDifferentialPerGame": {
               "raw": -7,
-              "adjusted": -15.25
+              "adjusted": -16.5
             }
           },
           "metricRanks": {
@@ -3882,12 +3889,12 @@
         }
       },
       "performance": {
-        "offenseRating": 55.12011900103292,
-        "offenseRank": 13,
-        "defenseRating": 63.35285869355663,
+        "offenseRating": 54.36657166263491,
+        "offenseRank": 14,
+        "defenseRating": 65.3043687354572,
         "defenseRank": 6,
-        "performanceRating": 54.922410085398354,
-        "performanceRank": 11
+        "performanceRating": 46.75735257667865,
+        "performanceRank": 19
       }
     },
     {
@@ -4162,18 +4169,18 @@
           "pointsPerDriveAllowed": 2.24,
           "adjusted": {
             "offense": {
-              "epaPerPlay": 0.007636393055983869,
-              "successRate": 0.43734536040927635,
-              "explosiveRate": 0.12375641915571654
+              "epaPerPlay": -0.028957343219548896,
+              "successRate": 0.40742603730813515,
+              "explosiveRate": 0.1343664110157084
             },
             "defenseAllowed": {
-              "epaPerPlay": -0.00418773056951563,
-              "successRate": 0.3758347775495335,
-              "explosiveRate": 0.13230166318226438
+              "epaPerPlay": -0.03204483050403481,
+              "successRate": 0.2952911923806138,
+              "explosiveRate": 0.14474059550113205
             },
             "pointDifferentialPerGame": {
               "raw": -9.5,
-              "adjusted": -18.25
+              "adjusted": -17.5
             }
           },
           "metricRanks": {
@@ -4205,12 +4212,12 @@
         }
       },
       "performance": {
-        "offenseRating": 48.3316176842451,
+        "offenseRating": 47.58871469401109,
         "offenseRank": 18,
-        "defenseRating": 61.13999052627816,
-        "defenseRank": 10,
-        "performanceRating": 49.58113513378372,
-        "performanceRank": 16
+        "defenseRating": 61.554896864513424,
+        "defenseRank": 8,
+        "performanceRating": 42.30149883549602,
+        "performanceRank": 26
       }
     },
     {
@@ -4485,18 +4492,18 @@
           "pointsPerDriveAllowed": 3.0833333333333335,
           "adjusted": {
             "offense": {
-              "epaPerPlay": 0.03882244060590966,
-              "successRate": 0.5092778758136917,
-              "explosiveRate": 0.14104179612678258
+              "epaPerPlay": 0.11120311311472338,
+              "successRate": 0.5533111541042992,
+              "explosiveRate": 0.16888435212151248
             },
             "defenseAllowed": {
-              "epaPerPlay": 0.07385595776186213,
-              "successRate": 0.45350718840610904,
-              "explosiveRate": 0.15078209744188412
+              "epaPerPlay": 0.14354833242592052,
+              "successRate": 0.46117561442988697,
+              "explosiveRate": 0.19261436122145076
             },
             "pointDifferentialPerGame": {
               "raw": -10.5,
-              "adjusted": -19.25
+              "adjusted": -17.5
             }
           },
           "metricRanks": {
@@ -4528,12 +4535,12 @@
         }
       },
       "performance": {
-        "offenseRating": 64.04229651446579,
+        "offenseRating": 65.27620303371633,
         "offenseRank": 7,
-        "defenseRating": 37.53931008761368,
-        "defenseRank": 23,
-        "performanceRating": 46.056536114546404,
-        "performanceRank": 20
+        "defenseRating": 35.826379718291726,
+        "defenseRank": 27,
+        "performanceRating": 44.91266582361139,
+        "performanceRank": 21
       }
     },
     {
@@ -4808,14 +4815,14 @@
           "pointsPerDriveAllowed": 1.6666666666666667,
           "adjusted": {
             "offense": {
-              "epaPerPlay": 0.11467711293374594,
-              "successRate": 0.4753500471151511,
-              "explosiveRate": 0.14363419464225285
+              "epaPerPlay": 0.17074697271543454,
+              "successRate": 0.4942580894763217,
+              "explosiveRate": 0.16782666883472702
             },
             "defenseAllowed": {
-              "epaPerPlay": 0.03390853396361024,
-              "successRate": 0.5143307134813921,
-              "explosiveRate": 0.1647937116876237
+              "epaPerPlay": 0.05210964890796346,
+              "successRate": 0.5402369296263867,
+              "explosiveRate": 0.21535568422593165
             },
             "pointDifferentialPerGame": {
               "raw": 8.5,
@@ -4851,12 +4858,12 @@
         }
       },
       "performance": {
-        "offenseRating": 64.6626201161595,
-        "offenseRank": 6,
-        "defenseRating": 26.9220476413039,
+        "offenseRating": 62.92663404706948,
+        "offenseRank": 10,
+        "defenseRating": 29.485474476166733,
         "defenseRank": 29,
-        "performanceRating": 51.02090205610453,
-        "performanceRank": 15
+        "performanceRating": 60.35866998831015,
+        "performanceRank": 6
       }
     },
     {
@@ -5131,18 +5138,18 @@
           "pointsPerDriveAllowed": 1.8181818181818181,
           "adjusted": {
             "offense": {
-              "epaPerPlay": 0.05194904794885016,
-              "successRate": 0.4948053495372479,
-              "explosiveRate": 0.1107258678892974
+              "epaPerPlay": 0.05696503267455766,
+              "successRate": 0.518644435872635,
+              "explosiveRate": 0.10063162185755135
             },
             "defenseAllowed": {
-              "epaPerPlay": 0.05337780035603375,
-              "successRate": 0.45827791500351045,
-              "explosiveRate": 0.07174167206197699
+              "epaPerPlay": 0.1442545189298442,
+              "successRate": 0.45885609791252047,
+              "explosiveRate": 0.028275654890928106
             },
             "pointDifferentialPerGame": {
               "raw": 12,
-              "adjusted": 20.75
+              "adjusted": 17.5
             }
           },
           "metricRanks": {
@@ -5174,12 +5181,12 @@
         }
       },
       "performance": {
-        "offenseRating": 54.660591532672754,
-        "offenseRank": 14,
-        "defenseRating": 59.44887342506175,
+        "offenseRating": 52.3898040357803,
+        "offenseRank": 15,
+        "defenseRating": 57.87669359040248,
         "defenseRank": 11,
-        "performanceRating": 62.48140355350895,
-        "performanceRank": 6
+        "performanceRating": 61.88150462736639,
+        "performanceRank": 5
       }
     },
     {
@@ -5454,18 +5461,18 @@
           "pointsPerDriveAllowed": 2.0833333333333335,
           "adjusted": {
             "offense": {
-              "epaPerPlay": -0.05262735872090521,
-              "successRate": 0.46134829928223164,
-              "explosiveRate": 0.1099705272771187
+              "epaPerPlay": -0.11861007765011904,
+              "successRate": 0.46910724825405187,
+              "explosiveRate": 0.10441804697054005
             },
             "defenseAllowed": {
-              "epaPerPlay": 0.047057551780025436,
-              "successRate": 0.4357915453269432,
-              "explosiveRate": 0.12716932413793222
+              "epaPerPlay": 0.09983057981070867,
+              "successRate": 0.40843469916168584,
+              "explosiveRate": 0.14370400257425
             },
             "pointDifferentialPerGame": {
               "raw": -12,
-              "adjusted": -15.5
+              "adjusted": -7
             }
           },
           "metricRanks": {
@@ -5497,12 +5504,12 @@
         }
       },
       "performance": {
-        "offenseRating": 44.26393552076219,
+        "offenseRating": 45.11461551620757,
         "offenseRank": 21,
-        "defenseRating": 48.794610965194686,
-        "defenseRank": 18,
-        "performanceRating": 42.32462953737501,
-        "performanceRank": 22
+        "defenseRating": 48.08440164638173,
+        "defenseRank": 17,
+        "performanceRating": 43.70044353719394,
+        "performanceRank": 23
       }
     },
     {
@@ -5777,18 +5784,18 @@
           "pointsPerDriveAllowed": 1.736842105263158,
           "adjusted": {
             "offense": {
-              "epaPerPlay": -0.030637630098058602,
-              "successRate": 0.5036530743181293,
-              "explosiveRate": 0.16693292583610542
+              "epaPerPlay": -0.06781415035918344,
+              "successRate": 0.5412149115202518,
+              "explosiveRate": 0.21851338560622033
             },
             "defenseAllowed": {
-              "epaPerPlay": -0.2252457781099708,
-              "successRate": 0.3770080063862765,
-              "explosiveRate": 0.07559075332221925
+              "epaPerPlay": -0.511959223976133,
+              "successRate": 0.28286051972806914,
+              "explosiveRate": 0.03019783394613014
             },
             "pointDifferentialPerGame": {
               "raw": 1,
-              "adjusted": -6
+              "adjusted": -14
             }
           },
           "metricRanks": {
@@ -5820,12 +5827,12 @@
         }
       },
       "performance": {
-        "offenseRating": 66.46198328123447,
-        "offenseRank": 5,
-        "defenseRating": 93.03421879237213,
+        "offenseRating": 66.5113335513477,
+        "offenseRank": 6,
+        "defenseRating": 94.01499189573472,
         "defenseRank": 1,
-        "performanceRating": 77.42668838419348,
-        "performanceRank": 2
+        "performanceRating": 59.85432315322558,
+        "performanceRank": 7
       }
     },
     {
@@ -6100,18 +6107,18 @@
           "pointsPerDriveAllowed": 1.125,
           "adjusted": {
             "offense": {
-              "epaPerPlay": -0.13591327305020914,
-              "successRate": 0.39484648113452686,
-              "explosiveRate": 0.09345995469455752
+              "epaPerPlay": -0.32879833493797883,
+              "successRate": 0.3206247142069342,
+              "explosiveRate": 0.06302517208586188
             },
             "defenseAllowed": {
-              "epaPerPlay": -0.0708014764083077,
-              "successRate": 0.4743142978742452,
-              "explosiveRate": 0.12632494304978775
+              "epaPerPlay": -0.1552310114342394,
+              "successRate": 0.4804687576872417,
+              "explosiveRate": 0.13520310456515527
             },
             "pointDifferentialPerGame": {
               "raw": 13,
-              "adjusted": 28
+              "adjusted": 30
             }
           },
           "metricRanks": {
@@ -6143,12 +6150,12 @@
         }
       },
       "performance": {
-        "offenseRating": 26.527023087513097,
+        "offenseRating": 24.48654389699037,
         "offenseRank": 30,
-        "defenseRating": 51.756680182914955,
+        "defenseRating": 51.996082806820176,
         "defenseRank": 15,
-        "performanceRating": 46.33724673169829,
-        "performanceRank": 19
+        "performanceRating": 54.22015231337721,
+        "performanceRank": 11
       }
     },
     {
@@ -6423,18 +6430,18 @@
           "pointsPerDriveAllowed": 3.263157894736842,
           "adjusted": {
             "offense": {
-              "epaPerPlay": 0.07575761698066168,
-              "successRate": 0.4142170460725225,
-              "explosiveRate": 0.11286967196706882
+              "epaPerPlay": 0.12869701227126967,
+              "successRate": 0.37284501697240735,
+              "explosiveRate": 0.10974288785484305
             },
             "defenseAllowed": {
-              "epaPerPlay": 0.1470611235039682,
-              "successRate": 0.5234750190626906,
-              "explosiveRate": 0.13774190669911066
+              "epaPerPlay": 0.26881906636263353,
+              "successRate": 0.5876941258319783,
+              "explosiveRate": 0.16014212966455102
             },
             "pointDifferentialPerGame": {
               "raw": -18,
-              "adjusted": -35
+              "adjusted": -34
             }
           },
           "metricRanks": {
@@ -6466,12 +6473,12 @@
         }
       },
       "performance": {
-        "offenseRating": 46.230700976870146,
+        "offenseRating": 46.1945479023804,
         "offenseRank": 20,
-        "defenseRating": 23.989996691780437,
+        "defenseRating": 25.68289295945782,
         "defenseRank": 30,
-        "performanceRating": 26.21932163856905,
-        "performanceRank": 31
+        "performanceRating": 25.357499857446555,
+        "performanceRank": 32
       }
     },
     {
@@ -6746,18 +6753,18 @@
           "pointsPerDriveAllowed": 1.1363636363636365,
           "adjusted": {
             "offense": {
-              "epaPerPlay": 0.018129268759865095,
-              "successRate": 0.43154164557107205,
-              "explosiveRate": 0.09755687199340382
+              "epaPerPlay": 0.009892004430145911,
+              "successRate": 0.40114349684899103,
+              "explosiveRate": 0.0847057869672854
             },
             "defenseAllowed": {
-              "epaPerPlay": -0.08811134062407483,
-              "successRate": 0.42698970023079363,
-              "explosiveRate": 0.12071659489258868
+              "epaPerPlay": -0.22258320310442323,
+              "successRate": 0.38168594451990984,
+              "explosiveRate": 0.12709549748395624
             },
             "pointDifferentialPerGame": {
               "raw": 11.5,
-              "adjusted": 11
+              "adjusted": -1
             }
           },
           "metricRanks": {
@@ -6789,12 +6796,12 @@
         }
       },
       "performance": {
-        "offenseRating": 41.03723378096813,
+        "offenseRating": 41.48470741881334,
         "offenseRank": 24,
-        "defenseRating": 62.3097382874405,
-        "defenseRank": 8,
-        "performanceRating": 54.25772995314292,
-        "performanceRank": 12
+        "defenseRating": 63.344163425595866,
+        "defenseRank": 7,
+        "performanceRating": 48.43075187027578,
+        "performanceRank": 16
       }
     },
     {
@@ -7069,18 +7076,18 @@
           "pointsPerDriveAllowed": 0.7272727272727273,
           "adjusted": {
             "offense": {
-              "epaPerPlay": 0.14550744002687305,
-              "successRate": 0.49894788837108367,
-              "explosiveRate": 0.12279345649222274
+              "epaPerPlay": 0.27421410280089,
+              "successRate": 0.5392172144923368,
+              "explosiveRate": 0.13706818283855005
             },
             "defenseAllowed": {
-              "epaPerPlay": -0.0220024031718547,
-              "successRate": 0.46292671726358103,
-              "explosiveRate": 0.09729015498393184
+              "epaPerPlay": -0.04985060182044751,
+              "successRate": 0.46655314091390365,
+              "explosiveRate": 0.08242626070827286
             },
             "pointDifferentialPerGame": {
               "raw": 7,
-              "adjusted": 2.75
+              "adjusted": -8.5
             }
           },
           "metricRanks": {
@@ -7112,12 +7119,12 @@
         }
       },
       "performance": {
-        "offenseRating": 63.752410555712615,
-        "offenseRank": 8,
-        "defenseRating": 57.636827146621926,
+        "offenseRating": 64.35825793446901,
+        "offenseRank": 9,
+        "defenseRating": 56.59399507128147,
         "defenseRank": 12,
-        "performanceRating": 61.43761115302675,
-        "performanceRank": 8
+        "performanceRating": 53.639425435719076,
+        "performanceRank": 12
       }
     },
     {
@@ -7392,18 +7399,18 @@
           "pointsPerDriveAllowed": 2.0869565217391304,
           "adjusted": {
             "offense": {
-              "epaPerPlay": -0.0037687865275102747,
-              "successRate": 0.4121640779706415,
-              "explosiveRate": 0.10708124494382151
+              "epaPerPlay": 0.011764958127241779,
+              "successRate": 0.3364097782726555,
+              "explosiveRate": 0.09129535208843625
             },
             "defenseAllowed": {
-              "epaPerPlay": -0.0685315317628864,
-              "successRate": 0.48182633112885276,
-              "explosiveRate": 0.08366211340170172
+              "epaPerPlay": -0.18103859076153797,
+              "successRate": 0.522986903230019,
+              "explosiveRate": 0.04997923697914859
             },
             "pointDifferentialPerGame": {
               "raw": 3,
-              "adjusted": 2.5
+              "adjusted": -1
             }
           },
           "metricRanks": {
@@ -7435,12 +7442,12 @@
         }
       },
       "performance": {
-        "offenseRating": 39.9090901910385,
+        "offenseRating": 38.28948218098004,
         "offenseRank": 25,
-        "defenseRating": 61.755802243147976,
+        "defenseRating": 60.77606452815674,
         "defenseRank": 9,
-        "performanceRating": 51.133040178500934,
-        "performanceRank": 14
+        "performanceRating": 46.40200636797138,
+        "performanceRank": 20
       }
     },
     {
@@ -7715,18 +7722,18 @@
           "pointsPerDriveAllowed": 2.6666666666666665,
           "adjusted": {
             "offense": {
-              "epaPerPlay": -0.014211851448690277,
-              "successRate": 0.4063135148673354,
-              "explosiveRate": 0.12283582178407065
+              "epaPerPlay": -0.05415267070250143,
+              "successRate": 0.3521117437585474,
+              "explosiveRate": 0.126453136064939
             },
             "defenseAllowed": {
-              "epaPerPlay": 0.09642411558658706,
-              "successRate": 0.4672276631684533,
-              "explosiveRate": 0.1471695348679271
+              "epaPerPlay": 0.17116960436110049,
+              "successRate": 0.4732534257731633,
+              "explosiveRate": 0.17595502741148172
             },
             "pointDifferentialPerGame": {
               "raw": -7,
-              "adjusted": -9.75
+              "adjusted": -5.5
             }
           },
           "metricRanks": {
@@ -7758,12 +7765,12 @@
         }
       },
       "performance": {
-        "offenseRating": 42.862317820402076,
+        "offenseRating": 42.318813949983436,
         "offenseRank": 23,
-        "defenseRating": 34.53527027328964,
-        "defenseRank": 28,
-        "performanceRating": 36.322178901630764,
-        "performanceRank": 26
+        "defenseRating": 36.1351980908519,
+        "defenseRank": 26,
+        "performanceRating": 40.60999215428986,
+        "performanceRank": 27
       }
     },
     {
@@ -8038,18 +8045,18 @@
           "pointsPerDriveAllowed": 1.3636363636363635,
           "adjusted": {
             "offense": {
-              "epaPerPlay": 0.01727724742748013,
-              "successRate": 0.49062101573656935,
-              "explosiveRate": 0.1279967583671769
+              "epaPerPlay": 0.021108881453214032,
+              "successRate": 0.5181545430645046,
+              "explosiveRate": 0.14004210294957736
             },
             "defenseAllowed": {
-              "epaPerPlay": -0.05344005175885155,
-              "successRate": 0.44436316124310554,
-              "explosiveRate": 0.07838319550296655
+              "epaPerPlay": -0.1020951173603083,
+              "successRate": 0.43741072006197873,
+              "explosiveRate": 0.04091790092969344
             },
             "pointDifferentialPerGame": {
               "raw": 5,
-              "adjusted": 12.75
+              "adjusted": 15.5
             }
           },
           "metricRanks": {
@@ -8081,12 +8088,12 @@
         }
       },
       "performance": {
-        "offenseRating": 56.87614080170967,
-        "offenseRank": 11,
-        "defenseRating": 68.12852742932009,
+        "offenseRating": 56.75168661004104,
+        "offenseRank": 12,
+        "defenseRating": 66.24413124370959,
         "defenseRank": 5,
-        "performanceRating": 65.62478770051979,
-        "performanceRank": 4
+        "performanceRating": 64.66243955526318,
+        "performanceRank": 3
       }
     },
     {
@@ -8361,18 +8368,18 @@
           "pointsPerDriveAllowed": 2,
           "adjusted": {
             "offense": {
-              "epaPerPlay": -0.0665147537196748,
-              "successRate": 0.3973262689729554,
-              "explosiveRate": 0.11296967805362366
+              "epaPerPlay": -0.18129945969315103,
+              "successRate": 0.30399435726906787,
+              "explosiveRate": 0.1095124870964327
             },
             "defenseAllowed": {
-              "epaPerPlay": 0.09601088345062499,
-              "successRate": 0.4377934297154268,
-              "explosiveRate": 0.14093164574650563
+              "epaPerPlay": 0.21488064605740564,
+              "successRate": 0.4029257826566033,
+              "explosiveRate": 0.17017956041900667
             },
             "pointDifferentialPerGame": {
               "raw": 3,
-              "adjusted": 12
+              "adjusted": 18
             }
           },
           "metricRanks": {
@@ -8404,12 +8411,12 @@
         }
       },
       "performance": {
-        "offenseRating": 36.072150516399915,
-        "offenseRank": 26,
-        "defenseRating": 41.04063990774456,
+        "offenseRating": 33.60233570499007,
+        "offenseRank": 27,
+        "defenseRating": 41.120795536579635,
         "defenseRank": 21,
-        "performanceRating": 41.7987034696155,
-        "performanceRank": 23
+        "performanceRating": 49.85487502535521,
+        "performanceRank": 15
       }
     },
     {
@@ -8684,18 +8691,18 @@
           "pointsPerDriveAllowed": 1.0833333333333333,
           "adjusted": {
             "offense": {
-              "epaPerPlay": -0.16574783117875636,
-              "successRate": 0.40287937639016574,
-              "explosiveRate": 0.11356392091872836
+              "epaPerPlay": -0.39275670888061764,
+              "successRate": 0.3345458602952555,
+              "explosiveRate": 0.10840647332430597
             },
             "defenseAllowed": {
-              "epaPerPlay": 0.036418635506482444,
-              "successRate": 0.4734181164910357,
-              "explosiveRate": 0.15342782308009123
+              "epaPerPlay": 0.07898163959821955,
+              "successRate": 0.4836647851382239,
+              "explosiveRate": 0.18326379937361348
             },
             "pointDifferentialPerGame": {
               "raw": -5,
-              "adjusted": 1
+              "adjusted": 12
             }
           },
           "metricRanks": {
@@ -8727,12 +8734,12 @@
         }
       },
       "performance": {
-        "offenseRating": 31.35703973250576,
-        "offenseRank": 29,
-        "defenseRating": 36.448269213464414,
-        "defenseRank": 26,
-        "performanceRating": 34.23223448131183,
-        "performanceRank": 28
+        "offenseRating": 29.838162706461958,
+        "offenseRank": 28,
+        "defenseRating": 37.430972493840656,
+        "defenseRank": 24,
+        "performanceRating": 44.208720475380595,
+        "performanceRank": 22
       }
     },
     {
@@ -9007,18 +9014,18 @@
           "pointsPerDriveAllowed": 0.8947368421052632,
           "adjusted": {
             "offense": {
-              "epaPerPlay": 0.14485744252594365,
-              "successRate": 0.5121716169081119,
-              "explosiveRate": 0.13232209085336888
+              "epaPerPlay": 0.2700181322086175,
+              "successRate": 0.5616797070860848,
+              "explosiveRate": 0.1440791573163177
             },
             "defenseAllowed": {
-              "epaPerPlay": -0.12436539410210581,
-              "successRate": 0.4139382174533808,
-              "explosiveRate": 0.08480346614450825
+              "epaPerPlay": -0.2591029473315436,
+              "successRate": 0.36212278450434593,
+              "explosiveRate": 0.05014242692862633
             },
             "pointDifferentialPerGame": {
               "raw": 13.5,
-              "adjusted": 13
+              "adjusted": -1
             }
           },
           "metricRanks": {
@@ -9050,12 +9057,12 @@
         }
       },
       "performance": {
-        "offenseRating": 68.0117095277156,
-        "offenseRank": 4,
-        "defenseRating": 76.81433941825527,
+        "offenseRating": 66.6327563099895,
+        "offenseRank": 5,
+        "defenseRating": 76.40871109045607,
         "defenseRank": 3,
-        "performanceRating": 75.55356727080415,
-        "performanceRank": 3
+        "performanceRating": 62.855692895137366,
+        "performanceRank": 4
       }
     },
     {
@@ -9330,18 +9337,18 @@
           "pointsPerDriveAllowed": 1.1764705882352942,
           "adjusted": {
             "offense": {
-              "epaPerPlay": 0.2346627781973287,
-              "successRate": 0.5822728357978454,
-              "explosiveRate": 0.1502372611632744
+              "epaPerPlay": 0.4903469205818729,
+              "successRate": 0.7149789635534781,
+              "explosiveRate": 0.18388132093451448
             },
             "defenseAllowed": {
-              "epaPerPlay": -0.008240562804356219,
-              "successRate": 0.43761929412823264,
-              "explosiveRate": 0.06753777994892643
+              "epaPerPlay": -0.03830453479639722,
+              "successRate": 0.41428345829239677,
+              "explosiveRate": 0.016289405676894478
             },
             "pointDifferentialPerGame": {
               "raw": 21,
-              "adjusted": 29.5
+              "adjusted": 17
             }
           },
           "metricRanks": {
@@ -9373,11 +9380,11 @@
         }
       },
       "performance": {
-        "offenseRating": 86.96120441183075,
+        "offenseRating": 87.62018813821473,
         "offenseRank": 1,
-        "defenseRating": 68.66570612998024,
+        "defenseRating": 69.24266737292993,
         "defenseRank": 4,
-        "performanceRating": 85.7845500680639,
+        "performanceRating": 80.33355617908558,
         "performanceRank": 1
       }
     },
@@ -9653,18 +9660,18 @@
           "pointsPerDriveAllowed": 2.3333333333333335,
           "adjusted": {
             "offense": {
-              "epaPerPlay": -0.06917560665598252,
-              "successRate": 0.45699414206199834,
-              "explosiveRate": 0.07691309897378877
+              "epaPerPlay": -0.26440575127578264,
+              "successRate": 0.417207174643452,
+              "explosiveRate": 0.03612882464521065
             },
             "defenseAllowed": {
-              "epaPerPlay": 0.11793690564627136,
-              "successRate": 0.49560002494429517,
-              "explosiveRate": 0.11855164768172083
+              "epaPerPlay": 0.5690506310585541,
+              "successRate": 0.538905077734642,
+              "explosiveRate": 0.11728414127901482
             },
             "pointDifferentialPerGame": {
               "raw": -5,
-              "adjusted": -5
+              "adjusted": 0
             }
           },
           "metricRanks": {
@@ -9696,12 +9703,12 @@
         }
       },
       "performance": {
-        "offenseRating": 33.76349337989066,
-        "offenseRank": 28,
-        "defenseRating": 35.90084900800152,
-        "defenseRank": 27,
-        "performanceRating": 33.59178391208003,
-        "performanceRank": 29
+        "offenseRating": 28.71159534491717,
+        "offenseRank": 29,
+        "defenseRating": 25.205118353941202,
+        "defenseRank": 31,
+        "performanceRating": 34.82514298456475,
+        "performanceRank": 30
       }
     },
     {
@@ -9976,18 +9983,18 @@
           "pointsPerDriveAllowed": 2.611111111111111,
           "adjusted": {
             "offense": {
-              "epaPerPlay": 0.009662113727921473,
-              "successRate": 0.48414156703716527,
-              "explosiveRate": 0.11560655985081765
+              "epaPerPlay": -0.014561085512302174,
+              "successRate": 0.49845490217287614,
+              "explosiveRate": 0.11220712208502717
             },
             "defenseAllowed": {
-              "epaPerPlay": 0.09498531003012928,
-              "successRate": 0.4929787674704297,
-              "explosiveRate": 0.12218488512744625
+              "epaPerPlay": 0.165717096280244,
+              "successRate": 0.5312031669406772,
+              "explosiveRate": 0.1259677085417554
             },
             "pointDifferentialPerGame": {
               "raw": -8.5,
-              "adjusted": -12.5
+              "adjusted": -8
             }
           },
           "metricRanks": {
@@ -10019,11 +10026,11 @@
         }
       },
       "performance": {
-        "offenseRating": 52.23800709326989,
-        "offenseRank": 15,
-        "defenseRating": 37.11611807733262,
-        "defenseRank": 25,
-        "performanceRating": 41.621012394504646,
+        "offenseRating": 50.78416053161007,
+        "offenseRank": 17,
+        "defenseRating": 38.2864034185306,
+        "defenseRank": 23,
+        "performanceRating": 43.683958995973384,
         "performanceRank": 24
       }
     },
@@ -10299,18 +10306,18 @@
           "pointsPerDriveAllowed": 3.05,
           "adjusted": {
             "offense": {
-              "epaPerPlay": -0.0806981931288233,
-              "successRate": 0.4291014988359718,
-              "explosiveRate": 0.09317263329602503
+              "epaPerPlay": -0.17421513950648257,
+              "successRate": 0.40495569769396283,
+              "explosiveRate": 0.06546256488174525
             },
             "defenseAllowed": {
-              "epaPerPlay": -0.0044115014364170535,
-              "successRate": 0.447790371413082,
-              "explosiveRate": 0.13259054025889427
+              "epaPerPlay": -0.009181770594337169,
+              "successRate": 0.44875256371554356,
+              "explosiveRate": 0.14646166670215005
             },
             "pointDifferentialPerGame": {
               "raw": -9.5,
-              "adjusted": -13.25
+              "adjusted": -7.5
             }
           },
           "metricRanks": {
@@ -10342,12 +10349,12 @@
         }
       },
       "performance": {
-        "offenseRating": 33.96114639470005,
-        "offenseRank": 27,
-        "defenseRating": 49.328852275594414,
-        "defenseRank": 17,
-        "performanceRating": 37.908510089419686,
-        "performanceRank": 25
+        "offenseRating": 34.27551270963491,
+        "offenseRank": 26,
+        "defenseRating": 48.13374286625294,
+        "defenseRank": 16,
+        "performanceRating": 38.44941487545147,
+        "performanceRank": 28
       }
     }
   ]
