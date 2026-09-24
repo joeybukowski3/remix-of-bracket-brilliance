@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { FANTASY_TABLE_BODY_CELL, FANTASY_TABLE_HEADER_CELL, FANTASY_TABLE_SHELL, FantasyExpandControl, FantasyPlayerIdentity, FantasyOpponentIdentity } from "@/components/fantasy/FantasyTable";
@@ -10,6 +10,7 @@ import { DFS_STATUS_BADGE_CLASSES, defaultDfsSortDirection, dfsMatchupValue, fil
 import { dfsOptionalColumnsForView, dfsReviewGroupsForView, type DfsColumnId } from "@/lib/nfl/dfs/columnRegistry";
 import { useDfsColumnVisibility } from "@/hooks/useDfsColumnVisibility";
 import { useIsCompactLayout } from "@/hooks/useIsCompactLayout";
+import { useElementWidth } from "@/hooks/useElementWidth";
 import { playerSurname } from "@/lib/nfl/playerSurname";
 import { weeklyHeatStyle } from "@/lib/fantasy/weekly/researchPresentation";
 import { weeklyMatchupDifferenceHeatTone, weeklyRankHeatTone, resolvePercentileDisplay } from "@/lib/shared/jkbHeat";
@@ -17,6 +18,7 @@ import { cn } from "@/lib/utils";
 import NflDfsHistory, { FpaSignal, DefenseSignal, FPA_HELP, DEF_AVG_HELP } from "./NflDfsHistory";
 import { DfsHeatLegend, DfsHeatValue, DfsPositionBadge, DfsSortButton, FantasyPpgCell, MatchupCell, SlotWidePctCell, SlotWidePpgAllowedCell, TargetsPerGameCell, TdScoreCell } from "./DfsTableCells";
 import DfsColumnMenu from "./DfsColumnMenu";
+import { DfsReviewStrip, DfsReviewTable, type DfsReviewTableRow } from "./DfsReviewTable";
 import { DFS_POSITION_ACCENT, dfsValueStyles } from "@/lib/nfl/dfs/tablePresentation";
 import { dfsHistoryLoader, historyCoverage, type DfsHistoryIndex, type HistoryTarget } from "@/lib/nfl/dfs/historyDelivery";
 import { resolveDfsDefRank, resolveDfsOppOffRank, type DfsTeamRank } from "@/lib/nfl/dfs/teamRankContext";
@@ -52,27 +54,25 @@ function SupplementalResearchReview({ row }: { row: DfsEnrichedAnalyzerRow }) {
   const research = row.research;
   const context = research && research.status === "available" ? research.context : null;
   const metric = (value: number | null, digits = 1) => (value == null ? "N/A" : value.toFixed(digits));
-
-  return (
-    <div className="rounded-md border border-slate-200 bg-white p-2">
-      <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">Additional Research</p>
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] sm:grid-cols-3">
-        <div className="flex items-center justify-between gap-2"><dt className="text-slate-500">DK Overall RK</dt><dd className="font-semibold text-slate-900">{formatDfsRank(row.dkOverallSalaryRank)}</dd></div>
-        <div className="flex items-center justify-between gap-2"><dt className="text-slate-500">JKB Overall RK</dt><dd className="font-semibold text-slate-900">{formatDfsRank(row.jkbOverallSlateProjectionRank)}</dd></div>
-        <div className="flex items-center justify-between gap-2"><dt className="text-slate-500">Overall Diff</dt><dd className="font-semibold text-slate-900">{formatDfsRankDiff(row.overallRankDiff)}</dd></div>
-        {context && row.position === "RB" && <>
-          <div className="flex items-center justify-between gap-2"><dt className="text-slate-500">Touches</dt><dd className="font-semibold text-slate-900">{metric(context.evidence.touches.value)}</dd></div>
-          <div className="flex items-center justify-between gap-2"><dt className="text-slate-500">YPC</dt><dd className="font-semibold text-slate-900">{metric(context.evidence.yardsPerCarry.value, 2)}</dd></div>
-          <div className="flex items-center justify-between gap-2"><dt className="text-slate-500">Rec Targets</dt><dd className="font-semibold text-slate-900">{metric(context.evidence.receivingTargets.value)}</dd></div>
-        </>}
-        {context && (row.position === "WR" || row.position === "TE") && <>
-          <div className="flex items-center justify-between gap-2"><dt className="text-slate-500">Target Share</dt><dd className="font-semibold text-slate-900">{context.evidence.targetShare.value == null ? "N/A" : `${(context.evidence.targetShare.value * 100).toFixed(1)}%`}</dd></div>
-          <div className="flex items-center justify-between gap-2"><dt className="text-slate-500">Air Yds/Game</dt><dd className="font-semibold text-slate-900">{metric(context.evidence.airYardsPerGame.value)}</dd></div>
-        </>}
-        {!context && <p className="col-span-2 text-slate-500 sm:col-span-3">No weekly research available for this player.</p>}
-      </dl>
-    </div>
-  );
+  const rows: DfsReviewTableRow[] = [
+    { id: "dk-overall", label: "DK Overall RK", value: formatDfsRank(row.dkOverallSalaryRank) },
+    { id: "jkb-overall", label: "JKB Overall RK", value: formatDfsRank(row.jkbOverallSlateProjectionRank) },
+    { id: "overall-diff", label: "Overall Diff", value: formatDfsRankDiff(row.overallRankDiff) },
+  ];
+  if (context && row.position === "RB") {
+    rows.push(
+      { id: "touches", label: "Touches", value: metric(context.evidence.touches.value) },
+      { id: "ypc", label: "YPC", value: metric(context.evidence.yardsPerCarry.value, 2) },
+      { id: "rec-targets", label: "Rec Targets", value: metric(context.evidence.receivingTargets.value) },
+    );
+  }
+  if (context && (row.position === "WR" || row.position === "TE")) {
+    rows.push(
+      { id: "target-share", label: "Target Share", value: context.evidence.targetShare.value == null ? "N/A" : `${(context.evidence.targetShare.value * 100).toFixed(1)}%` },
+      { id: "air-yards", label: "Air Yds/Game", value: metric(context.evidence.airYardsPerGame.value) },
+    );
+  }
+  return <DfsReviewStrip label="Additional Research" rows={rows} emptyMessage={context ? undefined : "No weekly research available for this player."} />;
 }
 
 /**
@@ -96,20 +96,10 @@ function PlayerReviewPanel({
   const isDstRow = row.kind === "dst";
   const groups = dfsReviewGroupsForView(isDstRow ? "DST" : row.position === "WR" ? "WR" : "VALUE");
   return (
-    <div className="space-y-2">
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+    <div className="min-w-0 space-y-1.5">
+      <div className="grid min-w-0 grid-cols-1 items-start gap-1.5 sm:grid-cols-2 xl:grid-cols-4">
         {groups.map(({ group, label, columns: groupColumns }) => (
-          <div key={group} className="rounded-md border border-slate-200 bg-white p-2">
-            <p className="mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">{label}</p>
-            <dl className="space-y-1">
-              {groupColumns.map((column) => (
-                <div key={column.id} className="flex items-center justify-between gap-2 text-[11px]">
-                  <dt className="text-slate-500">{column.label}</dt>
-                  <dd className="font-semibold text-slate-900">{renderMetric(row, column.id)}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
+          <DfsReviewTable key={group} label={label} rows={groupColumns.map((column) => ({ id: column.id, label: column.label, value: renderMetric(row, column.id) }))} />
         ))}
       </div>
       {!isDstRow && <SupplementalResearchReview row={row} />}
@@ -133,6 +123,10 @@ export type NflDfsAnalyzerTableProps = {
 };
 
 export default function NflDfsAnalyzerTable({ rows, historyTarget, dstEdges, teamRankByAbbr, tdScoreLookup, slotWideByAbbr }: NflDfsAnalyzerTableProps) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const scrollerWidth = useElementWidth(scrollerRef);
+  // td side padding (px-3 = 12px) on each side of the review.
+  const reviewWidth = scrollerWidth > 24 ? scrollerWidth - 24 : undefined;
   const [historyState, setHistoryState] = useState<{ target: HistoryTarget; index: DfsHistoryIndex | null } | null>(null);
   useEffect(() => {
     let active = true;
@@ -307,7 +301,7 @@ export default function NflDfsAnalyzerTable({ rows, historyTarget, dstEdges, tea
 
   const tableSection =
     visibleRows.length === 0 ? <p role="status" className="rounded-lg border border-slate-200 bg-white px-4 py-8 text-center text-xs text-slate-500">No players match the current filters.</p> :
-      <DenseTableScroller label={`${view} DFS analyzer`} className={cn(FANTASY_TABLE_SHELL, "overflow-x-auto", isFullScreen && "h-full overflow-y-auto")}>
+      <DenseTableScroller label={`${view} DFS analyzer`} scrollRef={scrollerRef} className={cn(FANTASY_TABLE_SHELL, "overflow-x-auto", isFullScreen && "h-full overflow-y-auto")}>
         <table className="w-full border-collapse whitespace-nowrap text-[11px] tabular-nums" aria-label={`${view} DFS players`}>
           <thead className={stickyDenseHeader("bg-slate-100")}><tr className={DENSE_TABLE_HEAD_ROW}>
             {columns.map((column, index) => <th key={column.id} scope="col" aria-sort={sortKey === column.sortKey ? sortDirection === "asc" ? "ascending" : "descending" : "none"}
@@ -338,7 +332,10 @@ export default function NflDfsAnalyzerTable({ rows, historyTarget, dstEdges, tea
                 {!isDst && <td className={cn(FANTASY_TABLE_BODY_CELL, "px-1 py-0", isCompact && "sticky right-0 bg-white group-hover:bg-slate-50")}><FantasyExpandControl label={`${reviewOpen ? "Collapse" : "Expand"} ${row.playerName}`} expanded={reviewOpen} onClick={() => setReviewDkId(reviewOpen ? null : row.dkId)} /></td>}
               </tr>
               {reviewOpen && <tr data-dfs-player-review={row.dkId}><td colSpan={isDst ? columns.length : columns.length + 1} className="whitespace-normal border-b border-slate-200 bg-slate-50 px-3 py-2">
-                <PlayerReviewPanel row={row} renderMetric={renderMetric} historyTarget={historyTarget} historyIndex={historyIndex} />
+                {/* The row spans the full (scrollable) table width; pin the review to the visible viewport of the scroller so it never widens or scrolls sideways. */}
+                <div className="sticky left-3 min-w-0" style={reviewWidth ? { width: reviewWidth } : undefined}>
+                  <PlayerReviewPanel row={row} renderMetric={renderMetric} historyTarget={historyTarget} historyIndex={historyIndex} />
+                </div>
               </td></tr>}
             </Fragment>;
           })}</tbody>
