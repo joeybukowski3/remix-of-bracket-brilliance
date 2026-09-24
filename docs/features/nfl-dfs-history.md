@@ -175,3 +175,13 @@ analytics-blocking fixture. If local server binding is unavailable, build first,
 then set `PLAYWRIGHT_DFS_LOCAL_DIST=1` and `PLAYWRIGHT_BASE_URL=http://jkb-dfs.local`;
 the spec fulfills same-origin requests directly from this workspace's `dist`
 without mocking application behavior or data.
+
+## Automation
+
+`nfl-yardage-projections.yml` generates the week folder on the same resolved season/week as the
+projections, after core publication: refresh `data/nfl/nflverse/stats-player-week` (current
+season), `npm run nfl:dfs-yardage-history -- --season=<s>`, then `npm run nfl:validate-dfs-history
+-- --season=<s> --week=<w>` (folder, `index`/`QB`/`RB`/`WR`/`TE`, matching season/week, non-empty
+history), then commit. Steps are fail-closed. `public/data/nfl/yardage-history/**` is generated;
+the DFS page requests exactly `week-NN` for the selected week and shows "History unavailable"
+when it is absent. `historyArtifact.test.ts` fails when the projection week has no folder.
