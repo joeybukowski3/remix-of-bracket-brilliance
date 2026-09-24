@@ -566,6 +566,31 @@ describe("Player Review panel", () => {
     expect(within(detail).getByText(/JKB projection unavailable for DST/i)).toBeInTheDocument();
   });
 
+  it("renders each review group as a compact Metric | Value table with same-row label and value", () => {
+    render(<NflDfsAnalyzerTable rows={[offensiveRow({ dkId: "q1", playerName: "QB Alpha", position: "QB" })]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for QB Alpha" }));
+    const detail = document.querySelector('[data-dfs-player-review="q1"]') as HTMLElement;
+    for (const group of ["Projection & Value", "Usage", "Matchup", "Scoring"]) {
+      const section = within(detail).getByRole("region", { name: group });
+      const table = within(section).getByRole("table");
+      const salary = within(table).queryByRole("rowheader", { name: "Salary" });
+      if (group === "Projection & Value") expect(salary?.closest("tr")).toHaveTextContent(/\$/);
+      expect(within(table).getAllByRole("row").length).toBeGreaterThan(0);
+    }
+    expect(detail.querySelector("dl")).toBeNull();
+  });
+
+  it("renders Additional Research as one compact strip", () => {
+    render(<NflDfsAnalyzerTable rows={[offensiveRow({ dkId: "q1", playerName: "QB Alpha", position: "QB" })]} />);
+    fireEvent.click(screen.getByRole("button", { name: "Expand details for QB Alpha" }));
+    const detail = document.querySelector('[data-dfs-player-review="q1"]') as HTMLElement;
+    const strip = within(detail).getByRole("region", { name: "Additional Research" });
+    expect(strip).toHaveTextContent("DK Overall RK");
+    expect(strip).toHaveTextContent("JKB Overall RK");
+    expect(strip).toHaveTextContent("Overall Diff");
+    expect(strip).toHaveTextContent("No weekly research available for this player.");
+  });
+
   it("shows hidden (board-invisible) columns in the complete review", () => {
     render(<NflDfsAnalyzerTable rows={[offensiveRow({ dkId: "q1", playerName: "QB Alpha", position: "QB" })]} />);
     fireEvent.click(screen.getByRole("button", { name: /columns/i }));
@@ -734,7 +759,7 @@ describe("mobile presentation", () => {
     fireEvent.click(nameButton);
     const detail = document.querySelector('[data-dfs-player-review="h1"]')!;
     expect(detail).toBeInTheDocument();
-    expect(within(detail as HTMLElement).getByText("Matchup", { selector: "dt" })).toBeInTheDocument();
+    expect(within(detail as HTMLElement).getByRole("rowheader", { name: "Matchup" })).toBeInTheDocument();
     // Full review includes fields beyond the currently visible board columns and the Last 10 history.
     expect(within(detail as HTMLElement).getByText("DK Overall RK")).toBeInTheDocument();
     expect(screen.getByRole("tab", { name: "Player Last 10" })).toBeInTheDocument();
