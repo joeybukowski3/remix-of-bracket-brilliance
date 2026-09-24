@@ -26,13 +26,15 @@
  *   npx tsx scripts/generate-nfl-tds-allowed-by-position.ts --season=2026 --week=3
  */
 
+import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { resolveNflWeekSelection } from "../src/lib/nfl/weekSelection.ts";
 import { buildTdsAllowedRows } from "../src/lib/nfl/tdsAllowed/buildRows.ts";
 import { resolveCurrentOpponents } from "../src/lib/nfl/fantasyAllowed/currentOpponents.ts";
 import type { TdsAllowedArtifact } from "../src/lib/nfl/tdsAllowed/types.ts";
-import { loadGames, loadPlayerWeekRows, loadTeamAbbrs, writeJsonAtomic } from "./lib/nflAllowedByPositionIo.ts";
+import { requirePlayerWeekCoverage } from "./lib/nfl-tds-allowed-coverage.mjs";
+import { loadGames, readJson, loadPlayerWeekRows, loadTeamAbbrs, writeJsonAtomic } from "./lib/nflAllowedByPositionIo.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DATA_DIR = join(ROOT, "public", "data", "nfl");
@@ -65,6 +67,10 @@ function main() {
   if (teams.length !== 32) throw new Error(`Expected 32 canonical teams, found ${teams.length}.`);
 
   const historicalRows = [...loadPlayerWeekRows(ROOT, priorSeason), ...loadPlayerWeekRows(ROOT, currentSeason)];
+  // Fail closed: never publish a sample that lags completed games (unplayed games are not expected).
+  const resultsFile = join(DATA_DIR, String(currentSeason), "results.json");
+  const results = existsSync(resultsFile) ? readJson(resultsFile).results ?? [] : [];
+  requirePlayerWeekCoverage({ season: currentSeason, results, games: currentSeasonGames, playerWeekRows: historicalRows });
   const opponents = resolveCurrentOpponents(currentSeasonGames, week);
 
   const rows = buildTdsAllowedRows({
