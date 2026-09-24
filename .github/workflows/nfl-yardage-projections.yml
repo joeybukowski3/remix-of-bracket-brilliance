@@ -430,6 +430,16 @@ jobs:
       - name: Validate DFS yardage history folder
         run: npm run nfl:validate-dfs-history -- --season=${{ steps.current-week.outputs.season }} --week=${{ steps.current-week.outputs.week }}
 
+      # TDs Allowed by Position reads the same stats-player-week cache refreshed
+      # above. Regenerate it from that exact cache state (the generator fails if
+      # any completed REG game is missing from the cache) and validate the
+      # artifact before it is committed with the cache below.
+      - name: Generate TDs Allowed by Position
+        run: npm run nfl:tds-allowed-by-position -- --season=${{ steps.current-week.outputs.season }} --week=${{ steps.current-week.outputs.week }}
+
+      - name: Validate TDs Allowed by Position coverage
+        run: npm run nfl:validate-tds-allowed -- --season=${{ steps.current-week.outputs.season }} --week=${{ steps.current-week.outputs.week }}
+
       - name: Commit and push validated DFS yardage history
         shell: bash
         run: |
@@ -440,7 +450,8 @@ jobs:
           history_dir="public/data/nfl/yardage-history/${season}/week-$(printf '%02d' "${{ steps.current-week.outputs.week }}")"
           git add -- "$history_dir" \
             "data/nfl/nflverse/stats-player-week/stats_player_week_${season}.csv" \
-            data/nfl/nflverse/stats-player-week/manifest.json
+            data/nfl/nflverse/stats-player-week/manifest.json \
+            public/data/nfl/tds-allowed-by-position.json
           if git diff --cached --quiet; then
             echo "No DFS yardage history changes."
             exit 0
