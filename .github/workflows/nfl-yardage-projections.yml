@@ -424,6 +424,20 @@ jobs:
       - name: Refresh player-week stats cache for DFS history (current season)
         run: npm run fantasy:player-week-cache -- --seasons=${{ steps.current-week.outputs.season }} --partial-season=${{ steps.current-week.outputs.season }}
 
+      # Yardage Props Review's Last-10 tables read the monolithic
+      # public/data/nfl/<season>/yardage-history.json, which used to be a manual
+      # local run and went stale (Week 1 artifact served into Week 3, omitting
+      # every completed current-season game). Regenerate it FIRST from the
+      # player-week cache refreshed above -- no extra source refresh -- then
+      # validate freshness/leakage/ordering; the per-week DFS folder below is then
+      # generated from that same cache state. The generator itself also fails if
+      # a completed pre-target-week game is missing from the cache.
+      - name: Generate Yardage Props Review history
+        run: npm run nfl:yardage-history -- --season=${{ steps.current-week.outputs.season }}
+
+      - name: Validate Yardage Props Review history
+        run: npm run nfl:validate-yardage-history -- --season=${{ steps.current-week.outputs.season }} --week=${{ steps.current-week.outputs.week }}
+
       - name: Generate DFS yardage history
         run: npm run nfl:dfs-yardage-history -- --season=${{ steps.current-week.outputs.season }}
 
@@ -449,6 +463,7 @@ jobs:
           season="${{ steps.current-week.outputs.season }}"
           history_dir="public/data/nfl/yardage-history/${season}/week-$(printf '%02d' "${{ steps.current-week.outputs.week }}")"
           git add -- "$history_dir" \
+            "public/data/nfl/${season}/yardage-history.json" \
             "data/nfl/nflverse/stats-player-week/stats_player_week_${season}.csv" \
             data/nfl/nflverse/stats-player-week/manifest.json \
             public/data/nfl/tds-allowed-by-position.json

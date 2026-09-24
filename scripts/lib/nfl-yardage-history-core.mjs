@@ -43,6 +43,51 @@ import { indexArchiveByTarget, resolveFinalPreKickoffLineFromIndex } from "./nfl
 
 export const MAX_HISTORY_GAMES = 10;
 
+/** First season with a stats_player_week cache / an epa_team_game cache. */
+export const FIRST_STAT_SEASON = 2022;
+export const FIRST_EPA_SEASON = 2020;
+
+function seasonRange(first, last) {
+  return Array.from({ length: Math.max(0, last - first + 1) }, (_, i) => first + i);
+}
+
+/**
+ * Single source of season coverage for every history block (legacy Player /
+ * Opponent Last-10, individualContext, pregame EPA ranks): first supported
+ * season through the TARGET season, inclusive. A fixed list silently drops the
+ * in-progress season -- the bug that hid 2026 Weeks 1-2 from Last-10 tables.
+ */
+export const statSeasonsThrough = (targetSeason) => seasonRange(FIRST_STAT_SEASON, targetSeason);
+export const epaSeasonsThrough = (targetSeason) => seasonRange(FIRST_EPA_SEASON, targetSeason);
+
+/**
+ * Leakage guard: drop every row at or after the target (season, week). Only
+ * completed games strictly before the target week may enter a Last-10 log;
+ * the target game itself (possibly partially played) and later games never do.
+ */
+export function excludeTargetWeekOnward(rows, targetSeason, targetWeek) {
+  return rows.filter((r) => r.season < targetSeason || (r.season === targetSeason && r.week < targetWeek));
+}
+
+/**
+ * Freshness guard: every team that played a completed game before the target
+ * week must have stat rows for that (season, week). Returns the missing
+ * `team|season|week` keys (empty when fresh) so a Week 3 artifact can never
+ * silently omit completed Week 2 games.
+ *
+ * @param {ReadonlyArray<{season:number, week:number, team:string}>} completedTeamGames - nflverse team codes, completed games before the target week.
+ * @param {ReadonlyArray<{season:number, week:number, team:string}>} statRows - normalized stat rows backing the logs.
+ */
+export function findMissingCompletedTeamGames(completedTeamGames, statRows) {
+  const have = new Set(statRows.map((r) => `${r.team}|${r.season}|${r.week}`));
+  const missing = new Set();
+  for (const g of completedTeamGames) {
+    const key = `${g.team}|${g.season}|${g.week}`;
+    if (!have.has(key)) missing.add(key);
+  }
+  return [...missing].sort();
+}
+
 /** Production-allowed-style position slices per market, mirroring `nfl-production-allowed-core.mjs`. */
 export const HISTORY_MARKET_POSITIONS = {
   passing: ["QB"],

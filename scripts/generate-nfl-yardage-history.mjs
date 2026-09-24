@@ -17,8 +17,10 @@
  *
  * Usage:
  *   node scripts/generate-nfl-yardage-history.mjs [--season=2026] [--as-of=<UTC>] [--dry-run]
- * The additive individualContext reads available 2022..target-season caches.
- * Legacy logs retain their original 2022-2025 sources and leader cohort.
+ * Every block (legacy players/teamDefense, individualContext, EPA ranks) reads
+ * the same first-supported..target-season range (statSeasonsThrough /
+ * epaSeasonsThrough) and only completed games strictly before the target week.
+ * Fails closed if any completed pre-target-week game is missing from the cache.
  */
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -37,6 +39,10 @@ import {
   buildPlayerLast10,
   buildOpponentLast10,
   HISTORY_MARKET_POSITIONS,
+  statSeasonsThrough,
+  epaSeasonsThrough,
+  excludeTargetWeekOnward,
+  findMissingCompletedTeamGames,
 } from "./lib/nfl-yardage-history-core.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -44,9 +50,6 @@ const DATA_DIR = join(ROOT, "public", "data", "nfl");
 const STATS_DIR = join(ROOT, "data", "nfl", "nflverse", "stats-player-week");
 const EPA_DIR = join(ROOT, "data", "nfl", "nflverse", "epa-team-game");
 const ARCHIVE_FILE = join(ROOT, "data", "nfl", "props", "market-archive", "nfl-yardage-market-archive.jsonl");
-
-const STAT_SEASONS = [2022, 2023, 2024, 2025];
-const EPA_SEASONS = [2020, 2021, 2022, 2023, 2024, 2025];
 
 export const YARDAGE_HISTORY_SCHEMA_VERSION = "nfl-yardage-history-v2";
 
@@ -79,7 +82,7 @@ function stripGsisPrefix(playerId) {
   return String(playerId ?? "").replace(/^gsis:/, "");
 }
 
-function loadAllStatRows(seasons = STAT_SEASONS, normalize = normalizeHistoryStatRows) {
+function loadAllStatRows(seasons, normalize = normalizeHistoryStatRows) {
   const out = [];
   for (const season of seasons) {
     const path = join(STATS_DIR, `stats_player_week_${season}.csv`);
@@ -90,9 +93,9 @@ function loadAllStatRows(seasons = STAT_SEASONS, normalize = normalizeHistorySta
   return out;
 }
 
-function loadAllEpaRows() {
+function loadAllEpaRows(seasons) {
   const out = [];
-  for (const season of EPA_SEASONS) {
+  for (const season of seasons) {
     const rows = readCsvIfExists(join(EPA_DIR, `epa_team_game_${season}.csv`));
     out.push(...normalizeEpaTeamGameRows(rows));
   }
@@ -126,12 +129,27 @@ function main() {
   const rows = projections.rows.filter((r) => r.week === week);
   if (rows.length === 0) throw new Error(`no projection rows for season ${season} week ${week} -- refusing to write an empty artifact`);
 
-  const contextSeasons = Array.from({ length: season - 2022 + 1 }, (_, i) => 2022 + i);
+  const statSeasons = statSeasonsThrough(season);
+  const epaSeasons = epaSeasonsThrough(season);
+  const contextSeasons = statSeasons;
   const { games, results } = loadGamesAndResults(contextSeasons);
   const gameLookup = buildGameLookup(games, results, canonicalToNflverseAbbr);
 
-  const allStatRows = loadAllStatRows();
-  const epaRows = loadAllEpaRows();
+  const allStatRows = excludeTargetWeekOnward(loadAllStatRows(statSeasons), season, week);
+  const epaRows = loadAllEpaRows(epaSeasons);
+
+  // Freshness guard: a completed pre-target-week game absent from the stat cache
+  // means the cache is stale -- refuse to write rather than ship a log that
+  // silently skips it (e.g. a Week 3 artifact missing completed Week 2).
+  const finalGameIds = new Set(results.map((r) => r.gameId));
+  const completedTeamGames = games
+    .filter((g) => g.season === season && g.week < week && finalGameIds.has(g.gameId))
+    .flatMap((g) => [g.homeAbbr, g.awayAbbr].map((abbr) => ({ season: g.season, week: g.week, team: canonicalToNflverseAbbr.get(abbr) })))
+    .filter((g) => g.team);
+  const staleTeamGames = findMissingCompletedTeamGames(completedTeamGames, allStatRows);
+  if (staleTeamGames.length > 0) {
+    throw new Error(`stat cache is stale: ${staleTeamGames.length} completed team-game(s) before week ${week} have no stat rows (${staleTeamGames.slice(0, 6).join(", ")}) -- refresh data/nfl/nflverse/stats-player-week first`);
+  }
   const rollingIndexes = buildHistoryRollingIndexes(allStatRows, epaRows);
 
   // This week's (not-yet-played) matchup ranks, using the EXACT SAME pregame
@@ -260,7 +278,7 @@ function main() {
       season,
       week,
       notes: [
-        `Player/opponent game logs are capped at ${TRAILING_GAMES} most-recent completed REG-season games, chronological across seasons (2022-2025 source data) -- Week 1 has zero current-season games, so every Last-10 game here is from a prior season.`,
+        `Player/opponent game logs are capped at ${TRAILING_GAMES} most-recent completed REG-season games, chronological across seasons (${statSeasons[0]}-${season} source data). Only completed games strictly before this week enter a log: the target-week game and later games are excluded, so Week 1 has zero current-season games and every Last-10 game is from a prior season, while later weeks lead with the completed current-season games.`,
         "Opp Def Rank / Opp Off Rank is a pregame trailing-10-game rolling EPA/play rank (see nfl-epa-week-rank-core.mjs) -- a distinct, per-game-windowed derivation of the same canonical nflverse EPA data the frozen Season/Last-5 matchup-epa.json artifact uses, not that artifact itself.",
         "Opp Yds Allow Avg is a pregame trailing-10-game rolling yards-allowed average (see nfl-yardage-rolling-core.mjs) over the same nflverse stats_player_week cache the frozen Season/Last-5 production-allowed artifact uses.",
         "Vegas Line resolves only from an approved-sportsbook, final pre-kickoff observation in the yardage market archive; the archive only began collecting 2026-08-26, so every historical (pre-2026) game resolves to null -- never backfilled/estimated.",
@@ -269,7 +287,7 @@ function main() {
         "epa_team_game's Rams ('LAR') and Washington ('WSH') team codes are aliased to the stats_player_week/teams.json convention ('LA'/'WAS') before ranking (see EPA_TEAM_CODE_ALIAS in nfl-epa-week-rank-core.mjs) -- unaliased, every historical game for those two teams' Opp Def Rank / Opp Off Rank resolved to null despite abundant EPA history, a join-key mismatch rather than genuinely missing data.",
         "currentWeekEpaRanks (keyed by canonical team abbr) is this week's not-yet-played matchup rank, computed with buildPregameRollingEpaAt -- the exact same pregame trailing-10-game EPA/play formula and rankTeamsAt ranking function as the historical Opp Def Rank / Opp Off Rank columns, evaluated at this week's (season, week) cutoff instead of a played game. Apples-to-apples with the historical columns; distinct from (and never sourced from) the frozen Season/Last-5 matchup-epa.json artifact's epaEdge rank used elsewhere in the review panel.",
         missingPregameRank.length > 0
-          ? `${missingPregameRank.length} player market(s) had no pregame EPA rank for their most recent Last-10 game (first tracked game in the 2020-2025 EPA window) -- rendered as null, never fabricated.`
+          ? `${missingPregameRank.length} player market(s) had no pregame EPA rank for their most recent Last-10 game (first tracked game in the ${epaSeasons[0]}-${season} EPA window) -- rendered as null, never fabricated.`
           : "Every built player's most recent Last-10 game had a resolvable pregame EPA rank.",
       ],
     }),
@@ -285,8 +303,10 @@ function main() {
       playersBuilt,
       opponentLogsBuilt,
       archiveObservations: archiveObservations.length,
-      statSeasons: STAT_SEASONS,
-      epaSeasons: EPA_SEASONS,
+      statSeasons,
+      epaSeasons,
+      historyCutoff: { season, week },
+      completedTeamGamesVerified: completedTeamGames.length,
       individualContextStatSeasons: contextSeasons.filter((year) => existsSync(join(STATS_DIR, `stats_player_week_${year}.csv`))),
     },
   };
