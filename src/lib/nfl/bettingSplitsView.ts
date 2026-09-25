@@ -1,4 +1,4 @@
-import { moneyGap, publicGap, type NflDkBettingSplitsArtifact, type NflDkBettingSplitsGame, type NflDkBettingSplitsSide } from "./bettingSplitsData";
+import { bettingSplitsForGame, moneyGap, publicGap, type NflDkBettingSplitsArtifact, type NflDkBettingSplitsGame, type NflDkBettingSplitsSide, type NflDkSplitsAvailability } from "./bettingSplitsData";
 
 export type SplitsMarket = "spread" | "moneyline" | "total";
 export type SplitsRow = { game: NflDkBettingSplitsGame; market: SplitsMarket; side: NflDkBettingSplitsSide; gap: number; publicGap: number };
@@ -34,6 +34,36 @@ export function splitsSignal(gap: number): SplitsSignal {
   if (gap >= SPLITS_THRESHOLDS.moneyLean) return "lean";
   if (gap <= SPLITS_THRESHOLDS.publicHeavy) return "public";
   return "balanced";
+}
+
+export type CompactSplitsSide = { side: string; moneyGap: number; signal: SplitsSignal; sharp: boolean };
+export type CompactSplitsSummary = {
+  state: "fresh" | "stale" | "missing" | "unavailable";
+  spread: CompactSplitsSide | null;
+  moneyline: CompactSplitsSide | null;
+  total: CompactSplitsSide | null;
+};
+
+/** One descriptive handle-minus-bets leader per market, joined by canonical gameId. */
+export function compactSplitsForGame(
+  availability: Pick<NflDkSplitsAvailability, "artifact" | "freshness">,
+  gameId: string,
+): CompactSplitsSummary {
+  const empty = { spread: null, moneyline: null, total: null };
+  if (availability.freshness === "unavailable" || !availability.artifact) return { state: "unavailable", ...empty };
+  const game = bettingSplitsForGame(availability.artifact, gameId);
+  if (!game) return { state: "missing", ...empty };
+  const strongest = (market: SplitsMarket): CompactSplitsSide => {
+    const side = [...game.markets[market]].sort((a, b) => moneyGap(b) - moneyGap(a))[0];
+    const gap = moneyGap(side);
+    return {
+      side: side.side === "away" ? game.away.toUpperCase() : side.side === "home" ? game.home.toUpperCase() : side.side === "over" ? "Over" : "Under",
+      moneyGap: gap,
+      signal: splitsSignal(gap),
+      sharp: gap >= SPLITS_THRESHOLDS.moneyLean,
+    };
+  };
+  return { state: availability.freshness, spread: strongest("spread"), moneyline: strongest("moneyline"), total: strongest("total") };
 }
 
 export function splitsRows(artifact: NflDkBettingSplitsArtifact, market?: SplitsMarket): SplitsRow[] {

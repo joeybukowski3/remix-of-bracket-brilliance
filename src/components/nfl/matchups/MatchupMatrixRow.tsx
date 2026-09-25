@@ -9,6 +9,8 @@ import type { NflMatrixDisplayMode } from "@/components/nfl/matchups/MatchupMatr
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 import { nflTeamColorFor } from "@/lib/nfl/nflTeamColor";
 import MatchupSummaryStrip from "@/components/nfl/matchups/MatchupSummaryStrip";
+import MatchupCompactSplits from "@/components/nfl/matchups/MatchupCompactSplits";
+import type { CompactSplitsSummary } from "@/lib/nfl/bettingSplitsView";
 import type { MarketCurrentGame } from "@/lib/nfl/marketData";
 import type { GameProjection } from "@/lib/nfl/projectionData";
 import type { TeamTotalProjection } from "@/lib/nfl/totalsProjectionData";
@@ -195,6 +197,7 @@ export default function MatchupMatrixRow({
   market = null,
   projection = null,
   totalProjection = null,
+  bettingSplits,
 }: {
   matchup: NflMatchup;
   board: NflMatrixBoard;
@@ -205,6 +208,7 @@ export default function MatchupMatrixRow({
   market?: MarketCurrentGame | null;
   projection?: GameProjection | null;
   totalProjection?: TeamTotalProjection | null;
+  bettingSplits?: CompactSplitsSummary;
 }) {
   const { away, home } = matchup;
 
@@ -275,6 +279,7 @@ export default function MatchupMatrixRow({
       </DenseTableScroller>
 
       <MatchupSummaryStrip market={market} projection={projection} totalProjection={totalProjection} />
+      {bettingSplits && <MatchupCompactSplits summary={bettingSplits} />}
     </div>
   );
 }

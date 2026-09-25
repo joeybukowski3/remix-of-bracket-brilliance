@@ -5,6 +5,7 @@ import MatchupMatrixRow from "@/components/nfl/matchups/MatchupMatrixRow";
 import { matrixCellStyle } from "@/lib/nfl/matchupMatrixRankTier";
 import type { NflMatrixBoard, NflMatrixCell, NflMatrixMetricId } from "@/lib/nfl/matchupMatrixData";
 import type { NflMatchup } from "@/lib/nfl/matchups";
+import type { CompactSplitsSummary } from "@/lib/nfl/bettingSplitsView";
 
 /**
  * Each cell renders exactly one number: the rank in Rankings mode, or the raw
@@ -52,6 +53,38 @@ function makeBoard(cells: Record<string, NflMatrixCell>): NflMatrixBoard {
     },
   };
 }
+
+describe("weekly matchup compact betting splits", () => {
+  const summary: CompactSplitsSummary = {
+    state: "fresh",
+    spread: { side: "NE", moneyGap: 14, signal: "lean", sharp: true },
+    moneyline: { side: "SEA", moneyGap: 13, signal: "lean", sharp: true },
+    total: { side: "Under", moneyGap: 34, signal: "strong", sharp: true },
+  };
+  const renderRow = (bettingSplits: CompactSplitsSummary) => render(<MemoryRouter><MatchupMatrixRow matchup={MATCHUP} board={makeBoard({})} displayMode="rankings" awayRecord={null} homeRecord={null} bettingSplits={bettingSplits} /></MemoryRouter>);
+
+  it("shows all three signals below the market strip without intercepting matchup links", () => {
+    renderRow(summary);
+    const strip = document.querySelector("[data-matchup-compact-splits]")!;
+    expect(strip.previousElementSibling).toHaveAttribute("data-matchup-summary-strip");
+    expect(within(strip as HTMLElement).getByLabelText("Spread: NE +14 pp, Money Lean")).toHaveTextContent("SPRNE +14");
+    expect(within(strip as HTMLElement).getByLabelText("Moneyline: SEA +13 pp, Money Lean")).toBeVisible();
+    expect(within(strip as HTMLElement).getByLabelText("Total: Under +34 pp, Strong Money Gap")).toBeVisible();
+    expect(strip.querySelector("a, button")).toBeNull();
+    expect(screen.getByRole("link", { name: /view matchup breakdown/i })).toHaveAttribute("href", `/nfl/matchups/${MATCHUP.slug}`);
+  });
+
+  it("mutes balanced values and uses dashes for unavailable and missing games", () => {
+    const view = renderRow({ ...summary, spread: { side: "NE", moneyGap: 3, signal: "balanced", sharp: false } });
+    expect(screen.getByLabelText("Spread: Balanced")).toHaveTextContent("—");
+    view.rerender(<MemoryRouter><MatchupMatrixRow matchup={MATCHUP} board={makeBoard({})} displayMode="rankings" awayRecord={null} homeRecord={null} bettingSplits={{ state: "unavailable", spread: null, moneyline: null, total: null }} /></MemoryRouter>);
+    expect(document.querySelector("[data-matchup-compact-splits]")).toHaveAttribute("data-splits-state", "unavailable");
+    expect(document.querySelectorAll("[data-matchup-compact-splits] span[aria-label$='unavailable']")).toHaveLength(3);
+    view.rerender(<MemoryRouter><MatchupMatrixRow matchup={MATCHUP} board={makeBoard({})} displayMode="rankings" awayRecord={null} homeRecord={null} bettingSplits={{ state: "missing", spread: null, moneyline: null, total: null }} /></MemoryRouter>);
+    expect(document.querySelector("[data-matchup-compact-splits]")).toHaveAttribute("data-splits-state", "missing");
+    expect(screen.getByLabelText("Spread: not in the current pregame snapshot")).toHaveTextContent("—");
+  });
+});
 
 /** jsdom normalizes inline hex colors to `rgb(...)` when read back from style. */
 function cssColorToRgb(css: string): string {
