@@ -33,3 +33,32 @@ for (const width of [1440, 390, 320]) {
     await page.screenshot({ path: testInfo.outputPath(`weekly-matchups-${width}.png`) });
   });
 }
+
+for (const width of [1440, 390, 320]) {
+  test(`weekly matchup summary strip is compact and does not overflow at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(`${baseUrl}/nfl/matchups?week=1`);
+
+    const strip = page.locator("[data-matchup-summary-strip]").first();
+    await expect(strip).toBeVisible();
+    await expect(strip.locator("dt")).toHaveText(["Vegas Line", "JKB Line", "Vegas Total", "JKB Total"]);
+
+    const fields = await strip.locator("[data-summary-field]").evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const { y, height } = node.getBoundingClientRect();
+        return { y, height };
+      }),
+    );
+    expect(new Set(fields.map((f) => Math.round(f.y))).size).toBe(width >= 768 ? 1 : 2);
+    expect(Math.max(...fields.map((f) => f.height))).toBeLessThanOrEqual(56);
+
+    const clipped = await strip.locator("dt, dd").evaluateAll((nodes) =>
+      nodes.filter((n) => n.scrollWidth > n.clientWidth + 1).map((n) => n.textContent),
+    );
+    expect(clipped).toEqual([]);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+
+    // The strip lives inside the matchup card, not beside it.
+    expect(await page.locator("[data-matrix-game]").first().locator("[data-matchup-summary-strip]").count()).toBe(1);
+  });
+}

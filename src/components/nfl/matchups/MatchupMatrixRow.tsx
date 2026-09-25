@@ -8,6 +8,10 @@ import type { NflMatrixBoard, NflMatrixCell, NflMatrixMetricId } from "@/lib/nfl
 import type { NflMatrixDisplayMode } from "@/components/nfl/matchups/MatchupMatrixControls";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 import { nflTeamColorFor } from "@/lib/nfl/nflTeamColor";
+import MatchupSummaryStrip from "@/components/nfl/matchups/MatchupSummaryStrip";
+import type { MarketCurrentGame } from "@/lib/nfl/marketData";
+import type { GameProjection } from "@/lib/nfl/projectionData";
+import type { TeamTotalProjection } from "@/lib/nfl/totalsProjectionData";
 
 /** Identity stays frozen and readable while the wider metric grid scrolls inside its card. */
 const DIVIDER_COL_WIDTH_PX = 3;
@@ -188,12 +192,19 @@ export default function MatchupMatrixRow({
   displayMode,
   awayRecord,
   homeRecord,
+  market = null,
+  projection = null,
+  totalProjection = null,
 }: {
   matchup: NflMatchup;
   board: NflMatrixBoard;
   displayMode: NflMatrixDisplayMode;
   awayRecord: string | null;
   homeRecord: string | null;
+  /** Current market, JKB spread and JKB total for THIS game (looked up by gameId by the caller). */
+  market?: MarketCurrentGame | null;
+  projection?: GameProjection | null;
+  totalProjection?: TeamTotalProjection | null;
 }) {
   const { away, home } = matchup;
 
@@ -262,6 +273,8 @@ export default function MatchupMatrixRow({
           </tbody>
         </table>
       </DenseTableScroller>
+
+      <MatchupSummaryStrip market={market} projection={projection} totalProjection={totalProjection} />
     </div>
   );
 }

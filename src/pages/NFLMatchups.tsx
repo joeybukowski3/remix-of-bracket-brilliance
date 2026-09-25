@@ -7,6 +7,12 @@ import StaleWarning from "@/components/nfl/StaleWarning";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
 import { useNflMatchupEpa } from "@/hooks/useNflMatchupEpa";
+import { useNflMatchupMarket } from "@/hooks/useNflMatchupMarket";
+import { useNflMatchupProjections } from "@/hooks/useNflMatchupProjections";
+import { useNflMatchupTotals } from "@/hooks/useNflMatchupTotals";
+import { currentMarketFor } from "@/lib/nfl/marketData";
+import { projectionFor } from "@/lib/nfl/projectionData";
+import { teamTotalFor } from "@/lib/nfl/totalsProjectionData";
 import { useNflMatchupMetrics } from "@/hooks/useNflMatchupMetrics";
 import { useNflSuccessRates } from "@/hooks/useNflSuccessRates";
 import { useNflTrenchMetrics } from "@/hooks/useNflTrenchMetrics";
@@ -71,6 +77,10 @@ export default function NFLMatchups() {
   const { artifact: conventionalArtifact } = useNflMatchupMetrics();
   const { artifact: successArtifact } = useNflSuccessRates();
   const { artifact: trenchArtifact } = useNflTrenchMetrics();
+  // Same canonical artifacts the matchup detail page reads for Vegas/JKB line and total.
+  const { artifact: marketArtifact } = useNflMatchupMarket();
+  const { artifact: projectionArtifact } = useNflMatchupProjections();
+  const { artifact: totalsArtifact } = useNflMatchupTotals();
 
   const [displayMode, setDisplayMode] = useState<NflMatrixDisplayMode>("rankings");
   const [dataWindow, setDataWindow] = useState<NflMatrixDataWindowMode>(DEFAULT_MATRIX_DATA_WINDOW_MODE);
@@ -177,6 +187,9 @@ export default function NFLMatchups() {
                 displayMode={displayMode}
                 awayRecord={recordByAbbr.get(matchup.away.abbr) ?? null}
                 homeRecord={recordByAbbr.get(matchup.home.abbr) ?? null}
+                market={currentMarketFor(marketArtifact, matchup.gameId)}
+                projection={projectionFor(projectionArtifact, matchup.gameId)}
+                totalProjection={teamTotalFor(totalsArtifact, matchup.gameId)}
               />
             ))}
           </div>
