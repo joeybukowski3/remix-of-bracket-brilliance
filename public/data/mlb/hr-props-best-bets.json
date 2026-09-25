@@ -1,10 +1,10 @@
 {
   "date": "2026-09-25",
-  "generatedAt": "2026-09-25T12:51:27.077Z",
+  "generatedAt": "2026-09-25T15:57:26.711Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Yankee Stadium (1.18) and Coors (1.07) lead the slate with elevated park factors, while Brendan Beck and Tomoyuki Sugano both carry HR-allowed marks above 84.9. The model is zeroing in on the BAL-NYY and CWS-COL games where barrel rates, pull tendencies, and opposing pitcher HR vulnerability align.",
-    "modelNote": "Pete Alonso tops the board at 96.1 because his 15% barrel rate, 6.9 HR/FB, and 100 opposing-pitcher HR mark combine with the highest park boost; Murakami and Vargas follow as the next-best Coors leverage plays."
+    "slateOverview": "Yankee Stadium (1.18) and Rate Field (1.07) are the day's strongest HR parks, with Brendan Beck and Tomoyuki Sugano both allowing elevated HR rates to opposing lineups. The model is heavily weighting park factors and recent pitcher vulnerability, pushing Alonso, Murakami, and Vargas to the top of the slate.",
+    "modelNote": "The model is prioritizing park-adjusted barrel rates and opposing pitcher HR vulnerability over raw exit velo, which is why Alonso's 96 hrScore leads despite Murakami's superior barrel rate."
   },
   "bestBets": [
     {
@@ -14,16 +14,16 @@
       "opposingPitcher": "Brendan Beck",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=15%",
-        "HH=56.3%"
+        "hrScore=96",
+        "park=1.18"
       ],
       "bullets": [
-        "park=1.18",
-        "hrScore=96.1"
+        "hrScore=96",
+        "park=1.18"
       ],
-      "hrOddsYes": "+345",
-      "marketImpliedProbability": 0.2247191011235955,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -33,16 +33,16 @@
       "opposingPitcher": "Tomoyuki Sugano",
       "hrScoreRank": 2,
       "topStats": [
-        "barrel=19.2%",
-        "HH=56%"
+        "hrScore=72",
+        "barrel=19.2%"
       ],
       "bullets": [
-        "park=1.07",
-        "hrScore=72.6"
+        "hrScore=72",
+        "barrel=19.2%"
       ],
-      "hrOddsYes": "+375",
-      "marketImpliedProbability": 0.21052631578947367,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -52,16 +52,16 @@
       "opposingPitcher": "Tomoyuki Sugano",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=13.2%",
-        "HH=44.1%"
+        "hrScore=71.7",
+        "park=1.07"
       ],
       "bullets": [
-        "park=1.07",
-        "hrScore=72.4"
+        "hrScore=71.7",
+        "park=1.07"
       ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -75,169 +75,54 @@
         "Pitcher HR VS=47.7"
       ],
       "bullets": [
-        "HR score 68.3 (#4)",
+        "HR score 67.9 (#4)",
         "Pitcher HR VS 47.7 at park 0.95"
       ],
-      "hrOddsYes": "+600",
-      "marketImpliedProbability": 0.14285714285714285,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
-      "player": "Coby Mayo",
-      "team": "BAL",
-      "opponent": "NYY",
-      "opposingPitcher": "Brendan Beck",
+      "player": "Ben Rice",
+      "team": "NYY",
+      "opponent": "BAL",
+      "opposingPitcher": "Brandon Young",
       "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=100.0",
-        "Hard Hit%=47.6"
+        "Hard Hit%=48.0",
+        "Pitcher HR VS=47.8"
       ],
       "bullets": [
-        "HR score 66.9 (#5)",
-        "Pitcher HR VS 100.0 at park 1.18"
+        "HR score 66.8 (#5)",
+        "Pitcher HR VS 47.8 at park 1.18"
       ],
-      "hrOddsYes": "+480",
-      "marketImpliedProbability": 0.1724137931034483,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
-      "player": "Coby Mayo",
-      "team": "BAL",
-      "opponent": "NYY",
-      "opposingPitcher": "Brendan Beck",
+      "player": "Ben Rice",
+      "team": "NYY",
+      "opponent": "BAL",
+      "opposingPitcher": "Brandon Young",
       "hrScoreRank": 5,
       "topStats": [
-        "barrel=13.7%",
-        "HH=47.6%"
+        "hrScore=66.8",
+        "park=1.18"
       ],
       "bullets": [
-        "park=1.18",
-        "hrScore=66.9"
+        "hrScore=66.8",
+        "park=1.18"
       ],
-      "hrOddsYes": "+480",
-      "marketImpliedProbability": 0.1724137931034483,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jackson Chourio",
-      "team": "MIL",
-      "opponent": "STL",
-      "opposingPitcher": "Michael McGreevy",
-      "hrScoreRank": 6,
-      "topStats": [
-        "barrel=12.4%",
-        "HH=47.1%"
-      ],
-      "bullets": [
-        "park=1.1",
-        "hrScore=66.7"
-      ],
-      "hrOddsYes": "+575",
-      "marketImpliedProbability": 0.14814814814814814,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Christian Encarnacion-Strand",
-      "team": "BAL",
-      "opponent": "NYY",
-      "opposingPitcher": "Brendan Beck",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Pitcher HR VS=100.0",
-        "Hard Hit%=38.1"
-      ],
-      "bullets": [
-        "HR score 66.1 (#7)",
-        "Pitcher HR VS 100.0 at park 1.18"
-      ],
-      "hrOddsYes": "+545",
-      "marketImpliedProbability": 0.15503875968992248,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ],
-  "longshots": [
-    {
-      "player": "Christian Encarnacion-Strand",
-      "team": "BAL",
-      "opponent": "NYY",
-      "opposingPitcher": "Brendan Beck",
-      "hrScoreRank": 7,
-      "topStats": [
-        "barrel=14.4%",
-        "HH=38.1%"
-      ],
-      "bullets": [
-        "park=1.18",
-        "hrScore=66.1"
-      ],
-      "hrOddsYes": "+545",
-      "marketImpliedProbability": 0.15503875968992248,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Yordan Alvarez",
-      "team": "HOU",
-      "opponent": "ATH",
-      "opposingPitcher": "Jacob Lopez",
-      "hrScoreRank": 8,
-      "topStats": [
-        "barrel=16.1%",
-        "HH=53.8%"
-      ],
-      "bullets": [
-        "park=0.96",
-        "hrScore=65"
-      ],
-      "hrOddsYes": "+300",
-      "marketImpliedProbability": 0.25,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Brice Turang",
-      "team": "MIL",
-      "opponent": "STL",
-      "opposingPitcher": "Michael McGreevy",
-      "hrScoreRank": 23,
-      "topStats": [
-        "Pitcher HR VS=64.4",
-        "Hard Hit%=41.4"
-      ],
-      "bullets": [
-        "HR score 53.4 (#23)",
-        "Pitcher HR VS 64.4 at park 1.10"
-      ],
-      "hrOddsYes": "+700",
-      "marketImpliedProbability": 0.125,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Josh Jung",
-      "team": "TEX",
-      "opponent": "MIN",
-      "opposingPitcher": "Joe Ryan",
-      "hrScoreRank": 24,
-      "topStats": [
-        "Pitcher HR VS=57.3",
-        "Hard Hit%=49.2"
-      ],
-      "bullets": [
-        "HR score 53.4 (#24)",
-        "Pitcher HR VS 57.3 at park 0.97"
-      ],
-      "hrOddsYes": "+700",
-      "marketImpliedProbability": 0.125,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ]
+  "longshots": []
 }
