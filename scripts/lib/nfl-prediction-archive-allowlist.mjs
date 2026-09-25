@@ -37,6 +37,17 @@ export function isAllowedStarterPropEvaluationPath(path, season) {
   return new RegExp(`^data/nfl/starter-prop-evaluations/${season}/[0-9]{2}(\\.exclusions)?\\.jsonl$`).test(path);
 }
 
+/**
+ * Shadow total calibration candidate (jkb-nfl-total-calibration-shadow-k08-2026), nfl-yardage-projections.yml. A SEPARATE root from every
+ * production prediction/outcome path: prospective + retrospective prediction partitions, immutable outcome events, the frozen-config
+ * manifest and the derived report. Never a production-consumer path.
+ */
+export function isAllowedShadowTotalPath(path, season) {
+  const root = "data/nfl/shadow-predictions/nfl-total-calibration-k08";
+  if (path === `${root}/manifest.json` || path === `${root}/report/latest.json` || path === `${root}/report/latest.md`) return true;
+  return new RegExp(`^data/nfl/shadow-predictions/nfl-total-calibration-k08/${season}/[0-9]{2}/(predictions|retrospective|outcomes)\\.jsonl$`).test(path);
+}
+
 /** WU3 derived evaluation datasets (nfl-schedules-results.yml, after resolution). Derived-only, never a source/outcome path. */
 export function isAllowedEvaluationPath(path) {
   const versionedFile = /^data\/nfl\/prediction-evaluations\/jkb-football-evaluation-v1\/(spread|passing|rushing|receiving|team_opportunity|team_total)\/[0-9]{4}\.jsonl$/;
@@ -58,7 +69,7 @@ export function isAllowedEvaluationPath(path) {
 function main() {
   const [, , kind, season, path] = process.argv;
   if (!kind || !season || !path) {
-    console.error("usage: nfl-prediction-archive-allowlist.mjs <predictions|outcomes|evaluations|starter-cohorts|starter-prop-evaluations> <season> <path>");
+    console.error("usage: nfl-prediction-archive-allowlist.mjs <predictions|outcomes|evaluations|starter-cohorts|starter-prop-evaluations|shadow-total> <season> <path>");
     process.exitCode = 1;
     return;
   }
@@ -68,6 +79,7 @@ function main() {
     : kind === "evaluations" ? isAllowedEvaluationPath(path)
     : kind === "starter-cohorts" ? isAllowedStarterCohortPath(path, season)
     : kind === "starter-prop-evaluations" ? isAllowedStarterPropEvaluationPath(path, season)
+    : kind === "shadow-total" ? isAllowedShadowTotalPath(path, season)
     : false;
   if (!allowed) {
     console.error(`ERROR: Refusing unexpected ${kind} path: ${path}`);

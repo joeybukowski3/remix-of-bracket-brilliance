@@ -288,7 +288,8 @@ jobs:
             ':(glob)data/nfl/predictions/${{ steps.current-week.outputs.season }}/[0-9][0-9]/nfl-*.jsonl' \
             ':(glob)data/nfl/predictions/manifests/sources/[0-9a-f]*.json' \
             ':(glob)data/nfl/predictions/manifests/fitted-models/[0-9a-f]*.json' \
-            ':(glob)data/nfl/starter-cohorts/${{ steps.current-week.outputs.season }}/[0-9][0-9]*.jsonl')" ]; then
+            ':(glob)data/nfl/starter-cohorts/${{ steps.current-week.outputs.season }}/[0-9][0-9]*.jsonl' \
+            'data/nfl/shadow-predictions/nfl-total-calibration-k08')" ]; then
             echo "No NFL yardage-projection input/output changes (unexpected on a successful run -- see the provenance-only-commit note above)."
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
@@ -375,6 +376,17 @@ jobs:
             node scripts/lib/nfl-prediction-archive-allowlist.mjs starter-cohorts "$archive_season" "$cohort_path"
             git add -- "$cohort_path"
           done < <(git status --porcelain=v1 -z --untracked-files=all -- data/nfl/starter-cohorts)
+
+          # Shadow total calibration candidate (jkb-nfl-total-calibration-shadow-k08-2026):
+          # append-only shadow predictions / outcome events / frozen-config manifest under a
+          # SEPARATE root (never data/nfl/predictions). Validated against the shared allowlist
+          # like every other archive path; fails closed on anything unrecognized. Shadow only --
+          # nothing here is read by the public site.
+          while IFS= read -r -d '' entry; do
+            shadow_path="${entry:3}"
+            node scripts/lib/nfl-prediction-archive-allowlist.mjs shadow-total "$archive_season" "$shadow_path"
+            git add -- "$shadow_path"
+          done < <(git status --porcelain=v1 -z --untracked-files=all -- data/nfl/shadow-predictions)
 
           if git diff --cached --quiet; then
             echo "No staged NFL yardage-projection changes."
