@@ -18,6 +18,7 @@ import {
 import type { NflPerformanceArtifactState } from "@/hooks/useNflPerformanceArtifact";
 import type {
   NflPropsPerformanceArtifact,
+  SidesPerformanceRow,
   StarterPropDirection,
   StarterPropDirectionalResult,
   StarterPosition,
@@ -36,8 +37,10 @@ const POSITION_OPTIONS: readonly (StarterPosition | "all")[] = ["all", "QB", "RB
 
 export default function NflPerformancePropsTab({
   state,
+  games,
 }: {
   state: NflPerformanceArtifactState<NflPropsPerformanceArtifact>;
+  games?: readonly SidesPerformanceRow[];
 }) {
   const [market, setMarket] = useState<PropsMarketFilter>("all");
   const [filters, setFilters] = useState<PropsFilters>(DEFAULT_PROPS_FILTERS);
@@ -105,7 +108,7 @@ export default function NflPerformancePropsTab({
           {sortedRows.length === 0 ? (
             <NflPerformanceEmptyState title="No props match the current filters." description="Adjust or clear a filter to see more results." />
           ) : (
-            <NflPerformancePropsTable rows={sortedRows} sort={sort} onSort={handleSort} />
+            <NflPerformancePropsTable rows={sortedRows} games={games} sort={sort} onSort={handleSort} />
           )}
         </>
       )}

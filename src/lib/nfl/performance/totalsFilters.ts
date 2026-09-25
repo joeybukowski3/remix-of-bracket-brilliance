@@ -16,6 +16,18 @@ export const DEFAULT_TOTALS_FILTERS: TotalsFilters = {
   jkbMarketDifferenceBucket: "all",
 };
 
+/** Number of toolbar filters that differ from the default. `week` is excluded: it has its own selector. */
+export function countActiveTotalsFilters(filters: TotalsFilters): number {
+  const { week: _week, ...rest } = filters;
+  const { week: _defaultWeek, ...defaults } = DEFAULT_TOTALS_FILTERS;
+  return (Object.keys(defaults) as (keyof typeof defaults)[]).filter((key) => rest[key] !== defaults[key]).length;
+}
+
+/** Resets every toolbar filter but keeps the selected week. */
+export function clearTotalsToolbarFilters(filters: TotalsFilters): TotalsFilters {
+  return { ...DEFAULT_TOTALS_FILTERS, week: filters.week };
+}
+
 export function applyTotalsFilters(rows: readonly TotalsPerformanceRow[], filters: TotalsFilters): TotalsPerformanceRow[] {
   return rows.filter((row) => {
     if (filters.week !== "all" && row.week !== filters.week) return false;

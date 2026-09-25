@@ -4,6 +4,9 @@ import { formatMetric, formatSigned } from "@/lib/nfl/performance/format";
 import NflCoachingComparison from "@/components/nfl/coaching/NflCoachingComparison";
 import { coachingAdvantageSummary } from "@/lib/nfl/performance/coachingPresentation";
 import type { SidesPerformanceRow } from "@/types/nfl/performance";
+import { MatchupIdentity } from "./NflPerformanceIdentity";
+import { NflResultBadge } from "./NflPerformanceBadges";
+import { computeSuResult } from "@/lib/nfl/performance/records";
 
 function DetailSection({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -46,6 +49,10 @@ export default function NflPerformanceSidesDetail({ row }: { row: SidesPerforman
   const final = row.game_completion_status === "final";
   return (
     <div className="space-y-4 border-t border-slate-100 bg-slate-50 px-4 py-4">
+      <section className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-slate-200 bg-white p-3" aria-label="Game result">
+        <div><MatchupIdentity away={row.away_team} home={row.home_team} /><div className="mt-1 text-xs font-semibold tabular-nums text-slate-700">{final ? `${row.away_team.toUpperCase()} ${formatMetric(row.actual_away_points, 0)} · ${row.home_team.toUpperCase()} ${formatMetric(row.actual_home_points, 0)}` : "Final score unavailable"}</div></div>
+        <div className="flex gap-2 text-[10px] font-bold text-slate-500"><span>ATS <NflResultBadge result={row.ats_result} /></span><span>SU <NflResultBadge result={computeSuResult(row)} /></span></div>
+      </section>
       <DetailSection title="JKB projection">
         <Field label="Projected home margin" value={formatSigned(row.projected_home_margin)} />
         <Field label="Projected spread" value={`${(row.projected_spread_team ?? row.home_team).toUpperCase()} ${formatMetric(row.projected_spread_line)}`} />
@@ -126,12 +133,6 @@ export default function NflPerformanceSidesDetail({ row }: { row: SidesPerforman
         />
       </section>
 
-      <DetailSection title="Provenance">
-        <Field label="Prediction ref" value={row.provenance.prediction_id_ref} />
-        <Field label="Market snapshot ref" value={row.provenance.market_snapshot_ref ? `${row.provenance.market_snapshot_ref.slice(0, 12)}…` : "—"} />
-        <Field label="Market observation id" value={row.provenance.market_observation_id ?? "—"} />
-        <Field label="Outcome source hash" value={row.provenance.outcome_source_state_hash ? `${row.provenance.outcome_source_state_hash.slice(0, 12)}…` : "—"} />
-      </DetailSection>
     </div>
   );
 }

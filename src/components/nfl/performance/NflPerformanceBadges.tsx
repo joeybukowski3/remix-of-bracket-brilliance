@@ -8,10 +8,10 @@ import type { DirectionalResult, NflHealthStatus } from "@/types/nfl/performance
  * size (frequently n=0-1 during the 2026 preseason) actually supports.
  */
 const RESULT_CLASS: Record<DirectionalResult, string> = {
-  WIN: "border-emerald-300 bg-emerald-50 text-emerald-800",
-  LOSS: "border-rose-300 bg-rose-50 text-rose-800",
-  PUSH: "border-slate-300 bg-slate-100 text-slate-700",
-  NEUTRAL: "border-slate-300 bg-slate-100 text-slate-600",
+  WIN: "border-green-300 bg-green-50 text-green-800",
+  LOSS: "border-red-300 bg-red-50 text-red-800",
+  PUSH: "border-amber-300 bg-amber-50 text-amber-800",
+  NEUTRAL: "border-amber-200 bg-amber-50/60 text-amber-700",
 };
 
 export function NflResultBadge({ result }: { result: DirectionalResult | null }) {
@@ -21,7 +21,7 @@ export function NflResultBadge({ result }: { result: DirectionalResult | null })
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide",
+        "inline-flex min-w-[3.25rem] items-center justify-center rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide",
         RESULT_CLASS[result],
       )}
     >

@@ -1,11 +1,16 @@
 import { useMemo, useState } from "react";
-import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
 import NflPerformanceKpiStrip, { type NflKpiItem } from "./NflPerformanceKpiStrip";
 import NflPerformanceEmptyState from "./NflPerformanceEmptyState";
+import NflPerformanceFilterToolbar, { NflFilterGroup, NflFilterSelect } from "./NflPerformanceFilterToolbar";
+import NflPerformanceRecordSummary, { type NflRecordMetric } from "./NflPerformanceRecordSummary";
 import NflPerformanceTotalsTable from "./NflPerformanceTotalsTable";
-import { formatCount, formatMetric, formatPercent, formatSigned } from "@/lib/nfl/performance/format";
+import NflPerformanceWeekSelector from "./NflPerformanceWeekSelector";
+import { formatCount, formatMetric, formatSigned } from "@/lib/nfl/performance/format";
+import { availableWeeks, computeOuRecord, rowsForWeek } from "@/lib/nfl/performance/records";
 import {
   applyTotalsFilters,
+  clearTotalsToolbarFilters,
+  countActiveTotalsFilters,
   DEFAULT_TOTALS_FILTERS,
   nextTotalsSort,
   sortTotalsRows,
@@ -19,6 +24,12 @@ import type { DirectionalResult, MarketDirection, NflTotalsPerformanceArtifact }
 const RESULT_OPTIONS: readonly (DirectionalResult | "all")[] = ["all", "WIN", "LOSS", "PUSH", "NEUTRAL"];
 const DIRECTION_OPTIONS: readonly (MarketDirection | "all")[] = ["all", "JKB_OVER", "JKB_UNDER", "NEUTRAL"];
 
+const allOr = (allLabel: string) => (option: string) => (option === "all" ? allLabel : option);
+
+/**
+ * Totals view. The O/U record is a straight tally of the artifact's canonical `directional_result`
+ * (JKB direction vs market total); NEUTRAL calls are reported next to it, not inside the W-L-P.
+ */
 export default function NflPerformanceTotalsTab({
   state,
 }: {
@@ -27,10 +38,7 @@ export default function NflPerformanceTotalsTab({
   const [filters, setFilters] = useState<TotalsFilters>(DEFAULT_TOTALS_FILTERS);
   const [sort, setSort] = useState<TotalsSortState>({ key: "week", direction: "asc" });
 
-  const weekOptions = useMemo(() => {
-    if (!state.data) return [];
-    return [...new Set(state.data.rows.map((r) => r.week))].sort((a, b) => a - b);
-  }, [state.data]);
+  const weekOptions = useMemo(() => (state.data ? availableWeeks(state.data.rows) : []), [state.data]);
 
   const projectedBucketOptions = useMemo(() => {
     if (!state.data) return [];
@@ -61,42 +69,77 @@ export default function NflPerformanceTotalsTab({
   }
 
   const { summary } = state.data;
-  const kpis: NflKpiItem[] = [
+  const allRows = state.data.rows;
+  const weekRows = filters.week === "all" ? null : rowsForWeek(allRows, filters.week);
+  const metrics: NflRecordMetric[] = [
+    { key: "ou", label: "O/U", season: computeOuRecord(allRows), week: weekRows && computeOuRecord(weekRows), neutralNoun: "neutral" },
+  ];
+  const seasons = [...new Set(allRows.map((r) => r.season))].sort();
+  const seasonLabel = `${seasons.join(" / ") || "2026"} Season`;
+  const activeCount = countActiveTotalsFilters(filters);
+  const setFilter =
+    <K extends keyof TotalsFilters>(key: K) =>
+    (value: TotalsFilters[K]) =>
+      setFilters((f) => ({ ...f, [key]: value }));
+  const qualityKpis: NflKpiItem[] = [
     { key: "graded", label: "Graded Games", value: formatCount(summary.graded_games) },
     { key: "mae", label: "Game Total MAE", value: formatMetric(summary.game_total_mae) },
     { key: "team-mae", label: "Team Score MAE", value: formatMetric(summary.team_score_mae) },
     { key: "bias", label: "Bias", value: formatSigned(summary.mean_signed_error) },
     { key: "corr", label: "Correlation", value: formatMetric(summary.correlation_projected_actual, 2) },
-    { key: "hit-rate", label: "Directional Hit Rate", value: formatPercent(summary.directional_hit_rate) },
   ];
 
   return (
     <div className="space-y-4">
-      <NflPerformanceKpiStrip items={kpis} />
-
       {summary.graded_games === 0 ? (
         <NflPerformanceEmptyState description="Totals results will populate as 2026 games are completed and graded." />
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-3">
-            <NflFilterChips label="Week" options={["all", ...weekOptions]} value={filters.week} onChange={(v) => setFilters((f) => ({ ...f, week: v }))} formatOption={(o) => (o === "all" ? "All Weeks" : `Week ${o}`)} size="sm" />
-            <NflFilterChips label="Direction" options={DIRECTION_OPTIONS} value={filters.direction} onChange={(v) => setFilters((f) => ({ ...f, direction: v }))} formatOption={(o) => (o === "all" ? "All" : o)} size="sm" tone="sky" />
-            <NflFilterChips label="Result" options={RESULT_OPTIONS} value={filters.result} onChange={(v) => setFilters((f) => ({ ...f, result: v }))} formatOption={(o) => (o === "all" ? "All" : o)} size="sm" tone="teal" />
-            {projectedBucketOptions.length > 0 && (
-              <NflFilterChips label="Projected Total" options={["all", ...projectedBucketOptions]} value={filters.projectedTotalBucket} onChange={(v) => setFilters((f) => ({ ...f, projectedTotalBucket: v }))} formatOption={(o) => (o === "all" ? "All Totals" : o)} size="sm" tone="amber" />
-            )}
-            {diffBucketOptions.length > 0 && (
-              <NflFilterChips label="JKB-Market Diff" options={["all", ...diffBucketOptions]} value={filters.jkbMarketDifferenceBucket} onChange={(v) => setFilters((f) => ({ ...f, jkbMarketDifferenceBucket: v }))} formatOption={(o) => (o === "all" ? "All Diffs" : o)} size="sm" tone="violet" />
-            )}
-          </div>
+          <NflPerformanceWeekSelector weeks={weekOptions} value={filters.week} onChange={setFilter("week")} />
+          <NflPerformanceRecordSummary
+            seasonLabel={seasonLabel}
+            weekLabel={filters.week === "all" ? null : `Week ${filters.week}`}
+            metrics={metrics}
+          />
 
-          <p className="text-[11px] text-slate-500">{sortedRows.length} of {state.data.rows.length} graded games shown</p>
+          <section aria-label="Model quality" className="space-y-1">
+            <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Model quality · season</h3>
+            <NflPerformanceKpiStrip items={qualityKpis} compact className="lg:grid-cols-5" />
+          </section>
+
+          <NflPerformanceFilterToolbar activeCount={activeCount} onClear={() => setFilters(clearTotalsToolbarFilters)}>
+            <NflFilterGroup label="JKB call">
+              <NflFilterSelect label="Direction" options={DIRECTION_OPTIONS} value={filters.direction} onChange={setFilter("direction")} formatOption={allOr("All")} />
+              <NflFilterSelect label="O/U result" options={RESULT_OPTIONS} value={filters.result} onChange={setFilter("result")} formatOption={allOr("All")} />
+            </NflFilterGroup>
+            {(projectedBucketOptions.length > 0 || diffBucketOptions.length > 0) && (
+              <NflFilterGroup label="Market">
+                {projectedBucketOptions.length > 0 && (
+                  <NflFilterSelect label="Projected total" options={["all", ...projectedBucketOptions]} value={filters.projectedTotalBucket} onChange={setFilter("projectedTotalBucket")} formatOption={allOr("All")} />
+                )}
+                {diffBucketOptions.length > 0 && (
+                  <NflFilterSelect label="JKB-Market diff" options={["all", ...diffBucketOptions]} value={filters.jkbMarketDifferenceBucket} onChange={setFilter("jkbMarketDifferenceBucket")} formatOption={allOr("All")} />
+                )}
+              </NflFilterGroup>
+            )}
+          </NflPerformanceFilterToolbar>
+
+          <p className="text-[11px] text-slate-500" data-testid="nfl-totals-shown-count">
+            {sortedRows.length} of {allRows.length} graded games shown
+            {filters.week !== "all" && ` · Week ${filters.week} selected`}
+          </p>
 
           {sortedRows.length === 0 ? (
             <NflPerformanceEmptyState title="No games match the current filters." description="Adjust or clear a filter to see more results." />
           ) : (
             <NflPerformanceTotalsTable rows={sortedRows} sort={sort} onSort={handleSort} />
           )}
+
+          <p className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-[12px] leading-5 text-slate-600" data-testid="nfl-totals-record-note">
+            O/U record = JKB&apos;s over/under call against the market total. Pushes are games landing on the number; NEUTRAL
+            (no lean) calls are shown beside the record and excluded from the W-L-P and hit rate. Season and Week records ignore the
+            secondary filters.
+          </p>
         </>
       )}
     </div>
