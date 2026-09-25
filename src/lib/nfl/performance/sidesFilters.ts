@@ -32,6 +32,18 @@ export const DEFAULT_SIDES_FILTERS: SidesFilters = {
   coachingAgreement: "all",
 };
 
+/** Number of toolbar filters that differ from the default. `week` is excluded: it has its own selector. */
+export function countActiveSidesFilters(filters: SidesFilters): number {
+  const { week: _week, ...rest } = filters;
+  const { week: _defaultWeek, ...defaults } = DEFAULT_SIDES_FILTERS;
+  return (Object.keys(defaults) as (keyof typeof defaults)[]).filter((key) => rest[key] !== defaults[key]).length;
+}
+
+/** Resets every toolbar filter but keeps the selected week. */
+export function clearSidesToolbarFilters(filters: SidesFilters): SidesFilters {
+  return { ...DEFAULT_SIDES_FILTERS, week: filters.week };
+}
+
 export function applySidesFilters(rows: readonly SidesPerformanceRow[], filters: SidesFilters): SidesPerformanceRow[] {
   return rows.filter((row) => {
     if (filters.week !== "all" && row.week !== filters.week) return false;
