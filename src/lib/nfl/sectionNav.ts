@@ -124,6 +124,14 @@ export const NFL_SECTION_NAV_CATEGORIES: NflSectionNavCategory[] = [
     description: "Futures markets and awards research.",
     items: [
       {
+        to: "/nfl/betting-splits",
+        label: "Betting Splits",
+        shortLabel: "Betting Splits",
+        description: "DraftKings Network handle and bets distribution for spread, moneyline and total markets.",
+        icon: "📊",
+        status: "new",
+      },
+      {
         to: "/nfl/super-bowl",
         label: "Super Bowl Odds",
         shortLabel: "Super Bowl",

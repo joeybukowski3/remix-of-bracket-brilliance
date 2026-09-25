@@ -49,6 +49,7 @@ import NFLMatchups from "./pages/NFLMatchups";
 import NFLMatchupDetail from "./pages/NFLMatchupDetail";
 import NFLTrends from "./pages/NFLTrends";
 import NFLSuperBowlOdds from "./pages/NFLSuperBowlOdds";
+import NFLBettingSplits from "./pages/NFLBettingSplits";
 import NFLGuide2026 from "./pages/NFLGuide2026";
 import NFLRegression2026 from "./pages/NFLRegression2026";
 import NFLTeamGuide2026 from "./pages/NFLTeamGuide2026";
@@ -187,6 +188,7 @@ const App = () => (
             <Route path="fantasy-position-matchups" element={<NFLFantasyPositionMatchupsRedirect />} />
             <Route path="dfs" element={<NFLDfsContestAnalyzer />} />
             <Route path="super-bowl" element={<NFLSuperBowlOdds />} />
+            <Route path="betting-splits" element={<NFLBettingSplits />} />
             <Route path="coach-of-year" element={<NFLCoachOfYear2026 />} />
             <Route path="guide" element={<NFLGuide2026 />} />
             <Route path="guide/regression" element={<NFLRegression2026 />} />
