@@ -95,6 +95,25 @@ the capture and generation timestamps, source, season/week, age, and reason;
 the hook updates age each minute and requires the expected season/week. No
 visual consumer is added in WU3.
 
+## Betting Splits page (WU4)
+
+`/nfl/betting-splits` reads only the selected-week `games` array through the
+existing hook. It appears under Markets & Predictions and offers Overview,
+Spread, Moneyline, and Total views. Market views show both sides of each
+eligible game; diagnostic-only adjacent-week rows are never rendered. The
+source timestamp shown to readers is `sourceCapturedAt`, the earliest
+successful page collection completion, not `generatedAt` or a claimed
+DraftKings update time. Stale data remains visible with a warning; unavailable
+data does not render tables.
+
+The page's labels are descriptive display heuristics. Money Gap is handle
+percentage minus bets percentage; Public Gap is the opposite. Strong Money Gap
+starts at +20 percentage points, Money Lean at +10, Balanced spans −9 through
++9, and Public Heavy starts at −10. The JKB Sharp Side overview requires at
+least a +10 point Money Gap. Contrarian requires bets below 40% and handle
+above 50%; Consensus requires both bets and handle at least 70%. These labels
+do not identify professional bettors or imply a predictive edge.
+
 Repository deployment authority remains open (`OPEN-001` in
 `docs/DECISIONS.md`): Vercel configuration and GitHub Pages deployment both
 exist. The refresh workflow publishes a validated artifact to `main` and
