@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schemaVersion": "nfl-v0.1",
-    "generatedAt": "2026-09-24T19:30:30.559Z",
+    "generatedAt": "2026-09-25T15:14:34.329Z",
     "source": "generated (data/nfl/predictions/**/jkb-power-number.jsonl + prediction-outcome resolver + embedded market_snapshot_refs)",
     "season": null,
     "week": null,
@@ -19,7 +19,7 @@
   "schemaVersion": "nfl-sides-performance-v1",
   "performanceMeta": {
     "schemaVersion": "nfl-sides-performance-v1",
-    "generatedAt": "2026-09-24T19:30:30.559Z",
+    "generatedAt": "2026-09-25T15:14:34.329Z",
     "seasons": [
       2026
     ],
@@ -27,40 +27,40 @@
       "jkb-power-number-v1.0.0"
     ],
     "liveModelVersion": "jkb-power-number-v1.1.0",
-    "gradedGames": 32,
+    "gradedGames": 33,
     "latestPredictionTimestamp": "2026-09-24T17:05:14.236Z",
-    "latestOutcomeTimestamp": "2026-09-21T18:12:03.198Z",
-    "marketCoverageCount": 32,
+    "latestOutcomeTimestamp": "2026-09-24T17:05:14.236Z",
+    "marketCoverageCount": 33,
     "contextCoverage": {
-      "trenches": 32,
-      "ypp": 32,
-      "epa": 32,
+      "trenches": 33,
+      "ypp": 33,
+      "epa": 33,
       "coaching": 0
     }
   },
   "summary": {
-    "graded_games": 32,
-    "margin_mae": 12.444855099688013,
-    "margin_rmse": 14.755374254683439,
-    "margin_median_absolute_error": 12.601559685831132,
-    "mean_signed_error": 2.9960183252712858,
-    "correlation_projected_actual_margin": 0.19735965189233645,
+    "graded_games": 33,
+    "margin_mae": 12.878556808127923,
+    "margin_rmse": 15.258392508277346,
+    "margin_median_absolute_error": 13.180482041402762,
+    "mean_signed_error": 3.716048420814733,
+    "correlation_projected_actual_margin": 0.16246702224998139,
     "directional_wins": 12,
-    "directional_losses": 19,
+    "directional_losses": 20,
     "directional_pushes": 1,
     "directional_neutral": 0,
-    "ats_directional_hit_rate": 0.3870967741935484,
-    "average_abs_jkb_market_difference": 2.7135326601500327,
+    "ats_directional_hit_rate": 0.375,
+    "average_abs_jkb_market_difference": 2.6693956546365483,
     "winner_accuracy": {
       "correct": 19,
-      "total": 32,
-      "accuracy": 0.59375
+      "total": 33,
+      "accuracy": 0.5757575757575758
     },
     "market_comparison": {
-      "comparable_n": 32,
-      "jkb_mae": 12.444855099688013,
-      "market_mae": 11.515625,
-      "jkb_minus_market_mae": 0.929230099688013
+      "comparable_n": 33,
+      "jkb_mae": 12.878556808127923,
+      "market_mae": 11.93939393939394,
+      "jkb_minus_market_mae": 0.9391628687339839
     }
   },
   "buckets": {
@@ -84,6 +84,16 @@
         "directional_losses": 9,
         "directional_pushes": 0,
         "hit_rate": 0.4375
+      },
+      {
+        "key": "3",
+        "n": 1,
+        "mae": 26.757011478205044,
+        "bias": 26.757011478205044,
+        "directional_wins": 0,
+        "directional_losses": 1,
+        "directional_pushes": 0,
+        "hit_rate": 0
       }
     ],
     "by_jkb_market_difference_bucket": [
@@ -119,13 +129,13 @@
       },
       {
         "key": "1-2",
-        "n": 6,
-        "mae": 13.981029680385527,
-        "bias": 4.6055995303408,
+        "n": 7,
+        "mae": 15.806169937216888,
+        "bias": 7.770086951464264,
         "directional_wins": 1,
-        "directional_losses": 5,
+        "directional_losses": 6,
         "directional_pushes": 0,
-        "hit_rate": 0.16666666666666666
+        "hit_rate": 0.14285714285714285
       },
       {
         "key": "<1",
@@ -151,13 +161,13 @@
       },
       {
         "key": "3-7",
-        "n": 19,
-        "mae": 11.608246617535743,
-        "bias": 3.378346620692463,
+        "n": 20,
+        "mae": 12.365684860569207,
+        "bias": 4.547279863568091,
         "directional_wins": 5,
-        "directional_losses": 13,
+        "directional_losses": 14,
         "directional_pushes": 1,
-        "hit_rate": 0.2777777777777778
+        "hit_rate": 0.2631578947368421
       },
       {
         "key": "<3",
@@ -193,13 +203,13 @@
       },
       {
         "key": "favorite",
-        "n": 11,
-        "mae": 14.031633187685257,
-        "bias": 5.843317874461454,
+        "n": 12,
+        "mae": 15.092081378561906,
+        "bias": 7.58612567477342,
         "directional_wins": 4,
-        "directional_losses": 6,
+        "directional_losses": 7,
         "directional_pushes": 1,
-        "hit_rate": 0.4
+        "hit_rate": 0.36363636363636365
       }
     ],
     "by_jkb_ats_side": [
@@ -215,13 +225,13 @@
       },
       {
         "key": "home",
-        "n": 15,
-        "mae": 14.898093141000253,
-        "bias": 8.373521051116075,
+        "n": 16,
+        "mae": 15.639275537075552,
+        "bias": 9.522489202809135,
         "directional_wins": 5,
-        "directional_losses": 9,
+        "directional_losses": 10,
         "directional_pushes": 1,
-        "hit_rate": 0.35714285714285715
+        "hit_rate": 0.3333333333333333
       }
     ]
   },
@@ -3649,11 +3659,118 @@
         "market_observation_id": "344ee169-8db6-4fef-90e5-ff85ac23d47b",
         "outcome_source_state_hash": "c8ed553b7a2c196723f3aabf37fdf5df6941c3693c1ec68b0d112701c8b4129f"
       }
+    },
+    {
+      "season": 2026,
+      "week": 3,
+      "game_id": "2026_03_ATL_GB",
+      "kickoff_time": "2026-09-25T00:15:00.000Z",
+      "away_team": "atl",
+      "home_team": "gb",
+      "projected_home_margin": 5.757011478205045,
+      "projected_spread_line": -5.8,
+      "projected_spread_team": "gb",
+      "home_power_number": 1.3592763681982438,
+      "away_power_number": -2.397735110006801,
+      "home_field_adjustment": 2,
+      "model_version": "jkb-power-number-v1.0.0",
+      "fitted_model_hash": null,
+      "prediction_timestamp": "2026-09-24T17:05:14.236Z",
+      "market_spread": -4.5,
+      "market_implied_home_margin": 4.5,
+      "market_team_orientation": "home_line",
+      "market_provider": "the-odds-api/draftkings",
+      "market_snapshot_timestamp": "2026-09-24T14:41:47.772Z",
+      "market_snapshot_ref": "33879cd251750daf42526b35e5a1b95ee564b51100d564a50b20832a779ad2eb",
+      "market_observation_id": "a0753703-78d3-4287-a804-e933eb515800",
+      "jkb_minus_market": 1.2570114782050448,
+      "actual_home_points": 14,
+      "actual_away_points": 35,
+      "actual_margin": -21,
+      "game_completion_status": "final",
+      "resolution_status": "resolved",
+      "signed_margin_error": 26.757011478205044,
+      "absolute_margin_error": 26.757011478205044,
+      "squared_margin_error": 715.9376632447965,
+      "jkb_ats_side": "home",
+      "jkb_supports_team": "gb",
+      "projected_winner": "home",
+      "actual_winner": "away",
+      "projected_winner_correct": false,
+      "ats_result": "LOSS",
+      "jkb_market_difference_bucket": "1-2",
+      "market_spread_bucket": "3-7",
+      "favorite_underdog": "favorite",
+      "context": {
+        "epa": {
+          "metric": "off.epaPerPlay",
+          "window": "prior-season-full",
+          "home_epa_value": 0.1223100968388222,
+          "away_epa_value": -0.007833701404945645,
+          "epa_advantage_team": "home",
+          "epa_differential": 0.13014379824376784,
+          "source_season": 2025,
+          "source_timestamp": "2026-01-04T18:00:00.000Z",
+          "provenance_status": "available"
+        },
+        "ypp": {
+          "metric": "off.yardsPerPlay",
+          "window": "prior-season-full",
+          "home_ypp": 5.82,
+          "away_ypp": 5.57,
+          "ypp_advantage_team": "home",
+          "ypp_differential": 0.25,
+          "source_season": 2025,
+          "source_timestamp": "2026-01-04T18:00:00.000Z",
+          "provenance_status": "available"
+        },
+        "trenches": {
+          "metric": "espn_trench_composite",
+          "window": "prior_season_through_week_18",
+          "home_trenches_value": {
+            "off_pass_block_win_rate": 69,
+            "off_run_block_win_rate": 71,
+            "def_pass_rush_win_rate": 39,
+            "def_run_stop_win_rate": 29
+          },
+          "away_trenches_value": {
+            "off_pass_block_win_rate": 64,
+            "off_run_block_win_rate": 70,
+            "def_pass_rush_win_rate": 41,
+            "def_run_stop_win_rate": 31
+          },
+          "trenches_advantage_team": "home",
+          "trenches_differential": 6,
+          "source_season": 2025,
+          "source_timestamp": "2026-01-06T15:51:59Z",
+          "provenance_status": "available"
+        },
+        "coaching": {
+          "home_coach": null,
+          "away_coach": null,
+          "home_coaching_rating": null,
+          "away_coaching_rating": null,
+          "coaching_differential": null,
+          "coaching_advantage_team": null,
+          "home_coach_context": null,
+          "away_coach_context": null,
+          "rating_version": null,
+          "source_timestamp": null,
+          "pregame_cutoff": null,
+          "coaching_context_status": "SOURCE_UNAVAILABLE"
+        }
+      },
+      "provenance": {
+        "prediction_id_ref": "pred_cb2d0526228b9bb51b5d579aca8340c577d106e0c67721cd762bee3beb5c7910",
+        "market_snapshot_ref": "33879cd251750daf42526b35e5a1b95ee564b51100d564a50b20832a779ad2eb",
+        "market_observation_id": "a0753703-78d3-4287-a804-e933eb515800",
+        "outcome_source_state_hash": "f8759c514f4e9b41fa6707f8c777634827943e783400802f893d6c17790d41df"
+      }
     }
   ],
   "exclusions": {
     "missing": 0,
     "model_version_mismatch": 0,
-    "not_resolved": 240
+    "not_resolved": 239
   }
 }

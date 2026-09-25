@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schemaVersion": "nfl-v0.1",
-    "generatedAt": "2026-09-24T15:02:34.654Z",
+    "generatedAt": "2026-09-25T15:14:36.712Z",
     "source": "generated (data/nfl/predictions/**/nfl-total-ridge.jsonl + prediction-outcome resolver + data/market/betting-lines/history)",
     "season": null,
     "week": null,
@@ -16,39 +16,39 @@
   "schemaVersion": "nfl-totals-performance-v1",
   "performanceMeta": {
     "schemaVersion": "nfl-totals-performance-v1",
-    "generatedAt": "2026-09-24T15:02:34.654Z",
+    "generatedAt": "2026-09-25T15:14:36.712Z",
     "seasons": [
       2026
     ],
     "modelVersions": [
       "jkb-nfl-total-ridge-v1.0.0"
     ],
-    "gradedGames": 32,
-    "latestPredictionTimestamp": "2026-09-23T17:54:05.926Z",
-    "latestOutcomeTimestamp": "2026-09-17T17:40:31.711Z",
-    "marketCoverageCount": 32,
+    "gradedGames": 33,
+    "latestPredictionTimestamp": "2026-09-24T17:54:02.863Z",
+    "latestOutcomeTimestamp": "2026-09-24T17:54:02.863Z",
+    "marketCoverageCount": 33,
     "contextCoverage": {
-      "trenches": 32,
-      "ypp": 32,
-      "epa": 32,
+      "trenches": 33,
+      "ypp": 33,
+      "epa": 33,
       "coaching": 0
     }
   },
   "summary": {
-    "graded_games": 32,
-    "game_total_mae": 12.383320279695749,
-    "game_total_rmse": 16.428445809300207,
-    "game_total_median_absolute_error": 9.820917777364397,
-    "mean_signed_error": 0.37855927707762205,
-    "correlation_projected_actual": 0.1588667810818028,
-    "team_score_mae": 8.988409816439676,
-    "team_score_rmse": 10.984464685943008,
-    "directional_wins": 14,
+    "graded_games": 33,
+    "game_total_mae": 12.184482728699994,
+    "game_total_rmse": 16.2093263328927,
+    "game_total_median_absolute_error": 8.087707037607316,
+    "mean_signed_error": 0.1906732051408505,
+    "correlation_projected_actual": 0.15420423126593535,
+    "team_score_mae": 9.11096995060237,
+    "team_score_rmse": 11.063727503606495,
+    "directional_wins": 15,
     "directional_losses": 18,
     "directional_pushes": 0,
     "directional_neutral": 0,
-    "directional_hit_rate": 0.4375,
-    "average_abs_jkb_market_difference": 2.57687087010244
+    "directional_hit_rate": 0.45454545454545453,
+    "average_abs_jkb_market_difference": 2.5193389923164315
   },
   "buckets": {
     "by_week": [
@@ -71,18 +71,28 @@
         "directional_losses": 8,
         "directional_pushes": 0,
         "hit_rate": 0.5
+      },
+      {
+        "key": "3",
+        "n": 1,
+        "mae": 5.821681096835839,
+        "bias": -5.821681096835839,
+        "directional_wins": 1,
+        "directional_losses": 0,
+        "directional_pushes": 0,
+        "hit_rate": 1
       }
     ],
     "by_projected_total_bucket": [
       {
         "key": "40-45",
-        "n": 9,
-        "mae": 10.14979100488225,
-        "bias": -2.274458445528693,
-        "directional_wins": 5,
+        "n": 10,
+        "mae": 9.71698001407761,
+        "bias": -2.6291807106594076,
+        "directional_wins": 6,
         "directional_losses": 4,
         "directional_pushes": 0,
-        "hit_rate": 0.5555555555555556
+        "hit_rate": 0.6
       },
       {
         "key": "45-50",
@@ -138,13 +148,13 @@
       },
       {
         "key": "<1",
-        "n": 8,
-        "mae": 15.129733595813523,
-        "bias": -1.0340500172286626,
-        "directional_wins": 3,
+        "n": 9,
+        "mae": 14.095505540371558,
+        "bias": -1.5660090260739044,
+        "directional_wins": 4,
         "directional_losses": 5,
         "directional_pushes": 0,
-        "hit_rate": 0.375
+        "hit_rate": 0.4444444444444444
       },
       {
         "key": "2-3",
@@ -3336,6 +3346,105 @@
         "home_prediction_id_ref": "pred_a75a51d7c81f96abff19050d7269ed0766c7dfa120c5e996bc19bec17b05c70c",
         "away_prediction_id_ref": "pred_994aafd6f0de10d1418764e411bd6aa5a04112d25a479474f33b26fe37b5e258"
       }
+    },
+    {
+      "season": 2026,
+      "week": 3,
+      "game_id": "2026_03_ATL_GB",
+      "kickoff_time": "2026-09-25T00:15:00.000Z",
+      "away_team": "atl",
+      "home_team": "gb",
+      "away_expected_points": 19.056265207773496,
+      "home_expected_points": 24.122053695390665,
+      "projected_game_total": 43.17831890316416,
+      "model_version": "jkb-nfl-total-ridge-v1.0.0",
+      "fitted_model_hash": "7e35e3fe3e188932e1b147bd2a639ac5d55fb0a11833f33c91a8012c97ac5602",
+      "prediction_timestamp": "2026-09-24T17:54:02.863Z",
+      "actual_away_points": 35,
+      "actual_home_points": 14,
+      "actual_game_total": 49,
+      "game_completion_status": "final",
+      "resolution_status": "resolved",
+      "signed_total_error": -5.821681096835839,
+      "absolute_total_error": 5.821681096835839,
+      "squared_total_error": 33.89197079325574,
+      "away_team_signed_error": -15.943734792226504,
+      "home_team_signed_error": 10.122053695390665,
+      "away_team_absolute_error": 15.943734792226504,
+      "home_team_absolute_error": 10.122053695390665,
+      "market_total": 42.5,
+      "market_timestamp": "2026-09-24T14:41:47.772Z",
+      "market_provider": "the-odds-api/draftkings",
+      "market_snapshot_ref": "33879cd251750daf42526b35e5a1b95ee564b51100d564a50b20832a779ad2eb",
+      "jkb_minus_market": 0.6783189031641612,
+      "jkb_market_direction": "JKB_OVER",
+      "market_outcome": "OVER",
+      "directional_result": "WIN",
+      "projected_total_bucket": "40-45",
+      "jkb_market_difference_bucket": "<1",
+      "context": {
+        "epa": {
+          "metric": "off.epaPerPlay",
+          "window": "prior-season-full",
+          "home_epa_value": 0.1223100968388222,
+          "away_epa_value": -0.007833701404945645,
+          "epa_advantage_team": "home",
+          "epa_differential": 0.13014379824376784,
+          "source_season": 2025,
+          "source_timestamp": "2026-01-04T18:00:00.000Z",
+          "provenance_status": "available"
+        },
+        "ypp": {
+          "metric": "off.yardsPerPlay",
+          "window": "prior-season-full",
+          "home_ypp": 5.82,
+          "away_ypp": 5.57,
+          "ypp_advantage_team": "home",
+          "ypp_differential": 0.25,
+          "source_season": 2025,
+          "source_timestamp": "2026-01-04T18:00:00.000Z",
+          "provenance_status": "available"
+        },
+        "trenches": {
+          "metric": "espn_trench_composite",
+          "window": "prior_season_through_week_18",
+          "home_trenches_value": {
+            "off_pass_block_win_rate": 69,
+            "off_run_block_win_rate": 71,
+            "def_pass_rush_win_rate": 39,
+            "def_run_stop_win_rate": 29
+          },
+          "away_trenches_value": {
+            "off_pass_block_win_rate": 64,
+            "off_run_block_win_rate": 70,
+            "def_pass_rush_win_rate": 41,
+            "def_run_stop_win_rate": 31
+          },
+          "trenches_advantage_team": "home",
+          "trenches_differential": 6,
+          "source_season": 2025,
+          "source_timestamp": "2026-01-06T15:51:59Z",
+          "provenance_status": "available"
+        },
+        "coaching": {
+          "home_coach": null,
+          "away_coach": null,
+          "home_coaching_rating": null,
+          "away_coaching_rating": null,
+          "coaching_differential": null,
+          "coaching_advantage_team": null,
+          "home_coach_context": null,
+          "away_coach_context": null,
+          "rating_version": null,
+          "source_timestamp": null,
+          "pregame_cutoff": null,
+          "coaching_context_status": "SOURCE_UNAVAILABLE"
+        }
+      },
+      "provenance": {
+        "home_prediction_id_ref": "pred_e9922154524d7df435b2b92963710beaf8f23bb70e739c4f85efa6d02c628dce",
+        "away_prediction_id_ref": "pred_7808467000df25e2994b6f02f674e014dd5eb85376146a2736449bf57204736b"
+      }
     }
   ],
   "exclusions": {
@@ -3343,6 +3452,6 @@
     "missing_away": 0,
     "model_version_mismatch": 0,
     "fitted_hash_mismatch": 0,
-    "not_resolved": 16
+    "not_resolved": 15
   }
 }
