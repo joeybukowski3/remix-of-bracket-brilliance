@@ -1,10 +1,10 @@
 {
   "date": "2026-09-25",
-  "generatedAt": "2026-09-25T15:57:26.711Z",
+  "generatedAt": "2026-09-25T18:46:31.322Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Yankee Stadium (1.18) and Rate Field (1.07) are the day's strongest HR parks, with Brendan Beck and Tomoyuki Sugano both allowing elevated HR rates to opposing lineups. The model is heavily weighting park factors and recent pitcher vulnerability, pushing Alonso, Murakami, and Vargas to the top of the slate.",
-    "modelNote": "The model is prioritizing park-adjusted barrel rates and opposing pitcher HR vulnerability over raw exit velo, which is why Alonso's 96 hrScore leads despite Murakami's superior barrel rate."
+    "slateOverview": "Yankee Stadium (1.18) and Rate Field (1.07) are the two biggest HR parks on the slate, while Fenway (0.95) and Sutter Health (0.96) suppress power. Brendan Beck (NYY) and Tomoyuki Sugano (COL) are both right-handers facing lineups with elevated barrel and hard-hit rates, creating the clearest edges for Alonso, Murakami, and Vargas.",
+    "modelNote": "The model is overweighting park factor and recent barrel trends, which is why Alonso (hrScore 96) and Murakami (72) sit atop the rankings despite facing right-handed pitching."
   },
   "bestBets": [
     {
@@ -52,12 +52,12 @@
       "opposingPitcher": "Tomoyuki Sugano",
       "hrScoreRank": 3,
       "topStats": [
-        "hrScore=71.7",
-        "park=1.07"
+        "Pitcher HR VS=85.0",
+        "Hard Hit%=44.1"
       ],
       "bullets": [
-        "hrScore=71.7",
-        "park=1.07"
+        "HR score 71.4 (#3)",
+        "Pitcher HR VS 85.0 at park 1.07"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -72,11 +72,11 @@
       "hrScoreRank": 4,
       "topStats": [
         "Hard Hit%=48.5",
-        "Pitcher HR VS=47.7"
+        "Pitcher HR VS=48.4"
       ],
       "bullets": [
-        "HR score 67.9 (#4)",
-        "Pitcher HR VS 47.7 at park 0.95"
+        "HR score 67.8 (#4)",
+        "Pitcher HR VS 48.4 at park 0.95"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -84,18 +84,18 @@
       "hrValueEdge": null
     },
     {
-      "player": "Ben Rice",
-      "team": "NYY",
-      "opponent": "BAL",
-      "opposingPitcher": "Brandon Young",
+      "player": "Coby Mayo",
+      "team": "BAL",
+      "opponent": "NYY",
+      "opposingPitcher": "Brendan Beck",
       "hrScoreRank": 5,
       "topStats": [
-        "Hard Hit%=48.0",
-        "Pitcher HR VS=47.8"
+        "Pitcher HR VS=100.0",
+        "Hard Hit%=47.6"
       ],
       "bullets": [
-        "HR score 66.8 (#5)",
-        "Pitcher HR VS 47.8 at park 1.18"
+        "HR score 66.7 (#5)",
+        "Pitcher HR VS 100.0 at park 1.18"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -105,18 +105,18 @@
   ],
   "valueBets": [
     {
-      "player": "Ben Rice",
-      "team": "NYY",
-      "opponent": "BAL",
-      "opposingPitcher": "Brandon Young",
-      "hrScoreRank": 5,
+      "player": "Miguel Vargas",
+      "team": "CWS",
+      "opponent": "COL",
+      "opposingPitcher": "Tomoyuki Sugano",
+      "hrScoreRank": 3,
       "topStats": [
-        "hrScore=66.8",
-        "park=1.18"
+        "hrScore=71.4",
+        "park=1.07"
       ],
       "bullets": [
-        "hrScore=66.8",
-        "park=1.18"
+        "hrScore=71.4",
+        "park=1.07"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -124,5 +124,25 @@
       "hrValueEdge": null
     }
   ],
-  "longshots": []
+  "longshots": [
+    {
+      "player": "Coby Mayo",
+      "team": "BAL",
+      "opponent": "NYY",
+      "opposingPitcher": "Brendan Beck",
+      "hrScoreRank": 5,
+      "topStats": [
+        "hrScore=66.7",
+        "park=1.18"
+      ],
+      "bullets": [
+        "hrScore=66.7",
+        "park=1.18"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    }
+  ]
 }
