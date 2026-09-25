@@ -15,8 +15,8 @@ import { validateNflV03ReviewArtifact } from "../src/lib/nfl/v03Review";
 import { validateNflV04ProjectionArtifact } from "../src/lib/nfl/v04Projection";
 import { buildPublicProjectionBoard } from "../src/lib/nfl/publicProjection2026";
 import { validateTeamPerformanceAnalyticsArtifact } from "../src/lib/nfl/teamPerformanceAnalytics";
-import { matchupRankDifference } from "../src/lib/nfl/matchupEdges";
-import { createTrenchResolver, resolveTrenchPeriods, type TrenchMetricsArtifact } from "../src/lib/nfl/trenchMetricsData";
+import type { TrenchMetricsArtifact } from "../src/lib/nfl/trenchMetricsData";
+import { buildDstTrenchComponent } from "../src/lib/nfl/dfs/dstTrenchContext";
 import { deriveImpliedTeamTotals } from "../src/lib/fantasy/weekly/impliedTeamTotals";
 import type { MarketArtifact } from "../src/lib/nfl/marketData";
 import { teamTotalFor, type TeamTotalsArtifact } from "../src/lib/nfl/totalsProjectionData";
@@ -82,7 +82,6 @@ const board = buildCurrentRatingBoard({ season, preseasonV03: preseason, perform
 const market = json<MarketArtifact>("public/data/nfl/matchup-market.json");
 const totals = json<TeamTotalsArtifact>("public/data/nfl/team-totals.json");
 const trench = json<TrenchMetricsArtifact>("public/data/nfl/matchup-trench-metrics.json");
-const trenchResolve = createTrenchResolver(trench);
 const defenses: DstMatchupInput[] = games.flatMap(game => [game.homeAbbr, game.awayAbbr].map(team => {
   const opponent = team === game.homeAbbr ? game.awayAbbr : game.homeAbbr;
   const off = board.teams.find(t => t.abbr === opponent), def = board.teams.find(t => t.abbr === team);
@@ -93,14 +92,11 @@ const defenses: DstMatchupInput[] = games.flatMap(game => [game.homeAbbr, game.a
   const total = teamTotalFor(totals, game.gameId);
   const validTotal = total?.season === season && total.week === week && total.status === "projected" && total.homeTeam === game.homeAbbr && total.awayTeam === game.awayAbbr && isFreshDfsSource(total.predictionTimestamp, asOf, DST_MATCHUP_V1.maxWeeklyAgeHours);
   const points = implied ? opponent === game.homeAbbr ? implied.home : implied.away : validTotal ? opponent === game.homeAbbr ? total.homeExpectedPoints : total.awayExpectedPoints : null;
-  const period = resolveTrenchPeriods(off?.gamesPlayed ?? 0, def?.gamesPlayed ?? 0)[0];
-  const passBlock = trenchResolve(opponent, "off.passBlockWinRate", period), passRush = trenchResolve(team,"def.passRushWinRate",period);
-  const edge = matchupRankDifference(passBlock?.espnRank, passRush?.espnRank);
   const weekly = DST_MATCHUP_V1.maxWeeklyAgeHours;
   return { team, opponent, gameId: game.gameId, kickoff: game.dateUtc, components: {
     opponentPoints: { value: points, source: implied ? "public/data/nfl/matchup-market.json" : "public/data/nfl/team-totals.json", asOf: implied ? marketAsOf : validTotal ? total.predictionTimestamp : null, detail: implied ? "nflverse implied opponent points; upstream commit time only, no per-line observation timestamp" : "JKB expected opponent team points fallback", maxAgeHours: weekly },
     opponentOffense: { value: off?.offenseRating ?? null, source: "currentRating2026.buildCurrentRatingBoard", asOf: off?.state === "preseason" ? preseason._meta.generatedAt : performance._meta.generatedAt, detail: `${off?.state ?? "unavailable"} canonical OFF; ${off?.gamesPlayed ?? 0} current-season games`, maxAgeHours: off?.state === "preseason" ? null : weekly },
-    trenches: { value: edge == null ? null : -edge, source: "public/data/nfl/matchup-trench-metrics.json", asOf: trench.seasons[period.slice(0,4)]?.sourceLastModified ?? null, detail: `${period}; opponent PBWR rank ${passBlock?.espnRank ?? "unknown"} minus DST PRWR rank ${passRush?.espnRank ?? "unknown"}`, maxAgeHours: period === "2025-season" ? null : DST_MATCHUP_V1.maxCurrentTrenchAgeHours },
+    trenches: buildDstTrenchComponent(trench, opponent, team, DST_MATCHUP_V1.maxCurrentTrenchAgeHours),
     historicalPpg: { value: null, source: "Unavailable", asOf: null, detail: "No canonical DST fantasy scoring history; DK Avg PPG remains a separate benchmark with unspecified window", maxAgeHours: null },
   }, warnings: ["No historical percentile-to-fantasy-points calibration", "Prior-season trenches / preseason OFF are contextual priors", ...(implied ? ["Market freshness uses upstream commit time; per-line timestamp unavailable"] : ["Market unavailable or stale; JKB team points fallback attempted"])] };
 }));

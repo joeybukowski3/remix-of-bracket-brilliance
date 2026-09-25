@@ -10,7 +10,7 @@ import { deriveMetricComparisonFromRanks } from "@/lib/nfl/matchupRailNormalizat
 import {
   collectTrenchPeriodValues,
   formatTrenchValue,
-  trenchPeriodLabel,
+  trenchPairSampleLabel,
 } from "@/lib/nfl/trenchMetricsData";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 import { nflTeamColorFor } from "@/lib/nfl/nflTeamColor";
@@ -58,7 +58,7 @@ function possessionRows(
         key: `${battle.id}-${period ?? "na"}`,
         label: battle.label,
         help: battle.help,
-        contextLabel: period ? trenchPeriodLabel(trench?.artifact ?? null, period).label : undefined,
+        contextLabel: period ? trenchPairSampleLabel(trench?.artifact ?? null, period, { abbr: awayTeam.abbr, value: away }, { abbr: homeTeam.abbr, value: home }) : undefined,
         direction: "higher-is-better" as const,
         away: { value: away?.valuePct ?? null, rank: leftRank, formatted: formatTrenchValue(away) },
         home: { value: home?.valuePct ?? null, rank: rightRank, formatted: formatTrenchValue(home) },

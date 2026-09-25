@@ -26,6 +26,8 @@ export type TrenchMetricValue = {
   valuePct: number;
   /** ESPN's official league rank, 1-32. */
   espnRank: number;
+  /** Season the value came from; set only by the current-first resolver. */
+  period?: TrenchPeriodKey;
 };
 
 export type TrenchSeason = {
@@ -136,7 +138,7 @@ export function describeTrenchPeriods(periods: readonly TrenchPeriodKey[]): stri
   if (periods.includes("2025-season")) {
     return "Trench metrics show the 2025 final season alongside ESPN's developing 2026 season-to-date values.";
   }
-  return "Trench metrics show ESPN's 2026 season-to-date values through the latest published week.";
+  return "Trench metrics show ESPN's 2026 season-to-date values through the latest published week; 2025 is used only where a team's 2026 value is unavailable.";
 }
 
 export type TrenchResolver = (
@@ -158,6 +160,67 @@ export function createTrenchResolver(artifact: TrenchMetricsArtifact | null): Tr
     if (!value || !Number.isFinite(value.valuePct) || !Number.isFinite(value.espnRank)) return null;
     return value;
   };
+}
+
+/** Current season first; the prior season is only a per-team, per-metric fallback. */
+export const TRENCH_PERIOD_PREFERENCE: readonly TrenchPeriodKey[] = ["2026-season", "2025-season"];
+
+/**
+ * Current-first policy shared by every live Trenches surface (matchup matrix,
+ * matchup detail, fantasy research, DFS lineup context): use the team's 2026
+ * ESPN value and rank verbatim when present, otherwise its 2025 value. Each
+ * team and metric falls back independently, and the returned value records the
+ * season it came from so labels stay truthful. Nothing is blended or recomputed.
+ *
+ * As a TrenchResolver, `period` is the preferred starting season: "2026-season"
+ * falls back to 2025, "2025-season" reads 2025 only.
+ */
+export function createCurrentFirstTrenchResolver(artifact: TrenchMetricsArtifact | null): TrenchResolver {
+  const resolve = createTrenchResolver(artifact);
+  return (teamAbbr, metricKey, period) => {
+    const order = period === "2025-season" ? (["2025-season"] as const) : TRENCH_PERIOD_PREFERENCE;
+    for (const candidate of order) {
+      const value = resolve(teamAbbr, metricKey, candidate);
+      if (value) return { ...value, period: candidate };
+    }
+    return null;
+  };
+}
+
+/** Matchup-level display config: 2026 when the artifact has that season, else 2025. */
+export function createTrenchDisplayConfig(artifact: TrenchMetricsArtifact) {
+  const period: TrenchPeriodKey = artifact.seasons?.[String(TRENCH_CURRENT_SEASON)] ? "2026-season" : "2025-season";
+  return { artifact, periods: [period] as TrenchPeriodKey[], resolve: createCurrentFirstTrenchResolver(artifact) };
+}
+
+/**
+ * Truthful sample label for a pair of sides. One shared period gives its plain
+ * label; sides that used different seasons are named, e.g.
+ * "Offense 2026 Through Week 2 / Defense 2025 Season".
+ */
+export function trenchSampleLabel(
+  artifact: TrenchMetricsArtifact | null,
+  sides: readonly { name: string; period: TrenchPeriodKey | null }[],
+  fallbackPeriod: TrenchPeriodKey = "2026-season",
+  form: "label" | "short" = "label"
+): string {
+  const present = sides.filter((side): side is { name: string; period: TrenchPeriodKey } => side.period != null);
+  const text = (period: TrenchPeriodKey) => trenchPeriodLabel(artifact, period)[form];
+  if (present.length === 0) return text(fallbackPeriod);
+  if (present.every((side) => side.period === present[0].period)) return text(present[0].period);
+  return present.map((side) => `${side.name} ${text(side.period)}`).join(" / ");
+}
+
+/** Row label for one away/home pair rendered under `period`; names sides only when they differ. */
+export function trenchPairSampleLabel(
+  artifact: TrenchMetricsArtifact | null,
+  period: TrenchPeriodKey,
+  away: { abbr: string; value: TrenchMetricValue | null },
+  home: { abbr: string; value: TrenchMetricValue | null },
+  form: "label" | "short" = "label"
+): string {
+  const side = (s: typeof away) => ({ name: s.abbr.toUpperCase(), period: s.value ? (s.value.period ?? period) : null });
+  return trenchSampleLabel(artifact, [side(away), side(home)], period, form);
 }
 
 /**

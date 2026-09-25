@@ -33,7 +33,7 @@ import {
   collectTrenchPeriodValues,
   formatTrenchValue,
   isTrenchMetric,
-  trenchPeriodLabel,
+  trenchPairSampleLabel,
 } from "@/lib/nfl/trenchMetricsData";
 
 type PossessionSide = "away-ball" | "home-ball";
@@ -148,7 +148,7 @@ function buildPairingRows({
       return {
         ...common,
         key: `${pairing.id}-${period}`,
-        contextLabel: trenchPeriodLabel(trench.artifact, period).label,
+        contextLabel: trenchPairSampleLabel(trench.artifact, period, { abbr: awayTeam.abbr, value: away }, { abbr: homeTeam.abbr, value: home }),
         away: { value: away?.valuePct ?? null, rank: leftRank, formatted: formatTrenchValue(away) },
         home: { value: home?.valuePct ?? null, rank: rightRank, formatted: formatTrenchValue(home) },
         comparison: deriveMetricComparisonFromRanks(leftRank, rightRank),

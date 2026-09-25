@@ -52,10 +52,8 @@ import {
   resolveSuccessPeriods,
 } from "@/lib/nfl/successRateData";
 import {
-  countCompletedGames,
-  createTrenchResolver,
+  createTrenchDisplayConfig,
   describeTrenchPeriods,
-  resolveTrenchPeriods,
 } from "@/lib/nfl/trenchMetricsData";
 import {
   DEFAULT_NFL_MATCHUP_SAMPLE_SETTINGS,
@@ -242,16 +240,11 @@ export default function NFLMatchupDetail() {
   }, [matchup, successArtifact]);
 
   // ESPN publishes cumulative season figures only, so the trench metrics use
-  // their own season policy. Completed-game counts come from the repository's
-  // own results, independent of any generated artifact.
-  const trench = useMemo(() => {
-    if (!matchup || !trenchArtifact) return undefined;
-    const periods = resolveTrenchPeriods(
-      countCompletedGames(data?.results, matchup.away.abbr),
-      countCompletedGames(data?.results, matchup.home.abbr)
-    );
-    return { artifact: trenchArtifact, periods, resolve: createTrenchResolver(trenchArtifact) };
-  }, [matchup, trenchArtifact, data]);
+  // their own current-first policy: each team's 2026 value when present, else 2025.
+  const trench = useMemo(
+    () => (matchup && trenchArtifact ? createTrenchDisplayConfig(trenchArtifact) : undefined),
+    [matchup, trenchArtifact]
+  );
 
   // Injuries are keyed by canonical abbreviation like the other artifacts, so
   // the resolver is built with the same explicit two-entry slug map. The

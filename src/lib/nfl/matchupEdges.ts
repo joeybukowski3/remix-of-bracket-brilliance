@@ -8,10 +8,11 @@ import {
   type SuccessRatesArtifact,
 } from "@/lib/nfl/successRateData";
 import {
-  createTrenchResolver,
+  createCurrentFirstTrenchResolver,
   formatTrenchValue,
-  resolveTrenchPeriods,
+  trenchSampleLabel,
   type TrenchMetricsArtifact,
+  type TrenchMetricValue,
 } from "@/lib/nfl/trenchMetricsData";
 
 export type NflMatchupEdgeComponent = {
@@ -53,6 +54,7 @@ export type FantasyMatchupEdges = {
 };
 
 const TEAM_COUNT = 32;
+
 
 function validRank(rank: number | null | undefined): rank is number {
   return Number.isInteger(rank) && (rank as number) >= 1 && (rank as number) <= TEAM_COUNT;
@@ -105,17 +107,20 @@ export function buildNflOffenseMatchupEdges(input: {
   const team = input.team.toLowerCase();
   const opponent = input.opponent.toLowerCase();
 
-  const trenchPeriods = resolveTrenchPeriods(input.teamCompletedGames, input.opponentCompletedGames);
-  const trenchPeriod = trenchPeriods[0];
-  const trenchResolve = createTrenchResolver(input.trench);
+  const trenchResolve = createCurrentFirstTrenchResolver(input.trench);
   const trenchPair = (offenseKey: string, offenseLabel: string, defenseKey: string, defenseLabel: string) => {
-    const offenseValue = trenchResolve(team, offenseKey, trenchPeriod);
-    const defenseValue = trenchResolve(opponent, defenseKey, trenchPeriod);
+    const offenseValue = trenchResolve(team, offenseKey, "2026-season");
+    const defenseValue = trenchResolve(opponent, defenseKey, "2026-season");
+    const component = (value: TrenchMetricValue | null, abbr: string, label: string) =>
+      value ? { team: abbr, label, value: value.valuePct, formattedValue: formatTrenchValue(value), rank: value.espnRank } : null;
     return edge(
-      offenseValue ? { team, label: offenseLabel, value: offenseValue.valuePct, formattedValue: formatTrenchValue(offenseValue), rank: offenseValue.espnRank } : null,
-      defenseValue ? { team: opponent, label: defenseLabel, value: defenseValue.valuePct, formattedValue: formatTrenchValue(defenseValue), rank: defenseValue.espnRank } : null,
+      component(offenseValue, team, offenseLabel),
+      component(defenseValue, opponent, defenseLabel),
       input.trench?.attribution ?? "ESPN Analytics / NFL Next Gen Stats",
-      trenchPeriod === "2025-season" ? "2025 season" : "2026 season to date",
+      trenchSampleLabel(input.trench, [
+        { name: "Offense", period: offenseValue?.period ?? null },
+        { name: "Defense", period: defenseValue?.period ?? null },
+      ]),
     );
   };
 
