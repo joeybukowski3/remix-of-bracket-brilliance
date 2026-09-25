@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { buildMatchupSummaryStripValues, compareSummaryLine, compareSummaryTotal } from "@/lib/nfl/matchupSummaryStrip";
+import { atsPick, atsPickSide, buildMatchupSummaryStripValues, compareSummaryLine, compareSummaryTotal, mlPickSide } from "@/lib/nfl/matchupSummaryStrip";
 import type { MarketCurrentGame } from "@/lib/nfl/marketData";
 import type { GameProjection } from "@/lib/nfl/projectionData";
+import { computeJkbAtsSide } from "../../../scripts/lib/nfl-sides-performance";
 import type { TeamTotalProjection } from "@/lib/nfl/totalsProjectionData";
 
 const market = (home: number | null, total: number | null): MarketCurrentGame => ({
@@ -87,5 +88,42 @@ describe("summary comparison signals", () => {
     expect(compareSummaryTotal(market(-3.5, 45), totals(45.03)).kind).toBe("aligned");
     expect(compareSummaryTotal(market(-3.5, null), totals(45)).kind).toBe("unavailable");
     expect(compareSummaryTotal(market(-3.5, 45), totals(Number.NaN)).kind).toBe("unavailable");
+  });
+});
+
+describe("model picks", () => {
+  const proj = (projectedHomeMargin: number) => ({ projectedHomeMargin, homeTeam: "sea", awayTeam: "ne" }) as GameProjection;
+
+  it("atsPickSide matches the Sides tracker's computeJkbAtsSide across cases", () => {
+    for (const homeLine of [-7, -3.5, -0.5, 0, 2.5, 6]) {
+      for (const modelMargin of [-10, -3.5, -0.01, 0, 0.01, 3.5, 7, 12]) {
+        const m = market(homeLine, 44);
+        const expected = computeJkbAtsSide(modelMargin, -homeLine);
+        expect(atsPickSide(m, proj(modelMargin))).toBe(expected === "pick" ? null : expected);
+      }
+    }
+  });
+
+  it("ATS: home, away, aligned, and missing data", () => {
+    expect(atsPickSide(market(-3.5, 44), proj(5))).toBe("home");
+    expect(atsPickSide(market(-3.5, 44), proj(1))).toBe("away");
+    expect(atsPickSide(market(-3.5, 44), proj(3.5))).toBeNull();
+    expect(atsPickSide(null, proj(3))).toBeNull();
+    expect(atsPickSide(market(null, null), proj(3))).toBeNull();
+    expect(atsPickSide(market(-3.5, 44), null)).toBeNull();
+    expect(atsPickSide(market(-3.5, 44), proj(Number.NaN))).toBeNull();
+  });
+
+  it("ATS carries the picked side's own market spread", () => {
+    expect(atsPick(market(-3.5, 44), proj(5))).toEqual({ side: "home", spread: "−3.5" });
+    expect(atsPick(market(-3.5, 44), proj(1))).toEqual({ side: "away", spread: "+3.5" });
+    expect(atsPick(market(-3.5, 44), proj(3.5))).toBeNull();
+  });
+
+  it("ML: home, away, pick'em, missing", () => {
+    expect(mlPickSide(proj(0.5))).toBe("home");
+    expect(mlPickSide(proj(-0.5))).toBe("away");
+    expect(mlPickSide(proj(0))).toBeNull();
+    expect(mlPickSide(null)).toBeNull();
   });
 });
