@@ -274,7 +274,7 @@ export default function MatchupMatrixRow({
         </table>
       </DenseTableScroller>
 
-      <MatchupSummaryStrip market={market} projection={projection} totalProjection={totalProjection} />
+      <MatchupSummaryStrip market={market} projection={projection} totalProjection={totalProjection} awayTeam={away} homeTeam={home} />
     </div>
   );
 }

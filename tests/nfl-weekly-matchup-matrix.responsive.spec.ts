@@ -41,7 +41,7 @@ for (const width of [1440, 390, 320]) {
 
     const strip = page.locator("[data-matchup-summary-strip]").first();
     await expect(strip).toBeVisible();
-    await expect(strip.locator("dt")).toHaveText(["Vegas Line", "JKB Line", "Vegas Total", "JKB Total"]);
+    await expect(strip.locator("dt")).toHaveText(["Vegas Line", "JKB Line", "Vegas Total", "JKB Total", "ATS Model Pick", "ML Model Pick"]);
 
     const fields = await strip.locator("[data-summary-field]").evaluateAll((nodes) =>
       nodes.map((node) => {
@@ -49,15 +49,21 @@ for (const width of [1440, 390, 320]) {
         return { x, y, itemWidth, height };
       }),
     );
-    expect(new Set(fields.map((f) => Math.round(f.y))).size).toBe(width >= 768 ? 1 : 2);
+    expect(new Set(fields.map((f) => Math.round(f.y))).size).toBe(width >= 768 ? 1 : 3);
     expect(Math.max(...fields.map((f) => f.height))).toBeLessThanOrEqual(56);
     if (width >= 768) {
       const stripBounds = await strip.boundingBox();
       expect(stripBounds).not.toBeNull();
       expect(fields[0].x).toBeCloseTo(stripBounds!.x, 0);
-      expect(fields[3].x + fields[3].itemWidth).toBeLessThan(stripBounds!.x + stripBounds!.width - 30);
+      expect(fields[5].x + fields[5].itemWidth).toBeLessThan(stripBounds!.x + stripBounds!.width - 30);
       expect(stripBounds!.height).toBeLessThanOrEqual(44);
     }
+
+    // Picks render a compact logo when a pick exists (no data → dash, still valid).
+    const pickLogos = await strip.locator("[data-summary-pick] img").evaluateAll((nodes) =>
+      nodes.map((n) => Math.round(n.getBoundingClientRect().width)),
+    );
+    for (const size of pickLogos) expect(size).toBeLessThanOrEqual(20);
 
     const clipped = await strip.locator("dt, dd").evaluateAll((nodes) =>
       nodes.filter((n) => n.scrollWidth > n.clientWidth + 1).map((n) => n.textContent),

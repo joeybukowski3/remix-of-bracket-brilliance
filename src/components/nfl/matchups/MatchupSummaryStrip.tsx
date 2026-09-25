@@ -1,15 +1,47 @@
 import { ArrowDown, ArrowUp } from "lucide-react";
 import {
+  atsPick,
   buildMatchupSummaryStripValues,
   compareSummaryLine,
   compareSummaryTotal,
+  mlPickSide,
+  SUMMARY_STRIP_MISSING,
+  type PickSide,
   type SummaryComparison,
 } from "@/lib/nfl/matchupSummaryStrip";
+import NflTeamCrest from "@/components/nfl/matchups/NflTeamCrest";
+import { nflTeamColorFor } from "@/lib/nfl/nflTeamColor";
+import type { NflMatchupTeam } from "@/lib/nfl/matchups";
 import type { MarketCurrentGame } from "@/lib/nfl/marketData";
 import type { GameProjection } from "@/lib/nfl/projectionData";
 import type { TeamTotalProjection } from "@/lib/nfl/totalsProjectionData";
 
-type Field = { key: string; label: string; value: string; comparison?: SummaryComparison };
+type Field = {
+  key: string;
+  label: string;
+  value?: string;
+  comparison?: SummaryComparison;
+  pick?: { side: PickSide | null; spread?: string | null };
+};
+
+const PICK_CREST_SIZE = 18;
+
+function PickValue({ team, side, spread, label }: { team: NflMatchupTeam; side: PickSide; spread?: string | null; label: string }) {
+  const color = nflTeamColorFor(team);
+  const abbr = team.abbr.toUpperCase();
+  return (
+    <dd
+      data-summary-pick={side}
+      aria-label={`${label}: ${abbr}${spread ? ` ${spread}` : ""}`}
+      className="m-0 inline-flex items-center gap-1 whitespace-nowrap rounded-sm border-l-[3px] border-slate-400 bg-white py-0.5 pl-1 pr-1.5 text-xs font-extrabold tabular-nums text-slate-800"
+      style={color ? { borderLeftColor: color, backgroundColor: `color-mix(in srgb, ${color} 10%, white)` } : undefined}
+    >
+      <NflTeamCrest team={team} side={side} size={PICK_CREST_SIZE} />
+      <span aria-hidden="true">{abbr}</span>
+      {spread && <span aria-hidden="true" className="font-bold text-slate-600">{spread}</span>}
+    </dd>
+  );
+}
 
 function ComparisonSignal({ comparison, line }: { comparison: SummaryComparison; line: boolean }) {
   if (comparison.kind === "unavailable" || comparison.kind === "aligned") return null;
@@ -43,17 +75,26 @@ export default function MatchupSummaryStrip({
   market,
   projection,
   totalProjection,
+  awayTeam,
+  homeTeam,
 }: {
   market: MarketCurrentGame | null;
   projection: GameProjection | null;
   totalProjection: TeamTotalProjection | null;
+  awayTeam: NflMatchupTeam;
+  homeTeam: NflMatchupTeam;
 }) {
   const values = buildMatchupSummaryStripValues(market, projection, totalProjection);
+  const ats = atsPick(market, projection);
+  const mlSide = mlPickSide(projection);
+  const teamFor = (side: PickSide) => (side === "home" ? homeTeam : awayTeam);
   const fields: Field[] = [
     { key: "vegas-line", label: "Vegas Line", value: values.vegasLine },
     { key: "jkb-line", label: "JKB Line", value: values.jkbLine, comparison: compareSummaryLine(market, projection) },
     { key: "vegas-total", label: "Vegas Total", value: values.vegasTotal },
     { key: "jkb-total", label: "JKB Total", value: values.jkbTotal, comparison: compareSummaryTotal(market, totalProjection) },
+    { key: "ats-pick", label: "ATS Model Pick", pick: { side: ats?.side ?? null, spread: ats?.spread } },
+    { key: "ml-pick", label: "ML Model Pick", pick: { side: mlSide } },
   ];
 
   return (
@@ -69,9 +110,13 @@ export default function MatchupSummaryStrip({
           }`}
         >
           <dt className="whitespace-nowrap text-[9px] font-bold uppercase tracking-[0.06em] text-slate-600">{field.label}</dt>
-          <dd className={`m-0 whitespace-nowrap text-xs font-extrabold tabular-nums ${field.comparison ? "text-emerald-800" : "text-slate-800"}`}>
-            {field.value}
-          </dd>
+          {field.pick?.side ? (
+            <PickValue team={teamFor(field.pick.side)} side={field.pick.side} spread={field.pick.spread} label={field.label} />
+          ) : (
+            <dd className={`m-0 whitespace-nowrap text-xs font-extrabold tabular-nums ${field.comparison ? "text-emerald-800" : "text-slate-800"}`}>
+              {field.value ?? SUMMARY_STRIP_MISSING}
+            </dd>
+          )}
           {field.comparison && <ComparisonSignal comparison={field.comparison} line={field.key === "jkb-line"} />}
         </div>
       ))}

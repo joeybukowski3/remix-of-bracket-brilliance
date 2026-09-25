@@ -1,5 +1,5 @@
-import { formatMarketFavoriteSpread, formatTotal, type MarketCurrentGame } from "@/lib/nfl/marketData";
-import { formatProjectedSpread, marketHomeMargin, type GameProjection } from "@/lib/nfl/projectionData";
+import { formatMarketFavoriteSpread, formatSpread, formatTotal, type MarketCurrentGame } from "@/lib/nfl/marketData";
+import { formatProjectedSpread, marketHomeMargin, projectedWinner, type GameProjection } from "@/lib/nfl/projectionData";
 import { formatTeamPoints, type TeamTotalProjection } from "@/lib/nfl/totalsProjectionData";
 
 /** Shown for any field with no canonical value; sources are never swapped silently. */
@@ -74,4 +74,41 @@ export function buildMatchupSummaryStripValues(
     vegasTotal: orMissing(formatTotal(market?.total)),
     jkbTotal: totalProjection ? orMissing(formatTeamPoints(totalProjection.projectedGameTotal)) : SUMMARY_STRIP_MISSING,
   };
+}
+
+export type PickSide = "home" | "away";
+
+export type SummaryPick = {
+  side: PickSide;
+  /** Signed market spread for the picked side (ATS only), e.g. "−4.5"; null when unavailable. */
+  spread: string | null;
+};
+
+/**
+ * ATS side JKB prefers. Same rule as `computeJkbAtsSide` in
+ * scripts/lib/nfl-sides-performance.ts (the Sides performance tracker), which is
+ * Node-side and cannot be bundled here; a parity test pins the two together.
+ * Strict comparison, no rounding: an exact tie (or missing input) is no pick.
+ */
+export function atsPickSide(market: MarketCurrentGame | null, projection: GameProjection | null): PickSide | null {
+  const marketMargin = marketHomeMargin(market);
+  const modelMargin = projection?.projectedHomeMargin;
+  if (marketMargin == null || modelMargin == null || !Number.isFinite(modelMargin)) return null;
+  if (modelMargin > marketMargin) return "home";
+  if (modelMargin < marketMargin) return "away";
+  return null;
+}
+
+export function atsPick(market: MarketCurrentGame | null, projection: GameProjection | null): SummaryPick | null {
+  const side = atsPickSide(market, projection);
+  if (!side || !market) return null;
+  const spread = orMissing(formatSpread(market.spread[side]));
+  return { side, spread: spread === SUMMARY_STRIP_MISSING ? null : spread };
+}
+
+/** JKB projected winner, via the same `projectedWinner` the matchup detail page's ML pick uses. */
+export function mlPickSide(projection: GameProjection | null): PickSide | null {
+  const winner = projectedWinner(projection);
+  if (!winner || !projection) return null;
+  return winner === projection.homeTeam ? "home" : "away";
 }
