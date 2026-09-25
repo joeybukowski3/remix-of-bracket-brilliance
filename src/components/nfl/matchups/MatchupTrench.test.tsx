@@ -6,6 +6,7 @@ import MatchupUnitComparison from "@/components/nfl/matchups/MatchupUnitComparis
 import MatchupUnitBattles from "@/components/nfl/matchups/MatchupUnitBattles";
 import { OFFENSE_METRIC_GROUPS, unavailableMetricResolver } from "@/lib/nfl/matchupMetrics";
 import {
+  createTrenchDisplayConfig,
   createTrenchResolver,
   describeTrenchPeriods,
   resolveTrenchPeriods,
@@ -288,5 +289,43 @@ describe("offense vs defense pairings", () => {
     expect(contexts).toContain("2025 Season");
     expect(contexts).toContain("2026 Through Week 4");
     expect(screen.getAllByText("Pass Block vs Pass Rush").length).toBeGreaterThan(0);
+  });
+});
+
+describe("current-first display config (matchup detail)", () => {
+  function renderCurrentFirst(artifact: TrenchMetricsArtifact) {
+    return render(
+      <MemoryRouter>
+        <MatchupTrenches matchup={MATCHUP} trench={createTrenchDisplayConfig(artifact)} />
+      </MemoryRouter>
+    );
+  }
+
+  it("shows 2026 values and ranks before any six-game transition, with no 2025 rows", () => {
+    renderCurrentFirst(ARTIFACT);
+    expect(screen.getAllByText("2026 Through Week 4").length).toBeGreaterThan(0);
+    expect(screen.queryByText("2025 Season")).toBeNull();
+    expect(screen.getAllByText("70%").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("#3").length).toBeGreaterThan(0);
+    expect(screen.queryAllByText("64%")).toHaveLength(0);
+    expect(document.querySelectorAll("#trenches [data-rank-tower-group]")).toHaveLength(4);
+  });
+
+  it("falls back to 2025 when the artifact has no 2026 season", () => {
+    renderCurrentFirst({ ...ARTIFACT, seasons: { "2025": ARTIFACT.seasons["2025"] } });
+    expect(screen.getAllByText("2025 Season").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("64%").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("#13").length).toBeGreaterThan(0);
+  });
+
+  it("falls back per team and labels mixed sides truthfully", () => {
+    const { ne: _ne, ...seaOnly } = seasonTeams(70, 3);
+    renderCurrentFirst({
+      ...ARTIFACT,
+      seasons: { ...ARTIFACT.seasons, "2026": { ...ARTIFACT.seasons["2026"], teams: seaOnly as never } },
+    });
+    expect(screen.getAllByText("NE 2025 Season / SEA 2026 Through Week 4").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("64%").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("71%").length).toBeGreaterThan(0);
   });
 });

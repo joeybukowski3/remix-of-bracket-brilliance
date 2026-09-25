@@ -267,3 +267,36 @@ describe("display formatting", () => {
     expect(formatTrenchValue(null)).toBe("N/A");
   });
 });
+
+describe("current-first trench resolver", () => {
+  const v = (valuePct: number, espnRank: number) => ({ valuePct, espnRank });
+  const team = (pb: ReturnType<typeof v>) => ({ espnSlug: "x", metrics: { "off.passBlockWinRate": pb } });
+  const artifact = {
+    schemaVersion: "t", generatedAt: "t", source: "t", attribution: "t", metricColumns: {}, provenance: null,
+    seasons: {
+      "2025": { articleId: "a", throughWeek: 18, sourceUpdatedText: null, sourceLastModified: null, teams: { ne: team(v(64, 13)), sea: team(v(60, 20)) } },
+      "2026": { articleId: "b", throughWeek: 2, sourceUpdatedText: null, sourceLastModified: null, teams: { ne: team(v(55, 9)) } },
+    },
+  };
+
+  it("prefers 2026 regardless of completed games and tags the source season", async () => {
+    const { createCurrentFirstTrenchResolver } = await import("@/lib/nfl/trenchMetricsData");
+    const resolve = createCurrentFirstTrenchResolver(artifact);
+    expect(resolve("ne", "off.passBlockWinRate", "2026-season")).toEqual({ valuePct: 55, espnRank: 9, period: "2026-season" });
+  });
+
+  it("falls back to 2025 independently per team and never crosses when 2025 is requested", async () => {
+    const { createCurrentFirstTrenchResolver } = await import("@/lib/nfl/trenchMetricsData");
+    const resolve = createCurrentFirstTrenchResolver(artifact);
+    expect(resolve("sea", "off.passBlockWinRate", "2026-season")).toEqual({ valuePct: 60, espnRank: 20, period: "2025-season" });
+    expect(resolve("ne", "off.passBlockWinRate", "2025-season")).toMatchObject({ valuePct: 64, period: "2025-season" });
+    expect(resolve("ne", "def.passRushWinRate", "2026-season")).toBeNull();
+  });
+
+  it("labels shared and mixed periods truthfully", async () => {
+    const { trenchSampleLabel } = await import("@/lib/nfl/trenchMetricsData");
+    expect(trenchSampleLabel(artifact, [{ name: "A", period: "2026-season" }, { name: "B", period: "2026-season" }])).toBe("2026 Through Week 2");
+    expect(trenchSampleLabel(artifact, [{ name: "A", period: "2026-season" }, { name: "B", period: "2025-season" }])).toBe("A 2026 Through Week 2 / B 2025 Season");
+    expect(trenchSampleLabel(artifact, [{ name: "A", period: null }, { name: "B", period: "2025-season" }])).toBe("2025 Season");
+  });
+});

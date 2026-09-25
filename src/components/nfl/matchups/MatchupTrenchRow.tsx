@@ -11,7 +11,7 @@ import {
 import type { TrenchResolver } from "@/lib/nfl/trenchMetricsData";
 import {
   formatTrenchValue,
-  trenchPeriodLabel,
+  trenchPairSampleLabel,
   type TrenchMetricValue,
   type TrenchMetricsArtifact,
   type TrenchPeriodKey,
@@ -118,7 +118,12 @@ export default function MatchupTrenchRow({
       )}
 
       {periods.map((period) => {
-        const labels = trenchPeriodLabel(artifact, period);
+        const awayPair = { abbr: awayTeamName, value: awayValues[period] ?? null };
+        const homePair = { abbr: homeTeamName, value: homeValues[period] ?? null };
+        const labels = {
+          label: trenchPairSampleLabel(artifact, period, awayPair, homePair),
+          short: trenchPairSampleLabel(artifact, period, awayPair, homePair, "short"),
+        };
         return (
           <div key={period}>
             {isMobile ? (
