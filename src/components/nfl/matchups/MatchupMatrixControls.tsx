@@ -20,7 +20,7 @@ const DISPLAY_MODE_OPTIONS = [
  * rank regardless of which mode is active — see matchupMatrixRankTier.ts.
  *
  * The two footnotes here are the SINGLE place the matrix explains that
- * Success Rate / Blocking / Def Rush never move with the Data Window toggle,
+ * Success Rate and all four trench rates never move with the Data Window toggle,
  * and that OVR's Last 8 reads as 2026-to-date (no rolling 8-game OVR exists) —
  * deliberately not repeated on every cell.
  */
@@ -61,9 +61,9 @@ export default function MatchupMatrixControls({
       </div>
 
       <p className="text-[10px] leading-4 text-slate-500">
-        <span className="font-bold text-slate-600">Success Rate and Blocking/Def Rush</span> are always
-        season-to-date and do not change with the Data Window toggle above — RBSDM and ESPN publish those
-        figures without a rolling or historical-blend window.
+        <span className="font-bold text-slate-600">Success Rate and the pass/run trench rates</span> use
+        their latest published periods and do not change with the Data Window toggle above — RBSDM and ESPN
+        do not provide a historical-blend window for them.
         {dataWindow === "last8" && (
           <>
             {" "}

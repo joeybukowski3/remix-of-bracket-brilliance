@@ -175,6 +175,26 @@ describe("MatchupMatrixRow team record", () => {
 });
 
 describe("MatchupMatrixRow header/value row structure", () => {
+  it("aligns pass block with opposing pass rush and run block with opposing run stop", () => {
+    const board = makeBoard({
+      "ne:passBlock": makeCell({ formattedValue: "61%", rank: 4 }),
+      "ne:runBlock": makeCell({ formattedValue: "71%", rank: 5 }),
+      "ne:passRush": makeCell({ formattedValue: "37%", rank: 8 }),
+      "ne:runStop": makeCell({ formattedValue: "29%", rank: 16 }),
+      "sea:passBlock": makeCell({ formattedValue: "63%", rank: 20 }),
+      "sea:runBlock": makeCell({ formattedValue: "73%", rank: 15 }),
+      "sea:passRush": makeCell({ formattedValue: "39%", rank: 13 }),
+      "sea:runStop": makeCell({ formattedValue: "30%", rank: 12 }),
+    });
+    render(<MemoryRouter><MatchupMatrixRow matchup={MATCHUP} board={board} displayMode="values" awayRecord={null} homeRecord={null} /></MemoryRouter>);
+    const rows = screen.getByRole("region", { name: /matchup matrix/i }).querySelectorAll("tbody > tr");
+    const values = (row: Element) => Array.from(row.querySelectorAll("td")).map((cell) => cell.textContent);
+    const away = values(rows[1]);
+    const home = values(rows[3]);
+    expect([away[4], home[4], away[5], home[5]]).toEqual(["61%", "39%", "71%", "30%"]);
+    expect([away[10], home[10], away[11], home[11]]).toEqual(["37%", "63%", "29%", "73%"]);
+  });
+
   it("renders the away stat header row in offense-then-defense order", () => {
     render(
       <MemoryRouter>
@@ -190,12 +210,14 @@ describe("MatchupMatrixRow header/value row structure", () => {
       "Off EPA",
       "Off YPP",
       "Off SR",
-      "Blocking",
+      "Pass Block",
+      "Run Block",
       "",
       "Def EPA",
       "Def YPP",
       "Def SR",
-      "Def Rush",
+      "Pass Rush",
+      "Run Stop",
     ]);
   });
 
@@ -214,12 +236,14 @@ describe("MatchupMatrixRow header/value row structure", () => {
       "Def EPA",
       "Def YPP",
       "Def SR",
-      "Def Rush",
+      "Pass Rush",
+      "Run Stop",
       "",
       "Off EPA",
       "Off YPP",
       "Off SR",
-      "Blocking",
+      "Pass Block",
+      "Run Block",
     ]);
   });
 
@@ -237,7 +261,7 @@ describe("MatchupMatrixRow header/value row structure", () => {
     expect(valueCell.querySelector("[class*='uppercase']")).toBeNull();
   });
 
-  it("keeps a strong center divider present after column 5 in both header and value rows", () => {
+  it("keeps a strong center divider after both offensive trench columns in both rows", () => {
     render(
       <MemoryRouter>
         <MatchupMatrixRow matchup={MATCHUP} board={makeBoard({})} displayMode="rankings" awayRecord={null} homeRecord={null} />
@@ -245,12 +269,12 @@ describe("MatchupMatrixRow header/value row structure", () => {
     );
     const table = screen.getByRole("region", { name: /matchup matrix/i }).querySelector("table")!;
     const rows = table.querySelectorAll("tbody > tr");
-    // Header rows: identity(0) + OVR,EPA,YPP,SR,Blocking(1-5) -> divider at index 6.
-    expect(rows[0].querySelectorAll("td")[6].getAttribute("aria-hidden")).toBe("true");
-    expect(rows[2].querySelectorAll("td")[6].getAttribute("aria-hidden")).toBe("true");
-    // Value rows: no identity cell -> OVR..Blocking(0-4) -> divider at index 5.
-    expect(rows[1].querySelectorAll("td")[5].getAttribute("aria-hidden")).toBe("true");
-    expect(rows[3].querySelectorAll("td")[5].getAttribute("aria-hidden")).toBe("true");
+    // Header rows: identity(0) + OVR,EPA,YPP,SR,Pass Block,Run Block(1-6).
+    expect(rows[0].querySelectorAll("td")[7].getAttribute("aria-hidden")).toBe("true");
+    expect(rows[2].querySelectorAll("td")[7].getAttribute("aria-hidden")).toBe("true");
+    // Value rows omit the identity cell.
+    expect(rows[1].querySelectorAll("td")[6].getAttribute("aria-hidden")).toBe("true");
+    expect(rows[3].querySelectorAll("td")[6].getAttribute("aria-hidden")).toBe("true");
   });
 });
 
@@ -262,14 +286,14 @@ describe("MatchupMatrixRow fixed grid and team tint", () => {
       </MemoryRouter>
     );
 
-  it("uses a fixed table layout with identity + 9 metric + 1 divider columns", () => {
+  it("uses a fixed table layout with identity + 11 metric + 1 divider columns", () => {
     const { container } = renderRow();
     const table = container.querySelector("table")!;
     expect(table.className).toContain("table-fixed");
     const cols = Array.from(table.querySelectorAll("colgroup > col")).map((c) => c.getAttribute("data-matrix-col"));
     expect(cols.filter((c) => c === "identity")).toHaveLength(1);
-    expect(cols.filter((c) => c === "metric")).toHaveLength(9);
-    expect(cols.indexOf("divider")).toBe(6);
+    expect(cols.filter((c) => c === "metric")).toHaveLength(11);
+    expect(cols.indexOf("divider")).toBe(7);
     // Metric columns carry no explicit width, so they share the remainder equally.
     table.querySelectorAll('col[data-matrix-col="metric"]').forEach((c) => expect((c as HTMLElement).style.width).toBe(""));
   });

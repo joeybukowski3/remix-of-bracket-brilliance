@@ -161,14 +161,19 @@ describe("buildMatchupMatrixBoard", () => {
     expect(blended.windowSensitive).toBe(false);
   });
 
-  it("uses ESPN's own published rank for trench metrics, never a recomputed one", () => {
+  it("maps each trench metric to its distinct ESPN percentage and published rank", () => {
     const trenchArtifact: TrenchMetricsArtifact = {
       schemaVersion: "1", generatedAt: "2026-01-01T00:00:00Z", source: "test", attribution: "test",
       metricColumns: {},
       seasons: {
         "2026": {
           articleId: "x", throughWeek: 3, sourceUpdatedText: null, sourceLastModified: null,
-          teams: { A: { espnSlug: "a", metrics: { "off.runBlockWinRate": { valuePct: 71, espnRank: 5 } } } },
+          teams: { A: { espnSlug: "a", metrics: {
+            "off.passBlockWinRate": { valuePct: 61, espnRank: 21 },
+            "off.runBlockWinRate": { valuePct: 71, espnRank: 5 },
+            "def.passRushWinRate": { valuePct: 37, espnRank: 8 },
+            "def.runStopWinRate": { valuePct: 29, espnRank: 16 },
+          } } },
         },
       },
       provenance: null,
@@ -182,9 +187,16 @@ describe("buildMatchupMatrixBoard", () => {
       successArtifact: null,
       trenchArtifact,
     });
-    const cell = board.getCell("A", "blocking");
-    expect(cell.rank).toBe(5); // ESPN's own published rank, verbatim
-    expect(cell.value).toBe(71);
+    for (const [metric, value, rank] of [
+      ["passBlock", 61, 21], ["runBlock", 71, 5],
+      ["passRush", 37, 8], ["runStop", 29, 16],
+    ] as const) {
+      const cell = board.getCell("A", metric);
+      expect(cell.value).toBe(value);
+      expect(cell.formattedValue).toBe(`${value}%`);
+      expect(cell.rank).toBe(rank); // ESPN's own published rank, verbatim
+      expect(cell.windowSensitive).toBe(false);
+    }
   });
 
   it("falls back to the 2025 trench season when the 2026 season has no entry yet for that team", () => {
@@ -207,7 +219,7 @@ describe("buildMatchupMatrixBoard", () => {
       teamAbbrs: TEAM_ABBRS, mode: "2026-only",
       currentRating: makeCurrentRating({ A: { rating: 50, rank: 1, performanceRating: null, performanceRank: null, gamesPlayed: 2 } }),
       epaArtifact: null, conventionalArtifact: null, successArtifact: null, trenchArtifact,
-    }).getCell("A", "blocking");
+    }).getCell("A", "runBlock");
     expect(cell.value).toBe(60);
     expect(cell.rank).toBe(10);
   });

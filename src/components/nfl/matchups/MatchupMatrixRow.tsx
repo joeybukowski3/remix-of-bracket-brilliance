@@ -9,10 +9,9 @@ import type { NflMatrixDisplayMode } from "@/components/nfl/matchups/MatchupMatr
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
 import { nflTeamColorFor } from "@/lib/nfl/nflTeamColor";
 
-/** Identity column is 100px on phones (team abbr) and 148px from md up (full name); the divider is 3px. */
+/** Identity stays frozen and readable while the wider metric grid scrolls inside its card. */
 const DIVIDER_COL_WIDTH_PX = 3;
-/** Minimum width of one metric column inside the mobile scroller. */
-const METRIC_COL_MIN_PX = 64; // 100 + 3 + 9*64 = 679px (md: 148 + 3 + 576 = 727px)
+// Table minima: mobile 100 + 3 + 11*72 = 895px; md 148 + 3 + 11*72 = 943px.
 /** Share of the team colour blended over white for the identity cell. */
 const TEAM_TINT_RATIO = 0.08;
 
@@ -35,17 +34,17 @@ type MatrixColumn = {
   topMetricId: NflMatrixMetricId;
   topLabel: string;
   /** Metric shown in the home (bottom) row for this column — deliberately
-   *  different from topMetricId for columns 2-9, so offense always lines up
+   *  different from topMetricId for columns 2-11, so offense always lines up
    *  vertically against the opposing defense. */
   bottomMetricId: NflMatrixMetricId;
   bottomLabel: string;
-  /** Strong navy divider rendered after this column (between 5 and 6). */
+  /** Strong navy divider rendered after the final offensive column. */
   dividerAfter?: boolean;
 };
 
 /**
- * Column 1 is each team's own OVR (no swap). Columns 2-5 pair the away team's
- * offense against the home team's defense; columns 6-9 pair the away team's
+ * Column 1 is each team's own OVR (no swap). Columns 2-6 pair the away team's
+ * offense against the home team's defense; columns 7-11 pair the away team's
  * defense against the home team's offense — the away/home metric ids swap
  * between the two rows so the same physical column always reads as one
  * offense vs. the opposing defense.
@@ -55,11 +54,13 @@ const MATRIX_COLUMNS: readonly MatrixColumn[] = [
   { id: "epa-1", topMetricId: "offEpa", topLabel: "Off EPA", bottomMetricId: "defEpa", bottomLabel: "Def EPA" },
   { id: "ypp-1", topMetricId: "offYpp", topLabel: "Off YPP", bottomMetricId: "defYpp", bottomLabel: "Def YPP" },
   { id: "sr-1", topMetricId: "offSr", topLabel: "Off SR", bottomMetricId: "defSr", bottomLabel: "Def SR" },
-  { id: "trench-1", topMetricId: "blocking", topLabel: "Blocking", bottomMetricId: "defRush", bottomLabel: "Def Rush", dividerAfter: true },
+  { id: "pass-trench-1", topMetricId: "passBlock", topLabel: "Pass Block", bottomMetricId: "passRush", bottomLabel: "Pass Rush" },
+  { id: "run-trench-1", topMetricId: "runBlock", topLabel: "Run Block", bottomMetricId: "runStop", bottomLabel: "Run Stop", dividerAfter: true },
   { id: "epa-2", topMetricId: "defEpa", topLabel: "Def EPA", bottomMetricId: "offEpa", bottomLabel: "Off EPA" },
   { id: "ypp-2", topMetricId: "defYpp", topLabel: "Def YPP", bottomMetricId: "offYpp", bottomLabel: "Off YPP" },
   { id: "sr-2", topMetricId: "defSr", topLabel: "Def SR", bottomMetricId: "offSr", bottomLabel: "Off SR" },
-  { id: "trench-2", topMetricId: "defRush", topLabel: "Def Rush", bottomMetricId: "blocking", bottomLabel: "Blocking" },
+  { id: "pass-trench-2", topMetricId: "passRush", topLabel: "Pass Rush", bottomMetricId: "passBlock", bottomLabel: "Pass Block" },
+  { id: "run-trench-2", topMetricId: "runStop", topLabel: "Run Stop", bottomMetricId: "runBlock", bottomLabel: "Run Block" },
 ] as const;
 
 /**
@@ -174,7 +175,7 @@ function TeamIdentityCell({
 
 /**
  * One game as a compact two-row spreadsheet: team identity (sticky on
- * horizontal scroll) plus nine metric columns, with the header labels
+ * horizontal scroll) plus eleven metric columns, with the header labels
  * swapping between the away and home rows so offense always lines up
  * against the opposing defense (see MATRIX_COLUMNS).
  *
@@ -216,7 +217,7 @@ export default function MatchupMatrixRow({
 
       <DenseTableScroller label={`${away.teamName} at ${home.teamName} matchup matrix`}>
         <table
-          className="w-full min-w-[679px] table-fixed border-separate border-spacing-0 text-[11px] md:min-w-[727px]"
+          className="w-full min-w-[895px] table-fixed border-separate border-spacing-0 text-[11px] md:min-w-[943px]"
         >
           <colgroup>
             <col data-matrix-col="identity" className="w-[100px] md:w-[148px]" />

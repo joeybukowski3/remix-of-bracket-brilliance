@@ -88,6 +88,30 @@ rating, metric, or projection.
 
 ### Samples and periods
 
+The Weekly Matchups rankings matrix shows `OVR | OFF EPA | OFF YPP | OFF SR |
+PASS BLOCK | RUN BLOCK || DEF EPA | DEF YPP | DEF SR | PASS RUSH | RUN STOP`
+for the away team. The home row swaps offense and defense in the same physical
+columns, pairing pass block with opposing pass rush and run block with opposing
+run stop. The divider follows the fifth offensive metric.
+
+The former **BLOCKING** column read only `off.runBlockWinRate`; **DEF RUSH**
+read only `def.runStopWinRate`. Neither was a composite or a pass metric. All
+four current trench columns read `public/data/nfl/matchup-trench-metrics.json`:
+
+| Column | Artifact field | ESPN team leaderboard | Display |
+| --- | --- | --- | --- |
+| PASS BLOCK | `off.passBlockWinRate` | PBWR | ESPN `valuePct` or `espnRank` |
+| RUN BLOCK | `off.runBlockWinRate` | RBWR | ESPN `valuePct` or `espnRank` |
+| PASS RUSH | `def.passRushWinRate` | PRWR | ESPN `valuePct` or `espnRank` |
+| RUN STOP | `def.runStopWinRate` | RSWR | ESPN `valuePct` or `espnRank` |
+
+The ESPN trench producer copies the published whole-number percentage and
+official 1–32 rank without a local formula or recomputed rank. The matrix uses
+the team's 2026 artifact row when present, otherwise its 2025 row. A missing
+metric in the selected row displays `N/A` (or `—` in Rankings mode); it never
+substitutes another trench field. These season values are independent of the
+matrix Data Window toggle, and the existing rank-tier palette uses `espnRank`.
+
 Conventional metrics and matchup-display EPA respond to the Season/Last 5 and
 historical-blend controls. With the default blend, “Season” is a rolling-eight
 matchup-display sample that may cross the prior/current-season boundary. This
