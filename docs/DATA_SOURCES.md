@@ -241,6 +241,23 @@ Repository-wide notes:
 | Fallback | Multi-provider fallback chain; a provider failure degrades to the next provider, then to no line. |
 | Framing | Per `KS-008`, the Moneyline view presents descriptive comparison and archived predictions/CLV, not calibrated probabilities or +EV claims (uncalibrated probability/value-edge claims were removed from the UI). |
 
+## NFL — DraftKings Network betting splits
+
+| Field | Value |
+|---|---|
+| Provider | DraftKings Network betting-splits pages (`dknetwork.draftkings.com`) |
+| Purpose | Current NFL Spread, Moneyline, and Total handle/bet percentages and quoted lines/odds |
+| Access | Public HTML fetched directly by Node at generator runtime |
+| Producer | `scripts/generate-nfl-betting-splits.mjs` |
+| Production refresh | GitHub Actions `nfl-betting-splits-refresh.yml`, three daytime America/New_York runs in the September–January window; first live runner test is manually dispatched dry-run and publication is gated by `NFL_DK_SPLITS_LIVE_VERIFIED`. |
+| Artifact | `public/data/nfl/betting-splits/current.json` (current only) |
+| Consumer | `src/lib/nfl/bettingSplitsData.ts` read contract and `src/hooks/useNflBettingSplits.ts`; no public view in WU2B |
+| Offline development | `--dry-run --input-dir <path>` reads local HTML without publication; local files are never required by production. |
+| Caveat | External HTML and pagination can change; missing pregame selected-week games or unresolved rows block publication. Started games are excluded from current-source coverage, and canonical adjacent-week rows are diagnosed without entering the artifact. |
+
+See [NFL betting splits](features/nfl-betting-splits.md) for the join and
+publication contract.
+
 ## MLB — Action Network (public betting splits)
 
 | Field | Value |

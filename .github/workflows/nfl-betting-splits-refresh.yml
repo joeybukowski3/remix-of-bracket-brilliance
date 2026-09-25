@@ -1,0 +1,131 @@
+name: NFL DraftKings Betting Splits Refresh
+
+run-name: NFL DK Betting Splits • ${{ github.event_name }} • ${{ github.ref_name }}
+
+on:
+  schedule:
+    # Daytime pregame coverage during the NFL regular-season window. Off-hour
+    # minutes reduce GitHub Actions' documented top-of-hour queue contention.
+    - cron: "37 8,12,17 * 1,9,10,11,12 *"
+      timezone: "America/New_York"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Fetch live DraftKings pages and validate without publishing"
+        type: boolean
+        required: false
+        default: true
+
+concurrency:
+  group: main-data-writers-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-nfl-betting-splits:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      deploy_ref: ${{ steps.commit.outputs.pushed_commit }}
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The first live test must be a manual dry run on GitHub's runner. Until
+      # that succeeds and the repository variable is explicitly enabled,
+      # scheduled and manual production runs fail before any publication.
+      - name: Require verified live fetch before publication
+        if: ${{ github.event_name == 'schedule' || inputs.dry_run != true }}
+        shell: bash
+        env:
+          LIVE_VERIFIED: ${{ vars.NFL_DK_SPLITS_LIVE_VERIFIED }}
+        run: |
+          if [ "$LIVE_VERIFIED" != "true" ]; then
+            echo "::error::Run a manual live-fetch dry run, review its diagnostics, then set NFL_DK_SPLITS_LIVE_VERIFIED=true before production publication."
+            exit 1
+          fi
+
+      - name: Fetch and validate current NFL betting splits
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "$DRY_RUN" = "true" ]; then
+            npm run generate:nfl-betting-splits -- --dry-run
+          else
+            npm run generate:nfl-betting-splits
+          fi
+
+      - name: Detect current artifact change
+        id: changes
+        if: ${{ github.event_name == 'schedule' || inputs.dry_run != true }}
+        shell: bash
+        run: |
+          if [ -z "$(git status --porcelain -- 'public/data/nfl/betting-splits/current.json')" ]; then
+            echo "No NFL betting-splits artifact change."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push validated current artifact
+        id: commit
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- public/data/nfl/betting-splits/current.json
+          if git diff --cached --quiet; then
+            echo "No staged NFL betting-splits artifact."
+            exit 0
+          fi
+          git commit -m "data(nfl): refresh DraftKings betting splits"
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+          if [ "$pushed" != "true" ]; then
+            echo "::error::Validated NFL betting splits could not be pushed; published artifact remains unchanged."
+            exit 1
+          fi
+          echo "Validated NFL betting-splits artifact pushed to main."
+          echo "pushed_commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  deploy-pages:
+    name: Deploy changed NFL betting-splits artifact to GitHub Pages
+    needs: refresh-nfl-betting-splits
+    if: needs.refresh-nfl-betting-splits.outputs.deploy_ref != ''
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/deploy.yml
+    with:
+      ref: ${{ needs.refresh-nfl-betting-splits.outputs.deploy_ref }}
