@@ -12,7 +12,7 @@ const market = {
   moneyline: { home: null, away: null },
   total: 45.5,
 } as MarketCurrentGame;
-const projection = { formattedJkbSpread: "GB −1.8" } as GameProjection;
+const projection = { formattedJkbSpread: "GB −1.8", projectedHomeMargin: 1.8 } as GameProjection;
 const totals = { projectedGameTotal: 47.2, status: "projected" } as TeamTotalProjection;
 
 function fieldText(key: string) {
@@ -30,6 +30,8 @@ describe("MatchupSummaryStrip", () => {
     expect(fieldText("jkb-line")).toEqual({ label: "JKB Line", value: "GB −1.8" });
     expect(fieldText("vegas-total")).toEqual({ label: "Vegas Total", value: "45.5" });
     expect(fieldText("jkb-total")).toEqual({ label: "JKB Total", value: "47.2" });
+    expect(screen.getByLabelText("JKB is less bullish on the market favorite by 1.7 points")).toBeTruthy();
+    expect(screen.getByLabelText("JKB total is higher than the Vegas total by 1.7 points")).toBeTruthy();
   });
 
   it("shows an away favorite by away abbreviation", () => {
@@ -59,11 +61,30 @@ describe("MatchupSummaryStrip", () => {
     expect(fieldText("vegas-line").value).toBe("GB −3.5");
   });
 
-  it("uses a 2x2 grid on mobile and one row at md", () => {
+  it("uses a compact mobile grid and a left-aligned desktop row with strong dividers", () => {
     render(<MatchupSummaryStrip market={market} projection={projection} totalProjection={totals} />);
     const strip = document.querySelector("[data-matchup-summary-strip]") as HTMLElement;
     expect(strip.className).toContain("grid-cols-2");
-    expect(strip.className).toContain("md:grid-cols-4");
+    expect(strip.className).toContain("md:flex");
+    expect(strip.className).toContain("border-t-[3px]");
+    expect((strip.querySelector('[data-summary-field="jkb-line"]') as HTMLElement).className).toContain("border-l-2");
     expect(screen.getAllByRole("term")).toHaveLength(4);
+  });
+
+  it("shows a dog badge for a flipped favorite and a neutral PK badge for pick'em", () => {
+    const flipped = { formattedJkbSpread: "CHI −1.0", projectedHomeMargin: -1 } as GameProjection;
+    const view = render(<MatchupSummaryStrip market={market} projection={flipped} totalProjection={totals} />);
+    expect(screen.getByLabelText("Market underdog projected to be favored by JKB").textContent).toBe("DOG");
+    view.rerender(<MatchupSummaryStrip market={{ ...market, spread: { home: 0, away: 0 } }} projection={projection} totalProjection={totals} />);
+    expect(screen.getByLabelText("Market pick'em; no favorite to compare").textContent).toBe("PK");
+  });
+
+  it("does not show a signal without both numeric sources or when effectively aligned", () => {
+    const view = render(<MatchupSummaryStrip market={null} projection={projection} totalProjection={null} />);
+    expect(document.querySelectorAll('[data-summary-field="jkb-line"] [aria-label]')).toHaveLength(0);
+    expect(document.querySelectorAll('[data-summary-field="jkb-total"] [aria-label]')).toHaveLength(0);
+    view.rerender(<MatchupSummaryStrip market={market} projection={{ ...projection, projectedHomeMargin: 3.53 }} totalProjection={{ ...totals, projectedGameTotal: 45.53 }} />);
+    expect(document.querySelectorAll('[data-summary-field="jkb-line"] [aria-label]')).toHaveLength(0);
+    expect(document.querySelectorAll('[data-summary-field="jkb-total"] [aria-label]')).toHaveLength(0);
   });
 });

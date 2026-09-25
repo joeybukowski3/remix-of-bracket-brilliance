@@ -45,12 +45,19 @@ for (const width of [1440, 390, 320]) {
 
     const fields = await strip.locator("[data-summary-field]").evaluateAll((nodes) =>
       nodes.map((node) => {
-        const { y, height } = node.getBoundingClientRect();
-        return { y, height };
+        const { x, y, width: itemWidth, height } = node.getBoundingClientRect();
+        return { x, y, itemWidth, height };
       }),
     );
     expect(new Set(fields.map((f) => Math.round(f.y))).size).toBe(width >= 768 ? 1 : 2);
     expect(Math.max(...fields.map((f) => f.height))).toBeLessThanOrEqual(56);
+    if (width >= 768) {
+      const stripBounds = await strip.boundingBox();
+      expect(stripBounds).not.toBeNull();
+      expect(fields[0].x).toBeCloseTo(stripBounds!.x, 0);
+      expect(fields[3].x + fields[3].itemWidth).toBeLessThan(stripBounds!.x + stripBounds!.width - 30);
+      expect(stripBounds!.height).toBeLessThanOrEqual(44);
+    }
 
     const clipped = await strip.locator("dt, dd").evaluateAll((nodes) =>
       nodes.filter((n) => n.scrollWidth > n.clientWidth + 1).map((n) => n.textContent),
