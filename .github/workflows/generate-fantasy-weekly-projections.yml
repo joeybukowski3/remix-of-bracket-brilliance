@@ -208,3 +208,55 @@ jobs:
           fi
 
           echo "Weekly projections published successfully."
+
+      # ----------------------------------------------------------------------
+      # SHADOW + ARCHIVE. Runs AFTER the public artifacts above were generated,
+      # validated and (if changed) committed/pushed; it can never alter or block
+      # them. Best-effort: a failure here is logged and ignored. Shadow output
+      # lives under data/fantasy/ and is never written to public/.
+      # ----------------------------------------------------------------------
+      - name: Shadow candidates and prospective archive (non-public, best-effort)
+        if: env.SKIP_ROLLOVER != 'true'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          season="${{ steps.target.outputs.season }}"
+          week="${{ steps.target.outputs.week }}"
+          node scripts/refresh-nfl-injury-source-cache.mjs --seasons="${season}" --only=snapCounts
+          npx tsx scripts/generate-fantasy-shadow-candidates.ts --season="$season" --week="$week"
+          npx tsx scripts/archive-fantasy-shadow-projections.ts --season="$season" --week="$week"
+          npx tsx scripts/archive-fantasy-weekly-projections.ts --season="$season" --week="$week"
+          for prior in $((week - 1)) $((week - 2)); do
+            if [ "$prior" -ge 1 ]; then
+              npx tsx scripts/append-fantasy-shadow-outcomes.ts --season="$season" --week="$prior" || echo "Outcome append for week ${prior} skipped." >&2
+            fi
+          done
+
+      - name: Commit shadow archive (append-only, best-effort)
+        if: env.SKIP_ROLLOVER != 'true'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          season="${{ steps.target.outputs.season }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "data/fantasy/shadow/${season}" "data/fantasy/shadow-archive/${season}" "data/nfl/predictions/${season}" "data/nfl/predictions/manifests" "data/nfl/nflverse/snap-counts"
+          if git diff --cached --quiet; then
+            echo "No shadow archive changes."
+            exit 0
+          fi
+          git commit -m "chore: archive JKB fantasy shadow projections — season ${season} week ${{ steps.target.outputs.week }} $(TZ=America/New_York date '+%Y-%m-%d %H:%M ET')"
+          bash scripts/ci/discard-unowned-tracked-changes.sh
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            if git rebase origin/main && git push origin HEAD:main; then
+              echo "Shadow archive published."
+              exit 0
+            fi
+            git rebase --abort || true
+            sleep $((attempt * 10))
+          done
+          echo "Shadow archive push failed (public projections unaffected)." >&2
+          exit 1

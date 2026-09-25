@@ -22,6 +22,7 @@
  *   node scripts/refresh-nfl-injury-source-cache.mjs
  *   node scripts/refresh-nfl-injury-source-cache.mjs --seasons=2025,2026
  *   node scripts/refresh-nfl-injury-source-cache.mjs --dry-run
+ *   node scripts/refresh-nfl-injury-source-cache.mjs --seasons=2026 --only=snapCounts   (snap counts only; used by the fantasy shadow pipeline)
  */
 
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
@@ -102,7 +103,7 @@ export const CACHE_SPECS = Object.freeze([
 const DEFAULT_SEASONS = [2025, 2026];
 
 function parseArgs(argv) {
-  const args = { seasons: DEFAULT_SEASONS, dryRun: false };
+  const args = { seasons: DEFAULT_SEASONS, dryRun: false, only: null };
   for (const raw of argv.slice(2)) {
     if (raw === "--dry-run") args.dryRun = true;
     else if (raw.startsWith("--seasons=")) {
@@ -111,6 +112,9 @@ function parseArgs(argv) {
         .split(",")
         .map((value) => Number(value.trim()))
         .filter(Number.isInteger);
+    } else if (raw.startsWith("--only=")) {
+      args.only = raw.slice(7);
+      if (!CACHE_SPECS.some((spec) => spec.key === args.only)) throw new Error(`--only must be one of ${CACHE_SPECS.map((spec) => spec.key).join(", ")}`);
     } else throw new Error(`Unknown argument: ${raw}`);
   }
   if (args.seasons.length === 0) throw new Error("No valid seasons requested");
@@ -306,6 +310,7 @@ async function main() {
   console.log(`[nfl:injury-cache] seasons=${args.seasons.join(",")}${args.dryRun ? " (dry run)" : ""}`);
 
   for (const spec of CACHE_SPECS) {
+    if (args.only && spec.key !== args.only) continue;
     await refreshSpec(spec, args.seasons, { dryRun: args.dryRun });
   }
 
