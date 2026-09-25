@@ -8,7 +8,7 @@ import { useCurrentNflWeek } from "@/hooks/useCurrentNflWeek";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { nflTeamColor } from "@/lib/nfl/nflTeamColor";
 import { formatNflMetadataTimestamp } from "@/lib/nfl/provenance";
-import { biggestMoneyGap, consensusSides, contrarianSides, publicSides, sharpSides, sortSplitsRows, splitsRows, splitsSignal, type SplitsMarket, type SplitsRow, type SplitsSortKey } from "@/lib/nfl/bettingSplitsView";
+import { biggestMoneyGap, consensusSides, contrarianSides, formatSplitsGap, formatSplitsLine, formatSplitsOdds, publicSides, sharpSides, sortSplitsRows, splitsRows, splitsSignal, SPLITS_SIGNAL_CLASS, SPLITS_SIGNAL_LABEL, type SplitsMarket, type SplitsRow, type SplitsSortKey } from "@/lib/nfl/bettingSplitsView";
 import { cn } from "@/lib/utils";
 
 type Tab = "overview" | SplitsMarket;
@@ -16,8 +16,6 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" }, { id: "spread", label: "Spread" },
   { id: "moneyline", label: "Moneyline" }, { id: "total", label: "Total" },
 ];
-const SIGNAL_LABEL = { strong: "Strong Money Gap", lean: "Money Lean", balanced: "Balanced", public: "Public Heavy" };
-const SIGNAL_CLASS = { strong: "bg-emerald-50 text-emerald-800", lean: "bg-emerald-50 text-emerald-700", balanced: "bg-slate-100 text-slate-600", public: "bg-amber-50 text-amber-800" };
 
 function TeamMark({ abbr }: { abbr: string }) {
   return <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-semibold text-slate-900"><span className="h-5 w-0.5 rounded" style={{ backgroundColor: nflTeamColor(abbr) ?? "#64748b" }} aria-hidden /><TeamLogo name="" logo={nflLogoUrl(abbr)} fallbackLabel="" className="h-5 w-5 bg-transparent" /><span>{abbr.toUpperCase()}</span></span>;
@@ -30,14 +28,13 @@ function SideCell({ row }: { row: SplitsRow }) {
 }
 
 function GapCell({ gap }: { gap: number }) {
-  return <span className={cn("font-bold tabular-nums", gap > 0 ? "text-emerald-700" : gap < 0 ? "text-rose-700" : "text-slate-600")}>{gap > 0 ? "+" : ""}{gap} pp</span>;
+  return <span className={cn("font-bold tabular-nums", gap > 0 ? "text-emerald-700" : gap < 0 ? "text-rose-700" : "text-slate-600")}>{formatSplitsGap(gap)}</span>;
 }
 
 function formatLine(row: SplitsRow) {
-  if (row.side.line === null) return "—";
-  return `${row.market === "total" ? "" : row.side.line > 0 ? "+" : ""}${row.side.line}`;
+  return formatSplitsLine(row.market, row.side.line);
 }
-function formatOdds(odds: number) { return odds > 0 ? `+${odds}` : String(odds); }
+function formatOdds(odds: number) { return formatSplitsOdds(odds); }
 
 function MobileSplitsRows({ rows, label }: { rows: readonly SplitsRow[]; label: string }) {
   return <div role="region" aria-label={`${label} mobile`} className="divide-y divide-slate-100 sm:hidden">
@@ -70,7 +67,7 @@ function SplitsTable({ rows, label, market, compact = false }: { rows: readonly 
         <td className="px-3 py-2"><SideCell row={row} /></td>
         <td className="px-2 py-2 text-right tabular-nums text-slate-700">{formatLine(row)}</td><td className="px-2 py-2 text-right tabular-nums text-slate-700">{formatOdds(row.side.odds)}</td>
         <td className="px-2 py-2 text-right font-semibold tabular-nums text-slate-900">{row.side.handlePct}%</td><td className="px-2 py-2 text-right tabular-nums text-slate-700">{row.side.betsPct}%</td>
-        <td className="px-3 py-2 text-right"><GapCell gap={row.gap} /></td><td className="px-3 py-2"><span className={cn("whitespace-nowrap rounded px-1.5 py-1 text-[10px] font-semibold", SIGNAL_CLASS[signal])}>{SIGNAL_LABEL[signal]}</span></td>
+        <td className="px-3 py-2 text-right"><GapCell gap={row.gap} /></td><td className="px-3 py-2"><span className={cn("whitespace-nowrap rounded px-1.5 py-1 text-[10px] font-semibold", SPLITS_SIGNAL_CLASS[signal])}>{SPLITS_SIGNAL_LABEL[signal]}</span></td>
       </tr>; })}</tbody>
     </table>
   </DenseTableScroller></>;

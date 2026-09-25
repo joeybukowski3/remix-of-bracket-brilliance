@@ -4,7 +4,7 @@
  * The betting-lines hook is mocked so these assert presentation only: the
  * designated sportsbook, the current line, the JKB gap, freshness wording,
  * first-observed line movement, independent spread/total degradation, the
- * sparkline using only real points, and the reserved splits placeholder.
+ * sparkline using only real points.
  */
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@testing-library/react";
@@ -252,19 +252,9 @@ describe("MatchupMarketContext", () => {
     expect(screen.queryByRole("img", { name: /large chart/i })).toBeNull();
   });
 
-  it("shows a reserved betting splits placeholder with no percentages", () => {
-    const { container } = renderContext({ current: current(), movement: movement() });
-    const splits = screen.getByText("Betting Splits").closest("div")
-      ?.parentElement as HTMLElement;
-    expect(within(splits).getByText(/Production source not yet qualified/)).toBeInTheDocument();
-    expect(within(splits).getAllByText("Awaiting source").length).toBe(2);
-    expect(splits.textContent).not.toMatch(/\d%/);
-    expect(container.textContent).not.toMatch(/SportsDataIO/i);
-  });
-
-  it("renders the splits placeholder even when no line is published", () => {
+  it("keeps sportsbook line availability independent of betting splits", () => {
     renderContext({ current: null, movement: null });
-    expect(screen.getByText("Betting Splits")).toBeInTheDocument();
+    expect(screen.queryByText("Betting Splits")).toBeNull();
     expect(
       screen.getByText(/No sportsbook line has been published/),
     ).toBeInTheDocument();

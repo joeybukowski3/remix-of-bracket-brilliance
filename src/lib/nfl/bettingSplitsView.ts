@@ -3,6 +3,20 @@ import { moneyGap, publicGap, type NflDkBettingSplitsArtifact, type NflDkBetting
 export type SplitsMarket = "spread" | "moneyline" | "total";
 export type SplitsRow = { game: NflDkBettingSplitsGame; market: SplitsMarket; side: NflDkBettingSplitsSide; gap: number; publicGap: number };
 export type SplitsSignal = "strong" | "lean" | "balanced" | "public";
+export const SPLITS_SIGNAL_LABEL: Record<SplitsSignal, string> = {
+  strong: "Strong Money Gap", lean: "Money Lean", balanced: "Balanced", public: "Public Heavy",
+};
+export const SPLITS_SIGNAL_CLASS: Record<SplitsSignal, string> = {
+  strong: "bg-emerald-50 text-emerald-800", lean: "bg-emerald-50 text-emerald-700",
+  balanced: "bg-slate-100 text-slate-600", public: "bg-amber-50 text-amber-800",
+};
+
+export function formatSplitsLine(market: SplitsMarket, line: number | null): string {
+  if (line === null) return "—";
+  return `${market === "total" ? "" : line > 0 ? "+" : ""}${line}`;
+}
+export function formatSplitsOdds(odds: number): string { return odds > 0 ? `+${odds}` : String(odds); }
+export function formatSplitsGap(gap: number): string { return `${gap > 0 ? "+" : ""}${gap} pp`; }
 
 /** Percentage-point thresholds for descriptive display only; no predictive meaning. */
 export const SPLITS_THRESHOLDS = {
