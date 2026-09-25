@@ -43,6 +43,17 @@ roster rule or salary-cap calculation changes.
 
 Status: initial governing specification, reconstructed from repository state at `2b2b2b56d4d233816f3b2f5398bfe99505b5ee26` on 2026-09-02.
 
+WU2B's [current DraftKings betting-splits feed](../features/nfl-betting-splits.md)
+is a separate descriptive market research artifact. Its handle/bet percentages
+are not a JKB model feature, prediction, calibration input, archived market
+observation, or evaluated betting signal. It does not change the football
+modeling or evaluation methods below. Its current-source coverage applies only
+to selected-week games with kickoff after the source capture time; closed
+markets are excluded, while canonical adjacent-week rows are diagnostic only.
+WU3 adds scheduled live collection, fail-closed current-artifact publication,
+and capture-time-based consumer freshness without creating a model input,
+prediction archive, or historical market observation.
+
 This document is the required entry point for work on JKB NFL spreads, totals, passing, rushing, receiving, prediction archives, market comparison, outcome resolution, features, evaluation, or model versions. Detailed contracts live in:
 
 - [Prediction Archive Schema](PREDICTION_ARCHIVE_SCHEMA.md)
