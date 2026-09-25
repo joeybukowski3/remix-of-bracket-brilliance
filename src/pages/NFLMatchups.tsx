@@ -26,6 +26,9 @@ import { buildMatchupMatrixBoard } from "@/lib/nfl/matchupMatrixData";
 import { DEFAULT_MATRIX_DATA_WINDOW_MODE, type NflMatrixDataWindowMode } from "@/lib/nfl/matchupMatrixWindow";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
+import { useNflBettingSplits } from "@/hooks/useNflBettingSplits";
+import { compactSplitsForGame } from "@/lib/nfl/bettingSplitsView";
+import { formatNflMetadataTimestamp } from "@/lib/nfl/provenance";
 
 const CURRENT_SEASON = 2026;
 const GUIDE = getNflSeasonGuide(CURRENT_SEASON)!;
@@ -98,6 +101,7 @@ export default function NFLMatchups() {
   );
   const weeks = weekSelection.availableWeeks;
   const activeWeek = weekSelection.week;
+  const bettingSplits = useNflBettingSplits({ season: CURRENT_SEASON, week: activeWeek ?? 1 });
   const matchups = useMemo(
     () => (data && activeWeek !== null ? buildWeekMatchups(data.games, GUIDE, activeWeek) : []),
     [data, activeWeek]
@@ -167,12 +171,19 @@ export default function NFLMatchups() {
       )}
 
       {!loading && !error && matchups.length > 0 && (
-        <MatchupMatrixControls
+        <><MatchupMatrixControls
           displayMode={displayMode}
           onDisplayModeChange={setDisplayMode}
           dataWindow={dataWindow}
           onDataWindowChange={setDataWindow}
         />
+        <p data-splits-provenance className="mb-3 flex flex-wrap items-center gap-x-1.5 text-[10px] leading-4 text-slate-600">
+          <span className="font-bold text-slate-700">Betting Splits</span>
+          <span>DraftKings Network</span>
+          {bettingSplits.sourceCapturedAt && <span>· captured <time dateTime={bettingSplits.sourceCapturedAt}>{formatNflMetadataTimestamp(bettingSplits.sourceCapturedAt)}</time></span>}
+          <span>· {bettingSplits.loading ? "Loading" : bettingSplits.freshness === "unavailable" ? "Unavailable" : bettingSplits.freshness === "stale" ? "Stale" : "Fresh"}</span>
+          <span>· Money gap = handle % − bets % (pp); descriptive only</span>
+        </p></>
       )}
 
       {!loading && !error && dayGroups.map((group) => (
@@ -190,6 +201,7 @@ export default function NFLMatchups() {
                 market={currentMarketFor(marketArtifact, matchup.gameId)}
                 projection={projectionFor(projectionArtifact, matchup.gameId)}
                 totalProjection={teamTotalFor(totalsArtifact, matchup.gameId)}
+                bettingSplits={compactSplitsForGame(bettingSplits, matchup.gameId)}
               />
             ))}
           </div>

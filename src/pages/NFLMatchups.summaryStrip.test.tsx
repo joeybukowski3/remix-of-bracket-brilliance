@@ -36,6 +36,10 @@ vi.mock("@/hooks/useNflMatchupProjections", () => ({
 vi.mock("@/hooks/useNflMatchupTotals", () => ({
   useNflMatchupTotals: () => ({ loading: false, error: null, artifact: fixture("public/data/nfl/team-totals.json") }),
 }));
+vi.mock("@/hooks/useNflBettingSplits", () => ({
+  useNflBettingSplits: () => ({ loading: false, error: null, freshness: "stale", reason: "age", artifact: null,
+    sourceCapturedAt: "2026-09-25T14:47:13.329Z", generatedAt: "2026-09-25T14:47:16.496Z" }),
+}));
 vi.mock("@/hooks/useNflCurrentRating2026", () => ({
   useNflCurrentRating2026: () => ({ loading: false, error: null, data: null }),
 }));
@@ -72,6 +76,14 @@ function vegasLines() {
 }
 
 describe("NFLMatchups summary strip wiring", () => {
+  it("shows source capture time and stale status once above the board", () => {
+    render(<MemoryRouter initialEntries={["/nfl/matchups?week=1"]}><NFLMatchups /></MemoryRouter>);
+    const provenance = document.querySelector("[data-splits-provenance]")!;
+    expect(provenance).toHaveTextContent("DraftKings Network");
+    expect(provenance).toHaveTextContent("Stale");
+    expect(provenance.querySelector("time")).toHaveAttribute("dateTime", "2026-09-25T14:47:13.329Z");
+    expect(provenance).not.toHaveTextContent("14:47:16");
+  });
   it("renders one strip per game using that game's own canonical artifact rows", () => {
     render(
       <MemoryRouter initialEntries={["/nfl/matchups?week=1"]}>

@@ -41,6 +41,9 @@ vi.mock("@/hooks/useNflMatchupMarket", () => {
   );
   return { useNflMatchupMarket: () => ({ loading: false, error: null, artifact }) };
 });
+vi.mock("@/hooks/useNflBettingSplits", () => ({
+  useNflBettingSplits: () => ({ loading: false, error: null, freshness: "unavailable", reason: "invalid_artifact", artifact: null, sourceCapturedAt: null, generatedAt: null }),
+}));
 
 // The matrix's live-record column reads the current-season v0.3 full-season
 // artifact. Mocked empty (no completed games) so records render the

@@ -127,6 +127,17 @@ the matchup has a pregame-snapshot absence message, which also covers games
 already started when the artifact was captured. This is descriptive display
 only and is not an input to any JKB projection or market comparison.
 
+## Weekly Matchups board (WU6)
+
+The Weekly Matchups board reads the same current artifact through the shared
+hook and joins each card by exact canonical `gameId`. A compact strip below the
+existing market/JKB summary shows only the side with the largest handle-minus-
+bets gap in Spread, Moneyline, and Total. It uses the WU4 signal thresholds;
+balanced values are muted as dashes. These are descriptive distribution
+signals, not picks or inputs to JKB projections. The board shows DraftKings
+Network, `sourceCapturedAt`, and Fresh/Stale once above the cards. Stale values
+remain visible; unavailable and game-absent cards show neutral dashes.
+
 Repository deployment authority remains open (`OPEN-001` in
 `docs/DECISIONS.md`): Vercel configuration and GitHub Pages deployment both
 exist. The refresh workflow publishes a validated artifact to `main` and
