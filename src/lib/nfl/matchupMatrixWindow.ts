@@ -21,7 +21,7 @@
  *                 number. This mirrors the OVR board's own method rather than
  *                 duplicating a second, diverging blend formula.
  *
- * Success Rate and Blocking/Rush Defense (trench) are NOT resolved through
+ * Success Rate and the pass/run trench metrics are NOT resolved through
  * this module — both remain season-to-date regardless of the selected mode
  * (see matchupMatrixSeasonToDate.ts), because neither pipeline has a rolling
  * or cross-season window to select from.

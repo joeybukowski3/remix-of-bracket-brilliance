@@ -212,7 +212,7 @@ describe("NFLMatchups landing", () => {
 
   it("shows a compact page-level note that Success Rate and trench metrics never move with the Data Window toggle, instead of implying every cell changed", () => {
     renderRoute("/nfl/matchups");
-    expect(screen.getByText(/always season-to-date/i)).toBeTruthy();
+    expect(screen.getByText(/latest published periods/i)).toBeTruthy();
   });
 
   it("notes the OVR Last 8 limitation in the UI once Last 8 is selected", () => {

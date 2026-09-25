@@ -15,8 +15,8 @@
  *   Off/Def YPP  matchup-metrics.json (TeamRankings), same three windows
  *   Off/Def SR   matchup-success-rates.json (RBSDM) — season-to-date only,
  *                ignores the Data Window toggle entirely
- *   Blocking /   matchup-trench-metrics.json (ESPN) — season-to-date only,
- *   Def Rush     ignores the Data Window toggle entirely; Rankings mode uses
+ *   Pass/Run     matchup-trench-metrics.json (ESPN) — season-to-date only,
+ *   trenches     ignores the Data Window toggle entirely; Rankings mode uses
  *                ESPN's own published rank verbatim, never a recomputed one
  */
 
@@ -46,18 +46,20 @@ export type NflMatrixMetricId =
   | "offEpa"
   | "offYpp"
   | "offSr"
-  | "blocking"
+  | "passBlock"
+  | "runBlock"
   | "defEpa"
   | "defYpp"
   | "defSr"
-  | "defRush";
+  | "passRush"
+  | "runStop";
 
 export type NflMatrixCell = {
   value: number | null;
   formattedValue: string;
   /** Canonical/published rank (1-32) where one exists; a newly computed rank for the Blended composite otherwise. */
   rank: number | null;
-  /** False for Success Rate, Blocking and Def Rush — those never move with the Data Window toggle. */
+  /** False for Success Rate and the four trench metrics — those never move with the Data Window toggle. */
   windowSensitive: boolean;
 };
 
@@ -149,9 +151,11 @@ const SUCCESS_METRIC_KEYS: Record<"offSr" | "defSr", { key: string; direction: N
   defSr: { key: "def.successRateAllowed", direction: "lower-is-better" },
 };
 
-const TRENCH_METRIC_KEYS: Record<"blocking" | "defRush", { key: string; direction: NflMatrixMetricDirection }> = {
-  blocking: { key: "off.runBlockWinRate", direction: "higher-is-better" },
-  defRush: { key: "def.runStopWinRate", direction: "higher-is-better" },
+const TRENCH_METRIC_KEYS: Record<"passBlock" | "runBlock" | "passRush" | "runStop", string> = {
+  passBlock: "off.passBlockWinRate",
+  runBlock: "off.runBlockWinRate",
+  passRush: "def.passRushWinRate",
+  runStop: "def.runStopWinRate",
 };
 
 /** Builds the whole-league board once; row components then do pure lookups. */
@@ -269,15 +273,15 @@ export function buildMatchupMatrixBoard(input: BuildMatchupMatrixBoardInput): Nf
     return out;
   }
 
-  // ---- Trench / Blocking (season-to-date only) -------------------------------
-  function buildTrenchCells(metricId: "blocking" | "defRush"): Map<string, NflMatrixCell> {
-    const config = TRENCH_METRIC_KEYS[metricId];
+  // ---- ESPN trenches (season-to-date only) ----------------------------------
+  function buildTrenchCells(metricId: keyof typeof TRENCH_METRIC_KEYS): Map<string, NflMatrixCell> {
+    const metricKey = TRENCH_METRIC_KEYS[metricId];
     const entries = new Map<string, { valuePct: number; espnRank: number } | null>();
 
     for (const abbr of teamAbbrs) {
       const seasonKey = trenchSeasonKeyFor(trenchArtifact, abbr);
       const season = trenchArtifact?.seasons?.[seasonKey];
-      const entry = season?.teams?.[abbr]?.metrics?.[config.key] ?? null;
+      const entry = season?.teams?.[abbr]?.metrics?.[metricKey] ?? null;
       entries.set(abbr, entry);
     }
 
@@ -299,11 +303,13 @@ export function buildMatchupMatrixBoard(input: BuildMatchupMatrixBoardInput): Nf
     offEpa: () => buildEpaYppCells("offEpa"),
     offYpp: () => buildEpaYppCells("offYpp"),
     offSr: () => buildSuccessCells("offSr"),
-    blocking: () => buildTrenchCells("blocking"),
+    passBlock: () => buildTrenchCells("passBlock"),
+    runBlock: () => buildTrenchCells("runBlock"),
     defEpa: () => buildEpaYppCells("defEpa"),
     defYpp: () => buildEpaYppCells("defYpp"),
     defSr: () => buildSuccessCells("defSr"),
-    defRush: () => buildTrenchCells("defRush"),
+    passRush: () => buildTrenchCells("passRush"),
+    runStop: () => buildTrenchCells("runStop"),
   };
 
   const boardByMetric = new Map<NflMatrixMetricId, Map<string, NflMatrixCell>>();
