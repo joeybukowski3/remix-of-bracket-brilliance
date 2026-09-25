@@ -30,10 +30,9 @@ import type {
  * profile rendered directly below it in the Comparison tab — the historical ATS
  * profile there did not produce this line, and this line never grades it.
  *
- * Three blocks, each degrading on its own:
+ * Two blocks, each degrading on its own:
  *  1. Current Market — this book's spread, total, moneyline + the JKB gap
  *  2. Line Movement  — first-observed vs current for spread and total
- *  3. Betting Splits — a reserved placeholder; no production source is qualified
  */
 export default function MatchupMarketContext({
   matchup,
@@ -88,11 +87,6 @@ export default function MatchupMarketContext({
           <LineMovementBlock movement={movement} homeAbbr={matchup.home.abbr} />
         </>
       )}
-
-      <BettingSplitsPlaceholder
-        current={current}
-        homeAbbr={matchup.home.abbr}
-      />
     </section>
   );
 }
@@ -253,78 +247,6 @@ function MovementRow({
       <span role="cell">
         <MatchupBettingSparkline values={row.values} label={row.market} />
       </span>
-    </div>
-  );
-}
-
-/**
- * Reserved. The production betting-splits source is not qualified, so this
- * block reads no split artifact and shows no percentage — only that a source is
- * still being brought online.
- */
-function BettingSplitsPlaceholder({
-  current,
-  homeAbbr,
-}: {
-  current: CurrentMarketView | null;
-  homeAbbr: string;
-}) {
-  const spreadLabel =
-    current && current.spread?.homeLine != null
-      ? currentSpreadLabel(current.spread, homeAbbr)
-      : "Spread";
-  const totalLabel =
-    current && current.total?.line != null
-      ? `Over ${formatTotal(current.total.line)}`
-      : "Total";
-
-  const markets = [spreadLabel, totalLabel];
-
-  return (
-    <div className="px-3 py-2.5">
-      <div className="mb-1 flex items-baseline justify-between gap-x-3">
-        <h4 className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-700">
-          Betting Splits
-        </h4>
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-amber-600">
-          Awaiting production source
-        </span>
-      </div>
-      <p className="mb-1.5 text-[10px] leading-4 text-slate-600">
-        Production source not yet qualified. No bet or money percentages are
-        shown until one is.
-      </p>
-      <div role="table" className="text-[11px]">
-        <div
-          role="row"
-          className="grid grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))] items-center gap-x-2 border-b border-slate-200 pb-1 text-[9px] font-bold uppercase tracking-wide text-slate-500"
-        >
-          <span role="columnheader">Market</span>
-          <span role="columnheader">Bet %</span>
-          <span role="columnheader">Money %</span>
-          <span role="columnheader">Signal</span>
-        </div>
-        {markets.map((market) => (
-          <div
-            key={market}
-            role="row"
-            className="grid grid-cols-[minmax(0,1.6fr)_repeat(3,minmax(0,1fr))] items-center gap-x-2 border-b border-slate-100 py-1 last:border-b-0"
-          >
-            <span role="cell" className="font-bold text-slate-700">
-              {market}
-            </span>
-            <span role="cell" className="text-slate-400">
-              —
-            </span>
-            <span role="cell" className="text-slate-400">
-              —
-            </span>
-            <span role="cell" className="text-[10px] font-medium text-slate-500">
-              Awaiting source
-            </span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

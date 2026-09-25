@@ -1,28 +1,27 @@
 import { useState } from "react";
 import MatchupMarketContext from "@/components/nfl/matchups/MatchupMarketContext";
+import MatchupBettingSplits from "@/components/nfl/matchups/MatchupBettingSplits";
 import MatchupMarketProfile, { type MarketProfileState } from "@/components/nfl/matchups/MatchupMarketProfile";
 import MatchupTabStrip, { type MatchupTabDef } from "@/components/nfl/matchups/MatchupTabStrip";
 import { MATCHUP_SECTION_SCROLL_MT } from "@/lib/nfl/matchupSections";
 import type { NflMatchup } from "@/lib/nfl/matchups";
 import type { GameProjection } from "@/lib/nfl/projectionData";
 
-type BookSaysTabId = "profile" | "context";
+type BookSaysTabId = "profile" | "context" | "splits";
 
 const BOOK_SAYS_TABS: readonly MatchupTabDef[] = [
   { id: "profile", label: "Market Profile", triggerId: "book-says-profile-tab" },
   { id: "context", label: "Betting Market Context", triggerId: "book-says-context-tab" },
+  { id: "splits", label: "Betting Splits", triggerId: "book-says-splits-tab" },
 ];
 
 /**
- * What the Book Says: the two existing, previously-standalone market sections
- * — the nflverse-derived Market Profile and the Odds-API Betting Market
- * Context — as one tabbed container instead of two stacked cards.
+ * What the Book Says: three separate market sources in one tabbed container:
+ * nflverse Market Profile, Odds API Betting Market Context, and DraftKings
+ * Network Betting Splits.
  *
- * Both children keep their own existing data plumbing and card chrome
- * verbatim (each already carries its own heading), so this wrapper is
- * deliberately unheaded — a second "What the Book Says" title above two
- * already-labelled cards would just repeat itself. The tab labels alone
- * carry the distinction.
+ * Each child owns its data plumbing and card heading. The tab labels carry
+ * the source distinction without adding another wrapper heading.
  */
 export default function MatchupBookSays({
   matchup,
@@ -46,7 +45,7 @@ export default function MatchupBookSays({
       />
 
       <div
-        id="book-says-profile-panel"
+        id="profile-panel"
         role="tabpanel"
         aria-labelledby="book-says-profile-tab"
         hidden={activeTab !== "profile"}
@@ -55,12 +54,15 @@ export default function MatchupBookSays({
       </div>
 
       <div
-        id="book-says-context-panel"
+        id="context-panel"
         role="tabpanel"
         aria-labelledby="book-says-context-tab"
         hidden={activeTab !== "context"}
       >
         <MatchupMarketContext matchup={matchup} projection={projection} />
+      </div>
+      <div id="splits-panel" role="tabpanel" aria-labelledby="book-says-splits-tab" hidden={activeTab !== "splits"}>
+        <MatchupBettingSplits matchup={matchup} />
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { biggestMoneyGap, consensusSides, contrarianSides, publicSides, sharpSides, sortSplitsRows, splitsSignal, type SplitsRow } from "./bettingSplitsView";
+import { biggestMoneyGap, consensusSides, contrarianSides, formatSplitsGap, formatSplitsLine, formatSplitsOdds, publicSides, sharpSides, sortSplitsRows, splitsSignal, SPLITS_SIGNAL_LABEL, type SplitsRow } from "./bettingSplitsView";
 import { moneyGap, publicGap } from "./bettingSplitsData";
 
 function row(id: string, handlePct: number, betsPct: number): SplitsRow {
@@ -30,5 +30,16 @@ describe("betting splits presentation selectors", () => {
     expect(sharpSides(rows).map((item) => item.game.gameId)).toEqual(["sharp", "contrarian", "lean"]);
     expect(contrarianSides(rows).map((item) => item.game.gameId)).toEqual(["contrarian"]);
     expect(consensusSides(rows).map((item) => item.game.gameId)).toEqual(["consensus"]);
+  });
+
+  it("shares line, odds, gap, and signal wording across the board and matchup", () => {
+    expect(formatSplitsLine("spread", 2.5)).toBe("+2.5");
+    expect(formatSplitsLine("total", 45.5)).toBe("45.5");
+    expect(formatSplitsLine("moneyline", null)).toBe("—");
+    expect(formatSplitsOdds(120)).toBe("+120");
+    expect(formatSplitsOdds(-118)).toBe("-118");
+    expect(formatSplitsGap(14)).toBe("+14 pp");
+    expect(formatSplitsGap(-14)).toBe("-14 pp");
+    expect(SPLITS_SIGNAL_LABEL[splitsSignal(20)]).toBe("Strong Money Gap");
   });
 });

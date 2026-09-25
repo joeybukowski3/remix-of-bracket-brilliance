@@ -114,6 +114,19 @@ least a +10 point Money Gap. Contrarian requires bets below 40% and handle
 above 50%; Consensus requires both bets and handle at least 70%. These labels
 do not identify professional bettors or imply a predictive edge.
 
+## Matchup detail view (WU5)
+
+The Comparison tab's “What the Book Says” group includes a Betting Splits view
+beside the existing nflverse Market Profile and Odds API Betting Market Context.
+It joins the current DraftKings artifact to the schedule matchup by exact
+canonical `gameId`. Spread and moneyline display both teams; total displays
+Over and Under. The view uses the WU4 money-gap and signal helpers, presents
+`sourceCapturedAt` as the capture time, and keeps stale data visible. An invalid
+or unavailable artifact has its own unavailable state; a valid artifact without
+the matchup has a pregame-snapshot absence message, which also covers games
+already started when the artifact was captured. This is descriptive display
+only and is not an input to any JKB projection or market comparison.
+
 Repository deployment authority remains open (`OPEN-001` in
 `docs/DECISIONS.md`): Vercel configuration and GitHub Pages deployment both
 exist. The refresh workflow publishes a validated artifact to `main` and

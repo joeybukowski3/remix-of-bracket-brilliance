@@ -53,6 +53,9 @@ markets are excluded, while canonical adjacent-week rows are diagnostic only.
 WU3 adds scheduled live collection, fail-closed current-artifact publication,
 and capture-time-based consumer freshness without creating a model input,
 prediction archive, or historical market observation.
+WU5 adds a matchup-detail view of the same current artifact, joined by canonical
+`gameId`. Its Money Gap and Sharp Side labels remain descriptive display
+heuristics and do not enter any JKB model, market comparison, or evaluation.
 
 This document is the required entry point for work on JKB NFL spreads, totals, passing, rushing, receiving, prediction archives, market comparison, outcome resolution, features, evaluation, or model versions. Detailed contracts live in:
 
