@@ -53,3 +53,7 @@ Best future insertion point: immediately after successful production generation 
 ## Validation
 
 `src/lib/nfl/fantasyProjectionArchive.test.ts` covers stable IDs, immutable retries, clocks, strict cutoff, resolution/version failures, multiple refreshes/repeated states, staleness, slate separation, dry-run and CLI backdating protection. Run alongside existing archive, resolver and evaluation materializer tests. Application/browser checks are unnecessary for this CLI-only change.
+
+## Related: shadow candidates
+
+Prospective production-vs-shadow archiving (Candidates A/B, snap inputs, separate outcome events) is documented in `FANTASY_SHADOW_CANDIDATES.md`. The workflow now also runs this archive after generation (best-effort, proposal pending review).
