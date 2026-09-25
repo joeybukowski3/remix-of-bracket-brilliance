@@ -6,7 +6,7 @@
  * fetch layer is covered separately in useNflPerformanceData.test.ts.
  */
 import { coachingContextFixture } from "@/lib/nfl/performance/__fixtures__/coaching";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
@@ -26,6 +26,10 @@ import type {
   SidesPerformanceRow,
   TotalsPerformanceRow,
 } from "@/types/nfl/performance";
+
+vi.mock("@/hooks/useNflYardageHistory", () => ({
+  useNflYardageHistory: () => ({ loading: false, error: null, data: null }),
+}));
 
 function loaded<T>(data: T): NflPerformanceArtifactState<T> {
   return { loading: false, error: null, data };
@@ -593,6 +597,55 @@ describe("NflPerformancePropsTab", () => {
     expect(expander).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(expander);
     expect(within(list).getByRole("button")).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("shows a compact result and matching final score without raw diagnostics", () => {
+    const row = { ...propsRow, detail: { ...propsRow.detail, context: { diagnostics: { hidden: true }, matchup_score: { hidden: true }, hard_case_flags: { hidden: true }, limited_history: { hidden: true } } } };
+    render(<MemoryRouter><NflPerformancePropsTab state={loaded({ ...propsWithRow, rows: [row] })} games={[sidesRow]} /></MemoryRouter>);
+    const list = screen.getByTestId("nfl-props-mobile-list");
+    fireEvent.click(within(list).getByRole("button"));
+    expect(within(list).getByRole("region", { name: "Game and box score" })).toHaveTextContent("Game & box score");
+    expect(within(list).getByRole("region", { name: "Game and box score" })).toHaveTextContent("271 passing yards");
+    expect(within(list).getByText("Final score")).toBeInTheDocument();
+    expect(within(list).getByRole("region", { name: "Game and box score" })).toHaveTextContent("AAA 17 · BBB 27");
+    expect(within(list).getByText("Projected")).toBeInTheDocument();
+    expect(within(list).queryByRole("region", { name: "Projection context" })).not.toBeInTheDocument();
+    expect(within(list).getByRole("region", { name: "Game and box score" })).toHaveTextContent("Starter basis");
+    expect(list).not.toHaveTextContent("diagnostics");
+    expect(list).not.toHaveTextContent("matchup_score");
+    expect(list).not.toHaveTextContent("hard_case_flags");
+    expect(list).not.toHaveTextContent("limited_history");
+    expect(list).not.toHaveTextContent("hidden");
+  });
+
+  it("uses direction hooks and arrow icons for over and under rows", () => {
+    const under = { ...propsRow, evaluation_row_id: "eval-under", player: "Under Player", direction: "UNDER" as const, result: "LOSS" as const };
+    const neutral = { ...propsRow, evaluation_row_id: "eval-neutral", player: "Neutral Player", direction: "NEUTRAL" as const, result: "NEUTRAL" as const };
+    render(<MemoryRouter><NflPerformancePropsTab state={loaded({ ...propsWithRow, rows: [propsRow, under, neutral] })} /></MemoryRouter>);
+    const list = screen.getByTestId("nfl-props-mobile-list");
+    expect(list.querySelector('[data-direction="over"]')).toHaveClass("border-l-emerald-300");
+    expect(list.querySelector('[data-direction="under"]')).toHaveClass("border-l-rose-300");
+    expect(list.querySelector('[data-direction="neutral"]')).toHaveClass("border-l-slate-200");
+    expect(within(list).getByText("Over").querySelector("svg")).toHaveClass("lucide-arrow-up");
+    expect(within(list).getByText("Under").querySelector("svg")).toHaveClass("lucide-arrow-down");
+    expect(within(list).getByText("Neutral").querySelector("svg")).toHaveClass("lucide-minus");
+    expect(screen.getByRole("region", { name: "Starter props performance table" }).querySelector('[data-direction="under"]')).toBeInTheDocument();
+  });
+});
+
+describe("NflPerformanceSidesTab visual states", () => {
+  it("marks ATS result and keeps score and logos in expanded details", () => {
+    const rows = [sidesRow, { ...sidesRow, game_id: "loss-game", ats_result: "LOSS" as const }, { ...sidesRow, game_id: "push-game", ats_result: "PUSH" as const }];
+    render(<MemoryRouter><NflPerformanceSidesTab state={loaded({ ...sidesWithRow, rows })} /></MemoryRouter>);
+    const list = screen.getByTestId("nfl-sides-mobile-list");
+    expect(list.querySelector('[data-ats-result="win"]')).toBeInTheDocument();
+    expect(list.querySelector('[data-ats-result="loss"]')).toHaveClass("border-l-rose-300");
+    expect(list.querySelector('[data-ats-result="push"]')).toHaveClass("border-l-amber-300");
+    expect(screen.getByRole("region", { name: "Sides performance table" }).querySelector('[data-ats-result="win"]')).toHaveClass("bg-emerald-50/25");
+    fireEvent.click(within(list).getAllByRole("button")[0]);
+    expect(within(list).getByRole("region", { name: "Game result" })).toBeInTheDocument();
+    expect(within(list).getByRole("region", { name: "Game result" }).querySelectorAll("img").length).toBeGreaterThan(0);
+    expect(list).not.toHaveTextContent("Outcome source hash");
   });
 });
 

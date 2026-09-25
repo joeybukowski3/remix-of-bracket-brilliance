@@ -66,7 +66,7 @@ export default function NFLPerformance() {
         {tab === "overview" && <NflPerformanceOverviewTab state={data.overview} />}
         {tab === "sides" && <NflPerformanceSidesTab state={data.sides} />}
         {tab === "totals" && <NflPerformanceTotalsTab state={data.totals} />}
-        {tab === "props" && <NflPerformancePropsTab state={data.props} />}
+        {tab === "props" && <NflPerformancePropsTab state={data.props} games={data.sides.data?.rows} />}
         {tab === "game-log" && <NflPerformanceGameLogTab />}
         {tab === "health" && <NflPerformanceHealthTab state={data.health} />}
       </div>

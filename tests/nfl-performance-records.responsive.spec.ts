@@ -6,6 +6,29 @@ const noHorizontalOverflow = (page: import("@playwright/test").Page) =>
   page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
 for (const width of [1440, 390, 320]) {
+  test(`props table and expanded box score fit at ${width}px`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto(`${baseUrl}/nfl/performance/props`);
+    if (width < 768) {
+      const list = page.getByTestId("nfl-props-mobile-list");
+      await expect(list).toBeVisible();
+      await list.locator("button").first().click();
+      await expect(list.getByRole("region", { name: "Game and box score" })).toBeVisible();
+      await expect(list.getByText("Final score").first()).toBeVisible();
+      await expect(list.getByRole("table", { name: /box score/i })).toBeVisible();
+      await expect(list.getByRole("table", { name: /box score/i }).getByRole("cell").first()).not.toHaveText("—");
+    } else {
+      const table = page.getByRole("region", { name: "Starter props performance table" });
+      await expect(table).toBeVisible();
+      await table.getByRole("button", { name: /^Expand details for/ }).first().click();
+      await expect(table.getByRole("region", { name: "Game and box score" })).toBeVisible();
+      await expect(table.getByRole("table", { name: /box score/i })).toBeVisible();
+      await expect(table.getByRole("table", { name: /box score/i }).getByRole("cell").first()).not.toHaveText("—");
+    }
+    expect(await noHorizontalOverflow(page)).toBeLessThanOrEqual(1);
+    await page.getByRole("region", { name: "Game and box score" }).screenshot({ path: testInfo.outputPath(`props-detail-${width}.png`) });
+  });
+
   test(`sides records, week selector and filters work at ${width}px`, async ({ page }, testInfo) => {
     await page.setViewportSize({ width, height: 900 });
     await page.goto(`${baseUrl}/nfl/performance/sides`);
