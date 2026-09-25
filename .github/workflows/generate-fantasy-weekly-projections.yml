@@ -97,6 +97,15 @@ jobs:
             node scripts/refresh-fantasy-player-week-source-cache.mjs --seasons="${prior_season}"
           fi
 
+      - name: Refresh current-season team EPA cache (RB team-context input)
+        if: env.SKIP_ROLLOVER != 'true'
+        continue-on-error: true
+        shell: bash
+        run: |
+          # Best-effort. The generator reads the committed, manifest-verified cache and FAILS CLOSED for week > 1 if the season has no team EPA
+          # rows at all; a merely lagging cache is used as-is with a warning (strictly prior games only).
+          node scripts/refresh-nfl-epa-source-cache.mjs --seasons="${{ steps.target.outputs.season }}" || echo "Team EPA cache refresh failed; using committed cache." >&2
+
       - name: Refresh current NFL spread/total market data
         if: env.SKIP_ROLLOVER != 'true'
         shell: bash
