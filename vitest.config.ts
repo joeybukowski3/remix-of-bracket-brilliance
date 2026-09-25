@@ -113,6 +113,11 @@ export default defineConfig({
       "scripts/generate-nfl-team-pregame-features.test.ts",
       // NFL total model production guard -- Week 1 empty-target-season-cache relief.
       "scripts/generate-nfl-totals.test.ts",
+      // Shadow total calibration candidate (k=0.8, shadow-only; never a production consumer).
+      "scripts/lib/nfl-total-shadow-calibration.test.ts",
+      "scripts/lib/nfl-total-shadow-report.test.ts",
+      "scripts/lib/nfl-total-shadow-allowlist.test.mjs",
+      "scripts/nfl-total-shadow-pipeline.test.ts",
       // CFB official AP/CFP rankings -- rankings-only fetch/update CLI behavior.
       "scripts/cfb-fetch-rankings.test.ts",
       "scripts/cfb-update-rankings.test.ts",

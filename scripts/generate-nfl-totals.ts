@@ -59,6 +59,7 @@ import {
   type JsonValue,
   type PredictionSnapshotDraft,
 } from "./lib/nfl-production-prediction-archive";
+import { runNflTotalShadow } from "./lib/nfl-total-shadow-calibration";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SCORING_SUPPORT_DIR = join(ROOT, "data", "nfl", "nflverse", "scoring-support-team-game");
@@ -73,12 +74,16 @@ type Args = {
   archiveRoot: string;
   generatedAt: string;
   output: string | null;
+  /** Shadow calibration candidate (separate archive; never touches production output). */
+  noShadow: boolean;
+  shadowArchiveRoot: string | null;
 };
 
 function parseArgs(argv: string[]): Args {
   const args: Args = {
     season: 0, week: 0, dryRun: false, archiveRoot: ARCHIVE_ROOT,
     generatedAt: new Date().toISOString(), output: null,
+    noShadow: false, shadowArchiveRoot: null,
   };
   for (const raw of argv.slice(2)) {
     if (raw.startsWith("--season=")) args.season = Number(raw.slice(9));
@@ -87,6 +92,8 @@ function parseArgs(argv: string[]): Args {
     else if (raw.startsWith("--archive-root=")) args.archiveRoot = resolve(ROOT, raw.slice(15));
     else if (raw.startsWith("--generated-at=")) args.generatedAt = raw.slice(15);
     else if (raw.startsWith("--output=")) args.output = resolve(ROOT, raw.slice(9));
+    else if (raw === "--no-shadow") args.noShadow = true;
+    else if (raw.startsWith("--shadow-archive-root=")) args.shadowArchiveRoot = resolve(ROOT, raw.slice(22));
     else throw new Error(`Unknown argument: ${raw}`);
   }
   if (!Number.isInteger(args.season) || !Number.isInteger(args.week) || args.week < 1) {
@@ -268,6 +275,26 @@ function sideDraft(options: {
   };
 }
 
+/**
+ * Shadow calibration candidate (jkb-nfl-total-calibration-shadow-k08-2026). Runs on the SAME finalized production rows
+ * the generator has just built, writes only under data/nfl/shadow-predictions/, and can never alter the production
+ * archive, view or any public artifact. A shadow failure is reported loudly but does not undo/abort the production write.
+ */
+function shadowStep(args: Args, slate: ReturnType<typeof loadSlate>, productionRecords: ReturnType<typeof finalizePredictionSnapshot>[], createdAt: string, runId: string, dryRun: boolean): void {
+  if (args.noShadow) return;
+  try {
+    const shadow = runNflTotalShadow({
+      season: args.season, week: args.week, generatedAt: args.generatedAt, createdAt, runId, codeRevision: process.env.GITHUB_SHA ?? null,
+      productionRecords, slate, shadowRoot: args.shadowArchiveRoot ?? undefined, dryRun,
+    });
+    if (shadow.skipped) { console.log(`[nfl:totals:shadow] skipped: ${shadow.skipped}`); return; }
+    console.log(`[nfl:totals:shadow] ${dryRun ? "preview (dry-run, nothing written)" : "archived"} model=jkb-nfl-total-calibration-shadow-k08-2026 k=0.8 priorSeasonLeagueMean(${shadow.leagueMean!.season})=${shadow.leagueMean!.mean_total_points} rows=${shadow.rows.length}${dryRun ? "" : ` appended=${shadow.appended} duplicates=${shadow.duplicates}`}`);
+    if (dryRun) for (const r of shadow.rows) console.log(`[nfl:totals:shadow]   ${JSON.stringify({ gameId: r.game_id, cohort: r.cohort, rawJkbTotal: r.raw_jkb_total, shadowTotal: r.shadow_total, marketAtGeneration: r.market_at_generation.total })}`);
+  } catch (error) {
+    console.log(`::warning::[nfl:totals:shadow] shadow step failed (production totals unaffected): ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
 function main(): void {
   const args = parseArgs(process.argv);
   const trainingSeasons = [...NFL_TOTAL_TRAINING_SEASONS];
@@ -352,6 +379,7 @@ function main(): void {
 
   if (args.dryRun) {
     console.log("[nfl:totals] --dry-run: not archiving.");
+    shadowStep(args, slate, preKickoff, createdAt, runId, true);
     return;
   }
   if (preKickoff.length === 0) {
@@ -363,6 +391,7 @@ function main(): void {
     sourceManifests: [sourceManifest], fittedModelManifests: [fittedManifest],
   });
   console.log(`[nfl:totals] archive appended=${result.appended} duplicates=${result.duplicates} skippedPostKickoff=${records.length - preKickoff.length} files=${result.files.length}`);
+  shadowStep(args, slate, preKickoff, createdAt, runId, false);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
