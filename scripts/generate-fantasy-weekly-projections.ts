@@ -37,6 +37,7 @@ import { buildProductionProjectionArtifact, type ProductionProjectionCandidate }
 import { weeklyFantasyProjectionProductionArtifactSchema, assertProductionArtifactRankInvariants, type WeeklyFantasyProjectionProductionArtifact } from "../src/lib/fantasy/weekly/projections/production/artifactContract.ts";
 import { buildWeek1ShadowUniverse } from "../src/lib/fantasy/weekly/projections/shadow/week1Universe.ts";
 import { normalizeHistoricalPlayerWeek, type HistoricalPlayerWeek } from "../src/lib/fantasy/weekly/history.ts";
+import { mapEpaTeamGameRows, priorSeasonTeamHistory } from "./lib/fantasy-team-history.ts";
 import type { MarketArtifact } from "../src/lib/nfl/marketData.ts";
 import { parseCsv } from "./lib/nfl-schedules-results-core.mjs";
 import { verifyCacheEntry } from "./lib/nfl-source-cache.mjs";
@@ -175,6 +176,18 @@ function main(): void {
   }
   const history = [...priorSeasonHistory, ...currentSeasonHistory];
 
+  // --- 3a. Current-season team EPA history (RB residual features teamRushEpaPrior / teamOffensivePlaysPrior) ---
+  // Same manifest-verified epa-team-game source and row mapping as the training dataset; strictly prior weeks only. Fails closed for week > 1.
+  let teamHistorySource: ReturnType<typeof verifiedCsv> | null = null;
+  let teamHistory: ReturnType<typeof priorSeasonTeamHistory>["rows"] = [];
+  if (week > 1) {
+    teamHistorySource = verifiedCsv("data/nfl/nflverse/epa-team-game", season);
+    const prior = priorSeasonTeamHistory(mapEpaTeamGameRows(teamHistorySource.rows), season, week);
+    teamHistory = prior.rows;
+    sourceFreshness.push({ source: "data/nfl/nflverse/epa-team-game", inputAsOf: isoDate(teamHistorySource.entry.retrievedDateUtc) });
+    if (prior.latestWeek !== week - 1) console.warn(`[fantasy:projections] epa-team-game latest week ${prior.latestWeek} lags week ${week - 1}; RB team context uses the latest completed cached week.`);
+  }
+
   // --- 3b. Current market (spread/total) authority -- best-effort, never fails the run ---
   // The most current pregame spread/total source already approved by the NFL
   // side of the repo (`scripts/generate-nfl-matchup-market.mjs` ->
@@ -221,6 +234,7 @@ function main(): void {
     }] : []),
     { source: trainingDatasetPath, sourceVersion: "weekly-fantasy-projection-training-dataset-v1", sourceHash: inputFingerprint, inputAsOf: trainingDataset._meta.generatedAt },
     ...(marketProvenanceEntry ? [marketProvenanceEntry] : []),
+    ...(teamHistorySource ? [{ source: "data/nfl/nflverse/epa-team-game", sourceVersion: teamHistorySource.manifest.schemaVersion, sourceHash: teamHistorySource.hash, inputAsOf: isoDate(teamHistorySource.entry.retrievedDateUtc) }] : []),
   ];
   const inputAsOf = artifactProvenance.map((p) => p.inputAsOf).sort().at(-1)!;
 
@@ -228,7 +242,7 @@ function main(): void {
 
   const artifact = buildProductionProjectionArtifact({
     season, week, generatedAt, inputAsOf, candidates, history, deploymentBundle: deploymentBundle, provenance: artifactProvenance,
-    currentMarket,
+    currentMarket, teamHistory,
   });
 
   // Fail-closed re-validation before any write (defense in depth on top of buildProductionProjectionArtifact's internal parse).
