@@ -141,6 +141,15 @@ export default defineConfig({
       "scripts/generate-nfl-totals-performance.test.ts",
       // Dual-AI handicapping architecture WU1 -- Game Context Packet builder + validators.
       "scripts/lib/nfl-full-game-context.test.ts",
+      "scripts/lib/nfl-team-form-facts.test.ts",
+      "scripts/lib/nfl-ai-stage-a-form-context.test.ts",
+      "scripts/lib/nfl-handicap-v2-units.test.ts",
+      "scripts/lib/nfl-handicap-v2-contract.test.ts",
+      "scripts/lib/nfl-handicap-v2-factref-paths.test.ts",
+      "scripts/lib/nfl-handicap-v2-stage-b-format.test.ts",
+      "scripts/lib/nfl-stage-a-calibration.test.ts",
+      // AI Picks v2 presentation/export plumbing.
+      "scripts/nfl-handicap-v2-presentation.test.ts",
       // WU7.1 -- gameId/identity team-code alias normalization regression coverage.
       "scripts/lib/nfl-game-context-validators.test.ts",
       // Dual-AI handicapping architecture WU2 -- external evidence normalization/validation foundation.

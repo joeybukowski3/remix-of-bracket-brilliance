@@ -55,11 +55,10 @@ import { SIDE_LEANS, TOTAL_LEANS, type SnapshotMarketState } from "./nfl-snapsho
 const VALID_BLIND_CONTEXT_REF_PREFIXES = [
   "identity",
   "schedule",
-  "jkbModels",
+  "teamForm",
   "teamMetrics",
   "matchup",
   "coaching",
-  "players",
   "availability",
   "situational",
   "trends",
@@ -183,7 +182,7 @@ function resolveContextPath(path: string, root: unknown): boolean {
  * but because "market" is not even in VALID_BLIND_CONTEXT_REF_PREFIXES and
  * the key does not exist on the blind packet at all.
  */
-function validateJkbContextRefs(refs: readonly string[], packet: AiBlindGameContextPacket, label: string): string[] {
+export function validateJkbContextRefs(refs: readonly string[], packet: AiBlindGameContextPacket, label: string): string[] {
   const reasons: string[] = [];
   for (const ref of refs) {
     const topLevel = ref.split(".")[0];
@@ -761,4 +760,6 @@ export function validateGrokStageBUpdate(raw: unknown, context: GrokStageBValida
 }
 
 export { VALID_BLIND_CONTEXT_REF_PREFIXES };
+/** AI Picks v2 WU3 -- shared with nfl-handicap-v2-validator.ts so both validators apply the identical evidence-citation, prose-language and team-code rules. */
+export { buildModelEvidenceIndex, containsMachineLanguage, containsPostgameLanguage, isRecord, normalizeProviderTeamCode, validateEvidenceIdCitations, validateProseStrings };
 export type { FailureMode, GrokSideOpinion, GrokTotalOpinion };

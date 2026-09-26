@@ -62,6 +62,9 @@ import {
   type TrenchSeasonData,
   type YppContext,
 } from "./nfl-game-context";
+import { sanitizeGameContextPacketForBlindStageA, type AiBlindGameContextPacket } from "./nfl-ai-context-sanitizer";
+import type { TeamFormFacts } from "./nfl-team-form-facts";
+import { buildPriorSeasonBaseline, type PriorSeasonBaseline, type PriorSeasonResultRow } from "./nfl-prior-season-baseline";
 
 export type ProvenanceStatus = "available" | "unavailable" | "stale";
 
@@ -397,12 +400,15 @@ export type GameContextTeamMetrics = {
   epa: EpaContext;
   ypp: YppContext;
   periodWindow: "prior-season-full";
+  /** Compact prior-season baseline for both teams (offense AND defense, scoring, record). Background only. */
+  priorSeasonBaseline: PriorSeasonBaseline;
   sos: { home: number | null; away: number | null; basis: "epa-overall-rank"; provenance_status: ProvenanceStatus };
 };
 
 export function buildTeamMetricsSection(input: {
   epaWindow: EpaPriorSeasonWindow | null;
   yppWindow: MetricsPriorSeasonWindow | null;
+  priorSeasonResults?: readonly PriorSeasonResultRow[];
   homeTeam: string;
   awayTeam: string;
 }): GameContextTeamMetrics {
@@ -410,6 +416,7 @@ export function buildTeamMetricsSection(input: {
     epa: buildEpaContext(input.epaWindow, input.homeTeam, input.awayTeam),
     ypp: buildYppContext(input.yppWindow, input.homeTeam, input.awayTeam),
     periodWindow: "prior-season-full",
+    priorSeasonBaseline: buildPriorSeasonBaseline(input),
     // No Node-safe deterministic SoS artifact exists yet (see file header) --
     // always honestly unavailable in WU1, never backfilled with a guess.
     sos: { home: null, away: null, basis: "epa-overall-rank", provenance_status: "unavailable" },
@@ -692,6 +699,27 @@ export function buildWeatherSection(): GameContextWeather {
 }
 
 /* -------------------------------------------------------------------------- */
+/* 11b. Team form (AI Picks v2 WU2)                                           */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The deterministic current-season form facts for both teams
+ * (nfl-team-form-facts.ts). Raw descriptive football data only -- no JKB
+ * conclusion. `unavailable` when either side could not be built (the games /
+ * results artifacts were missing); never partially populated.
+ */
+export type GameContextTeamForm = {
+  home: TeamFormFacts | null;
+  away: TeamFormFacts | null;
+  provenance_status: ProvenanceStatus;
+};
+
+export function buildTeamFormSection(input: { home: TeamFormFacts; away: TeamFormFacts } | null | undefined): GameContextTeamForm {
+  if (!input) return { home: null, away: null, provenance_status: "unavailable" };
+  return { home: input.home, away: input.away, provenance_status: "available" };
+}
+
+/* -------------------------------------------------------------------------- */
 /* 12. Provenance                                                             */
 /* -------------------------------------------------------------------------- */
 
@@ -724,6 +752,7 @@ export type NflGameContextPacket = {
   jkbModels: GameContextJkbModels;
   teamMetrics: GameContextTeamMetrics;
   matchup: GameContextMatchup;
+  teamForm: GameContextTeamForm;
   coaching: GameContextCoaching;
   players: GameContextPlayers;
   availability: GameContextAvailability;
@@ -735,12 +764,22 @@ export type NflGameContextPacket = {
 };
 
 /**
- * WU6.1 -- the canonical football-context identity: every packet section
- * EXCEPT `market` (live sportsbook odds -- see nfl-ai-slate-plan.ts's
- * market-only-change policy), `provenance` (source contentHashes/builtAt --
- * bookkeeping about how the packet was assembled, not what it says), and
- * `generatedAt` (wall-clock stamp used only for the PROVENANCE freshness
- * check in nfl-snapshot-context-freshness.ts, never for value comparison).
+ * WU6.1 / AI Picks v2 WU2 -- the canonical football-context identity: exactly
+ * what a market-blind Stage A can SEE, minus `provenance` (source
+ * contentHashes/builtAt -- bookkeeping about how the packet was assembled, not
+ * what it says) and `generatedAt` (wall-clock stamp used only for the
+ * PROVENANCE freshness check in nfl-snapshot-context-freshness.ts, never for
+ * value comparison).
+ *
+ * It is derived from the SAME sanitizer Stage A's prompt uses
+ * (sanitizeGameContextPacketForBlindStageA), so the hash cannot drift from the
+ * model's actual input: live sportsbook `market` data is absent, and every JKB
+ * composite/opinion field the sanitizer withholds from the model
+ * (`jkbModels`, `players` projections/scores, `matchup.offenseVsDefense`, the
+ * coaching rating/advantage, and every *_advantage_team / *_differential
+ * label) is absent too -- so a change in any of them can never trigger a
+ * Stage A rerun. `teamForm` IS included: new completed games are real football
+ * changes.
  *
  * This is the ONLY input `footballContextHash` below may hash. Every caller
  * that needs to know "did the football context actually change" (snapshot
@@ -757,10 +796,10 @@ export type NflGameContextPacket = {
  * nfl-game-context-preflight.ts) hash to different values even with zero
  * football change.
  */
-export type FootballContextIdentity = Omit<NflGameContextPacket, "market" | "provenance" | "generatedAt">;
+export type FootballContextIdentity = Omit<AiBlindGameContextPacket, "provenance" | "generatedAt">;
 
 export function footballContextIdentity(packet: NflGameContextPacket): FootballContextIdentity {
-  const { market: _market, provenance: _provenance, generatedAt: _generatedAt, ...identity } = packet;
+  const { provenance: _provenance, generatedAt: _generatedAt, ...identity } = sanitizeGameContextPacketForBlindStageA(packet);
   return identity;
 }
 
@@ -786,7 +825,9 @@ export type BuildFullGameContextInput = {
   tdPreview: TdPreviewArtifact | null;
   matchupInjuries: MatchupInjuriesArtifact | null;
   dfsWeek: DfsWeekArtifact | null;
-  priorSeasonResults?: { homeAbbr: string; awayAbbr: string }[];
+  /** WU2 -- deterministic team-form facts for both teams (nfl-team-form-facts-loader.ts). Optional so callers that predate WU2 still build; absent means `teamForm.provenance_status = "unavailable"`. */
+  teamForm?: { home: TeamFormFacts; away: TeamFormFacts } | null;
+  priorSeasonResults?: PriorSeasonResultRow[];
   provenanceSources: ProvenanceSourceRef[];
   generatedAt: string;
 };
@@ -825,6 +866,7 @@ export function buildFullGameContext(input: BuildFullGameContextInput): BuildFul
   const teamMetrics = buildTeamMetricsSection({
     epaWindow: input.epaWindow,
     yppWindow: input.yppWindow,
+    priorSeasonResults: input.priorSeasonResults,
     homeTeam: identity.homeTeam,
     awayTeam: identity.awayTeam,
   });
@@ -870,6 +912,7 @@ export function buildFullGameContext(input: BuildFullGameContextInput): BuildFul
     jkbModels,
     teamMetrics,
     matchup,
+    teamForm: buildTeamFormSection(input.teamForm),
     coaching,
     players,
     availability,

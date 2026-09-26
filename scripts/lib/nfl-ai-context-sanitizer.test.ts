@@ -19,22 +19,20 @@ import {
 } from "./__fixtures__/nfl-grok-analysis-fixtures";
 
 describe("sanitizeGameContextPacketForAiInput", () => {
-  it("strips jkbModels.projectedSpread/projectedTotal/modelMarketEdge -- JKB's own fair-line opinion is never handed to the model", () => {
+  it("strips jkbModels entirely -- JKB's projected spread/total/edge AND its power rating are never handed to the model", () => {
     const safe = sanitizeGameContextPacketForAiInput(FIXTURE_ANALYSIS_CONTEXT_PACKET);
-    expect(safe.jkbModels).not.toHaveProperty("projectedSpread");
-    expect(safe.jkbModels).not.toHaveProperty("projectedTotal");
-    expect(safe.jkbModels).not.toHaveProperty("modelMarketEdge");
+    expect(safe).not.toHaveProperty("jkbModels");
+    expect(JSON.stringify(safe)).not.toContain("powerRating");
   });
 
-  it("keeps jkbModels.powerRating -- descriptive team-strength data, not a betting conclusion", () => {
+  it("keeps the raw market (Stage B may see it) and the raw EPA values, without the JKB advantage/differential labels", () => {
     const safe = sanitizeGameContextPacketForAiInput(FIXTURE_ANALYSIS_CONTEXT_PACKET);
-    expect(safe.jkbModels.powerRating).toEqual(FIXTURE_ANALYSIS_CONTEXT_PACKET.jkbModels.powerRating);
-  });
-
-  it("leaves every other section (market, teamMetrics, matchup, coaching, situational, weather) untouched", () => {
-    const safe = sanitizeGameContextPacketForAiInput(FIXTURE_ANALYSIS_CONTEXT_PACKET);
-    expect(safe.market).toEqual(FIXTURE_ANALYSIS_CONTEXT_PACKET.market);
-    expect(safe.teamMetrics).toEqual(FIXTURE_ANALYSIS_CONTEXT_PACKET.teamMetrics);
+    const original = FIXTURE_ANALYSIS_CONTEXT_PACKET;
+    expect(safe.market).toEqual(original.market);
+    expect(safe.teamMetrics.epa.home_epa_value).toEqual(original.teamMetrics.epa.home_epa_value);
+    expect(safe.teamMetrics.epa.away_epa_value).toEqual(original.teamMetrics.epa.away_epa_value);
+    expect(safe.teamMetrics.epa).not.toHaveProperty("epa_advantage_team");
+    expect(safe.teamMetrics.epa).not.toHaveProperty("epa_differential");
   });
 
   it("never mutates the original packet", () => {
@@ -51,22 +49,25 @@ describe("sanitizeGameContextPacketForBlindStageA (WU4.6)", () => {
     expect(JSON.stringify(blind)).not.toContain(String(FIXTURE_ANALYSIS_CONTEXT_PACKET.market.spread.homeLine));
   });
 
-  it("still strips JKB's own fair-line opinion on top of removing market", () => {
+  it("still strips every JKB opinion/composite field on top of removing market", () => {
     const blind = sanitizeGameContextPacketForBlindStageA(FIXTURE_ANALYSIS_CONTEXT_PACKET);
-    expect(blind.jkbModels).not.toHaveProperty("projectedSpread");
-    expect(blind.jkbModels).not.toHaveProperty("projectedTotal");
-    expect(blind.jkbModels).not.toHaveProperty("modelMarketEdge");
+    expect(blind).not.toHaveProperty("jkbModels");
+    expect(blind).not.toHaveProperty("players");
+    expect(blind.matchup).not.toHaveProperty("offenseVsDefense");
+    expect(assertBlindPacketHasNoMarketLeakage(blind)).toEqual([]);
   });
 
-  it("keeps every underlying football section (teamMetrics, matchup, coaching, situational, weather, schedule, identity)", () => {
+  it("keeps the raw football sections (schedule, identity, situational, weather, raw EPA/YPP/trench values, coach names) and drops only the JKB labels", () => {
     const blind = sanitizeGameContextPacketForBlindStageA(FIXTURE_ANALYSIS_CONTEXT_PACKET);
-    expect(blind.teamMetrics).toEqual(FIXTURE_ANALYSIS_CONTEXT_PACKET.teamMetrics);
-    expect(blind.matchup).toEqual(FIXTURE_ANALYSIS_CONTEXT_PACKET.matchup);
-    expect(blind.coaching).toEqual(FIXTURE_ANALYSIS_CONTEXT_PACKET.coaching);
-    expect(blind.situational).toEqual(FIXTURE_ANALYSIS_CONTEXT_PACKET.situational);
-    expect(blind.weather).toEqual(FIXTURE_ANALYSIS_CONTEXT_PACKET.weather);
-    expect(blind.schedule).toEqual(FIXTURE_ANALYSIS_CONTEXT_PACKET.schedule);
-    expect(blind.identity).toEqual(FIXTURE_ANALYSIS_CONTEXT_PACKET.identity);
+    const original = FIXTURE_ANALYSIS_CONTEXT_PACKET;
+    expect(blind.teamMetrics.epa.home_epa_value).toEqual(original.teamMetrics.epa.home_epa_value);
+    expect(blind.teamMetrics.ypp.home_ypp).toEqual(original.teamMetrics.ypp.home_ypp);
+    expect(blind.matchup.trenches.home_trenches_value).toEqual(original.matchup.trenches.home_trenches_value);
+    expect(blind.coaching.home_coach).toEqual(original.coaching.home_coach);
+    expect(blind.situational).toEqual(original.situational);
+    expect(blind.weather).toEqual(original.weather);
+    expect(blind.schedule).toEqual(original.schedule);
+    expect(blind.identity).toEqual(original.identity);
   });
 
   it("never mutates the original packet", () => {

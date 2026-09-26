@@ -1,6 +1,9 @@
 import { useState } from "react";
 import AiHandicapArticle from "@/components/nfl/matchups/AiHandicapArticle";
-import type { AiHandicapCard, AiHandicapProvider, NflAiHandicapPresentation } from "@/lib/nfl/aiHandicapPresentation";
+import AiHandicapV2Analysis from "@/components/nfl/matchups/AiHandicapV2Analysis";
+import AiHandicapV2SummaryCard from "@/components/nfl/matchups/AiHandicapV2Card";
+import type { AiHandicapCard, AiHandicapProvider, AiHandicapV2Card, NflAiHandicapPresentation } from "@/lib/nfl/aiHandicapPresentation";
+import { describeV2Agreement } from "@/lib/nfl/aiHandicapV2Format";
 import { getProviderTheme } from "@/lib/nfl/aiHandicapProviderTheme";
 import {
   confidenceLabel,
@@ -143,6 +146,17 @@ const PROVIDER_TABS: { provider: AiHandicapProvider; key: "grokowski" | "chattyI
   { provider: "chatgpt", key: "chattyIce" },
 ];
 
+type ProviderKey = "grokowski" | "chattyIce";
+
+/**
+ * Per-provider resolution: a valid v2 handicap wins; otherwise the v1 card
+ * (an "ok" v1 card renders the legacy article, an unavailable one the
+ * unavailable state). v1 data is never rewritten to look like v2.
+ */
+function resolveV2(presentation: NflAiHandicapPresentation, key: ProviderKey): AiHandicapV2Card | null {
+  return presentation.handicapV2?.[key] ?? null;
+}
+
 /**
  * "AI Picks" tab: the latest independent Grokowski (Grok) and Chatty Ice
  * (ChatGPT) handicaps for this game. These are two fully independent
@@ -184,6 +198,9 @@ export default function MatchupAiPicksPanel({
 
   const activeTab = PROVIDER_TABS.find((tab) => tab.provider === activeProvider) ?? PROVIDER_TABS[0];
   const activeCard = presentation.handicappers[activeTab.key];
+  const activeV2 = resolveV2(presentation, activeTab.key);
+  const grokV2 = resolveV2(presentation, "grokowski");
+  const chattyV2 = resolveV2(presentation, "chattyIce");
 
   return (
     <div className="space-y-6">
@@ -192,17 +209,28 @@ export default function MatchupAiPicksPanel({
         <p className="text-[11px] leading-4 text-slate-500">
           Two independent AI handicappers form their own opinions from public evidence and the sportsbook line in
           effect at analysis time. That baseline is frozen to whichever run produced it -- it will not track today&apos;s
-          live market. They never see each other&apos;s work, and nothing on this page averages, compares, or declares
-          a winner between them.
+          live market. They never see each other&apos;s work, and nothing on this page averages them or declares a
+          winner.
         </p>
         <div className="grid grid-cols-1 items-stretch gap-4 @container sm:grid-cols-2">
-          <HandicapSummaryCard card={presentation.handicappers.grokowski} homeTeam={presentation.homeTeam} awayTeam={presentation.awayTeam} />
-          <HandicapSummaryCard card={presentation.handicappers.chattyIce} homeTeam={presentation.homeTeam} awayTeam={presentation.awayTeam} />
+          {PROVIDER_TABS.map((tab) => {
+            const v2 = resolveV2(presentation, tab.key);
+            return v2 ? (
+              <AiHandicapV2SummaryCard key={tab.provider} card={v2} homeTeam={presentation.homeTeam} awayTeam={presentation.awayTeam} />
+            ) : (
+              <HandicapSummaryCard key={tab.provider} card={presentation.handicappers[tab.key]} homeTeam={presentation.homeTeam} awayTeam={presentation.awayTeam} />
+            );
+          })}
         </div>
+        {grokV2 && chattyV2 && (
+          <p data-testid="ai-handicap-v2-agreement" className="text-[12px] font-medium leading-5 text-slate-600">
+            {describeV2Agreement(grokV2, chattyV2)}
+          </p>
+        )}
       </div>
 
       <div className="space-y-3">
-        <h3 className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-500">Full Analysis</h3>
+        <h3 className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-500">{grokV2 || chattyV2 ? "Analysis" : "Full Analysis"}</h3>
         <div role="tablist" aria-label="Full analysis provider" className="inline-flex rounded-md border border-slate-200 bg-slate-50 p-0.5">
           {PROVIDER_TABS.map((tab) => {
             const card = presentation.handicappers[tab.key];
@@ -226,7 +254,9 @@ export default function MatchupAiPicksPanel({
           })}
         </div>
 
-        {activeCard.status === "ok" ? (
+        {activeV2 ? (
+          <AiHandicapV2Analysis card={activeV2} />
+        ) : activeCard.status === "ok" ? (
           <AiHandicapArticle card={activeCard} homeTeam={presentation.homeTeam} awayTeam={presentation.awayTeam} />
         ) : (
           <p className="rounded border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-center text-[12px] font-semibold text-slate-600">

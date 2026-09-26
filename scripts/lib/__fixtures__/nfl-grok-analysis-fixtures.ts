@@ -125,7 +125,7 @@ function baseFactor(overrides: Partial<Record<string, unknown>> = {}) {
     finding: "Synthetic: a starting interior defender's absence (per cited evidence) plausibly softens the pass rush this week.",
     supports: "mixed",
     importance: "moderate",
-    jkbContextRefs: ["jkbModels.powerRating"],
+    jkbContextRefs: ["teamMetrics.epa"],
     evidenceIds: [EVIDENCE_ID.confirmedInjury],
     ...overrides,
   };

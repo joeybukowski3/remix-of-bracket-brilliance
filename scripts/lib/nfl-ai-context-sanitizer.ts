@@ -28,18 +28,114 @@
  * field fails validation the same way an entirely bogus path would.
  */
 
-import type { GameContextJkbModels, NflGameContextPacket } from "./nfl-full-game-context";
+import type { NflGameContextPacket } from "./nfl-full-game-context";
+import type { CoachRecordContext, CoachingContext, EpaContext, TrenchesContext, YppContext } from "./nfl-game-context";
 import type { EvidenceRecord } from "./nfl-evidence-types";
 
-export type AiSafeJkbModels = Pick<GameContextJkbModels, "powerRating">;
+/**
+ * AI Picks v2 WU2 -- the AI-visible packet is an explicit ALLOWLIST projection,
+ * not "the packet minus a few keys". The model receives raw football
+ * ingredients only; anything that already encodes a JKB judgment about which
+ * team is better is withheld:
+ *
+ *   - `jkbModels` entirely: projectedSpread / projectedTotal / modelMarketEdge
+ *     (WU4.5) AND powerRating (WU2 -- a composite team-strength number whose
+ *     home/away gap is effectively a spread).
+ *   - `players` entirely: yardage projections, matchupScore, TD scores are all
+ *     JKB model outputs.
+ *   - `matchup.offenseVsDefense`: a JKB-computed "home/away" advantage label.
+ *   - `coaching`: the composite rating, differential and advantage team, the
+ *     rating version, AND the ATS records (market-derived, so also barred from
+ *     the market-blind Stage A). Descriptive coach identity and W-L records stay.
+ *   - `teamMetrics.epa` / `.ypp` / `matchup.trenches` keep their raw home/away
+ *     values but lose the JKB `*_advantage_team` and `*_differential` labels.
+ *   - `teamMetrics.sos`: a JKB rank-derived field (always unavailable today).
+ *
+ * `teamForm` (nfl-team-form-facts.ts) is the current-season raw fact layer and
+ * is passed through unchanged.
+ *
+ * Enforced by construction: the projected object simply does not carry those
+ * keys, so there is nothing for a prompt-builder to print and nothing for a
+ * jkbContextRef to resolve against, regardless of prompt wording.
+ *
+ * WU4.6 -- TWO-STAGE MARKET-BLIND HANDICAPPER adds a SECOND, STRICTER
+ * sanitizer for Stage A (the blind football projection): it removes the
+ * ENTIRE `market` section (sportsbook spread/total/moneyline/movement) in
+ * addition to everything above, so Stage A physically cannot receive a
+ * sportsbook price of any kind -- not sanitized to null, the key does not
+ * exist on the object at all.
+ *
+ * Used by BOTH nfl-grok-analysis-adapter.ts and
+ * nfl-chatgpt-analysis-adapter.ts (building prompts), by
+ * nfl-grok-analysis-validator.ts (resolving jkbContextRefs / cross-checking
+ * marketAssessment) and by nfl-full-game-context.ts's footballContextIdentity
+ * (the Stage A rerun hash) -- the exact same sanitized view is what the model
+ * saw, what its output is checked against, and what decides whether Stage A
+ * must rerun.
+ */
 
-export type AiSafeGameContextPacket = Omit<NflGameContextPacket, "jkbModels"> & {
-  jkbModels: AiSafeJkbModels;
+export type AiSafeEpaContext = Omit<EpaContext, "epa_advantage_team" | "epa_differential">;
+export type AiSafeYppContext = Omit<YppContext, "ypp_advantage_team" | "ypp_differential">;
+export type AiSafeTrenchesContext = Omit<TrenchesContext, "trenches_advantage_team" | "trenches_differential">;
+
+/** Descriptive coach record only -- no ATS (market-derived) fields. */
+export type AiSafeCoachRecord = Pick<CoachRecordContext, "career_wl" | "tenure_wl" | "season_wl" | "tenure_year" | "first_year" | "interim" | "small_sample">;
+
+export interface AiSafeCoachingFacts {
+  home_coach: string | null;
+  away_coach: string | null;
+  home_coach_record: AiSafeCoachRecord | null;
+  away_coach_record: AiSafeCoachRecord | null;
+  coaching_context_status: CoachingContext["coaching_context_status"];
+}
+
+export type AiSafeGameContextPacket = Pick<
+  NflGameContextPacket,
+  "identity" | "schedule" | "market" | "teamForm" | "availability" | "situational" | "trends" | "weather" | "provenance" | "generatedAt"
+> & {
+  teamMetrics: { epa: AiSafeEpaContext; ypp: AiSafeYppContext; periodWindow: NflGameContextPacket["teamMetrics"]["periodWindow"]; priorSeasonBaseline: NflGameContextPacket["teamMetrics"]["priorSeasonBaseline"] };
+  matchup: { trenches: AiSafeTrenchesContext };
+  coaching: AiSafeCoachingFacts;
 };
 
+function toAiSafeCoachRecord(record: CoachRecordContext | null): AiSafeCoachRecord | null {
+  if (!record) return null;
+  return {
+    career_wl: record.career_wl,
+    tenure_wl: record.tenure_wl,
+    season_wl: record.season_wl,
+    tenure_year: record.tenure_year,
+    first_year: record.first_year,
+    interim: record.interim,
+    small_sample: record.small_sample,
+  };
+}
+
 export function sanitizeGameContextPacketForAiInput(packet: NflGameContextPacket): AiSafeGameContextPacket {
-  const { jkbModels, ...rest } = packet;
-  return { ...rest, jkbModels: { powerRating: jkbModels.powerRating } };
+  const { epa_advantage_team: _epaAdvantage, epa_differential: _epaDifferential, ...epa } = packet.teamMetrics.epa;
+  const { ypp_advantage_team: _yppAdvantage, ypp_differential: _yppDifferential, ...ypp } = packet.teamMetrics.ypp;
+  const { trenches_advantage_team: _trenchAdvantage, trenches_differential: _trenchDifferential, ...trenches } = packet.matchup.trenches;
+  return {
+    identity: packet.identity,
+    schedule: packet.schedule,
+    market: packet.market,
+    teamForm: packet.teamForm ?? { home: null, away: null, provenance_status: "unavailable" },
+    teamMetrics: { epa, ypp, periodWindow: packet.teamMetrics.periodWindow, priorSeasonBaseline: packet.teamMetrics.priorSeasonBaseline ?? { season: null, home: null, away: null, provenance_status: "unavailable" } },
+    matchup: { trenches },
+    coaching: {
+      home_coach: packet.coaching.home_coach,
+      away_coach: packet.coaching.away_coach,
+      home_coach_record: toAiSafeCoachRecord(packet.coaching.home_coach_context),
+      away_coach_record: toAiSafeCoachRecord(packet.coaching.away_coach_context),
+      coaching_context_status: packet.coaching.coaching_context_status,
+    },
+    availability: packet.availability,
+    situational: packet.situational,
+    trends: packet.trends,
+    weather: packet.weather,
+    provenance: packet.provenance,
+    generatedAt: packet.generatedAt,
+  };
 }
 
 /** WU4.6 Stage A packet shape -- `market` is REMOVED entirely (not nulled), on top of everything AiSafeGameContextPacket already strips. */
@@ -47,15 +143,14 @@ export type AiBlindGameContextPacket = Omit<AiSafeGameContextPacket, "market">;
 
 /**
  * Produces the packet Stage A (the blind football projection) is allowed to
- * see: WU4.5's JKB-fair-line stripping PLUS complete removal of the
- * sportsbook `market` section. There is no sportsbook spread, total,
- * moneyline, line movement, or freshness field anywhere on the returned
- * object -- a prompt builder that tried to reference `packet.market` would
- * fail to compile/would read `undefined`, not print a null.
+ * see: the AI-safe projection above PLUS complete removal of the sportsbook
+ * `market` section. There is no sportsbook spread, total, moneyline, line
+ * movement, or freshness field anywhere on the returned object -- a prompt
+ * builder that tried to reference `packet.market` would fail to compile/would
+ * read `undefined`, not print a null.
  */
 export function sanitizeGameContextPacketForBlindStageA(packet: NflGameContextPacket): AiBlindGameContextPacket {
-  const safe = sanitizeGameContextPacketForAiInput(packet);
-  const { market, ...blind } = safe;
+  const { market: _market, ...blind } = sanitizeGameContextPacketForAiInput(packet);
   return blind;
 }
 
@@ -87,7 +182,29 @@ export function isMarketPricingEvidence(record: Pick<EvidenceRecord, "category" 
  * array, avoids any risk of index misalignment between the two.
  */
 export function filterEvidenceRecordsForBlindStageA(records: readonly EvidenceRecord[]): EvidenceRecord[] {
-  return records.filter((record) => !isMarketPricingEvidence(record));
+  return records.filter((record) => !isMarketPricingEvidence(record) && !isBettingOpinionEvidence(record));
+}
+
+/**
+ * AI Picks v2 WU3 -- external research is FACT INPUT (injuries, participation,
+ * QB status, personnel, weather, credible team/NFL reporting), never a way to
+ * outsource the pick. A record whose claim is someone's betting opinion --
+ * a pick or prediction, "best bet", public/sharp action, ATS trends, a
+ * consensus or model win probability -- is excluded from every v2 handicap
+ * stage. Like the market-pricing filter this is deliberately broad: excluding a
+ * borderline record is the safe failure mode; letting an outside pick steer the
+ * handicap is not.
+ */
+const BETTING_OPINION_CLAIM_PATTERN =
+  /\b(best bets?|betting (?:pick|tip|trend|angle|percentages?|public|handle)|public (?:money|betting|action)|sharp (?:money|action|bettors?|side)|sharps|smart money|against the spread|ATS|covers? the (?:spread|number)|(?:experts?|analysts?|consensus|models?|FPI)\s+(?:picks?|predicts?|predictions?|projects?|projections?)|win probability|chances? to win|to (?:win|cover) (?:by|the))\b/i;
+
+export function isBettingOpinionEvidence(record: Pick<EvidenceRecord, "claim">): boolean {
+  return BETTING_OPINION_CLAIM_PATTERN.test(record.claim);
+}
+
+/** Stage B's evidence set: market-pricing commentary is redundant (the deterministic market is supplied) but harmless; outside betting opinion is not allowed. */
+export function filterEvidenceRecordsForStageBV2(records: readonly EvidenceRecord[]): EvidenceRecord[] {
+  return records.filter((record) => !isBettingOpinionEvidence(record));
 }
 
 /**
@@ -139,21 +256,62 @@ export interface StageAAuditResult {
   findings: StageAAuditFinding[];
 }
 
-/** Part C -- structural check #1: the blind packet itself must never carry a `market` key or any of JKB's own fair-line fields. */
+/** JKB judgment keys that must never appear on the AI-visible packet, however nested: a composite rating, an advantage label, a differential, or a model projection/score. */
+const FORBIDDEN_BLIND_KEYS: readonly string[] = [
+  "jkbModels",
+  "projectedSpread",
+  "projectedTotal",
+  "modelMarketEdge",
+  "powerRating",
+  "offenseVsDefense",
+  "players",
+  "yardageProjections",
+  "matchupScore",
+  "tdScores",
+  "tdScore",
+  "epa_advantage_team",
+  "epa_differential",
+  "ypp_advantage_team",
+  "ypp_differential",
+  "trenches_advantage_team",
+  "trenches_differential",
+  "home_coaching_rating",
+  "away_coaching_rating",
+  "coaching_differential",
+  "coaching_advantage_team",
+  "sos",
+  "home_coach_context",
+  "away_coach_context",
+];
+
+function collectForbiddenKeyPaths(value: unknown, path: string, out: string[]): void {
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => collectForbiddenKeyPaths(item, `${path}[${index}]`, out));
+    return;
+  }
+  if (value === null || typeof value !== "object") return;
+  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    const childPath = path ? `${path}.${key}` : key;
+    if (FORBIDDEN_BLIND_KEYS.includes(key)) out.push(childPath);
+    collectForbiddenKeyPaths(child, childPath, out);
+  }
+}
+
+/** Part C -- structural check #1: the blind packet itself must never carry a `market` key, any JKB fair-line field, or any JKB composite/advantage/projection field at any depth. */
 export function assertBlindPacketHasNoMarketLeakage(packet: AiBlindGameContextPacket): string[] {
   const issues: string[] = [];
-  const asRecord = packet as unknown as Record<string, unknown>;
-  if ("market" in asRecord) issues.push('blind Stage A packet still carries a top-level "market" key');
-  const jkbModels = packet.jkbModels as unknown as Record<string, unknown>;
-  if ("projectedSpread" in jkbModels) issues.push("blind Stage A packet's jkbModels still carries projectedSpread");
-  if ("projectedTotal" in jkbModels) issues.push("blind Stage A packet's jkbModels still carries projectedTotal");
-  if ("modelMarketEdge" in jkbModels) issues.push("blind Stage A packet's jkbModels still carries modelMarketEdge");
+  if ("market" in (packet as unknown as Record<string, unknown>)) issues.push('blind Stage A packet still carries a top-level "market" key');
+  const forbidden: string[] = [];
+  collectForbiddenKeyPaths(packet, "", forbidden);
+  for (const path of forbidden) issues.push(`blind Stage A packet still carries JKB judgment field "${path}"`);
   return issues;
 }
 
 /** Part C -- structural check #2: every evidence record actually handed to Stage A must not be market-pricing commentary. */
 export function assertBlindEvidenceHasNoMarketPricing(records: readonly EvidenceRecord[]): string[] {
-  return records.filter(isMarketPricingEvidence).map((r) => `evidence record ${r.evidenceId} (category=${r.category}) is market-pricing commentary and must not reach Stage A: "${r.claim}"`);
+  return records
+    .filter((r) => isMarketPricingEvidence(r) || isBettingOpinionEvidence(r))
+    .map((r) => `evidence record ${r.evidenceId} (category=${r.category}) is market-pricing or betting-opinion commentary and must not reach Stage A: "${r.claim}"`);
 }
 
 interface StageAPromptLeakPattern {
