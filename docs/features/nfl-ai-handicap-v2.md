@@ -75,3 +75,22 @@ OPENAI_API_KEY):
 
     npx tsx scripts/run-nfl-handicap-v2.ts --provider=grok --game=2026_03_LAC_BUF --live
     npx tsx scripts/run-nfl-handicap-v2.ts --provider=chatgpt --game=2026_03_LAC_BUF --live
+
+## Publication and UI (presentation only)
+
+`scripts/generate-nfl-ai-handicap-presentation.ts` publishes the newest valid write-once v2 record per provider as an optional
+`handicapV2: { grokowski, chattyIce }` block in the existing public artifact (`nfl-ai-handicap-presentation-v1`, additive; v1 `handicappers`
+are unchanged). A provider with no valid v2 record is `null` and the AI Picks tab falls back to its v1 card (legacy article or unavailable).
+Public cards omit internal provenance (contextHash, promptVersion, fact/evidence refs, evidence ids, warnings). Source urls are copied from
+the record only; sources without a url render as plain "JKB" text and are never linked. No handicapping logic is touched.
+
+### What is and is not committed
+
+- `public/data/nfl/<season>/ai-handicaps/<gameId>.json` is **committed static output**. There is no workflow or build step that generates it, and
+  the repo has deployed such artifacts by committing them (`fix(nfl): deploy Week 2 AI sample artifacts`). The LAC @ BUF (2026 wk 3) artifact is the
+  first that carries `handicapV2`, and ships in its own data commit, separate from the source commits.
+- `data/nfl/analysis/<season>/<week>/<gameId>/**` (raw provider responses, research diagnostics, rejected findings, `evidence.live-test.json` and the
+  write-once `handicap-v2/` records) is **local operational data, not committed**. The repo tracks only the foundation fixtures
+  (`2026_01_BAL_IND/*/evidence.json`). The accepted LAC @ BUF output is preserved in the public artifact and in the test fixture
+  `scripts/lib/__fixtures__/nfl-handicap-v2-live-lac-buf.json`; no committed test reads the local analysis or game-context directories.
+- Follow-up: the scheduled refresh that runs the v2 handicap and the presentation exporter for upcoming games is not part of this change.

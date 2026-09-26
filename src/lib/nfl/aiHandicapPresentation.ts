@@ -191,6 +191,65 @@ export type AiHandicapCard = AiHandicapReady | AiHandicapUnavailable;
 
 export const NFL_AI_HANDICAP_SCHEMA_VERSION = "nfl-ai-handicap-presentation-v1" as const;
 
+/* -------------------------------------------------------------------------- */
+/* AI Picks v2 -- concise handicap (additive; the v1 shapes above are unchanged) */
+/* -------------------------------------------------------------------------- */
+
+export const NFL_AI_HANDICAP_V2_SCHEMA_VERSION = "nfl-handicap-v2" as const;
+
+export const AI_HANDICAP_V2_VERDICTS = ["BET", "LEAN", "PASS"] as const;
+export type AiHandicapV2Verdict = (typeof AI_HANDICAP_V2_VERDICTS)[number];
+
+export type AiHandicapV2Confidence = "LOW" | "MEDIUM" | "MEDIUM_HIGH" | "HIGH";
+export type AiHandicapV2Uncertainty = "LOW" | "MEDIUM" | "HIGH";
+
+/** One attached source. `url` is null for JKB-internal deterministic sources (market artifact, team-game data) -- never a fabricated link. evidenceId is internal and not published. */
+export interface AiHandicapV2Source {
+  label: string;
+  url: string | null;
+  type: "market" | "injury" | "news" | "weather" | "other";
+}
+
+export interface AiHandicapV2KeyDriver {
+  summary: string;
+}
+
+/**
+ * Public projection of a validated write-once handicap-v2 record
+ * (scripts/lib/nfl-handicap-v2-types.ts HandicapV2Record). Internal
+ * provenance (contextHash, promptVersion, factRefs/evidenceRefs, evidence
+ * ids, warnings, stage timestamps) stays in the internal record only.
+ */
+export interface AiHandicapV2Card {
+  schemaVersion: typeof NFL_AI_HANDICAP_V2_SCHEMA_VERSION;
+  provider: AiHandicapProvider;
+  displayName: string;
+  generatedAt: string;
+  verdict: AiHandicapV2Verdict;
+  preferredSide: "home" | "away";
+  /** Lowercase team abbreviation, e.g. "buf". */
+  preferredTeam: string;
+  /** The preferred side's line at the displayed book, e.g. -7. */
+  preferredLine: number;
+  marketSpread: { sportsbook: string | null; homeLine: number; awayLine: number; homePrice: number | null; awayPrice: number | null; asOf: string | null };
+  marketTotal: number | null;
+  /** Percent, 0-100. */
+  coverProbabilityPreferred: number;
+  coverProbabilityOther: number;
+  impliedPushProbability: number;
+  fairSpread: AiHandicapFairSpread;
+  fairScoreAway: number;
+  fairScoreHome: number;
+  projectedTotal: number;
+  confidence: AiHandicapV2Confidence;
+  uncertainty: AiHandicapV2Uncertainty;
+  keyNumberSensitivity: string | null;
+  analysisMarkdown: string;
+  keyDrivers: AiHandicapV2KeyDriver[];
+  mainRisk: string;
+  sources: AiHandicapV2Source[];
+}
+
 export interface NflAiHandicapPresentation {
   schemaVersion: typeof NFL_AI_HANDICAP_SCHEMA_VERSION;
   gameId: string;
@@ -204,6 +263,16 @@ export interface NflAiHandicapPresentation {
   handicappers: {
     grokowski: AiHandicapCard;
     chattyIce: AiHandicapCard;
+  };
+  /**
+   * AI Picks v2 -- present only when at least one provider has a valid v2
+   * handicap. A provider entry is null when it has no valid v2 record; the
+   * UI then falls back to that provider's v1 card above. v1 `handicappers`
+   * is always present and never rewritten to look like v2.
+   */
+  handicapV2?: {
+    grokowski: AiHandicapV2Card | null;
+    chattyIce: AiHandicapV2Card | null;
   };
 }
 

@@ -35,11 +35,13 @@ import { readLatestWu46CompatibleAnalysisSnapshot, readPreviousAnalysisSnapshot 
 import { isWu46CompatibleAnalysisState } from "./lib/nfl-snapshot-analysis-lifecycle";
 import { computeSideEdgePoints, computeTotalEdgePoints } from "./lib/nfl-market-edge";
 import { buildLegacyEditorialArticle } from "./lib/nfl-legacy-editorial-adapter";
+import { buildHandicapV2PublicCard, readLatestPublishableHandicapV2Record } from "./lib/nfl-handicap-v2-presentation";
 import type { AnalysisSnapshot } from "./lib/nfl-snapshot-types";
 import {
   nflAiHandicapArtifactPath,
   type AiHandicapCard,
   type AiHandicapProvider,
+  type AiHandicapV2Card,
   type NflAiHandicapPresentation,
 } from "../src/lib/nfl/aiHandicapPresentation";
 
@@ -180,6 +182,15 @@ export function generatePresentationForGame(root: string, gameId: string, season
   const grokHasAnyAnalysis = readPreviousAnalysisSnapshot(root, season, week, gameId, "grok") !== null;
   const chatgptHasAnyAnalysis = readPreviousAnalysisSnapshot(root, season, week, gameId, "chatgpt") !== null;
 
+  // AI Picks v2: the newest valid write-once v2 record per provider. Absent -> null, and the UI
+  // falls back to that provider's v1 card. v1 snapshots and cards are never modified.
+  const v2Card = (provider: AiHandicapProvider): AiHandicapV2Card | null => {
+    const record = readLatestPublishableHandicapV2Record(root, season, week, gameId, provider);
+    return record ? buildHandicapV2PublicCard(record, DISPLAY_NAMES[provider]) : null;
+  };
+  const grokV2 = v2Card("grok");
+  const chattyV2 = v2Card("chatgpt");
+
   return {
     schemaVersion: "nfl-ai-handicap-presentation-v1",
     gameId,
@@ -193,6 +204,7 @@ export function generatePresentationForGame(root: string, gameId: string, season
       grokowski: buildHandicapCard(grokSnapshot, grokHasAnyAnalysis, "grok", identity),
       chattyIce: buildHandicapCard(chatgptSnapshot, chatgptHasAnyAnalysis, "chatgpt", identity),
     },
+    ...(grokV2 || chattyV2 ? { handicapV2: { grokowski: grokV2, chattyIce: chattyV2 } } : {}),
   };
 }
 

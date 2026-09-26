@@ -148,6 +148,8 @@ export default defineConfig({
       "scripts/lib/nfl-handicap-v2-factref-paths.test.ts",
       "scripts/lib/nfl-handicap-v2-stage-b-format.test.ts",
       "scripts/lib/nfl-stage-a-calibration.test.ts",
+      // AI Picks v2 presentation/export plumbing.
+      "scripts/nfl-handicap-v2-presentation.test.ts",
       // WU7.1 -- gameId/identity team-code alias normalization regression coverage.
       "scripts/lib/nfl-game-context-validators.test.ts",
       // Dual-AI handicapping architecture WU2 -- external evidence normalization/validation foundation.
