@@ -1,11 +1,11 @@
 {
   "_meta": {
     "schemaVersion": "nfl-v0.1",
-    "generatedAt": "2026-09-25T15:14:34.329Z",
+    "generatedAt": "2026-09-26T14:28:10.031Z",
     "source": "generated (data/nfl/predictions/**/jkb-power-number.jsonl + prediction-outcome resolver + embedded market_snapshot_refs)",
     "season": null,
     "week": null,
-    "modelVersion": "jkb-power-number-v1.0.0",
+    "modelVersion": null,
     "notes": [
       "Canonical derived sides (spread) performance artifact for /nfl/performance. Not a raw archive -- do not parse JSONL for this view.",
       "Live side model: jkb-power-number-v1.1.0 (Current OVR nfl-current-ovr-v1.1.0). Games whose final pregame snapshot was archived under jkb-power-number-v1.0.0 stay graded under that version; every row carries its own model_version. Side-model math is untouched by this artifact.",
@@ -19,16 +19,17 @@
   "schemaVersion": "nfl-sides-performance-v1",
   "performanceMeta": {
     "schemaVersion": "nfl-sides-performance-v1",
-    "generatedAt": "2026-09-25T15:14:34.329Z",
+    "generatedAt": "2026-09-26T14:28:10.031Z",
     "seasons": [
       2026
     ],
     "modelVersions": [
-      "jkb-power-number-v1.0.0"
+      "jkb-power-number-v1.0.0",
+      "jkb-power-number-v1.1.0"
     ],
     "liveModelVersion": "jkb-power-number-v1.1.0",
     "gradedGames": 33,
-    "latestPredictionTimestamp": "2026-09-24T17:05:14.236Z",
+    "latestPredictionTimestamp": "2026-09-25T17:05:23.446Z",
     "latestOutcomeTimestamp": "2026-09-24T17:05:14.236Z",
     "marketCoverageCount": 33,
     "contextCoverage": {
