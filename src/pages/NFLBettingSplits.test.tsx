@@ -27,21 +27,33 @@ describe("NFL Betting Splits page", () => {
     expect(screen.getByRole("heading", { name: "NFL Betting Splits" })).toBeTruthy();
     expect(screen.getByRole("tab", { name: "Overview" }).getAttribute("aria-selected")).toBe("true");
     expect(screen.getByRole("status").textContent).toContain("Fresh");
-    expect(screen.getByText("Biggest Money Gap")).toBeTruthy();
+    expect(screen.getByText("Matchup distribution")).toBeTruthy();
     expect(screen.getByText(/Captured Sep 25, 2026/)).toBeTruthy();
-    expect(screen.queryByText(/Captured Sep 25, 2026.*14:48/)).toBeNull();
-    expect(screen.getAllByText("+25 pp").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("-25 pp").length).toBeGreaterThan(0);
+    expect(screen.getByRole("status").textContent).toContain("10:47 AM");
+    expect(screen.getByRole("status").textContent).not.toContain("10:48 AM");
+    const table = screen.getByRole("region", { name: "Overview matchup distribution" });
+    expect(within(table).getAllByRole("row")).toHaveLength(3);
+    expect(within(table).getByText("+35 pp")).toBeTruthy();
+    const gameRow = within(table).getAllByRole("row")[2];
+    expect(within(gameRow).getAllByRole("cell").slice(1, 13).map((cell) => cell.textContent)).toEqual(["75%", "50%", "25%", "50%", "65%", "35%", "35%", "65%", "80%", "45%", "20%", "55%"]);
+    expect(within(gameRow).getByText("Strong Money Gap")).toBeTruthy();
   });
-  it("shows two sides in each market and null moneyline lines", () => {
+  it("shows both sides with market-specific columns, odds and shared signals", () => {
     setup();
     for (const market of ["Spread", "Moneyline", "Total"]) {
       fireEvent.click(screen.getByRole("tab", { name: market }));
       const table = screen.getByRole("region", { name: `${market.toLowerCase()} betting splits` });
       expect(within(table).getAllByRole("row").length).toBe(3);
-      if (market === "Moneyline") expect(within(table).getAllByText("—").length).toBe(2);
-      if (market === "Total") { expect(within(table).getByText("Over")).toBeTruthy(); expect(within(table).getByText("Under")).toBeTruthy(); }
-      else { expect(within(table).getAllByText("BUF", { selector: "span" }).length).toBeGreaterThan(0); }
+      expect(within(table).getByRole("columnheader", { name: /Handle/ })).toBeTruthy();
+      expect(within(table).getByRole("columnheader", { name: /Bets/ })).toBeTruthy();
+      expect(within(table).getByRole("columnheader", { name: /Money Gap/ })).toBeTruthy();
+      expect(within(table).getByRole("columnheader", { name: "Signal" })).toBeTruthy();
+      const sides = within(table).getAllByRole("row").slice(1).map((row) => within(row).getAllByRole("cell").map((cell) => cell.textContent?.trim()));
+      if (market === "Moneyline") { expect(within(table).queryByRole("columnheader", { name: "Line" })).toBeNull(); expect(within(table).getByText("-140")).toBeTruthy(); }
+      if (market === "Total") { expect(within(table).getByText("Over")).toBeTruthy(); expect(within(table).getByText("Under")).toBeTruthy(); expect(within(table).getAllByText("45.5")).toHaveLength(2); }
+      if (market === "Spread") { expect(within(table).getByText("-2.5")).toBeTruthy(); expect(within(table).getByText("+2.5")).toBeTruthy(); }
+      expect(sides[0]).toEqual(market === "Spread" ? ["BUF", "MIA", "-2.5", "-110", "75%", "50%", "+25 pp", "Strong Money Gap"] : market === "Moneyline" ? ["BUF", "MIA", "-140", "80%", "45%", "+35 pp", "Strong Money Gap"] : ["BUF@MIA", "Over", "45.5", "-110", "65%", "35%", "+30 pp", "Strong Money Gap"]);
+      expect(sides[1]?.at(-1)).toBe("Public Heavy");
     }
   });
   it("keeps stale data visible with a warning, and hides unavailable data", () => {

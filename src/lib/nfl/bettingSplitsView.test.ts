@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { biggestMoneyGap, compactSplitsForGame, consensusSides, contrarianSides, formatSplitsGap, formatSplitsLine, formatSplitsOdds, publicSides, sharpSides, sortSplitsRows, splitsSignal, SPLITS_SIGNAL_LABEL, type SplitsRow } from "./bettingSplitsView";
+import { biggestMoneyGap, compactSplitsForGame, consensusSides, contrarianSides, formatSplitsGap, formatSplitsLine, formatSplitsOdds, publicSides, sharpSides, sortSplitsMatchupRows, sortSplitsRows, splitsMatchupRows, splitsSignal, SPLITS_SIGNAL_LABEL, type SplitsRow } from "./bettingSplitsView";
 import type { NflDkBettingSplitsArtifact } from "./bettingSplitsData";
 import { moneyGap, publicGap } from "./bettingSplitsData";
 
@@ -60,7 +60,7 @@ describe("compact weekly matchup selector", () => {
 
   it("joins only exact gameId and chooses the highest gap per market", () => {
     const summary = compactSplitsForGame({ artifact, freshness: "fresh" }, "2026_03_CAR_IND");
-    expect(summary).toMatchObject({ state: "fresh", spread: { side: "CAR", moneyGap: 14, signal: "lean", sharp: true }, moneyline: { side: "IND", moneyGap: 12, signal: "lean" }, total: { side: "Under", moneyGap: 34, signal: "strong" } });
+    expect(summary).toMatchObject({ state: "fresh", spread: { side: "CAR", handlePct: 57, betsPct: 43, moneyGap: 14, signal: "lean", sharp: true }, moneyline: { side: "IND", handlePct: 56, betsPct: 44, moneyGap: 12, signal: "lean" }, total: { side: "Under", handlePct: 67, betsPct: 33, moneyGap: 34, signal: "strong" } });
     expect(compactSplitsForGame({ artifact, freshness: "fresh" }, "CAR at IND").state).toBe("missing");
     expect(compactSplitsForGame({ artifact, freshness: "fresh" }, "2026_03_CAR_IND_extra").state).toBe("missing");
   });
@@ -79,5 +79,29 @@ describe("compact weekly matchup selector", () => {
     expect(compactSplitsForGame({ artifact, freshness: "stale" }, "2026_03_CAR_IND")).toMatchObject({ state: "stale", spread: { side: "CAR" } });
     expect(compactSplitsForGame({ artifact, freshness: "stale" }, "2026_03_NE_SEA")).toMatchObject({ state: "missing", spread: null });
     expect(compactSplitsForGame({ artifact: null, freshness: "unavailable" }, "2026_03_CAR_IND")).toMatchObject({ state: "unavailable", spread: null });
+  });
+
+  it("groups all markets by exact gameId and selects the largest absolute gap", () => {
+    const rows = splitsMatchupRows(artifact);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ game: { gameId: "2026_03_CAR_IND" }, spread: { away: { handlePct: 57, betsPct: 43 }, home: { handlePct: 43, betsPct: 57 } }, moneyline: { away: { handlePct: 44, betsPct: 56 }, home: { handlePct: 56, betsPct: 44 } }, total: { over: { handlePct: 33, betsPct: 67 }, under: { handlePct: 67, betsPct: 33 } }, strongest: { market: "total", side: { side: "under" }, gap: 34 } });
+    const negative = structuredClone(artifact);
+    negative.games[0].markets.spread = [side("away", 20, 50), side("home", 50, 49)];
+    negative.games[0].markets.moneyline = [side("away", 48, 50), side("home", 52, 50)];
+    negative.games[0].markets.total = [side("over", 50, 50), side("under", 50, 50)];
+    expect(splitsMatchupRows(negative)[0].strongest).toMatchObject({ market: "spread", side: { side: "away" }, gap: -30 });
+    const reordered = structuredClone(artifact);
+    reordered.games[0].markets.total.reverse();
+    expect(splitsMatchupRows(reordered)[0].strongest).toMatchObject({ market: "total", side: { side: "under" }, gap: 34 });
+    const second = structuredClone(artifact.games[0]);
+    second.gameId = "2026_04_CAR_IND";
+    second.markets.total = [side("over", 50, 50), side("under", 50, 50)];
+    second.markets.spread = [side("away", 55, 50), side("home", 45, 50)];
+    second.markets.moneyline = [side("away", 52, 50), side("home", 48, 50)];
+    const twoGames = splitsMatchupRows({ ...artifact, games: [...artifact.games, second] });
+    expect(twoGames.map((item) => item.game.gameId)).toEqual(["2026_03_CAR_IND", "2026_04_CAR_IND"]);
+    expect(sortSplitsMatchupRows(twoGames, "gap", "desc")[0].game.gameId).toBe("2026_03_CAR_IND");
+    expect(sortSplitsMatchupRows(twoGames, "handlePct", "asc")[0].game.gameId).toBe("2026_04_CAR_IND");
+    expect(sortSplitsMatchupRows(twoGames, "betsPct", "desc")[0].game.gameId).toBe("2026_03_CAR_IND");
   });
 });

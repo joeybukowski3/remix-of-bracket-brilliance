@@ -57,9 +57,9 @@ function makeBoard(cells: Record<string, NflMatrixCell>): NflMatrixBoard {
 describe("weekly matchup compact betting splits", () => {
   const summary: CompactSplitsSummary = {
     state: "fresh",
-    spread: { side: "NE", moneyGap: 14, signal: "lean", sharp: true },
-    moneyline: { side: "SEA", moneyGap: 13, signal: "lean", sharp: true },
-    total: { side: "Under", moneyGap: 34, signal: "strong", sharp: true },
+    spread: { side: "NE", handlePct: 64, betsPct: 50, moneyGap: 14, signal: "lean", sharp: true },
+    moneyline: { side: "SEA", handlePct: 60, betsPct: 47, moneyGap: 13, signal: "lean", sharp: true },
+    total: { side: "Under", handlePct: 67, betsPct: 33, moneyGap: 34, signal: "strong", sharp: true },
   };
   const renderRow = (bettingSplits: CompactSplitsSummary) => render(<MemoryRouter><MatchupMatrixRow matchup={MATCHUP} board={makeBoard({})} displayMode="rankings" awayRecord={null} homeRecord={null} bettingSplits={bettingSplits} /></MemoryRouter>);
 
@@ -67,22 +67,24 @@ describe("weekly matchup compact betting splits", () => {
     renderRow(summary);
     const strip = document.querySelector("[data-matchup-compact-splits]")!;
     expect(strip.previousElementSibling).toHaveAttribute("data-matchup-summary-strip");
-    expect(within(strip as HTMLElement).getByLabelText("Spread: NE +14 pp, Money Lean")).toHaveTextContent("SPRNE +14");
-    expect(within(strip as HTMLElement).getByLabelText("Moneyline: SEA +13 pp, Money Lean")).toBeVisible();
-    expect(within(strip as HTMLElement).getByLabelText("Total: Under +34 pp, Strong Money Gap")).toBeVisible();
+    expect(within(strip as HTMLElement).getByLabelText("Spread: NE 64% Handle, 50% Bets")).toHaveTextContent("64% H / 50% B");
+    expect(within(strip as HTMLElement).getByLabelText("Moneyline: SEA 60% Handle, 47% Bets")).toHaveTextContent("60% H / 47% B");
+    expect(within(strip as HTMLElement).getByLabelText("Total: Under 67% Handle, 33% Bets")).toHaveTextContent("67% H / 33% B");
     expect(strip.querySelector("a, button")).toBeNull();
     expect(screen.getByRole("link", { name: /view matchup breakdown/i })).toHaveAttribute("href", `/nfl/matchups/${MATCHUP.slug}`);
   });
 
-  it("mutes balanced values and uses dashes for unavailable and missing games", () => {
-    const view = renderRow({ ...summary, spread: { side: "NE", moneyGap: 3, signal: "balanced", sharp: false } });
-    expect(screen.getByLabelText("Spread: Balanced")).toHaveTextContent("—");
+  it("keeps balanced percentages and uses dashes for unavailable and missing games", () => {
+    const view = renderRow({ ...summary, spread: { side: "NE", handlePct: 53, betsPct: 50, moneyGap: 3, signal: "balanced", sharp: false } });
+    expect(screen.getByLabelText("Spread: NE 53% Handle, 50% Bets")).toHaveTextContent("53% H / 50% B");
     view.rerender(<MemoryRouter><MatchupMatrixRow matchup={MATCHUP} board={makeBoard({})} displayMode="rankings" awayRecord={null} homeRecord={null} bettingSplits={{ state: "unavailable", spread: null, moneyline: null, total: null }} /></MemoryRouter>);
     expect(document.querySelector("[data-matchup-compact-splits]")).toHaveAttribute("data-splits-state", "unavailable");
     expect(document.querySelectorAll("[data-matchup-compact-splits] span[aria-label$='unavailable']")).toHaveLength(3);
+    expect(document.querySelector("[data-matchup-compact-splits]")).not.toHaveTextContent("%");
     view.rerender(<MemoryRouter><MatchupMatrixRow matchup={MATCHUP} board={makeBoard({})} displayMode="rankings" awayRecord={null} homeRecord={null} bettingSplits={{ state: "missing", spread: null, moneyline: null, total: null }} /></MemoryRouter>);
     expect(document.querySelector("[data-matchup-compact-splits]")).toHaveAttribute("data-splits-state", "missing");
     expect(screen.getByLabelText("Spread: not in the current pregame snapshot")).toHaveTextContent("—");
+    expect(document.querySelector("[data-matchup-compact-splits]")).not.toHaveTextContent("%");
   });
 });
 
