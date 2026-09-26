@@ -17,6 +17,32 @@ export function formatSplitsLine(market: SplitsMarket, line: number | null): str
 }
 export function formatSplitsOdds(odds: number): string { return odds > 0 ? `+${odds}` : String(odds); }
 export function formatSplitsGap(gap: number): string { return `${gap > 0 ? "+" : ""}${gap} pp`; }
+export const splitsSideLabel = (row: SplitsRow): string => row.side.side === "away" ? row.game.away.toUpperCase() : row.side.side === "home" ? row.game.home.toUpperCase() : row.side.side === "over" ? "Over" : "Under";
+export const splitsMatchupLabel = (game: NflDkBettingSplitsGame): string => `${game.away.toUpperCase()} @ ${game.home.toUpperCase()}`;
+export function splitsMatchupWithSpread(game: NflDkBettingSplitsGame): string {
+  const away = game.markets.spread.find((side) => side.side === "away")?.line;
+  const home = game.markets.spread.find((side) => side.side === "home")?.line;
+  if (away !== null && away !== undefined && away < 0) return `${game.away.toUpperCase()} [${formatSplitsLine("spread", away)}] @ ${game.home.toUpperCase()}`;
+  if (home !== null && home !== undefined && home < 0) return `${game.away.toUpperCase()} @ ${game.home.toUpperCase()} [${formatSplitsLine("spread", home)}]`;
+  return splitsMatchupLabel(game);
+}
+export function sharpIndicator(row: SplitsRow): string {
+  const side = splitsSideLabel(row);
+  const signal = splitsSignal(row.gap);
+  const description = signal === "strong" ? "Strong Sharp Side" : signal === "lean" ? `Sharp Lean to ${side}` : signal === "public" ? `Public Heavy on ${side}` : "Balanced";
+  return `${side} ${row.market === "total" ? "Total" : row.market === "spread" ? "Spread" : "Moneyline"} ${row.gap > 0 ? "+" : ""}${row.gap} [${description}]`;
+}
+export function rankedSideNumber(row: SplitsRow): string {
+  const side = splitsSideLabel(row);
+  return row.market === "moneyline" ? `${side} ${formatSplitsOdds(row.side.odds)}` : `${side} ${formatSplitsLine(row.market, row.side.line)}${row.market === "total" ? ` · ${formatSplitsOdds(row.side.odds)}` : ""}`;
+}
+/** Raw distribution tint: higher share reads greener, independent of predictive merit. */
+export function splitsHeatStyle(percent: number): { backgroundColor: string } {
+  const value = Math.max(0, Math.min(100, percent));
+  const hue = Math.round(value * 1.2);
+  return { backgroundColor: `hsl(${hue} 62% 95%)` };
+}
+export const totalSidePillClass = (side: NflDkBettingSplitsSide["side"]): string => side === "over" ? "border-orange-200 bg-orange-50 text-orange-800" : "border-sky-200 bg-sky-50 text-sky-800";
 
 /** Percentage-point thresholds for descriptive display only; no predictive meaning. */
 export const SPLITS_THRESHOLDS = {
@@ -116,13 +142,16 @@ export function splitsMatchupRows(artifact: NflDkBettingSplitsArtifact): SplitsM
   });
 }
 
-export type SplitsMatchupSortKey = "gap" | "matchup" | "handlePct" | "betsPct";
+export type SplitsMatchupSortKey = "gap" | "matchup" | "handlePct" | "betsPct" | "spreadHandle" | "spreadBets" | "totalHandle" | "totalBets" | "moneylineHandle" | "moneylineBets";
+export function matchupSortValue(row: SplitsMatchupRow, key: Exclude<SplitsMatchupSortKey, "matchup">): number {
+  const favorite = { spreadHandle: row.spread.handle.handlePct, spreadBets: row.spread.bets.betsPct, totalHandle: row.total.handle.handlePct, totalBets: row.total.bets.betsPct, moneylineHandle: row.moneyline.handle.handlePct, moneylineBets: row.moneyline.bets.betsPct };
+  return key === "gap" ? Math.abs(row.strongest.gap) : key === "handlePct" ? row.strongestHandlePct : key === "betsPct" ? row.strongestBetsPct : favorite[key];
+}
 export function sortSplitsMatchupRows(rows: readonly SplitsMatchupRow[], key: SplitsMatchupSortKey, direction: "asc" | "desc"): SplitsMatchupRow[] {
   const factor = direction === "asc" ? 1 : -1;
   return [...rows].sort((a, b) => {
     const comparison = key === "matchup" ? `${a.game.away}:${a.game.home}`.localeCompare(`${b.game.away}:${b.game.home}`)
-      : key === "gap" ? Math.abs(a.strongest.gap) - Math.abs(b.strongest.gap)
-        : key === "handlePct" ? a.strongestHandlePct - b.strongestHandlePct : a.strongestBetsPct - b.strongestBetsPct;
+      : matchupSortValue(a, key) - matchupSortValue(b, key);
     return comparison * factor || a.game.gameId.localeCompare(b.game.gameId);
   });
 }

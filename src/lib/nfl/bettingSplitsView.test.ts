@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { biggestMoneyGap, compactSplitsForGame, consensusSides, contrarianSides, formatSplitsGap, formatSplitsLine, formatSplitsOdds, publicSides, sharpSides, sortSplitsMatchupRows, sortSplitsRows, splitsMatchupRows, splitsSignal, SPLITS_SIGNAL_LABEL, type SplitsRow } from "./bettingSplitsView";
+import { biggestMoneyGap, compactSplitsForGame, consensusSides, contrarianSides, formatSplitsGap, formatSplitsLine, formatSplitsOdds, publicSides, rankedSideNumber, sharpIndicator, sharpSides, sortSplitsMatchupRows, sortSplitsRows, splitsHeatStyle, splitsMatchupRows, splitsMatchupWithSpread, splitsSignal, totalSidePillClass, SPLITS_SIGNAL_LABEL, type SplitsRow } from "./bettingSplitsView";
 import type { NflDkBettingSplitsArtifact } from "./bettingSplitsData";
 import { moneyGap, publicGap } from "./bettingSplitsData";
 
@@ -42,6 +42,24 @@ describe("betting splits presentation selectors", () => {
     expect(formatSplitsGap(14)).toBe("+14 pp");
     expect(formatSplitsGap(-14)).toBe("-14 pp");
     expect(SPLITS_SIGNAL_LABEL[splitsSignal(20)]).toBe("Strong Money Gap");
+  });
+
+  it("formats descriptive indicators, ranked numbers, and subtle distribution tint", () => {
+    expect(sharpIndicator(row("a", 82, 53))).toBe("BUF Spread +29 [Strong Sharp Side]");
+    expect(sharpIndicator(row("a", 62, 49))).toBe("BUF Spread +13 [Sharp Lean to BUF]");
+    expect(sharpIndicator(row("a", 50, 50))).toBe("BUF Spread 0 [Balanced]");
+    expect(sharpIndicator(row("a", 30, 50))).toBe("BUF Spread -20 [Public Heavy on BUF]");
+    expect(rankedSideNumber(row("a", 82, 53))).toBe("BUF -2.5");
+    const moneyline = { ...row("a", 82, 53), market: "moneyline" as const, side: { ...row("a", 82, 53).side, odds: 100, line: null } };
+    expect(rankedSideNumber(moneyline)).toBe("BUF +100");
+    const total = { ...row("a", 82, 53), market: "total" as const, side: { ...row("a", 82, 53).side, side: "under" as const, line: 40.5 } };
+    expect(sharpIndicator(total)).toBe("Under Total +29 [Strong Sharp Side]");
+    expect(sharpIndicator({ ...total, gap: 13 })).toBe("Under Total +13 [Sharp Lean to Under]");
+    expect(rankedSideNumber(total)).toBe("Under 40.5 · -110");
+    expect(totalSidePillClass("over")).toContain("bg-orange-50");
+    expect(totalSidePillClass("under")).toContain("bg-sky-50");
+    const hue = (pct: number) => Number(splitsHeatStyle(pct).backgroundColor.match(/hsl\((\d+)/)?.[1]);
+    expect([hue(0), hue(50), hue(100)]).toEqual([0, 60, 120]);
   });
 });
 
@@ -107,5 +125,17 @@ describe("compact weekly matchup selector", () => {
     expect(sortSplitsMatchupRows(twoGames, "gap", "desc")[0].game.gameId).toBe("2026_03_CAR_IND");
     expect(sortSplitsMatchupRows(twoGames, "handlePct", "asc")[0].game.gameId).toBe("2026_04_CAR_IND");
     expect(sortSplitsMatchupRows(twoGames, "betsPct", "desc")[0].game.gameId).toBe("2026_03_CAR_IND");
+    expect(splitsMatchupWithSpread(artifact.games[0])).toBe("CAR @ IND");
+    const awayFavorite = structuredClone(artifact.games[0]);
+    awayFavorite.markets.spread[0].line = -1.5;
+    expect(splitsMatchupWithSpread(awayFavorite)).toBe("CAR [-1.5] @ IND");
+    awayFavorite.markets.spread[0].line = 1.5;
+    awayFavorite.markets.spread[1].line = -1.5;
+    expect(splitsMatchupWithSpread(awayFavorite)).toBe("CAR @ IND [-1.5]");
+    for (const key of ["spreadHandle", "spreadBets", "totalHandle", "totalBets", "moneylineHandle", "moneylineBets"] as const) {
+      expect(sortSplitsMatchupRows(twoGames, key, "desc").map((item) => item.game.gameId)).toEqual(["2026_03_CAR_IND", "2026_04_CAR_IND"]);
+      expect(sortSplitsMatchupRows(twoGames, key, "asc").map((item) => item.game.gameId)).toEqual(["2026_04_CAR_IND", "2026_03_CAR_IND"]);
+    }
+    expect(sortSplitsMatchupRows([twoGames[1], twoGames[0]], "spreadHandle", "desc").map((item) => item.game.gameId)).toEqual(["2026_03_CAR_IND", "2026_04_CAR_IND"]);
   });
 });
