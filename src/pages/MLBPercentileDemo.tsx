@@ -1,4 +1,5 @@
 import SiteShell from "@/components/layout/SiteShell";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { PercentileCell } from "@/components/mlb/MlbPercentileScoreCell";
 import { useMLBPercentilesSample, type MLBStatKey } from "@/hooks/useMLBPercentilesSample";
 import { PERCENTILE_TIER_LEGEND } from "@/lib/mlb/percentileColorScale";
@@ -36,6 +37,8 @@ function PercentileColorLegend() {
 }
 
 export default function MLBPercentileDemo() {
+  // Development demo of the percentile color scale -- not a search surface.
+  usePageSeo({ title: "MLB Percentile Demo", description: "Internal demo of the MLB percentile color scale.", path: "/mlb-demo", noindex: true });
   const { data, isLoading, error } = useMLBPercentilesSample();
 
   const players = data?.players ?? [];

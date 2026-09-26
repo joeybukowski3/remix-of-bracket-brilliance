@@ -13,10 +13,10 @@ const SECTIONS = [
     ],
   },
   {
-    label: "NCAA Football",
+    label: "College Football",
     emoji: "🏈",
     links: [
-      { label: "NCAA Football", to: "/ncaa" },
+      { label: "College Football", to: "/college-football" },
     ],
   },
   {
@@ -34,7 +34,7 @@ const SECTIONS = [
     label: "NFL",
     emoji: "🏈",
     links: [
-      { label: "NFL Hub", to: "/nfl", soon: true },
+      { label: "NFL Hub", to: "/nfl" },
     ],
   },
   {

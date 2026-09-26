@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { usePageSeo } from "@/hooks/usePageSeo";
-import { getSeoMeta } from "@/lib/seo";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { useNflMatchupMetrics } from "@/hooks/useNflMatchupMetrics";
 import { useNflSuccessRates } from "@/hooks/useNflSuccessRates";
@@ -122,7 +121,6 @@ const GUIDE = getNflSeasonGuide(CURRENT_SEASON)!;
  */
 export default function NFLMatchupDetail() {
   const { gameSlug = "" } = useParams();
-  const seo = getSeoMeta("nfl");
   const { loading, error, data } = useNflSeasonData(CURRENT_SEASON);
   // Soft dependency: the analyzer renders fully without it, with detailed rows
   // staying at "N/A".
@@ -359,7 +357,10 @@ export default function NFLMatchupDetail() {
       ? `${matchup.away.teamName} vs ${matchup.home.teamName} Week ${matchup.week} preview: power ratings, side-by-side comparison, model advantages and matchup angles.`
       : "NFL weekly matchup preview.",
     path: `/nfl/matchups/${gameSlug}`,
-    noindex: seo.noindex ?? !matchup,
+    // Valid matchup: index. Once the season data has settled (loaded or
+    // failed) without a matching game, the slug is invalid: noindex. While
+    // loading, the page is not yet known to be invalid, so it is not marked.
+    noindex: !loading && !matchup,
   });
 
   const advantages = useMemo(

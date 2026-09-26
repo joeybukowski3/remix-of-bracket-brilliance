@@ -8,7 +8,8 @@ export default function SeoFooterBlock() {
         Joe Knows Ball provides free advanced sports analytics and betting models for MLB and PGA Tour.
         MLB tools include daily HR prop rankings, strikeout prop models, batter vs pitcher matchup analysis,
         park factor context, and live game matchup analysis. PGA tools include custom-weighted player rankings,
-        course-fit models, strokes gained breakdowns, and DFS salary value finders. NFL and NBA models coming soon.
+        course-fit models, strokes gained breakdowns, and DFS salary value finders. NFL tools include power ratings, standings, weekly matchup previews
+        and situational trends. NBA models coming soon.
       </p>
       <div className="mt-4 flex flex-wrap gap-3 text-sm">
         <Link to="/mlb/hr-props" className="font-medium text-primary hover:underline">MLB HR Props</Link>

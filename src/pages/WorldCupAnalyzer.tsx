@@ -13,6 +13,8 @@ export default function WorldCupAnalyzer() {
     title: "World Cup 2026 Matchup Analyzer | JoeKnowsBall",
     description: "Compare any two World Cup 2026 teams. Pre-tournament ratings, group-stage xG, strength of schedule, and model win probabilities.",
     path: "/world-cup/analyzer",
+    // Interactive team-vs-team tool: every ?a=&b= pair is a URL variant.
+    noindex: true,
   });
 
   const [teamAName, setTeamAName] = useState("Brazil");

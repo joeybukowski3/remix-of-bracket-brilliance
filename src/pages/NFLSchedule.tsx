@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { usePageSeo } from "@/hooks/usePageSeo";
-import { getSeoMeta } from "@/lib/seo";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import LastUpdated from "@/components/nfl/LastUpdated";
 import StaleWarning from "@/components/nfl/StaleWarning";
@@ -62,7 +61,6 @@ function GameRow({ game, result }: { game: NflGameRecord; result: NflResultRecor
 }
 
 export default function NFLSchedule() {
-  const seo = getSeoMeta("nfl");
   const [season, setSeason] = useState(CURRENT_SEASON);
   const { loading, error, data } = useNflSeasonData(season);
 
@@ -70,7 +68,6 @@ export default function NFLSchedule() {
     title: `${CURRENT_SEASON} NFL Schedule by Week | Joe Knows Ball`,
     description: "Full NFL schedule by week with kickoff times, stadiums and final scores, refreshed automatically from free public data.",
     path: "/nfl/schedule",
-    noindex: seo.noindex ?? false,
   });
 
   const resultsById = useMemo(

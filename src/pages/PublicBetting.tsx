@@ -208,7 +208,15 @@ function MostBetSideCard({ side }: { side: MostBetSide }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function PublicBetting() {
-  usePageSeo({ title: "Public Splits | JoeKnowsBall", description: "Top 3 most-bet MLB sides from Polymarket" });
+  // Canonical is this route (it previously defaulted to "/"). Kept out of the
+  // index: the page is three cards from a single daily snapshot and is empty
+  // whenever no snapshot exists for the day.
+  usePageSeo({
+    title: "Public Splits | Joe Knows Ball",
+    description: "Top 3 most-bet MLB sides from Polymarket",
+    path: "/odds-tracker",
+    noindex: true,
+  });
 
   const [today, setToday] = useState<SnapshotData | null>(null);
   const [loading, setLoading] = useState(true);

@@ -89,11 +89,6 @@ export default function HomeHeroOnly() {
       "@type": "WebSite",
       name: "Joe Knows Ball",
       url: CANONICAL_BASE,
-      potentialAction: {
-        "@type": "SearchAction",
-        target: `${CANONICAL_BASE}/search?q={search_term_string}`,
-        "query-input": "required name=search_term_string",
-      },
     },
   });
 

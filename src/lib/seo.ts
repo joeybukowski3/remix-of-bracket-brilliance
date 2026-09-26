@@ -11,6 +11,7 @@ export type SeoPage =
   | "pga-best-bets"
   | "pga-model"
   | "nfl"
+  | "nfl-power-ratings"
   | "nfl-dfs"
   | "fantasy-football"
   | "fantasy-draft-preview"
@@ -76,12 +77,16 @@ const SEO_META: Record<SeoPage, SeoMeta> = {
     description:
       "Build your own PGA Tour ranking model by adjusting strokes gained weights and course-specific stats. Personalized golf analytics and tournament ranking views.",
     path: "/pga/custom",
+    // Interactive weight builder backed by browser-saved state.
+    noindex: true,
   },
   "pga-dfs": {
     title: "PGA DFS Salary Upload & Price Context | Joe Knows Ball",
     description:
       "Upload DraftKings or FanDuel PGA salary files and compare DFS pricing against Joe Knows Ball golf model rankings for price-context research.",
     path: "/pga/dfs",
+    // Salary-file upload tool; empty until a user uploads a file.
+    noindex: true,
   },
   "pga-best-bets": {
     title: "PGA Tour Best Bets — Golf Tournament Picks & Model Signals",
@@ -95,12 +100,19 @@ const SEO_META: Record<SeoPage, SeoMeta> = {
       "Deep-dive PGA Tour player rankings powered by strokes gained off-the-tee, approach, around-the-green, and putting with course-fit adjustments.",
     path: "/pga/model",
   },
+  // The /nfl hub only. Registry entries describe one route each and are never
+  // borrowed by other pages for their robots value: NFL pages are indexable
+  // unless the individual page opts out.
   nfl: {
-    title: "NFL Analytics & Betting Models | Joe Knows Ball",
-    description:
-      "NFL matchup analytics, efficiency metrics, and betting context. Advanced football models coming soon.",
+    title: "NFL Weekly Command Center | Joe Knows Ball",
+    description: "Weekly NFL schedule and model intelligence from Joe Knows Ball.",
     path: "/nfl",
-    noindex: true,
+  },
+  "nfl-power-ratings": {
+    title: "2026 NFL Power Ratings | Joe Knows Ball",
+    description:
+      "Joe Knows Ball power ratings for all 32 NFL teams: overall, offense and defense ratings with EPA, success rate, yards per play and strength of schedule, for the 2026 season to date, the last 8 games or the 2025 season.",
+    path: "/nfl/power-ratings",
   },
   "nfl-dfs": {
     title: "NFL DFS Contest Analyzer | Joe Knows Ball",

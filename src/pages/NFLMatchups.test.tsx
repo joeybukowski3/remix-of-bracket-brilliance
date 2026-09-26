@@ -110,6 +110,7 @@ vi.mock("@/hooks/useNflCurrentRating2026", () => ({
 import NflPlatformLayout from "@/components/nfl/NflPlatformLayout";
 import NFLMatchups from "@/pages/NFLMatchups";
 import NFLMatchupDetail from "@/pages/NFLMatchupDetail";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import { MATCHUP_CATEGORIES } from "@/lib/nfl/matchupCategoryAdvantage";
 import {
   MATCHUP_TABS,
@@ -318,6 +319,48 @@ describe("NFLMatchupDetail", () => {
   it("redirects an unknown slug back to the matchups landing", () => {
     renderRoute("/nfl/matchups/not-a-real-game");
     expect(screen.getByRole("heading", { name: /2026 NFL Weekly Matchups/i })).toBeTruthy();
+  });
+
+  /** Every usePageSeo call the detail page made for a given slug. */
+  function detailSeoCalls(slug: string) {
+    return vi
+      .mocked(usePageSeo)
+      .mock.calls.map(([options]) => options)
+      .filter((options) => options.path === `/nfl/matchups/${slug}`);
+  }
+
+  it("marks a valid matchup indexable (index, follow)", () => {
+    vi.mocked(usePageSeo).mockClear();
+    renderRoute(`/nfl/matchups/${OPENER}`);
+    const calls = detailSeoCalls(OPENER);
+    expect(calls.length).toBeGreaterThan(0);
+    for (const options of calls) {
+      expect(options.noindex).toBe(false);
+      expect(options.nofollow).toBeUndefined();
+    }
+    expect(calls.at(-1)?.title).toBe("New England Patriots at Seattle Seahawks — Week 1 Matchup | Joe Knows Ball");
+  });
+
+  it("marks an invalid matchup slug noindex (noindex, follow) before redirecting", () => {
+    vi.mocked(usePageSeo).mockClear();
+    renderRoute("/nfl/matchups/not-a-real-game");
+    const calls = detailSeoCalls("not-a-real-game");
+    expect(calls.length).toBeGreaterThan(0);
+    for (const options of calls) {
+      expect(options.noindex).toBe(true);
+      expect(options.nofollow).toBeUndefined();
+    }
+  });
+
+  it("keeps the /nfl/matchups landing indexable", () => {
+    vi.mocked(usePageSeo).mockClear();
+    renderRoute("/nfl/matchups?week=2");
+    const landing = vi
+      .mocked(usePageSeo)
+      .mock.calls.map(([options]) => options)
+      .filter((options) => options.path === "/nfl/matchups");
+    expect(landing.length).toBeGreaterThan(0);
+    for (const options of landing) expect(options.noindex).toBeFalsy();
   });
 }, FULL_PAGE_RENDER_TIMEOUT_MS);
 

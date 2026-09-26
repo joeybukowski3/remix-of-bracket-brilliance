@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { usePageSeo } from "@/hooks/usePageSeo";
-import { getSeoMeta } from "@/lib/seo";
 import LastUpdated from "@/components/nfl/LastUpdated";
 import StaleWarning from "@/components/nfl/StaleWarning";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
@@ -69,7 +68,6 @@ function groupByDay(matchups: NflMatchup[]): DayGroup[] {
 export default function NFLMatchups() {
   const location = useLocation();
   const navigate = useNavigate();
-  const seo = getSeoMeta("nfl");
   const { loading, error, data } = useNflSeasonData(CURRENT_SEASON);
   // Universal current 2026 OVR/rank/performance -- the only source for the
   // matrix's OVR column. Never the guide's frozen 2025-preseason values.
@@ -92,7 +90,6 @@ export default function NFLMatchups() {
     title: `${CURRENT_SEASON} NFL Weekly Matchups | Joe Knows Ball`,
     description: "Week-by-week NFL matchup previews with team power ratings, side-by-side comparisons, model advantages and matchup angles.",
     path: "/nfl/matchups",
-    noindex: seo.noindex ?? false,
   });
 
   const weekSelection = useMemo(
