@@ -38,6 +38,7 @@ import type { EvidenceRecord } from "./nfl-evidence-types";
 import type { EvidenceAuthorityView } from "./nfl-evidence-store";
 import type { NflGameContextPacket } from "./nfl-full-game-context";
 import { sanitizeGameContextPacketForBlindStageA } from "./nfl-ai-context-sanitizer";
+import { buildBlindContextSummaryLines } from "./nfl-ai-blind-context-lines";
 import { resolveGrokAnalysisConfig, type GrokAnalysisConfig, type GrokAnalysisMode } from "./nfl-grok-analysis-config";
 import { MATCHUP_FACTOR_AREAS, type GrokStageAV1 } from "./nfl-grok-analysis-types";
 import { parseResponsesOutput, parseUsageTelemetry } from "./nfl-grok-research-parsing";
@@ -120,21 +121,11 @@ export function buildCitableEvidenceLines(records: readonly EvidenceRecord[], au
     .map((r) => formatEvidenceLine(r, authorityById.get(r.evidenceId)));
 }
 
-const BLIND_CONTEXT_SUMMARY_LINES = (packet: ReturnType<typeof sanitizeGameContextPacketForBlindStageA>): string[] => [
-  `identity: ${packet.identity.awayTeamFull} (away) at ${packet.identity.homeTeamFull} (home), season ${packet.identity.season} week ${packet.identity.week}`,
-  `jkbModels.powerRating: home=${packet.jkbModels.powerRating.home ?? "?"} away=${packet.jkbModels.powerRating.away ?? "?"}`,
-  `teamMetrics.epa (periodWindow=${packet.teamMetrics.periodWindow}): ${JSON.stringify(packet.teamMetrics.epa)}`,
-  `teamMetrics.ypp: ${JSON.stringify(packet.teamMetrics.ypp)}`,
-  `matchup.trenches: ${JSON.stringify(packet.matchup.trenches)}`,
-  `matchup.offenseVsDefense: ${JSON.stringify(packet.matchup.offenseVsDefense)}`,
-  `coaching: ${JSON.stringify(packet.coaching)}`,
-  `situational: ${JSON.stringify(packet.situational)}`,
-  `schedule: kickoff=${packet.schedule.kickoffUtc} venue=${packet.schedule.venue.stadium} isDome=${packet.schedule.venue.isDome}`,
-  `weather: ${JSON.stringify(packet.weather)}`,
-];
+/** WU2 -- shared with the other provider (nfl-ai-blind-context-lines.ts) so both receive identical deterministic football data. */
+const BLIND_CONTEXT_SUMMARY_LINES = (packet: ReturnType<typeof sanitizeGameContextPacketForBlindStageA>): string[] => buildBlindContextSummaryLines(packet);
 
 const BLIND_ANTI_HALLUCINATION_RULES = [
-  "You are NOT given the sportsbook spread, total, moneyline, opening line, or any line movement -- do not guess, estimate, or assume one. You are also NOT given JKB's own fair-line opinion (no projected spread/total/model-market edge) -- you must form your own from the football data alone.",
+  "You are NOT given the sportsbook spread, total, moneyline, opening line, or any line movement -- do not guess, estimate, or assume one. You are also NOT given JKB's own fair-line opinion (no projected spread/total/model-market edge, power rating, or team-advantage labels) -- you must form your own from the football data alone.",
   "Use ONLY the supplied JKB football DATA above for any statistic -- never estimate, round, or restate a number you were not given.",
   "Use ONLY the supplied validated evidence for any external fact (injury, personnel, coaching, news, weather) -- do not perform new research.",
   "Do not invent injuries, quotes, market movement, trends, or player status of any kind.",
@@ -149,7 +140,7 @@ const BLIND_OUTPUT_DISCIPLINE = [
     "\"trenches\" is not a real category here -- split trench-play findings into \"protection\", \"pass_rush\", or \"run_defense\" as appropriate. " +
     "The total/side bet-type recommendation is a Stage 2 concept -- it does not exist in this stage at all.",
   "Every matchupFactors[].evidenceIds entry must be an evidenceId from the citable evidence list above -- never invent an id.",
-  "Every matchupFactors[].jkbContextRefs entry must be a dot-path into the context sections listed above (e.g. \"jkbModels.powerRating\", \"teamMetrics.epa\") -- there is no \"market\" section to reference; it was never supplied to you.",
+  "Every matchupFactors[].jkbContextRefs entry must be a dot-path into the context sections listed above (e.g. \"teamForm.home.seasonToDate\", \"teamMetrics.epa\") -- there is no \"market\" section to reference; it was never supplied to you.",
 ];
 
 /**

@@ -52,7 +52,8 @@ describe("buildStageAInitialPrompt", () => {
     expect(prompt).toContain("Indianapolis Colts");
     expect(prompt).toContain("Baltimore Ravens");
     expect(prompt).toContain("teamMetrics.epa");
-    expect(prompt).toContain("jkbModels.powerRating");
+    expect(prompt).toContain("teamForm");
+    expect(prompt).not.toContain("powerRating");
     for (const line of BLIND_CITABLE_LINES) expect(prompt).toContain(line);
     expect(prompt).toContain("Do not invent injuries, quotes, market movement, trends, or player status");
   });

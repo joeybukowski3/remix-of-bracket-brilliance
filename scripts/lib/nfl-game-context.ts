@@ -257,6 +257,8 @@ export type EpaPriorSeasonWindow = {
     {
       through: { season: number; dateUtc: string } | null;
       totals: { offense: { offEpa: number; offPlays: number } };
+      /** Per-team [value, rank] pairs keyed like `off.epaPerPlay` / `def.epaPerPlayAllowed`. */
+      metrics?: Record<string, [number, number]>;
     }
   >;
 };

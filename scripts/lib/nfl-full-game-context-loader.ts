@@ -40,6 +40,8 @@ import {
 } from "./nfl-full-game-context";
 import type { EpaPriorSeasonWindow, MetricsPriorSeasonWindow, TrenchSeasonData } from "./nfl-game-context";
 import { createCoachingSnapshotSelector } from "./nfl-coaching-snapshot-source";
+import type { PriorSeasonResultRow } from "./nfl-prior-season-baseline";
+import { loadMatchupFormFacts } from "./nfl-team-form-facts-loader";
 import { buildCurrentMarketView, buildLineMovementView, parseBettingLinesCurrentArtifact, parseBettingLinesHistoryArtifact, toBettingLinesGameToken } from "../../src/lib/nfl/bettingLinesView";
 
 function loadJsonIfExists<T>(filePath: string): T | null {
@@ -121,6 +123,10 @@ export function loadFreshGameContextPacket(input: LoadFreshGameContextInput): Lo
   const priorSeasonResults = readSource(root, `results-${input.season - 1}`, `public/data/nfl/${input.season - 1}/results.json`);
   sources.push(priorSeasonResults.ref);
 
+  // WU2 -- deterministic current-season team-form facts (raw, descriptive). Their source files join the provenance list so a change in any of them is visible to the freshness check.
+  const teamFormResult = loadMatchupFormFacts({ root, season: input.season, gameId });
+  if (teamFormResult.status === "ok") sources.push(...teamFormResult.sources);
+
   const selectCoachingSnapshot = createCoachingSnapshotSelector(root);
   const gameForKickoff = (games.content as GamesArtifact | null)?.games.find((g) => g.gameId === gameId);
   const coachingSnapshot = gameForKickoff ? selectCoachingSnapshot({ season: input.season, week: input.week, kickoffUtc: gameForKickoff.dateUtc }) : null;
@@ -133,9 +139,10 @@ export function loadFreshGameContextPacket(input: LoadFreshGameContextInput): Lo
   const epaWindow = (epa.content as { windows?: { "prior-season-full"?: EpaPriorSeasonWindow } } | null)?.windows?.["prior-season-full"] ?? null;
   const metricsWindow = (metrics.content as { windows?: { "prior-season-full"?: MetricsPriorSeasonWindow } } | null)?.windows?.["prior-season-full"] ?? null;
   const trenchSeasons = (trench.content as { seasons?: Record<string, TrenchSeasonData> } | null)?.seasons ?? {};
-  const trenchSeasonKey = Object.keys(trenchSeasons).map(Number).sort((a, b) => b - a)[0] ?? null;
-  const trenchSeasonData = trenchSeasonKey != null ? (trenchSeasons[String(trenchSeasonKey)] ?? null) : null;
-  const priorResults = (priorSeasonResults.content as { results?: { homeAbbr: string; awayAbbr: string }[] } | null)?.results ?? [];
+  // buildTrenchesContext's contract is the PRIOR completed season. Never "the newest key": once ESPN publishes an in-season archive (e.g. 2026 "Through Week 2") that would silently swap current-season data in under a prior-season label.
+  const trenchSeasonKey = trenchSeasons[String(input.season - 1)] ? input.season - 1 : null;
+  const trenchSeasonData = trenchSeasonKey != null ? trenchSeasons[String(trenchSeasonKey)] : null;
+  const priorResults = (priorSeasonResults.content as { results?: PriorSeasonResultRow[] } | null)?.results ?? [];
 
   const buildInput: BuildFullGameContextInput = {
     games: games.content as GamesArtifact,
@@ -155,6 +162,7 @@ export function loadFreshGameContextPacket(input: LoadFreshGameContextInput): Lo
     tdPreview: tdPreview.content as TdPreviewArtifact | null,
     matchupInjuries: matchupInjuries.content as MatchupInjuriesArtifact | null,
     dfsWeek: dfsWeek.content as DfsWeekArtifact | null,
+    teamForm: teamFormResult.status === "ok" ? { home: teamFormResult.home, away: teamFormResult.away } : null,
     priorSeasonResults: priorResults,
     provenanceSources: sources,
     generatedAt: nowFn().toISOString(),

@@ -59,7 +59,8 @@ describe("buildStageAInitialPrompt (chatgpt)", () => {
     const prompt = buildStageAInitialPrompt(FIXTURE_CHATGPT_ANALYSIS_GAME, FIXTURE_CHATGPT_ANALYSIS_CONTEXT_PACKET, CITABLE_LINES);
     expect(prompt).toContain("Indianapolis Colts");
     expect(prompt).toContain("Baltimore Ravens");
-    expect(prompt).toContain("jkbModels.powerRating");
+    expect(prompt).toContain("teamForm");
+    expect(prompt).not.toContain("powerRating");
     expect(prompt).toContain("Do not invent injuries, quotes, market movement, trends, or player status");
   });
 
