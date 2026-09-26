@@ -1,47 +1,125 @@
 {
-  "date": "2026-09-25",
-  "generatedAt": "2026-09-25T19:33:16.670Z",
+  "date": "2026-09-26",
+  "generatedAt": "2026-09-26T12:18:30.645Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Yankee Stadium (1.18) and Rate Field (1.07) are the primary power parks today, with Brendan Beck and Tomoyuki Sugano both allowing elevated HR rates to opposing lineups. The model is overweighting barrel rate and recent HR volume in these spots, while discounting Fenway (0.95) and Sutter Health Park (0.96) despite strong individual profiles.",
-    "modelNote": "Pete Alonso leads the slate with a 96.1 hrScore driven by elite barrel rate (15) and a 100 opposing pitcher HR rate, while the model is also elevating Munetaka Murakami and Miguel Vargas due to their high pull rates and favorable matchup against Sugano."
+    "slateOverview": "Rate Field (+7%) and American Family Field (+10%) are the strongest park factors on the slate, while Comerica Park (-5%) is a slight drag. Quintana vs. Murakami and Verlander vs. Cruz/Flores create the clearest platoon edges, and the model is also keying on elevated barrel and hard-hit rates for the top three names.",
+    "modelNote": "The model is overweighting recent HR/FB ratios and opposing-pitcher HR rates, which is why Murakami (78.3) and Flores (77.1) sit atop the board despite modest xBA marks."
   },
   "bestBets": [
-    {
-      "player": "Pete Alonso",
-      "team": "BAL",
-      "opponent": "NYY",
-      "opposingPitcher": "Brendan Beck",
-      "hrScoreRank": 1,
-      "topStats": [
-        "hrScore=96.1",
-        "park=1.18"
-      ],
-      "bullets": [
-        "hrScore=96.1",
-        "barrel=15%"
-      ],
-      "hrOddsYes": "+386",
-      "marketImpliedProbability": 0.205761316872428,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
     {
       "player": "Munetaka Murakami",
       "team": "CWS",
       "opponent": "COL",
-      "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 2,
+      "opposingPitcher": "Jose Quintana",
+      "hrScoreRank": 1,
       "topStats": [
-        "hrScore=72",
-        "park=1.07"
+        "barrel=20.2%",
+        "HH=56.5%"
       ],
       "bullets": [
-        "hrScore=72",
-        "barrel=19.2%"
+        "barrel=20.2%",
+        "park=1.07"
       ],
-      "hrOddsYes": "+343",
-      "marketImpliedProbability": 0.22573363431151242,
+      "hrOddsYes": "+325",
+      "marketImpliedProbability": 0.23529411764705882,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Rafael Flores Jr.",
+      "team": "PIT",
+      "opponent": "DET",
+      "opposingPitcher": "Justin Verlander",
+      "hrScoreRank": 2,
+      "topStats": [
+        "barrel=15%",
+        "HH=47%"
+      ],
+      "bullets": [
+        "barrel=15%",
+        "park=0.95"
+      ],
+      "hrOddsYes": "+550",
+      "marketImpliedProbability": 0.15384615384615385,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Oneil Cruz",
+      "team": "PIT",
+      "opponent": "DET",
+      "opposingPitcher": "Justin Verlander",
+      "hrScoreRank": 3,
+      "topStats": [
+        "barrel=15.4%",
+        "HH=53.7%"
+      ],
+      "bullets": [
+        "barrel=15.4%",
+        "park=0.95"
+      ],
+      "hrOddsYes": "+375",
+      "marketImpliedProbability": 0.21052631578947367,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "ATH",
+      "opposingPitcher": "Jack Perkins",
+      "hrScoreRank": 4,
+      "topStats": [
+        "barrel=16%",
+        "HH=53.8%"
+      ],
+      "bullets": [
+        "barrel=16%",
+        "park=0.96"
+      ],
+      "hrOddsYes": "+235",
+      "marketImpliedProbability": 0.29850746268656714,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Brandon Lowe",
+      "team": "PIT",
+      "opponent": "DET",
+      "opposingPitcher": "Justin Verlander",
+      "hrScoreRank": 5,
+      "topStats": [
+        "barrel=12.3%",
+        "HH=45.7%"
+      ],
+      "bullets": [
+        "barrel=12.3%",
+        "park=0.95"
+      ],
+      "hrOddsYes": "+425",
+      "marketImpliedProbability": 0.19047619047619047,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Randal Grichuk",
+      "team": "CWS",
+      "opponent": "COL",
+      "opposingPitcher": "Jose Quintana",
+      "hrScoreRank": 6,
+      "topStats": [
+        "barrel=11%",
+        "HH=49.8%"
+      ],
+      "bullets": [
+        "barrel=11%",
+        "park=1.07"
+      ],
+      "hrOddsYes": "+403",
+      "marketImpliedProbability": 0.1988071570576541,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -49,193 +127,77 @@
       "player": "Miguel Vargas",
       "team": "CWS",
       "opponent": "COL",
-      "opposingPitcher": "Tomoyuki Sugano",
-      "hrScoreRank": 3,
-      "topStats": [
-        "hrScore=71.5",
-        "park=1.07"
-      ],
-      "bullets": [
-        "hrScore=71.5",
-        "barrel=13.2%"
-      ],
-      "hrOddsYes": "+369",
-      "marketImpliedProbability": 0.21321961620469082,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Elly De La Cruz",
-      "team": "CIN",
-      "opponent": "TOR",
-      "opposingPitcher": "José Soriano",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Hard Hit%=53.8",
-        "Pitcher HR VS=39.3"
-      ],
-      "bullets": [
-        "HR score 68.2 (#4)",
-        "Pitcher HR VS 39.3 at park 1.08"
-      ],
-      "hrOddsYes": "+472",
-      "marketImpliedProbability": 0.17482517482517482,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Pete Crow-Armstrong",
-      "team": "CHC",
-      "opponent": "BOS",
-      "opposingPitcher": "Brayan Bello",
-      "hrScoreRank": 5,
-      "topStats": [
-        "Hard Hit%=48.5",
-        "Pitcher HR VS=48.2"
-      ],
-      "bullets": [
-        "HR score 67.8 (#5)",
-        "Pitcher HR VS 48.2 at park 0.95"
-      ],
-      "hrOddsYes": "+575",
-      "marketImpliedProbability": 0.14814814814814814,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Elly De La Cruz",
-      "team": "CIN",
-      "opponent": "TOR",
-      "opposingPitcher": "José Soriano",
-      "hrScoreRank": 4,
-      "topStats": [
-        "hrScore=68.2",
-        "park=1.08"
-      ],
-      "bullets": [
-        "hrScore=68.2",
-        "barrel=16.4%"
-      ],
-      "hrOddsYes": "+472",
-      "marketImpliedProbability": 0.17482517482517482,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Coby Mayo",
-      "team": "BAL",
-      "opponent": "NYY",
-      "opposingPitcher": "Brendan Beck",
-      "hrScoreRank": 6,
-      "topStats": [
-        "hrScore=66.8",
-        "park=1.18"
-      ],
-      "bullets": [
-        "hrScore=66.8",
-        "barrel=13.7%"
-      ],
-      "hrOddsYes": "+518",
-      "marketImpliedProbability": 0.16181229773462782,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Yordan Alvarez",
-      "team": "HOU",
-      "opponent": "ATH",
-      "opposingPitcher": "Jacob Lopez",
+      "opposingPitcher": "Jose Quintana",
       "hrScoreRank": 7,
       "topStats": [
-        "Hard Hit%=53.8",
-        "Pitcher HR VS=37.6"
+        "barrel=13.1%",
+        "HH=44%"
       ],
       "bullets": [
-        "HR score 66.2 (#7)",
-        "Pitcher HR VS 37.6 at park 0.96"
+        "barrel=13.1%",
+        "park=1.07"
       ],
-      "hrOddsYes": "+263",
-      "marketImpliedProbability": 0.27548209366391185,
+      "hrOddsYes": "+381",
+      "marketImpliedProbability": 0.2079002079002079,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Alec Burleson",
+      "team": "STL",
+      "opponent": "MIL",
+      "opposingPitcher": "Dustin May",
+      "hrScoreRank": 8,
+      "topStats": [
+        "barrel=11.1%",
+        "HH=50%"
+      ],
+      "bullets": [
+        "barrel=11.1%",
+        "park=1.1"
+      ],
+      "hrOddsYes": "+475",
+      "marketImpliedProbability": 0.17391304347826086,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Yordan Alvarez",
-      "team": "HOU",
-      "opponent": "ATH",
-      "opposingPitcher": "Jacob Lopez",
-      "hrScoreRank": 7,
+      "player": "Emmanuel Rodriguez",
+      "team": "MIN",
+      "opponent": "TEX",
+      "opposingPitcher": "Nathan Eovaldi",
+      "hrScoreRank": 18,
       "topStats": [
-        "hrScore=66.2",
-        "park=0.96"
+        "barrel=20.7%",
+        "HH=48.3%"
       ],
       "bullets": [
-        "hrScore=66.2",
-        "barrel=16.1%"
+        "barrel=20.7%",
+        "park=0.97"
       ],
-      "hrOddsYes": "+263",
-      "marketImpliedProbability": 0.27548209366391185,
+      "hrOddsYes": "+850",
+      "marketImpliedProbability": 0.10526315789473684,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Christian Encarnacion-Strand",
-      "team": "BAL",
-      "opponent": "NYY",
-      "opposingPitcher": "Brendan Beck",
-      "hrScoreRank": 8,
+      "player": "Kyle Teel",
+      "team": "CWS",
+      "opponent": "COL",
+      "opposingPitcher": "Jose Quintana",
+      "hrScoreRank": 24,
       "topStats": [
-        "hrScore=66",
-        "park=1.18"
+        "barrel=11.8%",
+        "HH=48.5%"
       ],
       "bullets": [
-        "hrScore=66",
-        "barrel=14.4%"
+        "barrel=11.8%",
+        "park=1.07"
       ],
-      "hrOddsYes": "+630",
-      "marketImpliedProbability": 0.136986301369863,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Vinnie Pasquantino",
-      "team": "KC",
-      "opponent": "CLE",
-      "opposingPitcher": "Gavin Williams",
-      "hrScoreRank": 23,
-      "topStats": [
-        "Pitcher HR VS=64.6",
-        "Hard Hit%=41.7"
-      ],
-      "bullets": [
-        "HR score 55.8 (#23)",
-        "Pitcher HR VS 64.6 at park 0.96"
-      ],
-      "hrOddsYes": "+740",
-      "marketImpliedProbability": 0.11904761904761904,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Gunnar Henderson",
-      "team": "BAL",
-      "opponent": "NYY",
-      "opposingPitcher": "Brendan Beck",
-      "hrScoreRank": 10,
-      "topStats": [
-        "Pitcher HR VS=100.0",
-        "Hard Hit%=43.1"
-      ],
-      "bullets": [
-        "HR score 62.1 (#10)",
-        "Pitcher HR VS 100.0 at park 1.18"
-      ],
-      "hrOddsYes": "+613",
-      "marketImpliedProbability": 0.1402524544179523,
+      "hrOddsYes": "+700",
+      "marketImpliedProbability": 0.125,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
