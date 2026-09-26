@@ -114,6 +114,15 @@ least a +10 point Money Gap. Contrarian requires bets below 40% and handle
 above 50%; Consensus requires both bets and handle at least 70%. These labels
 do not identify professional bettors or imply a predictive edge.
 
+The Overview summarizes one game per row. For Spread, Total, and Moneyline it
+shows only the higher-Handle side and higher-Bets side in separate columns;
+these may differ. A tied percentage selects away before home, or Over before
+Under, independently of source order. The Money Gap and signal represent the
+side with the largest absolute gap across the game's markets, with positive
+gap preferred on equal magnitude. Compact Highest Public Sides, Sharp Sides,
+and Contrarian Sides tables use the shared display selectors and thresholds.
+Market tabs continue to show both sides as separate rows.
+
 ## Matchup detail view (WU5)
 
 The Comparison tab's “What the Book Says” group includes a Betting Splits view

@@ -35,8 +35,19 @@ describe("NFL Betting Splits page", () => {
     expect(within(table).getAllByRole("row")).toHaveLength(3);
     expect(within(table).getByText("+35 pp")).toBeTruthy();
     const gameRow = within(table).getAllByRole("row")[2];
-    expect(within(gameRow).getAllByRole("cell").slice(1, 13).map((cell) => cell.textContent)).toEqual(["75%", "50%", "25%", "50%", "65%", "35%", "35%", "65%", "80%", "45%", "20%", "55%"]);
+    expect(within(gameRow).getAllByRole("cell").slice(1, 7).map((cell) => cell.textContent)).toEqual(["BUF 75%", "BUF 50%", "Over 65%", "Under 65%", "BUF 80%", "MIA 55%"]);
     expect(within(gameRow).getByText("Strong Money Gap")).toBeTruthy();
+    for (const [title, tone] of [["Highest Public Sides", "bg-amber-50"], ["Sharp Sides", "bg-emerald-50"], ["Contrarian Sides", "bg-violet-50"]]) {
+      const section = screen.getByRole("region", { name: title });
+      expect(within(section).getByRole("heading", { name: title }).className).toContain(tone);
+      expect(within(section).getAllByRole("row").length).toBeGreaterThan(1);
+    }
+    expect(within(screen.getByRole("region", { name: "Highest Public Sides" })).getAllByRole("row")[1].textContent).toContain("Undertotal35%65%-30 pp");
+    expect(within(screen.getByRole("region", { name: "Sharp Sides" })).getAllByRole("row")[1].textContent).toContain("BUFmoneyline80%45%+35 pp");
+    expect(within(screen.getByRole("region", { name: "Contrarian Sides" })).getAllByRole("row")[1].textContent).toContain("Overtotal65%35%+30 pp");
+    const cards = screen.getByRole("region", { name: "Overview matchup cards" });
+    expect(within(cards).getByText("BUF 75%")).toBeTruthy();
+    expect(within(cards).getByText("MIA 55%")).toBeTruthy();
   });
   it("shows both sides with market-specific columns, odds and shared signals", () => {
     setup();
@@ -54,6 +65,23 @@ describe("NFL Betting Splits page", () => {
       if (market === "Spread") { expect(within(table).getByText("-2.5")).toBeTruthy(); expect(within(table).getByText("+2.5")).toBeTruthy(); }
       expect(sides[0]).toEqual(market === "Spread" ? ["BUF", "MIA", "-2.5", "-110", "75%", "50%", "+25 pp", "Strong Money Gap"] : market === "Moneyline" ? ["BUF", "MIA", "-140", "80%", "45%", "+35 pp", "Strong Money Gap"] : ["BUF@MIA", "Over", "45.5", "-110", "65%", "35%", "+30 pp", "Strong Money Gap"]);
       expect(sides[1]?.at(-1)).toBe("Public Heavy");
+    }
+  });
+  it("keeps mobile spread and moneyline rows side-specific and compact", () => {
+    setup();
+    for (const market of ["Spread", "Moneyline"]) {
+      fireEvent.click(screen.getByRole("tab", { name: market }));
+      const cards = screen.getByRole("region", { name: `${market.toLowerCase()} mobile rows` });
+      const [away, home] = within(cards).getAllByRole("article");
+      expect(away.textContent).toContain("BUF @ MIA");
+      expect(home.textContent).toContain("MIA vs BUF");
+      expect(away.textContent).not.toContain("BUF vs MIA");
+      expect(home.textContent).not.toContain("BUF @ MIA");
+      expect(away.textContent).toContain(market === "Spread" ? "Handle 75%Bets 50%" : "Handle 80%Bets 45%");
+      expect(home.textContent).toContain(market === "Spread" ? "Handle 25%Bets 50%" : "Handle 20%Bets 55%");
+      expect(away.querySelectorAll('img[src$="/buf.png"]')).toHaveLength(2);
+      expect(home.querySelectorAll('img[src$="/mia.png"]')).toHaveLength(2);
+      expect(away.textContent).toContain("Money Gap");
     }
   });
   it("keeps stale data visible with a warning, and hides unavailable data", () => {

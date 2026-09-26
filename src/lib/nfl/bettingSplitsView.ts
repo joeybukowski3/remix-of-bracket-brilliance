@@ -70,13 +70,26 @@ export function compactSplitsForGame(
 
 export type SplitsMatchupRow = {
   game: NflDkBettingSplitsGame;
-  spread: { away: NflDkBettingSplitsSide; home: NflDkBettingSplitsSide };
-  moneyline: { away: NflDkBettingSplitsSide; home: NflDkBettingSplitsSide };
-  total: { over: NflDkBettingSplitsSide; under: NflDkBettingSplitsSide };
+  spread: SplitsFavorites;
+  moneyline: SplitsFavorites;
+  total: SplitsFavorites;
   strongest: SplitsRow;
   strongestHandlePct: number;
   strongestBetsPct: number;
 };
+
+export type SplitsFavorites = { handle: NflDkBettingSplitsSide; bets: NflDkBettingSplitsSide };
+
+/** Tied percentages select away before home, or Over before Under, regardless of source order. */
+function favorites(game: NflDkBettingSplitsGame, market: SplitsMarket): SplitsFavorites {
+  const ordered = market === "total"
+    ? [sideFor(game, market, "over"), sideFor(game, market, "under")]
+    : [sideFor(game, market, "away"), sideFor(game, market, "home")];
+  return {
+    handle: ordered[1].handlePct > ordered[0].handlePct ? ordered[1] : ordered[0],
+    bets: ordered[1].betsPct > ordered[0].betsPct ? ordered[1] : ordered[0],
+  };
+}
 
 function sideFor(game: NflDkBettingSplitsGame, market: SplitsMarket, side: NflDkBettingSplitsSide["side"]): NflDkBettingSplitsSide {
   const found = game.markets[market].find((entry) => entry.side === side);
@@ -93,9 +106,9 @@ export function splitsMatchupRows(artifact: NflDkBettingSplitsArtifact): SplitsM
     const strongest = [...sides].sort((a, b) => Math.abs(b.gap) - Math.abs(a.gap) || b.gap - a.gap || stable(a, b))[0];
     return {
       game,
-      spread: { away: sideFor(game, "spread", "away"), home: sideFor(game, "spread", "home") },
-      moneyline: { away: sideFor(game, "moneyline", "away"), home: sideFor(game, "moneyline", "home") },
-      total: { over: sideFor(game, "total", "over"), under: sideFor(game, "total", "under") },
+      spread: favorites(game, "spread"),
+      moneyline: favorites(game, "moneyline"),
+      total: favorites(game, "total"),
       strongest,
       strongestHandlePct: Math.max(...sides.map((row) => row.side.handlePct)),
       strongestBetsPct: Math.max(...sides.map((row) => row.side.betsPct)),

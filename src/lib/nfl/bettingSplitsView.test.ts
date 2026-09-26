@@ -84,7 +84,7 @@ describe("compact weekly matchup selector", () => {
   it("groups all markets by exact gameId and selects the largest absolute gap", () => {
     const rows = splitsMatchupRows(artifact);
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ game: { gameId: "2026_03_CAR_IND" }, spread: { away: { handlePct: 57, betsPct: 43 }, home: { handlePct: 43, betsPct: 57 } }, moneyline: { away: { handlePct: 44, betsPct: 56 }, home: { handlePct: 56, betsPct: 44 } }, total: { over: { handlePct: 33, betsPct: 67 }, under: { handlePct: 67, betsPct: 33 } }, strongest: { market: "total", side: { side: "under" }, gap: 34 } });
+    expect(rows[0]).toMatchObject({ game: { gameId: "2026_03_CAR_IND" }, spread: { handle: { side: "away", handlePct: 57 }, bets: { side: "home", betsPct: 57 } }, moneyline: { handle: { side: "home", handlePct: 56 }, bets: { side: "away", betsPct: 56 } }, total: { handle: { side: "under", handlePct: 67 }, bets: { side: "over", betsPct: 67 } }, strongest: { market: "total", side: { side: "under" }, gap: 34 } });
     const negative = structuredClone(artifact);
     negative.games[0].markets.spread = [side("away", 20, 50), side("home", 50, 49)];
     negative.games[0].markets.moneyline = [side("away", 48, 50), side("home", 52, 50)];
@@ -93,6 +93,10 @@ describe("compact weekly matchup selector", () => {
     const reordered = structuredClone(artifact);
     reordered.games[0].markets.total.reverse();
     expect(splitsMatchupRows(reordered)[0].strongest).toMatchObject({ market: "total", side: { side: "under" }, gap: 34 });
+    const tied = structuredClone(artifact);
+    tied.games[0].markets.spread = [side("home", 50, 50), side("away", 50, 50)];
+    tied.games[0].markets.total = [side("under", 50, 50), side("over", 50, 50)];
+    expect(splitsMatchupRows(tied)[0]).toMatchObject({ spread: { handle: { side: "away" }, bets: { side: "away" } }, total: { handle: { side: "over" }, bets: { side: "over" } } });
     const second = structuredClone(artifact.games[0]);
     second.gameId = "2026_04_CAR_IND";
     second.markets.total = [side("over", 50, 50), side("under", 50, 50)];
