@@ -1,4 +1,5 @@
 import { useSearchParams } from "react-router-dom";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { decodeArtifactParam, formatSlateDateLabel, type HrArtifactRow } from "@/lib/mlb/xExportArtifact";
@@ -59,6 +60,9 @@ function HrExportRow({ row, index }: { row: HrArtifactRow; index: number }) {
 }
 
 export default function MlbHrPropsXExport() {
+  // Screenshot/export surface for X posts: the ?d= payload makes every URL
+  // unique, so it must never be indexed.
+  usePageSeo({ title: "MLB HR Props X Export", description: "Internal MLB HR props image export.", path: "/mlb/hr-props/x-export", noindex: true });
   const [searchParams] = useSearchParams();
   const artifact = decodeArtifactParam<HrArtifactRow>(searchParams.get("d"));
 

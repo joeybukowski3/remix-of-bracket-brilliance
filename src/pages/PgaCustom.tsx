@@ -126,6 +126,7 @@ export default function PgaCustom() {
     title: seo.title,
     description: seo.description,
     path: seo.path,
+    noindex: seo.noindex ?? false,
   });
 
   useEffect(() => {

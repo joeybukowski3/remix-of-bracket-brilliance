@@ -195,6 +195,7 @@ export default function PgaDfsUpload() {
     title: seo.title,
     description: seo.description,
     path: seo.path,
+    noindex: seo.noindex ?? false,
   });
 
   const { active: activeEvent, current: currentEvent } = useMemo(() => getCurrentAndNextEvents(schedule), [schedule]);

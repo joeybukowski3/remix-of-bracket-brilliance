@@ -1,7 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { usePageSeo } from "@/hooks/usePageSeo";
-import { getSeoMeta } from "@/lib/seo";
 import { NFL_DIVISION_ORDER, nflLogoUrl } from "@/data/nflPreseason2026";
 import RankHeatCell from "@/components/nfl/standings/RankHeatCell";
 import LastUpdated from "@/components/nfl/LastUpdated";
@@ -428,7 +427,6 @@ function InSeasonDivisionCard({
 }
 
 export default function NFLStandings() {
-  const seo = getSeoMeta("nfl");
   const [season, setSeason] = useState(CURRENT_SEASON);
   const [viewMode, setViewMode] = useState<DivisionViewMode>("auto");
   const { loading, error, data } = useNflSeasonData(season);
@@ -445,7 +443,6 @@ export default function NFLStandings() {
     title: "2026 NFL Standings by Division | Joe Knows Ball",
     description: "NFL standings by division derived from final game results, with clickable team dashboards and preseason projected power ratings.",
     path: "/nfl/standings",
-    noindex: seo.noindex ?? false,
   });
 
   const standings = useMemo(

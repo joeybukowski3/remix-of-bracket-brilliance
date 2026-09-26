@@ -1,4 +1,5 @@
 import { useSearchParams } from "react-router-dom";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { decodeArtifactParam, formatSignedEdge, formatSlateDateLabel, type KArtifactRow } from "@/lib/mlb/xExportArtifact";
@@ -72,6 +73,9 @@ function KExportRow({ row, index }: { row: KArtifactRow; index: number }) {
 }
 
 export default function MlbStrikeoutPropsXExport() {
+  // Screenshot/export surface for X posts: the ?d= payload makes every URL
+  // unique, so it must never be indexed.
+  usePageSeo({ title: "MLB Strikeout Props X Export", description: "Internal MLB strikeout props image export.", path: "/mlb/strikeout-props/x-export", noindex: true });
   const [searchParams] = useSearchParams();
   const artifact = decodeArtifactParam<KArtifactRow>(searchParams.get("d"));
 

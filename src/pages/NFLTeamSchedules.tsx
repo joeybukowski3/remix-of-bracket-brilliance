@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { usePageSeo } from "@/hooks/usePageSeo";
-import { getSeoMeta } from "@/lib/seo";
 import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
@@ -166,7 +165,6 @@ function ScheduleRow({
 export default function NFLTeamSchedules() {
   const { teamSlug = "" } = useParams();
   const navigate = useNavigate();
-  const seo = getSeoMeta("nfl");
   const { loading, error, data } = useNflSeasonData(CURRENT_SEASON);
   const currentRating = useNflCurrentRating2026();
   const { artifact: projectionsArtifact } = useNflMatchupProjections();
@@ -205,7 +203,9 @@ export default function NFLTeamSchedules() {
       ? `${selectedTeam.name} full ${CURRENT_SEASON} schedule with opponent power ratings, projected spreads and projected totals.`
       : "Select any NFL team to see its full season schedule with power ratings and projections.",
     path: selectedTeam ? `/nfl/team-schedules/${selectedTeam.slug}` : "/nfl/team-schedules",
-    noindex: seo.noindex ?? false,
+    // Deliberately noindex (unchanged behavior): these per-team schedule views
+    // overlap the indexable team dashboard at /nfl/guide/team/:teamSlug.
+    noindex: true,
   });
 
   if (!loading && !error && teams.length > 0 && !teamSlug) {

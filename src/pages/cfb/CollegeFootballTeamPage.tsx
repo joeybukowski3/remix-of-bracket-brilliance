@@ -57,6 +57,8 @@ export default function CollegeFootballTeamPage() {
       ? `${team.name} ratings, roster context, schedule, and matchup links.`
       : "College Football team page.",
     path: `/college-football/team/${teamSlug}`,
+    // Unknown slugs render a "Team not found" state.
+    noindex: !team,
   });
 
   if (!team) {

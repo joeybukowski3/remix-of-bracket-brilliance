@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { usePageSeo } from "@/hooks/usePageSeo";
 import MlbTeamLogo from "@/components/mlb/MlbTeamLogo";
 import { getMlbTeamColors } from "@/lib/mlbTeamColors";
 import { useMlbNumerologyXPreview, type NumerologyXOtherPlay, type NumerologyXPlaySummary } from "@/hooks/useMlbNumerologyXPreview";
@@ -102,6 +103,8 @@ function OthersTableRow({ play, index }: { play: NumerologyXOtherPlay; index: nu
 }
 
 export default function MlbNumerologyXExport() {
+  // Screenshot/export surface for X posts -- never indexed.
+  usePageSeo({ title: "MLB Numerology X Export", description: "Internal MLB numerology image export.", path: "/mlb/numerology/x-export", noindex: true });
   const { loading, fileUnavailable, preview } = useMlbNumerologyXPreview();
 
   if (loading) {

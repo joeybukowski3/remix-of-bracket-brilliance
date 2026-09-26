@@ -26,10 +26,14 @@ import {
 } from "@/lib/pga/historyModel";
 import { selectPgaScoreComparisonRows } from "@/lib/pga/pgaScoreColorScale";
 import { SPORTSBOOKS } from "@/lib/sportsbooks";
+import { usePageSeo } from "@/hooks/usePageSeo";
+import { getSeoMeta } from "@/lib/seo";
 
 type PlayerStatsMeta = Record<string, unknown>;
 
 export default function PgaHistoryModel() {
+  const seo = getSeoMeta("pga");
+  usePageSeo({ title: seo.title, description: seo.description, path: seo.path });
   const { schedule, courseWeights, playerStats, loading } = usePgaHubData();
   const { playerHistory, playerHistoryMap, majorHistoryMap, loading: historyLoading, error: historyError } = usePgaPlayerHistory();
   const { payload: field, field: currentField, loaded: fieldLoaded } = usePgaCurrentField();

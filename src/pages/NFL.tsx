@@ -2,17 +2,15 @@ import { useLocation, useNavigate } from "react-router-dom";
 import WeeklyCommandCenter from "@/components/nfl/weekly-dashboard/WeeklyCommandCenter";
 import { useNflWeeklyDashboard } from "@/hooks/useNflWeeklyDashboard";
 import { usePageSeo } from "@/hooks/usePageSeo";
+import { getSeoMeta } from "@/lib/seo";
 
 export default function NFL() {
   const location = useLocation();
   const navigate = useNavigate();
   const data = useNflWeeklyDashboard(location.search);
 
-  usePageSeo({
-    title: "NFL Weekly Command Center | Joe Knows Ball",
-    description: "Weekly NFL schedule and model intelligence from Joe Knows Ball.",
-    path: "/nfl",
-  });
+  const seo = getSeoMeta("nfl");
+  usePageSeo({ title: seo.title, description: seo.description, path: seo.path });
 
   if (data.season.loading) return <p className="rounded-lg border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500">Loading the NFL command center…</p>;
   if (data.season.error) return <div role="alert" className="rounded-lg border border-red-200 bg-red-50 px-4 py-5 text-sm font-semibold text-red-800">The NFL schedule is unavailable. Other NFL pages remain accessible from the section navigation.</div>;

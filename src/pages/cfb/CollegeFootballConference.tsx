@@ -22,6 +22,8 @@ export default function CollegeFootballConference() {
       ? `${conference.name} college football standings and JKB power ratings.`
       : "College Football conference page.",
     path: `/college-football/conference/${conferenceSlug}`,
+    // Unknown slugs render a "Conference not found" state.
+    noindex: !conference,
   });
 
   if (!conference) {

@@ -30,13 +30,8 @@ import {
 } from "@/lib/nfl/powerRatingsGroups";
 
 export default function NFLPowerRatings() {
-  const seo = getSeoMeta("nfl");
-  usePageSeo({
-    title: seo.title,
-    description: seo.description,
-    path: "/nfl/power-ratings",
-    noindex: seo.noindex ?? false,
-  });
+  const seo = getSeoMeta("nfl-power-ratings");
+  usePageSeo({ title: seo.title, description: seo.description, path: seo.path });
 
   const [period, setPeriod] = useState<PowerRatingsPeriod>("2026");
   const [mode, setMode] = useState<MetricCellMode>("rankings");

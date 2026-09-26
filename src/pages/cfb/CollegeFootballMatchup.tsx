@@ -53,6 +53,8 @@ export default function CollegeFootballMatchup() {
         : "Matchup | College Football",
     description: "Side-by-side College Football matchup comparison — ratings, stats, and market odds.",
     path: `/college-football/matchup/${gameId}`,
+    // Unknown game ids render a "Matchup not found" state.
+    noindex: !game || !away || !home,
   });
 
   useEffect(() => {
