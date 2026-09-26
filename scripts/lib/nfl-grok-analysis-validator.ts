@@ -760,3 +760,6 @@ export function validateGrokStageBUpdate(raw: unknown, context: GrokStageBValida
 }
 
 export { VALID_BLIND_CONTEXT_REF_PREFIXES };
+/** AI Picks v2 WU3 -- shared with nfl-handicap-v2-validator.ts so both validators apply the identical evidence-citation, prose-language and team-code rules. */
+export { buildModelEvidenceIndex, containsMachineLanguage, containsPostgameLanguage, isRecord, normalizeProviderTeamCode, validateEvidenceIdCitations, validateProseStrings };
+export type { FailureMode, GrokSideOpinion, GrokTotalOpinion };

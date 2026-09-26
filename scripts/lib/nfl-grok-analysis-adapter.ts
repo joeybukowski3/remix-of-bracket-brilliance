@@ -39,6 +39,7 @@ import type { EvidenceAuthorityView } from "./nfl-evidence-store";
 import type { NflGameContextPacket } from "./nfl-full-game-context";
 import { sanitizeGameContextPacketForBlindStageA } from "./nfl-ai-context-sanitizer";
 import { buildBlindContextSummaryLines } from "./nfl-ai-blind-context-lines";
+import { HANDICAP_V2_OUTPUT_TOKENS } from "./nfl-handicap-v2-types";
 import { resolveGrokAnalysisConfig, type GrokAnalysisConfig, type GrokAnalysisMode } from "./nfl-grok-analysis-config";
 import { MATCHUP_FACTOR_AREAS, type GrokStageAV1 } from "./nfl-grok-analysis-types";
 import { parseResponsesOutput, parseUsageTelemetry } from "./nfl-grok-research-parsing";
@@ -579,4 +580,19 @@ export async function runGrokStageBUpdate(input: RunGrokStageBUpdateInput): Prom
   const config = resolveGrokAnalysisConfig("stageBUpdate", input.configOverrides);
   const prompt = buildStageBUpdatePrompt(input.game, input.lockedFairSpread, input.lockedProjectedTotal, input.marketRecord);
   return callGrokAnalysis(prompt, config, input.apiKey, input.fetchImpl ?? fetch);
+}
+
+/**
+ * AI Picks v2 WU3 -- transport for the shared v2 prompts (nfl-handicap-v2-prompts.ts). Takes an already-built prompt: the prompt builders are provider-neutral and live outside this file so Grok and ChatGPT cannot drift apart. Still reasoning-only (no `tools`).
+ */
+export interface RunGrokHandicapV2StageInput {
+  stage: "A" | "B";
+  prompt: string;
+  apiKey: string;
+  fetchImpl?: typeof fetch;
+}
+
+export async function runGrokHandicapV2Stage(input: RunGrokHandicapV2StageInput): Promise<GrokAnalysisRawResult> {
+  const config = resolveGrokAnalysisConfig(input.stage === "A" ? "stageAInitial" : "stageBInitial", { maxOutputTokens: HANDICAP_V2_OUTPUT_TOKENS[input.stage].first });
+  return callGrokAnalysis(input.prompt, config, input.apiKey, input.fetchImpl ?? fetch);
 }
