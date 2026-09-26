@@ -36,7 +36,7 @@ export function splitsSignal(gap: number): SplitsSignal {
   return "balanced";
 }
 
-export type CompactSplitsSide = { side: string; moneyGap: number; signal: SplitsSignal; sharp: boolean };
+export type CompactSplitsSide = { side: string; handlePct: number; betsPct: number; moneyGap: number; signal: SplitsSignal; sharp: boolean };
 export type CompactSplitsSummary = {
   state: "fresh" | "stale" | "missing" | "unavailable";
   spread: CompactSplitsSide | null;
@@ -58,12 +58,73 @@ export function compactSplitsForGame(
     const gap = moneyGap(side);
     return {
       side: side.side === "away" ? game.away.toUpperCase() : side.side === "home" ? game.home.toUpperCase() : side.side === "over" ? "Over" : "Under",
+      handlePct: side.handlePct,
+      betsPct: side.betsPct,
       moneyGap: gap,
       signal: splitsSignal(gap),
       sharp: gap >= SPLITS_THRESHOLDS.moneyLean,
     };
   };
   return { state: availability.freshness, spread: strongest("spread"), moneyline: strongest("moneyline"), total: strongest("total") };
+}
+
+export type SplitsMatchupRow = {
+  game: NflDkBettingSplitsGame;
+  spread: SplitsFavorites;
+  moneyline: SplitsFavorites;
+  total: SplitsFavorites;
+  strongest: SplitsRow;
+  strongestHandlePct: number;
+  strongestBetsPct: number;
+};
+
+export type SplitsFavorites = { handle: NflDkBettingSplitsSide; bets: NflDkBettingSplitsSide };
+
+/** Tied percentages select away before home, or Over before Under, regardless of source order. */
+function favorites(game: NflDkBettingSplitsGame, market: SplitsMarket): SplitsFavorites {
+  const ordered = market === "total"
+    ? [sideFor(game, market, "over"), sideFor(game, market, "under")]
+    : [sideFor(game, market, "away"), sideFor(game, market, "home")];
+  return {
+    handle: ordered[1].handlePct > ordered[0].handlePct ? ordered[1] : ordered[0],
+    bets: ordered[1].betsPct > ordered[0].betsPct ? ordered[1] : ordered[0],
+  };
+}
+
+function sideFor(game: NflDkBettingSplitsGame, market: SplitsMarket, side: NflDkBettingSplitsSide["side"]): NflDkBettingSplitsSide {
+  const found = game.markets[market].find((entry) => entry.side === side);
+  if (!found) throw new Error(`Missing ${market} ${side} side for ${game.gameId}`);
+  return found;
+}
+
+/** One complete, gameId-keyed distribution with its largest absolute handle minus bets discrepancy. */
+export function splitsMatchupRows(artifact: NflDkBettingSplitsArtifact): SplitsMatchupRow[] {
+  return artifact.games.map((game) => {
+    const sides = (["spread", "moneyline", "total"] as const).flatMap((market) =>
+      game.markets[market].map((side): SplitsRow => ({ game, market, side, gap: moneyGap(side), publicGap: publicGap(side) })));
+    // Equal absolute gaps prefer the positive side, then market/side name; artifact order never breaks ties.
+    const strongest = [...sides].sort((a, b) => Math.abs(b.gap) - Math.abs(a.gap) || b.gap - a.gap || stable(a, b))[0];
+    return {
+      game,
+      spread: favorites(game, "spread"),
+      moneyline: favorites(game, "moneyline"),
+      total: favorites(game, "total"),
+      strongest,
+      strongestHandlePct: Math.max(...sides.map((row) => row.side.handlePct)),
+      strongestBetsPct: Math.max(...sides.map((row) => row.side.betsPct)),
+    };
+  });
+}
+
+export type SplitsMatchupSortKey = "gap" | "matchup" | "handlePct" | "betsPct";
+export function sortSplitsMatchupRows(rows: readonly SplitsMatchupRow[], key: SplitsMatchupSortKey, direction: "asc" | "desc"): SplitsMatchupRow[] {
+  const factor = direction === "asc" ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    const comparison = key === "matchup" ? `${a.game.away}:${a.game.home}`.localeCompare(`${b.game.away}:${b.game.home}`)
+      : key === "gap" ? Math.abs(a.strongest.gap) - Math.abs(b.strongest.gap)
+        : key === "handlePct" ? a.strongestHandlePct - b.strongestHandlePct : a.strongestBetsPct - b.strongestBetsPct;
+    return comparison * factor || a.game.gameId.localeCompare(b.game.gameId);
+  });
 }
 
 export function splitsRows(artifact: NflDkBettingSplitsArtifact, market?: SplitsMarket): SplitsRow[] {

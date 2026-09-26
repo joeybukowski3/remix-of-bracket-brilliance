@@ -23,7 +23,7 @@ for (const width of widths) {
       await route.fulfill({ json: sample });
     });
     await page.goto(boardUrl);
-    const card = page.locator("[data-matrix-game]").first();
+    const card = page.locator("[data-matrix-game]").filter({ has: page.locator("[aria-label='Spread: CAR 70% Handle, 50% Bets']") }).first();
     const splits = card.locator("[data-matchup-compact-splits]");
     await expect(splits).toBeVisible();
     await expect(page.locator("[data-splits-provenance]")).toContainText("DraftKings Network");
@@ -31,7 +31,7 @@ for (const width of widths) {
     await expect(splits.locator("[aria-label^='Spread:']")).toBeVisible();
     await expect(splits.locator("[aria-label^='Moneyline:']")).toBeVisible();
     await expect(splits.locator("[aria-label^='Total:']")).toBeVisible();
-    await expect(page.locator("[data-matchup-compact-splits] [aria-label*='Money Gap'], [data-matchup-compact-splits] [aria-label*='Money Lean']").first()).toBeVisible();
+    await expect(splits.locator("[aria-label^='Spread:']")).toContainText("70% H / 50% B");
     await expect(card.locator("[data-matchup-summary-strip]")).toBeVisible();
     await expect(card.locator("[data-matrix-team-cell='away'] img")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
@@ -39,7 +39,7 @@ for (const width of widths) {
     const splitsBox = await splits.boundingBox();
     expect(cardBox && splitsBox).toBeTruthy();
     expect(splitsBox!.x + splitsBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width + 1);
-    expect(splitsBox!.height).toBeLessThanOrEqual(width < 430 ? 56 : 38);
+    expect(splitsBox!.height).toBeLessThanOrEqual(width < 430 ? 68 : 52);
     if (width === 1440 || width === 390) await page.screenshot({ path: testInfo.outputPath(`weekly-splits-${width}.png`), fullPage: true });
   });
 }
