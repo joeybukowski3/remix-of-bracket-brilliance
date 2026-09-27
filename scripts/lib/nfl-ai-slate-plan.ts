@@ -74,7 +74,7 @@ export interface PlanSlateOptions {
   now?: () => Date;
 }
 
-interface ScheduleGame {
+export interface ScheduleGame {
   gameId: string;
   season: number;
   week: number;
@@ -88,7 +88,7 @@ interface GamesArtifactShape {
   games: ScheduleGame[];
 }
 
-function loadScheduleGames(root: string, season: number): ScheduleGame[] {
+export function loadScheduleGames(root: string, season: number): ScheduleGame[] {
   const gamesPath = join(root, "public", "data", "nfl", String(season), "games.json");
   if (!existsSync(gamesPath)) return [];
   return (JSON.parse(readFileSync(gamesPath, "utf8")) as GamesArtifactShape).games;

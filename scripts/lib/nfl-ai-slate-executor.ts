@@ -160,7 +160,7 @@ function bootstrapScriptFor(provider: EvidenceModel): string {
   return `scripts/bootstrap-nfl-${provider}-initial-snapshot.ts`;
 }
 
-function runScript(runCommand: CommandRunner, script: string, args: string[]): CommandOutcome {
+export function runScript(runCommand: CommandRunner, script: string, args: string[]): CommandOutcome {
   return runCommand("npx", ["tsx", script, ...args]);
 }
 
@@ -178,7 +178,7 @@ function executeContextStage(root: string, gamePlan: GamePlan, now?: () => Date)
   return { stage: "context", action: "rebuild", ran: true, ok: true, detail: `wrote ${rebuilt.contextArtifactPath}` };
 }
 
-function executeResearchStage(runCommand: CommandRunner, live: boolean, gameId: string, provider: EvidenceModel, plan: ProviderPlan): StageOutcome {
+export function executeResearchStage(runCommand: CommandRunner, live: boolean, gameId: string, provider: EvidenceModel, plan: ProviderPlan): StageOutcome {
   if (plan.research === "none") {
     return { stage: "research", provider, action: "none", ran: false, ok: true, detail: plan.researchReason };
   }
@@ -212,7 +212,7 @@ function executeHandicapStage(runCommand: CommandRunner, live: boolean, gameId: 
   return { stage: "handicap", provider, action: plan.handicap, ran: true, ok: result.ok, detail: result.ok ? "handicap pass completed" : result.stderr, telemetry };
 }
 
-function writePresentation(root: string, gameId: string, season: number, week: number): string {
+export function writePresentation(root: string, gameId: string, season: number, week: number): string {
   const presentation = generatePresentationForGame(root, gameId, season, week);
   const outputPath = join(root, "public", nflAiHandicapArtifactPath(presentation.season, presentation.gameId));
   mkdirSync(dirname(outputPath), { recursive: true });
