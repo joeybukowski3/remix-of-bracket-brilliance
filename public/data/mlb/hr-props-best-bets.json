@@ -1,10 +1,10 @@
 {
   "date": "2026-09-27",
-  "generatedAt": "2026-09-27T13:09:34.519Z",
+  "generatedAt": "2026-09-27T15:51:31.436Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Yankee Stadium's 1.18 park factor and Coors-adjacent Rate Field (1.07) headline today's environment, while Kyle Freeland and DJ Herz face elevated opposing HR rates (73.4 and 94.8) that inflate fly-ball outcomes. Right-handed power bats like Pete Alonso and Ben Rice benefit from the short right-field porch and favorable park factors, whereas lefty Kyle Freeland's 73.4 HR/9 allowed against righties creates a three-way Coors-like boost for CWS lefties.",
-    "modelNote": "The model is overweighting barrel rate, park factor, and opposing pitcher HR vulnerability, pushing Alonso to the top despite a modest 7.1 HR/FB ratio, while de-emphasizing recent form in favor of underlying exit data and matchup edges."
+    "slateOverview": "Yankee Stadium (1.18) and Rate Field (1.07) stand out as the primary power parks today, while Nationals Park and Petco Park suppress totals. The top three model plays all face right-handers in plus venues, with Rodríguez and Herz allowing elevated HR/FB rates; Scherzer's matchup against De La Cruz is the lone lefty-on-lefty spot that still grades out favorably.",
+    "modelNote": "The model is overweighting park-adjusted barrel and hard-hit rates while heavily discounting recent HR volume, pushing Alonso and Alvarez to the top despite modest last-7 numbers."
   },
   "bestBets": [
     {
@@ -14,16 +14,16 @@
       "opposingPitcher": "Elmer Rodríguez",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=15.3%",
+        "hrScore=90.7",
         "park=1.18"
       ],
       "bullets": [
-        "hrScore=91.1",
-        "HH=56.2%"
+        "hrScore=90.7",
+        "park=1.18"
       ],
-      "hrOddsYes": "+430",
-      "marketImpliedProbability": 0.18867924528301888,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -33,16 +33,16 @@
       "opposingPitcher": "Seth Johnson",
       "hrScoreRank": 2,
       "topStats": [
-        "barrel=16.1%",
-        "HH=53.9%"
+        "hrScore=78.5",
+        "barrel=16.1%"
       ],
       "bullets": [
-        "hrScore=77.1",
-        "park=0.96"
+        "hrScore=78.5",
+        "barrel=16.1%"
       ],
-      "hrOddsYes": "+210",
-      "marketImpliedProbability": 0.3225806451612903,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -52,16 +52,16 @@
       "opposingPitcher": "DJ Herz",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=13.9%",
-        "HH=47.9%"
-      ],
-      "bullets": [
-        "hrScore=76.7",
+        "hrScore=76.9",
         "park=0.98"
       ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
-      "valueStatus": "uncalibrated",
+      "bullets": [
+        "hrScore=76.9",
+        "park=0.98"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -75,12 +75,12 @@
         "Hard Hit%=56.6"
       ],
       "bullets": [
-        "HR score 71.1 (#4)",
+        "HR score 72.2 (#4)",
         "Pitcher HR VS 73.4 at park 1.07"
       ],
-      "hrOddsYes": "+325",
-      "marketImpliedProbability": 0.23529411764705882,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -94,12 +94,12 @@
         "Pitcher HR VS=50.9"
       ],
       "bullets": [
-        "HR score 68.4 (#5)",
+        "HR score 69.4 (#5)",
         "Pitcher HR VS 50.9 at park 1.08"
       ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ],
@@ -115,12 +115,12 @@
         "HH=56.6%"
       ],
       "bullets": [
-        "hrScore=71.1",
-        "park=1.07"
+        "barrel=20.3%",
+        "HH=56.6%"
       ],
-      "hrOddsYes": "+325",
-      "marketImpliedProbability": 0.23529411764705882,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -130,152 +130,18 @@
       "opposingPitcher": "Max Scherzer",
       "hrScoreRank": 5,
       "topStats": [
-        "barrel=16.4%",
-        "HH=53.5%"
-      ],
-      "bullets": [
-        "hrScore=68.4",
+        "hrScore=69.4",
         "park=1.08"
       ],
-      "hrOddsYes": "+390",
-      "marketImpliedProbability": 0.20408163265306123,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Randal Grichuk",
-      "team": "CWS",
-      "opponent": "COL",
-      "opposingPitcher": "Kyle Freeland",
-      "hrScoreRank": 6,
-      "topStats": [
-        "barrel=10.8%",
-        "HH=49.5%"
-      ],
       "bullets": [
-        "hrScore=66",
-        "park=1.07"
+        "hrScore=69.4",
+        "park=1.08"
       ],
-      "hrOddsYes": "+330",
-      "marketImpliedProbability": 0.23255813953488372,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Ben Rice",
-      "team": "NYY",
-      "opponent": "BAL",
-      "opposingPitcher": "Shane Baz",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Pitcher HR VS=51.3",
-        "Hard Hit%=48.6"
-      ],
-      "bullets": [
-        "HR score 64.9 (#7)",
-        "Pitcher HR VS 51.3 at park 1.18"
-      ],
-      "hrOddsYes": "+460",
-      "marketImpliedProbability": 0.17857142857142858,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Miguel Vargas",
-      "team": "CWS",
-      "opponent": "COL",
-      "opposingPitcher": "Kyle Freeland",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Pitcher HR VS=73.4",
-        "Hard Hit%=43.8"
-      ],
-      "bullets": [
-        "HR score 64.8 (#8)",
-        "Pitcher HR VS 73.4 at park 1.07"
-      ],
-      "hrOddsYes": "+370",
-      "marketImpliedProbability": 0.2127659574468085,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ],
-  "longshots": [
-    {
-      "player": "Ben Rice",
-      "team": "NYY",
-      "opponent": "BAL",
-      "opposingPitcher": "Shane Baz",
-      "hrScoreRank": 7,
-      "topStats": [
-        "barrel=14.3%",
-        "HH=48.6%"
-      ],
-      "bullets": [
-        "hrScore=64.9",
-        "park=1.18"
-      ],
-      "hrOddsYes": "+460",
-      "marketImpliedProbability": 0.17857142857142858,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Miguel Vargas",
-      "team": "CWS",
-      "opponent": "COL",
-      "opposingPitcher": "Kyle Freeland",
-      "hrScoreRank": 8,
-      "topStats": [
-        "barrel=13%",
-        "HH=43.8%"
-      ],
-      "bullets": [
-        "hrScore=64.8",
-        "park=1.07"
-      ],
-      "hrOddsYes": "+370",
-      "marketImpliedProbability": 0.2127659574468085,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Carson Benge",
-      "team": "NYM",
-      "opponent": "WSH",
-      "opposingPitcher": "DJ Herz",
-      "hrScoreRank": 23,
-      "topStats": [
-        "Pitcher HR VS=94.8",
-        "Hard Hit%=38.8"
-      ],
-      "bullets": [
-        "HR score 57.3 (#23)",
-        "Pitcher HR VS 94.8 at park 0.98"
-      ],
-      "hrOddsYes": "+700",
-      "marketImpliedProbability": 0.125,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Gabriel Moreno",
-      "team": "AZ",
-      "opponent": "SD",
-      "opposingPitcher": "Randy Vásquez",
-      "hrScoreRank": 13,
-      "topStats": [
-        "Pitcher HR VS=75.0",
-        "Hard Hit%=42.2"
-      ],
-      "bullets": [
-        "HR score 61.5 (#13)",
-        "Pitcher HR VS 75.0 at park 0.89"
-      ],
-      "hrOddsYes": "+650",
-      "marketImpliedProbability": 0.13333333333333333,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ]
+  "longshots": []
 }
