@@ -15,6 +15,12 @@
  *   npx tsx scripts/run-nfl-handicap-v2.ts --provider=grok --game=2026_03_LAC_BUF
  *   npx tsx scripts/run-nfl-handicap-v2.ts --provider=chatgpt --game=2026_03_LAC_BUF --live
  *
+ * --mode=repricing (market-only change): reuses the LOCKED Stage A stored on the
+ * game's newest record byte-for-byte and runs Stage B alone against the current
+ * market (one billed call). It refuses when the football context or the
+ * Stage A-visible evidence has changed since that record -- that needs a full
+ * run. Written by scripts/run-nfl-ai-handicap-v2-slate.ts; safe to run by hand.
+ *
  * Evidence is read from the provider's evidence.live-test.json (the same real
  * research stream the v1 runners use). Independence and pregame guards are
  * unchanged: Stage A gets no market and no JKB opinion (WU2 sanitizer plus the
@@ -31,14 +37,16 @@ import { footballContextHash, type NflGameContextPacket, type TeamsArtifact } fr
 import { loadFreshGameContextPacket } from "./lib/nfl-full-game-context-loader";
 import { validateGameContextPacket } from "./lib/nfl-game-context-validators";
 import { buildCitableEvidenceLines as buildGrokEvidenceLines, runGrokHandicapV2Stage } from "./lib/nfl-grok-analysis-adapter";
-import { buildBookRange, buildHandicapV2MarketContext, type HandicapV2MarketContext } from "./lib/nfl-handicap-v2-market";
+import { buildInputFingerprint, type HandicapV2InputFingerprint, loadHandicapV2MarketContext, recordFingerprint, stageAEvidenceHash } from "./lib/nfl-handicap-v2-inputs";
+import { emitTelemetryMarker, type AnyProviderTelemetry } from "./lib/nfl-ai-telemetry";
+import type { HandicapV2MarketContext } from "./lib/nfl-handicap-v2-market";
 import { buildStageAV2Prompt, buildStageBV2Prompt, type HandicapV2GameFacts } from "./lib/nfl-handicap-v2-prompts";
-import { buildHandicapV2Record, writeHandicapV2Record } from "./lib/nfl-handicap-v2-record";
+import { buildHandicapV2Record, lockedStageAFromRecord, writeHandicapV2Record } from "./lib/nfl-handicap-v2-record";
+import { readLatestPublishableHandicapV2Record } from "./lib/nfl-handicap-v2-presentation";
 import { deriveFairScore } from "./lib/nfl-handicap-v2-text";
 import { HANDICAP_V2_SCHEMA_VERSION, type StageAV2 } from "./lib/nfl-handicap-v2-types";
 import { validateStageAV2, validateStageBV2 } from "./lib/nfl-handicap-v2-validator";
 import { canCreatePregameSnapshot, isPregameStreamLocked } from "./lib/nfl-snapshot-lock";
-import { buildCurrentMarketView, findCurrentGame, parseBettingLinesCurrentArtifact } from "../src/lib/nfl/bettingLinesView";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -54,7 +62,7 @@ const PROVIDERS: Record<EvidenceModel, ProviderBindings> = {
   chatgpt: { buildEvidenceLines: buildChatGptEvidenceLines, runStage: runChatGptHandicapV2Stage, apiKey: () => process.env.OPENAI_API_KEY, apiKeyHint: "OPENAI_API_KEY" },
 };
 
-function parseArgs(argv: string[]): { provider: EvidenceModel | null; gameId: string; live: boolean } {
+function parseArgs(argv: string[]): { provider: EvidenceModel | null; gameId: string; live: boolean; mode: "full" | "repricing" | null } {
   const flags = new Map<string, string>();
   let live = false;
   for (const arg of argv) {
@@ -63,7 +71,8 @@ function parseArgs(argv: string[]): { provider: EvidenceModel | null; gameId: st
     if (match) flags.set(match[1], match[2]);
   }
   const provider = flags.get("provider");
-  return { provider: provider === "grok" || provider === "chatgpt" ? provider : null, gameId: flags.get("game") ?? "", live };
+  const mode = flags.get("mode") ?? "full";
+  return { provider: provider === "grok" || provider === "chatgpt" ? provider : null, gameId: flags.get("game") ?? "", live, mode: mode === "full" || mode === "repricing" ? mode : null };
 }
 
 function readJson<T>(path: string): T | null {
@@ -103,8 +112,8 @@ function placeholderStageA(packet: NflGameContextPacket, game: HandicapV2GameFac
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
-  if (!args.provider || !args.gameId) {
-    console.error("Usage: npx tsx scripts/run-nfl-handicap-v2.ts --provider=grok|chatgpt --game=2026_03_LAC_BUF [--live]");
+  if (!args.provider || !args.gameId || !args.mode) {
+    console.error("Usage: npx tsx scripts/run-nfl-handicap-v2.ts --provider=grok|chatgpt --game=2026_03_LAC_BUF [--mode=full|repricing] [--live]");
     process.exitCode = 1;
     return;
   }
@@ -167,19 +176,51 @@ async function main(): Promise<void> {
   console.log(`Evidence: ${allEvidence.length} total, ${blindEvidence.length} citable in Stage A (market/betting-opinion records excluded), ${stageBEvidence.length} citable in Stage B.`);
 
   // Market context: the exact line JKB displays, plus the range across the other books.
-  const bettingLines = readJson<unknown>(join(ROOT, "public", "data", "market", "betting-lines-current.json"));
-  const artifact = bettingLines ? parseBettingLinesCurrentArtifact(bettingLines) : null;
-  const bookRange = artifact ? buildBookRange(findCurrentGame(artifact, args.gameId)) : null;
-  const displayed = artifact ? buildCurrentMarketView({ artifact, jkbGameId: args.gameId }) : null;
-  const market: HandicapV2MarketContext | null = buildHandicapV2MarketContext({
-    market: packet.market,
-    teams: { homeTeam: game.homeTeam, awayTeam: game.awayTeam, homeTeamFull: game.homeTeamFull, awayTeamFull: game.awayTeamFull },
-    bookRange,
-    asOf: displayed?.lastObservedAt ?? packet.market.firstObserved.observedAt ?? packet.provenance.builtAt,
-  });
+  const market = loadHandicapV2MarketContext(ROOT, packet, args.gameId);
   if (!market) {
     console.error("No usable current spread for this game -- Stage B needs the exact displayed line. Stopping.");
     process.exitCode = 1;
+    return;
+  }
+
+  const inputs = buildInputFingerprint({ packet, evidence: allEvidence, market });
+
+  if (args.mode === "repricing") {
+    const prior = readLatestPublishableHandicapV2Record(ROOT, season, week, args.gameId, provider);
+    if (!prior) {
+      console.error("Refusing to reprice: there is no stored v2 record to take a locked Stage A from. Run a full pass first.");
+      process.exitCode = 1;
+      return;
+    }
+    if (prior.contextHash !== contextHash) {
+      console.error(`Refusing to reprice: the football context changed since the stored record (${prior.contextHash.slice(0, 12)} -> ${contextHash.slice(0, 12)}). Stage A must rerun -- use the full mode.`);
+      process.exitCode = 1;
+      return;
+    }
+    const priorInputs = recordFingerprint(prior);
+    if (priorInputs && priorInputs.stageAEvidenceHash !== stageAEvidenceHash(allEvidence)) {
+      console.error("Refusing to reprice: the Stage A-visible evidence changed since the stored record. Stage A must rerun -- use the full mode.");
+      process.exitCode = 1;
+      return;
+    }
+    const lockedStageA = lockedStageAFromRecord(prior);
+    const repriceBEvidenceLines = bindings.buildEvidenceLines(stageBEvidence, authority);
+    const repricePrompt = buildStageBV2Prompt({ provider, game, packet, lockedStageA, market, evidenceLines: repriceBEvidenceLines });
+    if (!args.live) {
+      banner(`DRY RUN REPRICING (${provider}, ${game.gameId}) -- no provider call is made and nothing is written`);
+      console.log(repricePrompt);
+      console.log(`
+To run for real: npx tsx scripts/run-nfl-handicap-v2.ts --provider=${provider} --game=${game.gameId} --mode=repricing --live   (needs ${bindings.apiKeyHint}; ONE billed call, Stage A reused)`);
+      return;
+    }
+    const repriceKey = bindings.apiKey();
+    if (!repriceKey) {
+      console.error(`${bindings.apiKeyHint} is not set.`);
+      process.exitCode = 1;
+      return;
+    }
+    banner(`STAGE B REPRICING (${provider}) -- locked Stage A from ${prior.stageAGeneratedAt}`);
+    await runStageBAndWrite({ provider, bindings, apiKey: repriceKey, game, packet, lockedStageA, market, stageBEvidenceLines: repriceBEvidenceLines, allEvidence, contextHash, season, week, inputs, cliMode: "repricing" });
     return;
   }
 
@@ -222,6 +263,7 @@ async function main(): Promise<void> {
     process.exitCode = 1;
     return;
   }
+  emitTelemetryMarker({ provider, gameId: game.gameId, cliMode: "initial", stage: "A", telemetry: stageAResult.telemetry as AnyProviderTelemetry });
   const stageA = validateStageAV2(stageAResult.raw, { model: provider, gameId: game.gameId, generatedAt: new Date().toISOString(), contextHash, homeTeam: game.homeTeam, awayTeam: game.awayTeam, contextPacket: packet, allEvidenceRecords: allEvidence });
   if (!stageA.ok) {
     console.error("Stage A FAILED validation:");
@@ -233,15 +275,39 @@ async function main(): Promise<void> {
   console.log(`LOCKED: ${stageA.analysis.fairSpread.team.toUpperCase()} ${stageA.analysis.fairSpread.line}, total ${stageA.analysis.projectedTotal}, uncertainty ${stageA.analysis.uncertainty}`);
 
   banner(`STAGE B (${provider}) -- market decision and write-up`);
-  const stageBPrompt = buildStageBV2Prompt({ provider, game, packet, lockedStageA: stageA.analysis, market, evidenceLines: stageBEvidenceLines });
-  const stageBResult = await bindings.runStage({ stage: "B", prompt: stageBPrompt, apiKey });
+  await runStageBAndWrite({ provider, bindings, apiKey, game, packet, lockedStageA: stageA.analysis, market, stageBEvidenceLines, allEvidence, contextHash, season, week, inputs, cliMode: "initial" });
+}
+
+interface StageBRunInput {
+  provider: EvidenceModel;
+  bindings: ProviderBindings;
+  apiKey: string;
+  game: HandicapV2GameFacts;
+  packet: NflGameContextPacket;
+  lockedStageA: StageAV2;
+  market: HandicapV2MarketContext;
+  stageBEvidenceLines: string[];
+  allEvidence: EvidenceRecord[];
+  contextHash: string;
+  season: number;
+  week: number;
+  inputs: HandicapV2InputFingerprint;
+  cliMode: "initial" | "repricing";
+}
+
+/** Stage B -> validate -> write-once record. Shared by the full run and the market-only repricing run. */
+async function runStageBAndWrite(run: StageBRunInput): Promise<void> {
+  const { provider, game, market } = run;
+  const stageBPrompt = buildStageBV2Prompt({ provider, game, packet: run.packet, lockedStageA: run.lockedStageA, market, evidenceLines: run.stageBEvidenceLines });
+  const stageBResult = await run.bindings.runStage({ stage: "B", prompt: stageBPrompt, apiKey: run.apiKey });
   console.log(JSON.stringify(stageBResult.telemetry, null, 2));
   if (!stageBResult.ok) {
     console.error(`Stage B FAILED: ${stageBResult.error}`);
     process.exitCode = 1;
     return;
   }
-  const stageB = validateStageBV2(stageBResult.raw, { model: provider, gameId: game.gameId, generatedAt: new Date().toISOString(), contextHash, game, lockedStageA: stageA.analysis, market, contextPacket: packet, allEvidenceRecords: allEvidence });
+  emitTelemetryMarker({ provider, gameId: game.gameId, cliMode: run.cliMode, stage: "B", telemetry: stageBResult.telemetry as AnyProviderTelemetry });
+  const stageB = validateStageBV2(stageBResult.raw, { model: provider, gameId: game.gameId, generatedAt: new Date().toISOString(), contextHash: run.contextHash, game, lockedStageA: run.lockedStageA, market, contextPacket: run.packet, allEvidenceRecords: run.allEvidence });
   if (!stageB.ok) {
     console.error("Stage B FAILED validation:");
     for (const reason of stageB.reasons) console.error(`  - ${reason}`);
@@ -250,12 +316,14 @@ async function main(): Promise<void> {
     return;
   }
 
-  const record = buildHandicapV2Record({ stageA: stageA.analysis, stageB: stageB.analysis, market, evidenceRecords: allEvidence });
-  const path = writeHandicapV2Record(ROOT, season, week, record);
+  const record = buildHandicapV2Record({ stageA: run.lockedStageA, stageB: stageB.analysis, market, evidenceRecords: run.allEvidence, inputs: run.inputs });
+  const path = writeHandicapV2Record(ROOT, run.season, run.week, record);
   banner("RESULT");
   console.log(`${record.verdict} | preferred ${market.sideLabels[record.preferredSide]} | cover ${record.coverProbabilityPreferred}% vs ${record.coverProbabilityOther}% | confidence ${record.confidence} | ${record.wordCount} words`);
   if (record.warnings.length > 0) console.log(`warnings: ${record.warnings.join(" | ")}`);
-  console.log(`\n${record.analysisMarkdown}\n`);
+  console.log(`
+${record.analysisMarkdown}
+`);
   console.log(`sources: ${JSON.stringify(record.sources, null, 2)}`);
   console.log(`written (write-once): ${path}`);
 }

@@ -227,6 +227,12 @@ export default defineConfig({
       // WU6.9 -- machine-readable Stage A/B telemetry markers (emit/parse/aggregate).
       "scripts/lib/nfl-ai-telemetry.test.ts",
       "scripts/run-nfl-ai-handicap-slate.test.ts",
+      "scripts/lib/nfl-handicap-v2-inputs.test.ts",
+      "scripts/lib/nfl-ai-v2-slate-plan.test.ts",
+      "scripts/lib/nfl-ai-v2-slate-policy.test.ts",
+      "scripts/lib/nfl-ai-v2-slate-executor.test.ts",
+      "scripts/run-nfl-ai-handicap-v2-slate.test.ts",
+      "scripts/lib/nfl-ai-v2-slate-workflow.test.ts",
       // WU6.5 -- zero-cost replay of an archived provider research response
       // (ChatGPT only; see nfl-provider-research-replay.ts's header for the
       // Grok gap). Pure planning/safety-check tests plus the CLI integration
