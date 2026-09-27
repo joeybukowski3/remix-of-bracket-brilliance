@@ -67,16 +67,16 @@ describe("weekly matchup compact betting splits", () => {
     renderRow(summary);
     const strip = document.querySelector("[data-matchup-compact-splits]")!;
     expect(strip.previousElementSibling).toHaveAttribute("data-matchup-summary-strip");
-    expect(within(strip as HTMLElement).getByLabelText("Spread: NE 64% Handle, 50% Bets")).toHaveTextContent("64% H / 50% B");
-    expect(within(strip as HTMLElement).getByLabelText("Moneyline: SEA 60% Handle, 47% Bets")).toHaveTextContent("60% H / 47% B");
-    expect(within(strip as HTMLElement).getByLabelText("Total: Under 67% Handle, 33% Bets")).toHaveTextContent("67% H / 33% B");
+    expect(within(strip as HTMLElement).getByLabelText("Spread: NE 64% Handle, 50% Bets")).toHaveTextContent("64% Handle / 50% Bets");
+    expect(within(strip as HTMLElement).getByLabelText("Moneyline: SEA 60% Handle, 47% Bets")).toHaveTextContent("60% Handle / 47% Bets");
+    expect(within(strip as HTMLElement).getByLabelText("Total: Under 67% Handle, 33% Bets")).toHaveTextContent("67% Handle / 33% Bets");
     expect(strip.querySelector("a, button")).toBeNull();
     expect(screen.getByRole("link", { name: /view matchup breakdown/i })).toHaveAttribute("href", `/nfl/matchups/${MATCHUP.slug}`);
   });
 
   it("keeps balanced percentages and uses dashes for unavailable and missing games", () => {
     const view = renderRow({ ...summary, spread: { side: "NE", handlePct: 53, betsPct: 50, moneyGap: 3, signal: "balanced", sharp: false } });
-    expect(screen.getByLabelText("Spread: NE 53% Handle, 50% Bets")).toHaveTextContent("53% H / 50% B");
+    expect(screen.getByLabelText("Spread: NE 53% Handle, 50% Bets")).toHaveTextContent("53% Handle / 50% Bets");
     view.rerender(<MemoryRouter><MatchupMatrixRow matchup={MATCHUP} board={makeBoard({})} displayMode="rankings" awayRecord={null} homeRecord={null} bettingSplits={{ state: "unavailable", spread: null, moneyline: null, total: null }} /></MemoryRouter>);
     expect(document.querySelector("[data-matchup-compact-splits]")).toHaveAttribute("data-splits-state", "unavailable");
     expect(document.querySelectorAll("[data-matchup-compact-splits] span[aria-label$='unavailable']")).toHaveLength(3);
