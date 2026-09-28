@@ -7,6 +7,7 @@ import type { MarketCurrentGame } from "@/lib/nfl/marketData";
 import type { GameProjection } from "@/lib/nfl/projectionData";
 import type { TeamTotalProjection } from "@/lib/nfl/totalsProjectionData";
 import { kickoffLabel } from "@/pages/NFLSchedule";
+import { nflTeamPath } from "@/lib/nfl/teamRoutes";
 
 const NA = "N/A";
 
@@ -42,7 +43,7 @@ function TeamIdentity({
             The name stays a link to the team's canonical dashboard route, which
             is the analyzer's only route out to a single team. */}
         <Link
-          to={`/nfl/guide/team/${team.slug}`}
+          to={nflTeamPath(team.slug)}
           className="matchup-team-identity__name block text-[20px] font-extrabold leading-tight tracking-[-0.02em] text-slate-900 hover:text-emerald-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:text-[26px]"
         >
           {team.teamName}

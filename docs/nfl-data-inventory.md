@@ -67,7 +67,7 @@ ingest scripts must fail on any team code they cannot resolve.
 | Field | Meaning |
 | --- | --- |
 | `id` | Stable internal id (`nfl-<abbr>`) |
-| `slug` | URL slug, equals `slugifyNflTeam(name)` from `src/lib/nfl/guide2026.ts` (keeps `/nfl/guide/team/<slug>` links working) |
+| `slug` | URL slug, equals `slugifyNflTeam(name)` from `src/lib/nfl/guide2026.ts` (the slug in `/nfl/teams/<slug>` team page URLs) |
 | `abbr` | Site-wide ESPN-style lowercase code (`buf`, `wsh`, `lar`) used for logos and lookups |
 | `nflverseAbbr` | Code used by nflverse files (`BUF`, `WAS`, `LA`) |
 | `name` / `fullName` / `shortName` | Display name (matches `nflPreseason2026.ts`), official name, nickname |

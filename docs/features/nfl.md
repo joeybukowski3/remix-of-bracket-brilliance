@@ -21,7 +21,7 @@ All public NFL routes are children of `NflPlatformLayout` in
 | Matchup Analyzer | `/nfl/matchups`, `/nfl/matchups/:gameSlug` | Weekly cards and a four-tab matchup detail surface. See [NFL Matchup Analyzer](nfl-matchup-analyzer.md). |
 | Yardage Props Review | `/nfl/yardage-props-review` | Read-only passing, rushing, and receiving yardage projection review with optional market and opponent context. See [NFL Yardage Props Review](nfl-yardage-props-review.md). |
 | DraftKings DFS Contest Analyzer | `/nfl/dfs` | User-supplied DK NFL Classic salary slate compared with canonical weekly fantasy projections and research. See [NFL DFS Contest Analyzer](nfl-dfs-contest-analyzer.md). |
-| Other current NFL research | `/nfl/analytics`, `/nfl/super-bowl`, `/nfl/coach-of-year`, `/nfl/guide`, `/nfl/guide/regression`, `/nfl/guide/team/:teamSlug` | Analytics, futures, award, season-guide, regression, and team-guide views. `/nfl/2026-guide` redirects to `/nfl/guide`. |
+| Other current NFL research | `/nfl/analytics`, `/nfl/super-bowl`, `/nfl/coach-of-year`, `/nfl/guide`, `/nfl/guide/regression`, `/nfl/teams/:teamSlug` | Analytics, futures, award, season-guide, regression, and team-dashboard views. `/nfl/teams/:teamSlug` is the canonical team page; `/nfl/guide/team/:teamSlug` permanently redirects to it (vercel.json 301 + client redirect) and `/nfl/teams` and `/nfl/2026-guide` redirect to `/nfl/guide`. |
 
 The command center is assembled by
 [`useNflWeeklyDashboard.ts`](../../src/hooks/useNflWeeklyDashboard.ts) and

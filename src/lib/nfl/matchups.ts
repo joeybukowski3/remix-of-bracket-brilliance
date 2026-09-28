@@ -9,7 +9,7 @@
  *  - Never invent schedule, team, rating, or spread data. Every field traces to
  *    existing repository data; genuinely missing values stay null/undefined.
  *  - Slugs are deterministic and built from canonical team slugs so they stay
- *    consistent with the team dashboard route (/nfl/guide/team/:teamSlug).
+ *    consistent with the team dashboard route (/nfl/teams/:teamSlug).
  *  - Spread is structural only. The repository intentionally does not ingest
  *    betting lines, so no matchup carries a spread yet — the optional shape lets
  *    a future phase attach one without reshaping the pages.

@@ -20,7 +20,7 @@ export function isNflPerformanceTabId(value: string | undefined): value is NflPe
  * Compact horizontal tab bar for the /nfl/performance/:tab route family.
  * Real links (not buttons that call setState) so tab state lives in the URL
  * and is shareable/back-button-safe -- consistent with the rest of the NFL
- * platform's subroute pattern (e.g. /nfl/guide/team/:teamSlug).
+ * platform's subroute pattern (e.g. /nfl/teams/:teamSlug).
  *
  * Scrolls horizontally on narrow viewports rather than wrapping or shrinking
  * to icons, so every tab stays a real tappable target with no overflow.

@@ -40,9 +40,9 @@ const GUIDE = getNflSeasonGuide(2026)!;
 
 function renderTeamRoute(slug: string) {
   return render(
-    <MemoryRouter initialEntries={[`/nfl/guide/team/${slug}`]}>
+    <MemoryRouter initialEntries={[`/nfl/teams/${slug}`]}>
       <Routes>
-        <Route path="/nfl/guide/team/:teamSlug" element={<NFLTeamGuide2026 />} />
+        <Route path="/nfl/teams/:teamSlug" element={<NFLTeamGuide2026 />} />
         <Route path="/nfl/guide" element={<div data-testid="guide-index-redirect" />} />
       </Routes>
     </MemoryRouter>
@@ -57,14 +57,14 @@ describe("/nfl/guide renders from normalized data", () => {
       </MemoryRouter>
     );
     expect(screen.getAllByText(NFL_GUIDE_SUPER_BOWL_PICK.team).length).toBeGreaterThan(0);
-    // 8 division cards, each with 4 team links to /nfl/guide/team/<slug>
-    const links = document.querySelectorAll('a[href^="/nfl/guide/team/"]');
+    // 8 division cards, each with 4 team links to /nfl/teams/<slug>
+    const links = document.querySelectorAll('a[href^="/nfl/teams/"]');
     expect(links.length).toBeGreaterThanOrEqual(32);
     expect(screen.getByText("Fluke, real, or mispriced?")).toBeTruthy();
   });
 });
 
-describe("/nfl/guide/team/:teamSlug renders from normalized data", () => {
+describe("/nfl/teams/:teamSlug renders from normalized data", () => {
   for (const slug of ["kansas-city-chiefs", "buffalo-bills", "washington-commanders", "la-rams"]) {
     it(`resolves ${slug} with identical legacy values`, () => {
       const legacy = NFL_GUIDE_TEAM_BY_SLUG.get(slug)!;
@@ -96,7 +96,7 @@ describe("/nfl/guide/regression renders from normalized data", () => {
         <NFLRegression2026 />
       </MemoryRouter>
     );
-    const links = document.querySelectorAll('a[href^="/nfl/guide/team/"]');
+    const links = document.querySelectorAll('a[href^="/nfl/teams/"]');
     expect(links.length).toBe(32);
   });
 });

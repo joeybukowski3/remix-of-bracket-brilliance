@@ -12,6 +12,7 @@ import {
   type PowerRatingsSort,
   type PowerRatingsSortKey,
 } from "@/lib/nfl/powerRatingsSort";
+import { nflTeamPath } from "@/lib/nfl/teamRoutes";
 
 const oneDecimal = (value: number) => value.toFixed(1);
 
@@ -101,7 +102,7 @@ function TeamCell({ row }: { row: PowerRatingsRow }) {
   return (
     <td className="nfl-pr-team" title={row.name}>
       <Link
-        to={`/nfl/guide/team/${row.slug}`}
+        to={nflTeamPath(row.slug)}
         className="nfl-pr-team-link"
         aria-label={`Open ${row.name} team dashboard`}
       >

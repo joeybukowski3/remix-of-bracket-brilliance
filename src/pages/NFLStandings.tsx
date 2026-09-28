@@ -24,6 +24,7 @@ import {
   type DivisionViewMode,
 } from "@/lib/nfl/divisionBoard2026";
 import { buildSosBoard, type SosBoardRow, type SosMetric } from "@/lib/nfl/sosMetrics2026";
+import { nflTeamPath } from "@/lib/nfl/teamRoutes";
 
 const SEASONS = [2026, 2025, 2024, 2023, 2022];
 const CURRENT_SEASON = 2026;
@@ -46,7 +47,7 @@ function TeamLogo({ abbr, color, compactOnMobile = false }: { abbr: string; colo
 function TeamLink({ row, color, children, compactOnMobile = false }: { row: TeamStanding; color: string; children?: ReactNode; compactOnMobile?: boolean }) {
   return (
     <Link
-      to={`/nfl/guide/team/${row.slug}`}
+      to={nflTeamPath(row.slug)}
       className={`flex items-center font-semibold text-slate-800 hover:text-sky-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500 ${
         compactOnMobile ? "justify-center gap-1.5 px-1.5 py-1 min-[400px]:justify-start sm:gap-2 sm:px-2 sm:py-1.5" : "gap-2 px-2 py-1.5"
       }`}

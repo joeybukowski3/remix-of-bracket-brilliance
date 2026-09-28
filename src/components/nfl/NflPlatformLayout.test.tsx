@@ -24,7 +24,7 @@ function renderNflRoute(path: string) {
           <Route path="coach-of-year" element={<h1>Coach Page</h1>} />
           <Route path="guide" element={<h1>Guide Page</h1>} />
           <Route path="guide/regression" element={<h1>Regression Page</h1>} />
-          <Route path="guide/team/:teamSlug" element={<h1>Team Page</h1>} />
+          <Route path="teams/:teamSlug" element={<h1>Team Page</h1>} />
         </Route>
         <Route path="/mlb" element={<h1>MLB Page</h1>} />
       </Routes>
@@ -74,7 +74,7 @@ describe("NflPlatformLayout", () => {
   });
 
   it("highlights the team guide area for team detail routes", () => {
-    renderNflRoute("/nfl/guide/team/seattle-seahawks");
+    renderNflRoute("/nfl/teams/seattle-seahawks");
     expect(screen.getByRole("button", { name: /Team Intelligence/i }).getAttribute("aria-expanded")).toBe("true");
     expect(screen.getByRole("link", { name: /2026 Team Guide/i }).getAttribute("aria-current")).toBe("page");
   });
