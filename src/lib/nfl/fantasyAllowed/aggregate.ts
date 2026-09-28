@@ -66,11 +66,11 @@ export function buildDefenseGameLog(
  * defense played in a given season, or its most recent N completed games
  * (which may span backward across a season boundary).
  */
-export function selectDefenseGames(
-  gameLog: readonly DefenseGamePoints[],
+export function selectDefenseGames<Game extends { team: string; season: number; week: number }>(
+  gameLog: readonly Game[],
   team: string,
   selector: FantasyAllowedSampleSelector,
-): DefenseGamePoints[] {
+): Game[] {
   const teamGames = gameLog
     .filter((game) => game.team === team)
     .sort((a, b) => b.season - a.season || b.week - a.week);

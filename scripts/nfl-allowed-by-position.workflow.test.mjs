@@ -28,19 +28,23 @@ test("shares the yardage workflow's data-writer lock", () => {
   assert.equal(workflow.concurrency["cancel-in-progress"], false);
 });
 
-test("refreshes the cache, then generates and validates both artifacts before committing", () => {
+test("refreshes the cache, then generates and validates every artifact before committing", () => {
   const order = [
     "Refresh player-week stats cache",
     "Generate TDs Allowed by Position",
     "Validate TDs Allowed by Position",
     "Generate Fantasy Points Allowed by Position",
     "Validate Fantasy Points Allowed by Position",
+    "Generate Yards vs Average by Position",
+    "Validate Yards vs Average by Position",
     "Commit and push refreshed data",
   ].map(stepIndex);
   assert.ok(order.every((index, i) => index > 0 && (i === 0 || index > order[i - 1])), `unexpected step order ${order}`);
   assert.match(steps[order[0]].run, /fantasy:player-week-cache -- --seasons=\$\{\{ steps\.season\.outputs\.season \}\} --partial-season=\$\{\{ steps\.season\.outputs\.season \}\}/);
   assert.match(steps[order[3]].run, /npm run nfl:fantasy-points-allowed/);
   assert.match(steps[order[4]].run, /npm run nfl:validate-fantasy-points-allowed/);
+  assert.match(steps[order[5]].run, /npm run nfl:yards-vs-average -- --season=\$\{\{ steps\.season\.outputs\.season \}\}/);
+  assert.match(steps[order[6]].run, /npm run nfl:validate-yards-vs-average -- --season=\$\{\{ steps\.season\.outputs\.season \}\}/);
 });
 
 test("is independent of the yardage model chain and only the diagnostics step may fail softly", () => {
@@ -52,11 +56,12 @@ test("is independent of the yardage model chain and only the diagnostics step ma
   assert.deepEqual(soft, ["Refresh schedule/results for coverage diagnostics"]);
 });
 
-test("commits only the cache and the two artifacts, and skips idle runs", () => {
+test("commits only the cache and the three artifacts, and skips idle runs", () => {
   const commit = steps[stepIndex("Commit and push refreshed data")].run;
   for (const path of [
     "public/data/nfl/fantasy-points-allowed.json",
     "public/data/nfl/tds-allowed-by-position.json",
+    "public/data/nfl/yards-vs-average-by-position.json",
     "stats_player_week_${season}.csv",
     "data/nfl/nflverse/stats-player-week/manifest.json",
   ]) assert.ok(commit.includes(path), `missing ${path}`);
@@ -74,4 +79,11 @@ test("the yardage workflow keeps regenerating Fantasy Points Allowed as a backst
   const publish = find("Commit and push validated DFS yardage history");
   assert.ok(tdsValidate > 0 && tdsValidate < generate && generate < validate && validate < publish);
   assert.ok(yardage[publish].run.includes("public/data/nfl/fantasy-points-allowed.json"));
+});
+
+test("Yards vs Avg is not part of the yardage-projections backstop (Phase 1)", () => {
+  const yardage = read("nfl-yardage-projections.yml").jobs["refresh-yardage-projections"].steps;
+  const runs = yardage.map((step) => step.run ?? "").join("\n");
+  assert.ok(!runs.includes("nfl:yards-vs-average"));
+  assert.ok(!runs.includes("yards-vs-average-by-position.json"));
 });

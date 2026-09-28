@@ -13,6 +13,8 @@ export type AllowedByPositionHeaderKey =
   | "slotWr"
   | "wr"
   | "te"
+  | "teamPass"
+  | "teamRush"
   | "qbPass"
   | "qbRush"
   | "rbRush"
@@ -35,6 +37,9 @@ export const ALLOWED_BY_POSITION_HEADER_CLASSNAMES: Record<
   wr: "bg-[#2F6B63] text-white",
   te: "bg-[#544B7A] text-white",
 
+  // Yards vs Avg team totals: neutral slate so they read as totals, not a position family.
+  teamPass: "bg-[#3F4A5C] text-white",
+  teamRush: "bg-[#56606E] text-white",
   qbPass: "bg-[#6F3C57] text-white",
   qbRush: "bg-[#8A4A6C] text-white",
   rbRush: "bg-[#2E5D7B] text-white",

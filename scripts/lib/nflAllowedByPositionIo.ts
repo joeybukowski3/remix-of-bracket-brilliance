@@ -57,8 +57,11 @@ export function loadGames(root: string, season: number): NflGameRecord[] {
 }
 
 export function writeJsonAtomic(path: string, value: unknown): void {
+  writeTextAtomic(path, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+export function writeTextAtomic(path: string, text: string): void {
   mkdirSync(dirname(path), { recursive: true });
-  const text = `${JSON.stringify(value, null, 2)}\n`;
   const temporary = `${path}.tmp`;
   try {
     writeFileSync(temporary, text, "utf8");

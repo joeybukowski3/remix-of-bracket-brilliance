@@ -21,6 +21,12 @@ export type AllowedByPositionCell = {
   rawValue?: number | null;
   /** Pre-formatted raw text (e.g. "5.4") -- the table renders this verbatim, it does not format numbers itself. */
   rawDisplay?: string | null;
+  /** Optional shorter raw text shown below the `sm` breakpoint instead of "rawDisplay (rank)", for very narrow mobile columns. */
+  rawDisplayCompact?: string | null;
+  /** Native tooltip for the cell (e.g. "3/3 opponents above avg"). */
+  title?: string | null;
+  /** Known-insufficient sample: the tone resolver may mute it (TABLE_CONVENTIONS.md section G); the value stays visible. */
+  smallSample?: boolean;
 };
 
 /** "rank" shows the bare defensive rank; "raw" shows the underlying metric with rank in parentheses. Heat color is always rank-driven in both modes. */

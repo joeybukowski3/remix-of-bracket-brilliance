@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dense-table";
 import { cn } from "@/lib/utils";
 import { nextAllowedByPositionSort, sortAllowedByPositionRows } from "./sort";
-import type { AllowedByPositionColumn, AllowedByPositionDisplayMode, AllowedByPositionRow, AllowedByPositionSortState } from "./types";
+import type { AllowedByPositionCell, AllowedByPositionColumn, AllowedByPositionDisplayMode, AllowedByPositionRow, AllowedByPositionSortState } from "./types";
 
 /**
  * Column widths as Tailwind classes (not inline styles) so they can differ
@@ -27,9 +27,12 @@ const POSITION_COL_WIDTH_CLASS = "w-[46px] min-w-[46px] sm:w-20 sm:min-w-[80px]"
 /** Tables with more than five metric columns (TDs Allowed: six) use a narrower mobile column so Team + Opp + all metrics still fit a 375px viewport without page-level scroll. */
 const MANY_COLUMNS_THRESHOLD = 5;
 const POSITION_COL_WIDTH_CLASS_MANY = "w-[38px] min-w-[38px] sm:w-20 sm:min-w-[80px]";
+/** Seven or more metric columns (Yards vs Avg) need a still narrower mobile column and tighter cell padding to fit 375px. */
+const DENSE_COLUMNS_THRESHOLD = 6;
+const POSITION_COL_WIDTH_CLASS_DENSE = "w-[32px] min-w-[32px] sm:w-20 sm:min-w-[80px]";
 
 export type RankTone = { className?: string; style?: CSSProperties };
-export type RankToneResolver = (rank: number | null) => RankTone;
+export type RankToneResolver = (rank: number | null, cell?: AllowedByPositionCell) => RankTone;
 
 function SortHeaderButton({
   sortKey,
@@ -137,7 +140,10 @@ export default function AllowedByPositionTable<ColumnKey extends string>({
 }) {
   const sortedRows = sortAllowedByPositionRows(rows, sort.key, sort.direction, displayMode);
   const hasManyColumns = columns.length > MANY_COLUMNS_THRESHOLD;
-  const positionColWidthClass = hasManyColumns ? POSITION_COL_WIDTH_CLASS_MANY : POSITION_COL_WIDTH_CLASS;
+  const hasDenseColumns = columns.length > DENSE_COLUMNS_THRESHOLD;
+  const positionColWidthClass = hasDenseColumns
+    ? POSITION_COL_WIDTH_CLASS_DENSE
+    : hasManyColumns ? POSITION_COL_WIDTH_CLASS_MANY : POSITION_COL_WIDTH_CLASS;
 
   return (
     // `overflow-visible` overrides DenseTableScroller's default `overflow-x-auto` -- same
@@ -226,24 +232,30 @@ export default function AllowedByPositionTable<ColumnKey extends string>({
               {columns.map((column, index) => {
                 const cell = row.cells[column.key];
                 const rank = cell?.rank ?? null;
-                const tone = rankTone(rank);
+                const tone = rankTone(rank, cell);
                 return (
                   <td
                     key={column.key}
                     className={cn(
-                      "px-1 py-1.5 text-center text-xs tabular-nums font-semibold text-slate-800 sm:px-1.5 sm:text-sm",
+                      "py-1.5 text-center text-xs tabular-nums font-semibold text-slate-800 sm:px-1.5 sm:text-sm",
+                      hasDenseColumns ? "px-0" : "px-1",
                       positionColWidthClass,
                       positionDividerClassName(index),
                       tone.className,
                     )}
                     style={tone.style}
+                    title={cell?.title ?? undefined}
                   >
                     {displayMode === "raw" ? (
                       cell?.rawDisplay != null ? (
-                        <span className="inline-flex items-baseline gap-0.5 sm:gap-1">
-                          <span>{cell.rawDisplay}</span>
-                          <span className="text-[9px] font-normal opacity-70 sm:text-[10px]">({rank ?? "—"})</span>
-                        </span>
+                        <>
+                          {/* Optional mobile-only compact value (no rank suffix) for columns too narrow for "value (rank)". */}
+                          {cell.rawDisplayCompact != null && <span className="text-[10px] sm:hidden">{cell.rawDisplayCompact}</span>}
+                          <span className={cn("items-baseline gap-0.5 sm:gap-1", cell.rawDisplayCompact != null ? "hidden sm:inline-flex" : "inline-flex")}>
+                            <span>{cell.rawDisplay}</span>
+                            <span className="text-[9px] font-normal opacity-70 sm:text-[10px]">({rank ?? "—"})</span>
+                          </span>
+                        </>
                       ) : (
                         <span className="font-normal text-slate-400">—</span>
                       )
