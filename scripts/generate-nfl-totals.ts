@@ -59,6 +59,7 @@ import {
   type JsonValue,
   type PredictionSnapshotDraft,
 } from "./lib/nfl-production-prediction-archive";
+import { partitionByKickoff } from "./lib/nfl-prediction-kickoff-cutoff";
 import { runNflTotalShadow } from "./lib/nfl-total-shadow-calibration";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -366,9 +367,14 @@ function main(): void {
     }
   }
 
-  const records = drafts.map(finalizePredictionSnapshot);
-  const preKickoff = records.filter((r) => Date.parse(r.prediction_timestamp) < Date.parse(r.kickoff_utc));
-  console.log(`[nfl:totals] season=${args.season} week=${args.week} games=${slate.length} archivable=${inspect.length} skippedUnresolved=${skippedGames} rows=${records.length} preKickoffRows=${preKickoff.length}`);
+  // Partition BEFORE finalizing: finalizePredictionSnapshot rejects post-kickoff
+  // production snapshots, so a slate whose first game already started must skip
+  // those rows rather than abort the run.
+  const { preKickoff: preKickoffDrafts, postKickoff: postKickoffDrafts } = partitionByKickoff(
+    drafts, (d) => ({ predictionTimestamp: d.prediction_timestamp, kickoffUtc: d.kickoff_utc }),
+  );
+  const preKickoff = preKickoffDrafts.map(finalizePredictionSnapshot);
+  console.log(`[nfl:totals] season=${args.season} week=${args.week} games=${slate.length} archivable=${inspect.length} skippedUnresolved=${skippedGames} rows=${drafts.length} preKickoffRows=${preKickoff.length}`);
   for (const row of inspect) console.log(`[nfl:totals]   ${JSON.stringify(row)}`);
 
   if (args.output) {
@@ -390,7 +396,7 @@ function main(): void {
     rootDir: args.archiveRoot, records: preKickoff,
     sourceManifests: [sourceManifest], fittedModelManifests: [fittedManifest],
   });
-  console.log(`[nfl:totals] archive appended=${result.appended} duplicates=${result.duplicates} skippedPostKickoff=${records.length - preKickoff.length} files=${result.files.length}`);
+  console.log(`[nfl:totals] archive appended=${result.appended} duplicates=${result.duplicates} skippedPostKickoff=${postKickoffDrafts.length} files=${result.files.length}`);
   shadowStep(args, slate, preKickoff, createdAt, runId, false);
 }
 

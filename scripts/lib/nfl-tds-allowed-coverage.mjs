@@ -1,39 +1,31 @@
-import { expectedFinalTeamGames, requireTeamGameCoverage } from "./nfl-current-season-coverage.mjs";
+import { defenseGamesByTeam, reportPlayerWeekCoverage } from "./nfl-allowed-by-position-coverage.mjs";
 
-/** Distinct team-games present in the player-week cache for a season, keyed to canonical game ids. */
-export function playerWeekTeamGames(playerWeekRows, season, results) {
-  const gameIdByTeamWeek = new Map();
-  for (const result of results) {
-    if (result.seasonType !== "REG") continue;
-    for (const team of [result.homeAbbr, result.awayAbbr]) gameIdByTeamWeek.set(`${result.week}|${team}`, result.gameId);
-  }
-  const included = new Map();
-  for (const row of playerWeekRows) {
-    if (row.season !== season) continue;
-    const gameId = gameIdByTeamWeek.get(`${row.week}|${row.team}`) ?? `${season}_${row.week}_unscheduled`;
-    included.set(`${gameId}|${row.team}`, { gameId, team: row.team });
-  }
-  return [...included.values()];
-}
-
-/** Fails when any completed REG game has no player-week rows. Unplayed games are never expected. */
+/**
+ * Logs how the player-week cache lines up with completed games. Unplayed games
+ * are never expected, and a FINAL game nflverse has not published yet is a
+ * warning, not a failure: a lagging upstream game must not block publishing
+ * the completed games that are available. Throws only on structural errors.
+ */
 export function requirePlayerWeekCoverage({ season, results, games, playerWeekRows }) {
-  const expected = expectedFinalTeamGames(results, games);
-  return requireTeamGameCoverage(expected, playerWeekTeamGames(playerWeekRows, season, results), `TDs Allowed ${season} player-week cache`);
+  return reportPlayerWeekCoverage({ season, results, games, playerWeekRows }, `TDs Allowed ${season} player-week cache`);
 }
 
-/** Problems (empty when valid) if the artifact's current-season sample lags the completed games. */
-export function validateTdsAllowedArtifact(artifact, results, games = null) {
+/**
+ * Problems (empty when valid) if the artifact's current-season sample does not
+ * match the player-week cache it was built from. Every TDs category counts a
+ * game whenever the defense faced any offensive row, so each category's
+ * gamesSampled must equal the defense's game count in the cache.
+ */
+export function validateTdsAllowedArtifact(artifact, playerWeekRows) {
   const key = String(artifact?.season);
-  const expectedByTeam = new Map();
-  for (const { team } of expectedFinalTeamGames(results, games)) expectedByTeam.set(team, (expectedByTeam.get(team) ?? 0) + 1);
+  const cacheGames = defenseGamesByTeam(playerWeekRows, { season: artifact?.season });
   const problems = [];
   if (!Array.isArray(artifact?.rows) || artifact.rows.length !== 32) problems.push("artifact must contain 32 team rows");
   for (const row of artifact?.rows ?? []) {
-    const expected = expectedByTeam.get(row.team) ?? 0;
+    const expected = cacheGames.get(row.team)?.size ?? 0;
     for (const [category, sample] of Object.entries(row.samples?.[key] ?? {})) {
       const sampled = sample?.gamesSampled ?? 0;
-      if (sampled !== expected) problems.push(`${row.team} ${category}: ${sampled} games sampled, ${expected} completed`);
+      if (sampled !== expected) problems.push(`${row.team} ${category}: ${sampled} games sampled, player-week cache has ${expected}`);
     }
   }
   return problems;

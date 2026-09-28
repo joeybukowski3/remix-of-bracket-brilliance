@@ -1,0 +1,209 @@
+name: NFL Allowed by Position
+
+run-name: NFL Allowed by Position • ${{ github.event_name }} • ${{ github.ref_name }}
+
+# Primary refresh for the defense "Allowed by Position" pages:
+#   /nfl/fantasy-points-allowed  -> public/data/nfl/fantasy-points-allowed.json
+#   TDs Allowed by Position      -> public/data/nfl/tds-allowed-by-position.json
+# Both are full deterministic rebuilds from the nflverse player-week cache
+# (data/nfl/nflverse/stats-player-week), so reruns never double count and
+# every game nflverse has published is incorporated -- the week never has to
+# be complete. Deliberately independent of the yardage-projections model
+# chain: a failure there used to leave these pages stale Thursday-Monday
+# every week. nfl-yardage-projections.yml still regenerates both as a
+# backstop; identical inputs produce identical outputs.
+#
+# Lag policy: a game FINAL in results.json that nflverse has not published
+# yet is a ::warning:: annotation, never a failure -- the completed games that
+# ARE available still publish. Only structural problems (unscheduled team-weeks,
+# wrong team coverage, artifact not matching the cache) fail the run.
+on:
+  schedule:
+    # `timezone` makes GitHub evaluate the cron in Eastern time (the repo-wide
+    # convention; see nfl-schedules-results.yml, nfl-yardage-projections.yml),
+    # so these are 8:00 AM ET = 12:00 UTC during EDT / 13:00 UTC during EST.
+    # GitHub may start scheduled runs late under load. nflverse posts Sunday's
+    # player stats around 8 AM ET Monday, so a late start only helps.
+    # Friday 8:00 AM ET -- Thursday Night Football.
+    - cron: "0 8 * 1,2,9,10,11,12 5"
+      timezone: "America/New_York"
+    # Monday 8:00 AM ET -- Thursday + Sunday games.
+    - cron: "0 8 * 1,2,9,10,11,12 1"
+      timezone: "America/New_York"
+    # Tuesday 8:00 AM ET -- Monday Night Football; effectively finalizes the week.
+    - cron: "0 8 * 1,2,9,10,11,12 2"
+      timezone: "America/New_York"
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "NFL season to refresh (blank = current NFL season; Jan-Feb belong to the prior year's season)"
+        required: false
+        default: ""
+
+# Same per-branch lock as nfl-yardage-projections.yml, which also writes the
+# player-week cache and tds-allowed-by-position.json.
+concurrency:
+  group: main-data-writers-${{ github.repository }}-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-allowed-by-position:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # Mirrors nfl-yardage-projections.yml: dispatch -> the selected branch,
+      # schedule -> main, never inferred.
+      - name: Resolve target branch
+        id: target-branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          event_name="${{ github.event_name }}"
+          ref_name="${{ github.ref_name }}"
+          if [ "$event_name" = "workflow_dispatch" ]; then
+            if [ -z "$ref_name" ]; then
+              echo "ERROR: workflow_dispatch run has no github.ref_name -- refusing to guess a branch." >&2
+              exit 1
+            fi
+            branch="$ref_name"
+          elif [ "$event_name" = "schedule" ]; then
+            branch="main"
+          else
+            echo "ERROR: unsupported event_name '$event_name' -- refusing to guess a branch." >&2
+            exit 1
+          fi
+          echo "branch=${branch}" >> "$GITHUB_OUTPUT"
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.target-branch.outputs.branch }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify checkout branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected_branch="${{ steps.target-branch.outputs.branch }}"
+          actual_branch="$(git branch --show-current)"
+          echo "event=${{ github.event_name }} branch=${actual_branch} sha=$(git rev-parse HEAD)"
+          if [ "$actual_branch" != "$expected_branch" ]; then
+            echo "ERROR: checked-out branch '${actual_branch}' does not match resolved branch '${expected_branch}'." >&2
+            exit 1
+          fi
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Resolve season
+        id: season
+        shell: bash
+        env:
+          SEASON_INPUT: ${{ inputs.season }}
+        run: |
+          set -euo pipefail
+          if [ -n "${SEASON_INPUT:-}" ]; then
+            season="$SEASON_INPUT"
+          else
+            year="$(TZ=America/New_York date +%Y)"
+            month="$(TZ=America/New_York date +%-m)"
+            if [ "$month" -le 2 ]; then season=$((year - 1)); else season="$year"; fi
+          fi
+          if ! [[ "$season" =~ ^20[0-9]{2}$ ]]; then
+            echo "ERROR: invalid season '${season}'" >&2
+            exit 1
+          fi
+          echo "Resolved season=${season} (input='${SEASON_INPUT:-}', now=$(TZ=America/New_York date -Iseconds))"
+          echo "season=${season}" >> "$GITHUB_OUTPUT"
+
+      # Runner-local only (NOT committed -- nfl-schedules-results.yml owns
+      # games.json/results.json). Gives the coverage diagnostics current FINAL
+      # statuses; a failure only makes those warnings less precise, it never
+      # blocks publishing, since the artifacts are built from the cache alone.
+      - name: Refresh schedule/results for coverage diagnostics
+        continue-on-error: true
+        run: npm run nfl:schedules -- --season=${{ steps.season.outputs.season }}
+
+      - name: Refresh player-week stats cache
+        run: npm run fantasy:player-week-cache -- --seasons=${{ steps.season.outputs.season }} --partial-season=${{ steps.season.outputs.season }}
+
+      - name: Generate TDs Allowed by Position
+        run: npm run nfl:tds-allowed-by-position -- --season=${{ steps.season.outputs.season }}
+
+      - name: Validate TDs Allowed by Position
+        run: npm run nfl:validate-tds-allowed -- --season=${{ steps.season.outputs.season }}
+
+      - name: Generate Fantasy Points Allowed by Position
+        run: npm run nfl:fantasy-points-allowed -- --season=${{ steps.season.outputs.season }}
+
+      - name: Validate Fantasy Points Allowed by Position
+        run: npm run nfl:validate-fantasy-points-allowed -- --season=${{ steps.season.outputs.season }}
+
+      - name: Commit and push refreshed data
+        shell: bash
+        run: |
+          set -euo pipefail
+          target_branch="${{ steps.target-branch.outputs.branch }}"
+          season="${{ steps.season.outputs.season }}"
+          test "$(git branch --show-current)" = "$target_branch"
+          # Diagnostics-only schedule refresh: discard so the tree is clean for rebase.
+          git checkout -- "public/data/nfl/${season}/games.json" "public/data/nfl/${season}/results.json" 2>/dev/null || true
+          artifacts=(public/data/nfl/fantasy-points-allowed.json public/data/nfl/tds-allowed-by-position.json)
+          # A rebuild from unchanged inputs differs only in generatedAt; keep
+          # the committed file so an idle run makes no commit.
+          for artifact in "${artifacts[@]}"; do
+            if git cat-file -e "HEAD:${artifact}" 2>/dev/null && node -e '
+              const { execFileSync } = require("node:child_process");
+              const { readFileSync } = require("node:fs");
+              const file = process.argv[1];
+              const strip = (text) => { const value = JSON.parse(text); delete value.generatedAt; return JSON.stringify(value); };
+              process.exit(strip(execFileSync("git", ["show", `HEAD:${file}`], { encoding: "utf8" })) === strip(readFileSync(file, "utf8")) ? 0 : 1);
+            ' "$artifact"; then
+              git checkout -- "$artifact"
+              echo "${artifact}: content unchanged (generatedAt only) -- keeping committed version"
+            fi
+          done
+          git add -- "${artifacts[@]}" \
+            "data/nfl/nflverse/stats-player-week/stats_player_week_${season}.csv" \
+            data/nfl/nflverse/stats-player-week/manifest.json
+          if git diff --cached --quiet; then
+            echo "No Allowed-by-Position data changes."
+            exit 0
+          fi
+          if [ -n "$(git status --porcelain --untracked-files=no | grep -v '^M  ' || true)" ]; then
+            echo "ERROR: unexpected unstaged tracked changes; refusing to commit/rebase:" >&2
+            git status --short >&2
+            exit 1
+          fi
+          git diff --cached --stat
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "data(nfl): refresh allowed-by-position (season ${season})"
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5 -> ${target_branch}"
+            git fetch origin "$target_branch"
+            if ! git rebase "origin/$target_branch"; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin "HEAD:$target_branch"; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+          if [ "$pushed" != "true" ]; then
+            echo "ERROR: All push attempts failed -- Allowed-by-Position data was not committed to ${target_branch}." >&2
+            exit 1
+          fi

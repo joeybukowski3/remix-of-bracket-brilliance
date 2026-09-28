@@ -36,6 +36,10 @@ import { buildFantasyAllowedRows } from "../src/lib/nfl/fantasyAllowed/buildRows
 import { resolveCurrentOpponents } from "../src/lib/nfl/fantasyAllowed/currentOpponents.ts";
 import type { FantasyAllowedArtifact } from "../src/lib/nfl/fantasyAllowed/types.ts";
 import { loadGames, loadPlayerWeekRows, loadTeamAbbrs, readJson, writeJsonAtomic } from "./lib/nflAllowedByPositionIo.ts";
+import { reportPlayerWeekCoverage } from "./lib/nfl-allowed-by-position-coverage.mjs";
+import { currentSeasonGamesByTeam } from "./lib/nfl-fantasy-allowed-coverage.mjs";
+import type { NflGameRecord } from "../src/lib/nfl/standings.ts";
+import type { HistoricalPlayerWeek } from "../src/lib/fantasy/weekly/history.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DATA_DIR = join(ROOT, "public", "data", "nfl");
@@ -69,6 +73,57 @@ function loadSlotWideSnapshot(season: number): Map<string, { slotPpgAllowed: num
   return map;
 }
 
+const LOG = "[nfl:fantasy-points-allowed]";
+
+type ResultRecord = { week: number; seasonType: string; final: boolean };
+
+/** Distribution of per-team current-season games, e.g. {"2":2,"3":30}. */
+function gamesDistribution(byTeam: Map<string, number>): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const games of byTeam.values()) counts[games] = (counts[games] ?? 0) + 1;
+  return counts;
+}
+
+function readPreviousArtifact(): FantasyAllowedArtifact | null {
+  if (!existsSync(OUT_FILE)) return null;
+  try {
+    return readJson(OUT_FILE) as FantasyAllowedArtifact;
+  } catch (error) {
+    console.warn(`${LOG} previous artifact unreadable (${error instanceof Error ? error.message : error}); treating as absent`);
+    return null;
+  }
+}
+
+/** Schedule state plus cache coverage (lag is a warning, never a failure). */
+function logRefreshContext(season: number, week: number, games: NflGameRecord[], currentRows: HistoricalPlayerWeek[]) {
+  const resultsFile = join(DATA_DIR, String(season), "results.json");
+  const results: ResultRecord[] = existsSync(resultsFile) ? (readJson(resultsFile).results ?? []) : [];
+  const scheduledInWeek = games.filter((game) => game.seasonType === "REG" && game.week === week).length;
+  const finalInWeek = results.filter((result) => result.seasonType === "REG" && result.week === week && result.final).length;
+  const finalInSeason = results.filter((result) => result.seasonType === "REG" && result.final).length;
+  console.log(`${LOG} season=${season} week=${week} scheduledGamesInWeek=${scheduledInWeek} finalGamesInWeek=${finalInWeek} finalGamesSeason=${finalInSeason}`);
+  reportPlayerWeekCoverage({ season, results, games, playerWeekRows: currentRows }, `Fantasy Points Allowed ${season} player-week cache`);
+}
+
+/** What this rebuild changes versus the previously published artifact. */
+function logArtifactChange(previous: FantasyAllowedArtifact | null, next: FantasyAllowedArtifact) {
+  const after = currentSeasonGamesByTeam(next);
+  const before = previous?.season === next.season ? currentSeasonGamesByTeam(previous) : new Map<string, number>();
+  if (previous) {
+    console.log(`${LOG} previous artifact: season=${previous.season} week=${previous.week} generatedAt=${previous.generatedAt} gamesPerTeam=${JSON.stringify(gamesDistribution(before))}`);
+  } else {
+    console.log(`${LOG} previous artifact: none`);
+  }
+  let newTeamGames = 0;
+  const changedTeams: string[] = [];
+  for (const [team, games] of after) {
+    const delta = games - (before.get(team) ?? 0);
+    if (delta !== 0) changedTeams.push(`${team}${delta > 0 ? "+" : ""}${delta}`);
+    newTeamGames += delta;
+  }
+  console.log(`${LOG} rebuilt artifact: week=${next.week} gamesPerTeam=${JSON.stringify(gamesDistribution(after))} newlyIncorporatedTeamGames=${newTeamGames} (${changedTeams.join(" ") || "no change"})`);
+}
+
 function main() {
   const args = parseArgs(process.argv);
   const currentSeason = args.season;
@@ -81,7 +136,9 @@ function main() {
   const teams = loadTeamAbbrs(ROOT);
   if (teams.length !== 32) throw new Error(`Expected 32 canonical teams, found ${teams.length}.`);
 
-  const historicalRows = [...loadPlayerWeekRows(ROOT, priorSeason), ...loadPlayerWeekRows(ROOT, currentSeason)];
+  const currentRows = loadPlayerWeekRows(ROOT, currentSeason);
+  const historicalRows = [...loadPlayerWeekRows(ROOT, priorSeason), ...currentRows];
+  logRefreshContext(currentSeason, week, currentSeasonGames, currentRows);
   const opponents = resolveCurrentOpponents(currentSeasonGames, week);
   const slotWideSnapshot = loadSlotWideSnapshot(currentSeason);
 
@@ -103,6 +160,8 @@ function main() {
     rows,
   };
 
+  logArtifactChange(readPreviousArtifact(), artifact);
+
   if (args.dryRun) {
     console.log(JSON.stringify(artifact, null, 2).slice(0, 2000));
     console.log(`\n(dry run) ${rows.length} rows, would write to ${OUT_FILE}`);
@@ -110,7 +169,7 @@ function main() {
   }
 
   writeJsonAtomic(OUT_FILE, artifact);
-  console.log(`Wrote ${rows.length} rows to ${OUT_FILE}`);
+  console.log(`${LOG} wrote ${rows.length} rows to ${OUT_FILE}`);
 }
 
 main();
