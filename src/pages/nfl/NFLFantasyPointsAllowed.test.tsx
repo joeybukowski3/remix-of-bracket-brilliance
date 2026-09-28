@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import type { FantasyAllowedArtifact, FantasyAllowedPositionSample, FantasyAllowedRow } from "@/lib/nfl/fantasyAllowed/types";
 import { fantasyAllowedRankTone } from "@/lib/nfl/fantasyAllowed/presentation";
 import type { PositionMatchupArtifact, PositionMatchupCell, PositionMatchupCells, PositionMatchupRow } from "@/lib/nfl/positionMatchups/types";
+import { YARDS_VS_AVERAGE_METRIC_KEYS, YARDS_VS_AVERAGE_SAMPLE_KEYS, type YardsVsAverageArtifact, type YardsVsAverageMetricSample } from "@/lib/nfl/yardsVsAverage/types";
 import NFLFantasyPointsAllowed from "./NFLFantasyPointsAllowed";
 
 function renderPage(initialEntry = "/nfl/fantasy-points-allowed") {
@@ -391,5 +392,62 @@ describe("NFLFantasyPointsAllowed view tabs", () => {
 
     await waitFor(() => screen.getByText("BUF"));
     expect(screen.getByRole("button", { name: "Last 8" })).toHaveAttribute("aria-pressed", "true");
+  });
+});
+
+function yardsSample(overrides: Partial<YardsVsAverageMetricSample> = {}): YardsVsAverageMetricSample {
+  return { gamesSampled: 3, deltaYds: -12.4, deltaPct: -8.1, rankYds: 4, rankPct: 5, gamesAbove: 0, gamesBelow: 3, ...overrides };
+}
+
+function yardsArtifact(): YardsVsAverageArtifact {
+  const samples = (teRec: YardsVsAverageMetricSample) => Object.fromEntries(YARDS_VS_AVERAGE_SAMPLE_KEYS.map((key) => [key,
+    Object.fromEntries(YARDS_VS_AVERAGE_METRIC_KEYS.map((metric) => [metric,
+      metric === "teRec" ? teRec : metric === "qbRush" ? yardsSample({ deltaPct: null, rankPct: null }) : yardsSample()]))]));
+  return {
+    schemaVersion: "nfl-yards-vs-average-v1",
+    generatedAt: "2026-09-28T00:00:00.000Z",
+    season: 2026,
+    week: 3,
+    games: [],
+    rows: [
+      { team: "car", opponent: "atl", location: "vs", samples: samples(yardsSample({ deltaYds: 16.8, deltaPct: 31.5, rankYds: 32, rankPct: 31, gamesAbove: 3, gamesBelow: 0 })) },
+      { team: "ten", opponent: "nyg", location: "@", samples: samples(yardsSample({ deltaYds: -37.4, rankYds: 1 })) },
+    ],
+  } as unknown as YardsVsAverageArtifact;
+}
+
+describe("NFLFantasyPointsAllowed Yards vs Avg tab", () => {
+  function stubYardsFetch() {
+    vi.stubGlobal("fetch", vi.fn((url: string) => Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve(String(url).includes("yards-vs-average") ? yardsArtifact() : artifact()),
+    } as Response)));
+  }
+
+  it("loads from ?view=yards with Yds + Raw defaults and signed deltas", async () => {
+    stubYardsFetch();
+    renderPage("/nfl/fantasy-points-allowed?view=yards");
+
+    const carRow = await waitFor(() => screen.getByText("CAR").closest("tr") as HTMLElement);
+    expect(screen.getByRole("button", { name: "Yards vs Avg" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Yds" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Raw" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(carRow).getByText("+16.8")).toBeInTheDocument();
+    expect(within(carRow).getByText("+17")).toBeInTheDocument(); // compact mobile value
+    expect(within(carRow).getByText("+16.8").closest("td")).toHaveAttribute("title", "Rank 32 of 32 · 3/3 opponents above avg, 0 below (3 games)");
+    expect(screen.getByRole("button", { name: "Sort by PASS" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sort by QB PASS" })).not.toBeInTheDocument();
+  });
+
+  it("switches to % and shows a dash for suppressed QB RUSH %", async () => {
+    stubYardsFetch();
+    renderPage("/nfl/fantasy-points-allowed?view=yards");
+    await waitFor(() => screen.getByText("CAR"));
+
+    fireEvent.click(screen.getByRole("button", { name: "%" }));
+    const carRow = screen.getByText("CAR").closest("tr") as HTMLElement;
+    expect(within(carRow).getByText("+31.5%")).toBeInTheDocument();
+    const qbRushCell = within(carRow).getAllByRole("cell")[4];
+    expect(qbRushCell).toHaveTextContent("—");
   });
 });

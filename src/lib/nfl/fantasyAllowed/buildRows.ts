@@ -41,7 +41,8 @@ const JKB_SOURCE = "jkb-full-ppr-player-week" as const;
 /** Rolling-window sample keys mapped to their game count, so adding a new window (e.g. last10) is a one-line change. */
 const ROLLING_SAMPLE_GAME_COUNTS: Partial<Record<FantasyAllowedSampleKey, number>> = { last5: 5, last8: 8 };
 
-function selectorForSample(sampleKey: FantasyAllowedSampleKey, currentSeason: number, priorSeason: number) {
+/** Shared defense-window semantics (also used by Yards vs Avg): season samples, or the most recent N games across the season boundary. */
+export function selectorForSample(sampleKey: FantasyAllowedSampleKey, currentSeason: number, priorSeason: number) {
   if (sampleKey === "2026") return { kind: "season" as const, season: currentSeason };
   if (sampleKey === "2025") return { kind: "season" as const, season: priorSeason };
   const n = ROLLING_SAMPLE_GAME_COUNTS[sampleKey];

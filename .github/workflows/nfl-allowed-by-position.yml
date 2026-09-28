@@ -5,7 +5,8 @@ run-name: NFL Allowed by Position • ${{ github.event_name }} • ${{ github.re
 # Primary refresh for the defense "Allowed by Position" pages:
 #   /nfl/fantasy-points-allowed  -> public/data/nfl/fantasy-points-allowed.json
 #   TDs Allowed by Position      -> public/data/nfl/tds-allowed-by-position.json
-# Both are full deterministic rebuilds from the nflverse player-week cache
+#   Yards vs Avg (?view=yards)   -> public/data/nfl/yards-vs-average-by-position.json
+# All are full deterministic rebuilds from the nflverse player-week cache
 # (data/nfl/nflverse/stats-player-week), so reruns never double count and
 # every game nflverse has published is incorporated -- the week never has to
 # be complete. Deliberately independent of the yardage-projections model
@@ -150,6 +151,12 @@ jobs:
       - name: Validate Fantasy Points Allowed by Position
         run: npm run nfl:validate-fantasy-points-allowed -- --season=${{ steps.season.outputs.season }}
 
+      - name: Generate Yards vs Average by Position
+        run: npm run nfl:yards-vs-average -- --season=${{ steps.season.outputs.season }}
+
+      - name: Validate Yards vs Average by Position
+        run: npm run nfl:validate-yards-vs-average -- --season=${{ steps.season.outputs.season }}
+
       - name: Commit and push refreshed data
         shell: bash
         run: |
@@ -159,7 +166,7 @@ jobs:
           test "$(git branch --show-current)" = "$target_branch"
           # Diagnostics-only schedule refresh: discard so the tree is clean for rebase.
           git checkout -- "public/data/nfl/${season}/games.json" "public/data/nfl/${season}/results.json" 2>/dev/null || true
-          artifacts=(public/data/nfl/fantasy-points-allowed.json public/data/nfl/tds-allowed-by-position.json)
+          artifacts=(public/data/nfl/fantasy-points-allowed.json public/data/nfl/tds-allowed-by-position.json public/data/nfl/yards-vs-average-by-position.json)
           # A rebuild from unchanged inputs differs only in generatedAt; keep
           # the committed file so an idle run makes no commit.
           for artifact in "${artifacts[@]}"; do
