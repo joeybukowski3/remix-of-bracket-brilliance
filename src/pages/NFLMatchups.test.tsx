@@ -126,7 +126,7 @@ function renderRoute(path: string) {
           <Route path="matchups/:gameSlug" element={<NFLMatchupDetail />} />
           <Route path="trends" element={<h1>NFL Trends Page</h1>} />
           <Route path="schedule" element={<h1>Schedule Page</h1>} />
-          <Route path="guide/team/:teamSlug" element={<h1>Team Dashboard</h1>} />
+          <Route path="teams/:teamSlug" element={<h1>Team Dashboard</h1>} />
         </Route>
         <Route path="/mlb" element={<h1>MLB Page</h1>} />
       </Routes>
@@ -306,7 +306,7 @@ describe("NFLMatchupDetail", () => {
   it("links each team to its canonical dashboard route", () => {
     renderRoute(`/nfl/matchups/${OPENER}`);
     const away = screen.getByRole("link", { name: "New England Patriots" });
-    expect(away.getAttribute("href")).toBe("/nfl/guide/team/new-england-patriots");
+    expect(away.getAttribute("href")).toBe("/nfl/teams/new-england-patriots");
   });
 
   it("highlights Weekly Matchups in the sidebar on the detail route", () => {

@@ -62,6 +62,7 @@ import NFLPerformance from "./pages/nfl/NFLPerformance";
 import NFLFantasyPointsAllowed from "./pages/nfl/NFLFantasyPointsAllowed";
 import NFLTdsAllowedByPosition from "./pages/nfl/NFLTdsAllowedByPosition";
 import NFLFantasyPositionMatchupsRedirect from "./pages/nfl/NFLFantasyPositionMatchupsRedirect";
+import LegacyNflTeamRedirect from "./pages/nfl/LegacyNflTeamRedirect";
 import FantasyFootball from "./pages/FantasyFootball";
 import FantasyPointsAllowed from "./pages/FantasyPointsAllowed";
 import FantasyWeeklyRankings from "./pages/FantasyWeeklyRankings";
@@ -192,7 +193,9 @@ const App = () => (
             <Route path="coach-of-year" element={<NFLCoachOfYear2026 />} />
             <Route path="guide" element={<NFLGuide2026 />} />
             <Route path="guide/regression" element={<NFLRegression2026 />} />
-            <Route path="guide/team/:teamSlug" element={<NFLTeamGuide2026 />} />
+            <Route path="guide/team/:teamSlug" element={<LegacyNflTeamRedirect />} />
+            <Route path="teams" element={<Navigate to="/nfl/guide" replace />} />
+            <Route path="teams/:teamSlug" element={<NFLTeamGuide2026 />} />
             <Route path="2026-guide" element={<Navigate to="/nfl/guide" replace />} />
           </Route>
           <Route element={<NflPlatformLayout />}>

@@ -411,11 +411,11 @@ describe("Matchup hero", () => {
 
     expect(screen.getByRole("link", { name: "New England Patriots" })).toHaveAttribute(
       "href",
-      "/nfl/guide/team/new-england-patriots"
+      "/nfl/teams/new-england-patriots"
     );
     expect(screen.getByRole("link", { name: "Seattle Seahawks" })).toHaveAttribute(
       "href",
-      "/nfl/guide/team/seattle-seahawks"
+      "/nfl/teams/seattle-seahawks"
     );
 
     expect(screen.getByText("Lumen Field")).toBeInTheDocument();

@@ -18,7 +18,7 @@ function renderAt(path: string) {
           <Route path="power-ratings" element={<h1>Power Ratings</h1>} />
           <Route path="standings" element={<h1>Standings</h1>} />
           <Route path="guide" element={<h1>Guide</h1>} />
-          <Route path="guide/team/:teamSlug" element={<h1>Team</h1>} />
+          <Route path="teams/:teamSlug" element={<h1>Team</h1>} />
         </Route>
         <Route path="/fantasy-football" element={<h1>Fantasy</h1>} />
       </Routes>
@@ -41,7 +41,7 @@ describe("NFL navigation architecture", () => {
   });
 
   it("names the team guide on a team detail route", () => {
-    renderAt("/nfl/guide/team/seattle-seahawks");
+    renderAt("/nfl/teams/seattle-seahawks");
     const trigger = screen.getByRole("button", { name: /Open NFL menu/i });
     expect(within(trigger).getByText("2026 Team Guide")).toBeTruthy();
   });

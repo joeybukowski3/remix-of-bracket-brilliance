@@ -3,6 +3,7 @@ import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { getNflSeasonGuide, type NflGuideTeamNormalized } from "@/lib/nfl/guideData";
 import type { NflScheduleGame } from "@/lib/nfl/teamSchedule";
 import type { WarrenSharpWeeklyRestEdge } from "@/lib/nfl/warrenSharpSchedule2026";
+import { nflTeamPath } from "@/lib/nfl/teamRoutes";
 
 type MatchupTone = "advantage" | "disadvantage" | "even" | "neutral";
 
@@ -65,7 +66,7 @@ export default function NflScheduleGameCard({
           </div>
           {opponent ? (
             <Link
-              to={`/nfl/guide/team/${opponent.slug}`}
+              to={nflTeamPath(opponent.slug)}
               className="text-lg font-black text-slate-900 hover:text-blue-700 hover:underline"
             >
               {opponentName}

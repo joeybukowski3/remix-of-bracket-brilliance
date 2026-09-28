@@ -24,6 +24,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { buildMatchupFromGame } from "@/lib/nfl/matchups";
+import { nflTeamPath } from "@/lib/nfl/teamRoutes";
 import type { NflGameRecord } from "@/lib/nfl/standings";
 import { getAllTeams, getTeamsByConference } from "@/data/cfb";
 import { CFB_CONFERENCES, CFB_CONFERENCE_ORDER } from "@/data/cfb/conferences";
@@ -134,6 +135,8 @@ export const EXCLUDED_ROUTES: Readonly<Record<string, string>> = {
   "/nfl/performance/*": "tab URLs canonicalize to /nfl/performance, which itself redirects",
   "/nfl/fantasy-position-matchups": "client redirect",
   "/nfl/2026-guide": "client redirect to /nfl/guide",
+  "/nfl/teams": "client redirect to /nfl/guide (team pages live at /nfl/teams/:teamSlug)",
+  "/nfl/guide/team/*": "301 redirect to /nfl/teams/:teamSlug",
   "/fantasy-football":
     "renders the weekly board (getDefaultFantasyRankingMode() is 'weekly') and canonicalizes to /fantasy-football/weekly-rankings",
   "/fantasy-football/start-sit": "user-specific Sleeper lineup tool",
@@ -177,11 +180,11 @@ export const EXCLUDED_ROUTES: Readonly<Record<string, string>> = {
 
 // ── Data-derived routes ──────────────────────────────────────────────────────
 
-/** 2026 NFL team dashboards: /nfl/guide/team/:teamSlug from the season guide. */
+/** 2026 NFL team pages: /nfl/teams/:teamSlug from the season guide (the page's own resolver). */
 export function buildNflTeamPaths(): string[] {
   const guide = getNflSeasonGuide(NFL_SITEMAP_SEASON);
   if (!guide) throw new Error(`No NFL season guide for ${NFL_SITEMAP_SEASON}`);
-  return guide.teams.map((team) => `/nfl/guide/team/${team.slug}`);
+  return guide.teams.map((team) => nflTeamPath(team.slug));
 }
 
 export function loadNflSeasonGames(season = NFL_SITEMAP_SEASON): NflGameRecord[] {

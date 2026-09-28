@@ -15,6 +15,7 @@ import {
 import { MATCHUP_SECTION_SCROLL_MT } from "@/lib/nfl/matchupSections";
 import { kickoffLabel } from "@/pages/NFLSchedule";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
+import { nflTeamPath } from "@/lib/nfl/teamRoutes";
 
 const NA = "N/A";
 
@@ -74,7 +75,7 @@ function TeamBlock({
           {/* Wraps rather than truncates: at 375px each team block is ~170px
               wide, where truncation would render "New Eng…". */}
           <Link
-            to={`/nfl/guide/team/${team.slug}`}
+            to={nflTeamPath(team.slug)}
             className="block text-sm font-bold leading-4 text-slate-900 hover:text-emerald-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 sm:text-base sm:leading-5 lg:truncate lg:text-lg"
           >
             {team.teamName}

@@ -179,7 +179,7 @@ describe("NFLStandings — 2026 preseason projection view", () => {
     const links = await screen.findAllByRole("link", { name: /Open LA Rams team dashboard/i });
     expect(links.length).toBeGreaterThan(0);
     for (const link of links) {
-      expect(link.getAttribute("href")).toBe("/nfl/guide/team/la-rams");
+      expect(link.getAttribute("href")).toBe("/nfl/teams/la-rams");
       const img = link.querySelector("img");
       expect(img?.getAttribute("src")).toMatch(/lar\.png/);
     }

@@ -80,7 +80,7 @@ describe("NFL section navigation", () => {
     expect(getActiveNflSectionLabel("/nfl/fantasy-points-allowed")).toBe("Fantasy Points Allowed");
     expect(getActiveNflSectionLabel("/nfl/tds-allowed-by-position")).toBe("TDs Allowed by Position");
     expect(getActiveNflSectionLabel("/nfl/trends")).toBe("NFL Trends");
-    expect(getActiveNflSectionLabel("/nfl/guide/team/seattle-seahawks")).toBe("2026 Team Guide");
+    expect(getActiveNflSectionLabel("/nfl/teams/seattle-seahawks")).toBe("2026 Team Guide");
     expect(getActiveNflSectionLabel("/fantasy-football")).toBe("Fantasy Football");
     expect(getActiveNflSectionLabel("/mlb")).toBeNull();
   });
@@ -102,7 +102,7 @@ describe("NFL section navigation", () => {
   });
 
   it("keeps team dashboards grouped under the 2026 guide", () => {
-    expect(isNflSectionPathActive("/nfl/guide/team/seattle-seahawks", "/nfl/guide")).toBe(true);
+    expect(isNflSectionPathActive("/nfl/teams/seattle-seahawks", "/nfl/guide")).toBe(true);
     expect(isNflSectionPathActive("/nfl/guide/regression", "/nfl/guide")).toBe(false);
     expect(isNflSectionPathActive("/nfl/guide/regression", "/nfl/guide/regression")).toBe(true);
   });
@@ -113,7 +113,7 @@ describe("NFL section navigation", () => {
     expect(getActiveNflSectionCategoryId("/nfl/standings")).toBe("season");
     expect(getActiveNflSectionCategoryId("/nfl/guide")).toBe("team-intelligence");
     expect(getActiveNflSectionCategoryId("/nfl/guide/regression")).toBe("team-intelligence");
-    expect(getActiveNflSectionCategoryId("/nfl/guide/team/seattle-seahawks")).toBe("team-intelligence");
+    expect(getActiveNflSectionCategoryId("/nfl/teams/seattle-seahawks")).toBe("team-intelligence");
   });
 
   it("contains no duplicate clickable paths", () => {

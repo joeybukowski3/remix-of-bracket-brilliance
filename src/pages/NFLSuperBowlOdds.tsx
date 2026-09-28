@@ -7,6 +7,7 @@ import { calculateRankGap, getRankGapSignal, type SuperBowlMarketTeam } from "@/
 import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
 import NflPageHeader from "@/components/nfl/ui/NflPageHeader";
 import { NFL_TABLE_HEAD_ROW, NFL_TABLE_ROW, NflTableScroller } from "@/components/nfl/ui/NflTable";
+import { nflTeamPath } from "@/lib/nfl/teamRoutes";
 
 type SuperBowlOddsResponse = {
   source: "polymarket";
@@ -139,7 +140,7 @@ export default function NFLSuperBowlOdds() {
                   <tr key={row.abbr} className={NFL_TABLE_ROW}>
                     <td className="text-center font-semibold tabular-nums text-slate-900">{row.marketRank ?? "—"}</td>
                     <td className="p-0">
-                      <Link to={`/nfl/guide/team/${slugifyNflTeam(row.team)}`} className="flex items-center gap-2.5 px-3 py-2 font-semibold text-slate-900 hover:text-sky-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500" aria-label={`Open ${row.team} team dashboard`}>
+                      <Link to={nflTeamPath(slugifyNflTeam(row.team))} className="flex items-center gap-2.5 px-3 py-2 font-semibold text-slate-900 hover:text-sky-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500" aria-label={`Open ${row.team} team dashboard`}>
                         <span className="h-6 w-[3px] rounded-full" style={{ background: row.color }} aria-hidden />
                         <TeamLogo team={row} />
                         <span>{row.team}</span>

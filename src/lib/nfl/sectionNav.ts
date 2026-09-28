@@ -239,7 +239,7 @@ export const NFL_SECTION_NAV_ITEMS: NflSectionNavItem[] = NFL_SECTION_NAV_CATEGO
 export function isNflSectionPathActive(pathname: string, to: string) {
   if (pathname === "/fantasy-football/start-sit" && to === "/fantasy-football") return false;
   if (to === "/nfl/guide") {
-    return pathname === to || pathname.startsWith("/nfl/guide/team/");
+    return pathname === to || pathname.startsWith("/nfl/teams/");
   }
   // Prefix-matched items (e.g. Weekly Matchups) stay active on their detail
   // routes. Guard with a trailing slash so "/nfl/matchups" never bleeds into a

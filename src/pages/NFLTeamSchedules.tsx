@@ -204,7 +204,9 @@ export default function NFLTeamSchedules() {
       : "Select any NFL team to see its full season schedule with power ratings and projections.",
     path: selectedTeam ? `/nfl/team-schedules/${selectedTeam.slug}` : "/nfl/team-schedules",
     // Deliberately noindex (unchanged behavior): these per-team schedule views
-    // overlap the indexable team dashboard at /nfl/guide/team/:teamSlug.
+    // overlap the indexable team dashboard at /nfl/teams/:teamSlug. Not
+    // cross-canonicalized: it is a separate projection tool, and noindex plus a
+    // canonical to another URL would send search engines conflicting signals.
     noindex: true,
   });
 

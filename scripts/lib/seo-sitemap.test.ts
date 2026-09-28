@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { CANONICAL_BASE } from "@/hooks/usePageSeo";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { getMatchupBySlug } from "@/lib/nfl/matchups";
+import { nflTeamCanonicalUrl } from "@/lib/nfl/teamPageSeo";
 import { getAllTeams, getConferenceBySlug, getTeamBySlug } from "@/data/cfb";
 import { researchStudies } from "@/data/researchStudies";
 import { GENERATED_PGA_TOURNAMENTS } from "@/data/pga/generated/registry";
@@ -150,15 +151,26 @@ describe("child sitemaps", () => {
 describe("data-derived URLs resolve through the pages' own resolvers", () => {
   const guide = getNflSeasonGuide(NFL_SITEMAP_SEASON)!;
 
-  it("lists all 32 NFL team dashboards, each resolving to a guide team", () => {
-    const teamPaths = pathsIn("sitemap-nfl-teams.xml", "/nfl/guide/team/");
-    expect(locsIn("sitemap-nfl-teams.xml")).toHaveLength(32);
+  it("lists all 32 NFL team pages at /nfl/teams/:teamSlug, each resolving to a guide team", () => {
+    const teamLocs = locsIn("sitemap-nfl-teams.xml");
+    const teamPaths = pathsIn("sitemap-nfl-teams.xml", "/nfl/teams/");
+    expect(teamLocs).toHaveLength(32);
+    expect(teamPaths).toHaveLength(32);
     expect(new Set(teamPaths).size).toBe(32);
     for (const path of teamPaths) {
-      const slug = path.slice("/nfl/guide/team/".length);
+      const slug = path.slice("/nfl/teams/".length);
       expect(slug, path).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
       expect(guide.teamBySlug.get(slug), path).toBeDefined();
     }
+    // Same slugs, same order-independent set, as the page's canonical builder.
+    expect(new Set(teamLocs)).toEqual(new Set(guide.teams.map((team) => nflTeamCanonicalUrl(team.slug))));
+  });
+
+  it("lists no legacy /nfl/guide/team/ URLs in any sitemap", () => {
+    expect(allPaths.filter((path) => path.startsWith("/nfl/guide/team/"))).toEqual([]);
+    const committed = readFileSync(resolve(ROOT, "public", "sitemap-nfl-teams.xml"), "utf8");
+    expect(committed).not.toContain("/nfl/guide/team/");
+    expect(committed.match(/<loc>https:\/\/www\.joeknowsball\.com\/nfl\/teams\/[a-z0-9-]+<\/loc>/g)).toHaveLength(32);
   });
 
   it("lists one unique matchup URL per resolvable regular-season game, each found by getMatchupBySlug", () => {

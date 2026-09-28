@@ -20,6 +20,15 @@ import {
   getScheduleDescription,
   type NflGuideTeamNormalized,
 } from "@/lib/nfl/guideData";
+import { nflTeamPath } from "@/lib/nfl/teamRoutes";
+import {
+  NFL_TEAM_FALLBACK_DESCRIPTION,
+  NFL_TEAM_FALLBACK_TITLE,
+  buildNflTeamDescription,
+  buildNflTeamIntro,
+  buildNflTeamStructuredData,
+  buildNflTeamTitle,
+} from "@/lib/nfl/teamPageSeo";
 
 const GUIDE = getNflSeasonGuide(2026)!;
 
@@ -36,11 +45,16 @@ export default function NFLTeamGuide2026() {
     return map;
   }, [currentRating.data]);
 
+  // Memoized: usePageSeo re-applies whenever structuredData changes identity.
+  const structuredData = useMemo(() => (team ? buildNflTeamStructuredData(team) : undefined), [team]);
+
   usePageSeo({
-    title: team ? `${team.teamName} 2026 Schedule, Stats, Odds & Roster Changes | Joe Knows Ball` : "2026 NFL Team Dashboard | Joe Knows Ball",
-    description: team ? `${team.teamName} 2026 schedule, power rating, 2025 statistics, futures odds, value, coaching changes and notable player movement.` : "2026 NFL team schedule, ratings, odds and roster changes.",
-    path: `/nfl/guide/team/${teamSlug}`,
+    title: team ? buildNflTeamTitle(team) : NFL_TEAM_FALLBACK_TITLE,
+    description: team ? buildNflTeamDescription(team) : NFL_TEAM_FALLBACK_DESCRIPTION,
+    path: nflTeamPath(teamSlug),
+    // Unknown slugs never index; the <Navigate> below sends them to the guide.
     noindex: !team,
+    structuredData,
   });
 
   if (!team) return <Navigate to="/nfl/guide" replace />;
@@ -118,6 +132,10 @@ export default function NFLTeamGuide2026() {
           { label: "Schedule", value: team.scheduleRank == null ? "—" : `#${team.scheduleRank}` },
         ]}
       />
+
+      <p data-testid="nfl-team-intro" className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[13px] leading-6 text-slate-600">
+        {buildNflTeamIntro(team)}
+      </p>
 
       <NflTeamModelTrendPanel teamSlug={team.slug} teamAbbr={team.abbr} />
 
@@ -251,7 +269,7 @@ function DivisionRow({ team, active }: { team: NflGuideTeamNormalized; active: b
   return (
     <tr className={`${NFL_TABLE_ROW} ${surface}`}>
       <td className={`sticky left-0 z-10 px-3 py-2 ${surface}`}>
-        <Link to={`/nfl/guide/team/${team.slug}`} className="flex items-center gap-2 font-semibold text-slate-900 hover:text-sky-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500">
+        <Link to={nflTeamPath(team.slug)} className="flex items-center gap-2 font-semibold text-slate-900 hover:text-sky-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-sky-500">
           <img src={nflLogoUrl(team.abbr)} alt="" className="h-6 w-6 shrink-0 object-contain" />
           <span className="text-xs sm:text-sm">{team.teamName}</span>
           {active && <span className="rounded bg-sky-600 px-1 py-0.5 text-[9px] font-semibold text-white">You</span>}
