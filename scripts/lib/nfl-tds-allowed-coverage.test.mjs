@@ -13,26 +13,38 @@ const results = [
   { gameId: "2026_02_BBB_AAA", week: 2, seasonType: "REG", final: true, awayAbbr: "bbb", homeAbbr: "aaa" },
   { gameId: "2026_03_AAA_BBB", week: 3, seasonType: "REG", final: false, awayAbbr: "aaa", homeAbbr: "bbb" },
 ];
-const rows = (week) => ["aaa", "bbb"].map((team) => ({ season: 2026, week, team }));
+const rows = (week) => [["aaa", "bbb"], ["bbb", "aaa"]].map(([team, opponent]) => ({ season: 2026, week, team, opponent }));
 const run = (playerWeekRows) => requirePlayerWeekCoverage({ season: 2026, results, games: results, playerWeekRows });
 
-test("fails when a completed game is missing from the player-week source", () => {
-  assert.throws(() => run(rows(1)), /missing team-games/);
+test("warns (does not fail) when a completed game has not reached the player-week source yet", () => {
+  const result = run(rows(1));
+  assert.deepEqual(result.summary.missingFinalGameIds, ["2026_02_BBB_AAA"]);
+  assert.match(result.warnings[0], /upstream lag/);
 });
 
-test("passes when only unplayed games are missing", () => {
-  assert.doesNotThrow(() => run([...rows(1), ...rows(2)]));
+test("passes cleanly when only unplayed games are missing", () => {
+  assert.deepEqual(run([...rows(1), ...rows(2)]).warnings, []);
 });
 
-test("artifact claiming a newer week fails while its sample lags completed games", () => {
+test("warns when the cache has a scheduled game results.json does not mark FINAL yet", () => {
+  const result = run([...rows(1), ...rows(2), ...rows(3)]);
+  assert.deepEqual(result.summary.notYetFinalGameIds, ["2026_03_AAA_BBB"]);
+});
+
+test("fails on player-week rows for a team-week that is not on the schedule", () => {
+  assert.throws(() => run([...rows(1), ...rows(9)]), /unscheduled team-weeks/);
+});
+
+test("artifact whose sample does not match the player-week cache fails", () => {
   const sample = (gamesSampled) => ({ qbPass: { gamesSampled } });
   const artifact = (n) => ({
     season: 2026,
     week: 3,
     rows: Array.from({ length: 32 }, (_, i) => ({ team: i < 2 ? ["aaa", "bbb"][i] : `t${i}`, samples: { 2026: sample(i < 2 ? n : 0) } })),
   });
-  assert.equal(validateTdsAllowedArtifact(artifact(2), results).length, 0);
-  assert.match(validateTdsAllowedArtifact(artifact(1), results)[0], /1 games sampled, 2 completed/);
+  const cache = [...rows(1), ...rows(2)];
+  assert.equal(validateTdsAllowedArtifact(artifact(2), cache).length, 0);
+  assert.match(validateTdsAllowedArtifact(artifact(1), cache)[0], /1 games sampled, player-week cache has 2/);
 });
 
 // Real committed caches: ATL vs CAR Week 2, 2026.
@@ -53,16 +65,19 @@ test("ATL Week 2 source rows carry the Carolina touchdowns", () => {
 const artifact = readJson("public/data/nfl/tds-allowed-by-position.json");
 const atl = artifact.rows.find((row) => row.team === "atl").samples["2026"];
 
+// Weeks 1-2 alone total these; later weeks can only add to them.
 test("ATL full-2026 totals include Weeks 1 and 2", () => {
-  assert.equal(atl.qbPass.touchdownsAllowedTotal, 4);
-  assert.equal(atl.rbRec.touchdownsAllowedTotal, 1);
-  assert.equal(atl.teRec.touchdownsAllowedTotal, 3);
+  assert.ok(atl.qbPass.touchdownsAllowedTotal >= 4);
+  assert.ok(atl.rbRec.touchdownsAllowedTotal >= 1);
+  assert.ok(atl.teRec.touchdownsAllowedTotal >= 3);
 });
 
 test("all 32 teams have full completed-game coverage in cache and artifact", () => {
   const current = readJson("public/data/nfl/2026/results.json").results;
   const games = readJson("public/data/nfl/2026/games.json").games;
-  const cacheRows = sourceRows.map((r) => ({ season: 2026, week: Number(r.week), team: RAW_TEAM_ALIASES[r.team] ?? r.team.toLowerCase() }));
-  assert.doesNotThrow(() => requirePlayerWeekCoverage({ season: 2026, results: current, games, playerWeekRows: cacheRows }));
-  assert.deepEqual(validateTdsAllowedArtifact(artifact, current, games), []);
+  const canonical = (abbr) => RAW_TEAM_ALIASES[abbr] ?? abbr.toLowerCase();
+  const cacheRows = sourceRows.map((r) => ({ season: 2026, week: Number(r.week), team: canonical(r.team), opponent: canonical(r.opponent_team) }));
+  const coverage = requirePlayerWeekCoverage({ season: 2026, results: current, games, playerWeekRows: cacheRows });
+  assert.deepEqual(coverage.summary.missingFinalGameIds, []);
+  assert.deepEqual(validateTdsAllowedArtifact(artifact, cacheRows), []);
 });

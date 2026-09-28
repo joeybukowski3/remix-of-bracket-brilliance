@@ -48,6 +48,7 @@ import {
   archiveProductionPredictions, buildFittedModelManifest, buildSourceManifest, contentHash,
   finalizePredictionSnapshot, type JsonValue, type MarketSnapshotReference, type PredictionSnapshotDraft,
 } from "./lib/nfl-production-prediction-archive";
+import { partitionByKickoff } from "./lib/nfl-prediction-kickoff-cutoff";
 import { buildReceivingRoleConflictArchiveEntry, type ReceivingRoleConflictArchiveEntry } from "../src/lib/nfl/research/receivingRoleConflictDiagnostic";
 import { buildRushingRoleConflictV2ArchiveEntry, type RushingRoleConflictV2ArchiveEntry } from "../src/lib/nfl/research/rushingRoleConflictDiagnosticV2";
 
@@ -673,7 +674,13 @@ function main(): void {
     });
   }
 
-  const records = archiveCaptures.map((capture) => {
+  // Skip games that already kicked off BEFORE finalizing: finalizePredictionSnapshot
+  // rejects post-kickoff production snapshots, which otherwise aborts every run
+  // from the week's first kickoff until the week rolls over.
+  const { preKickoff: preKickoffCaptures, postKickoff: postKickoffCaptures } = partitionByKickoff(
+    archiveCaptures, (capture) => ({ predictionTimestamp: capture.row.generatedAt, kickoffUtc: capture.row.kickoff }),
+  );
+  const records = preKickoffCaptures.map((capture) => {
     const row = capture.row;
     if (row.projectedYards == null) throw new Error(`Cannot archive non-numeric production row ${row.market}/${row.playerId}`);
     const model = fittedByMarket[row.market];
@@ -770,7 +777,7 @@ function main(): void {
     rootDir: args.archiveRoot, records,
     sourceManifests: [sourceManifest], fittedModelManifests: Object.values(fittedManifests),
   });
-  console.log(`[nfl:current-week-projections] archive appended=${archiveResult.appended} duplicates=${archiveResult.duplicates}`);
+  console.log(`[nfl:current-week-projections] archive appended=${archiveResult.appended} duplicates=${archiveResult.duplicates} skippedPostKickoff=${postKickoffCaptures.length}`);
 
   const outPath = args.output ?? join(ROOT, "public", "data", "nfl", String(args.season), "yardage-projections.json");
   // Compact (no pretty-print indentation) -- this is the browser-facing

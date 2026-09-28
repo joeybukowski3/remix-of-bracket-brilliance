@@ -466,6 +466,16 @@ jobs:
       - name: Validate TDs Allowed by Position coverage
         run: npm run nfl:validate-tds-allowed -- --season=${{ steps.current-week.outputs.season }} --week=${{ steps.current-week.outputs.week }}
 
+      # Fantasy Points Allowed by Position reads the same cache. Its primary
+      # refresh is nfl-allowed-by-position.yml (Fri/Mon/Tue 8 AM ET); this is
+      # the daily backstop. Full deterministic rebuild, so a second run over the
+      # same cache reproduces the same numbers (no double counting).
+      - name: Generate Fantasy Points Allowed by Position
+        run: npm run nfl:fantasy-points-allowed -- --season=${{ steps.current-week.outputs.season }} --week=${{ steps.current-week.outputs.week }}
+
+      - name: Validate Fantasy Points Allowed by Position
+        run: npm run nfl:validate-fantasy-points-allowed -- --season=${{ steps.current-week.outputs.season }} --week=${{ steps.current-week.outputs.week }}
+
       - name: Commit and push validated DFS yardage history
         shell: bash
         run: |
@@ -478,7 +488,8 @@ jobs:
             "public/data/nfl/${season}/yardage-history.json" \
             "data/nfl/nflverse/stats-player-week/stats_player_week_${season}.csv" \
             data/nfl/nflverse/stats-player-week/manifest.json \
-            public/data/nfl/tds-allowed-by-position.json
+            public/data/nfl/tds-allowed-by-position.json \
+            public/data/nfl/fantasy-points-allowed.json
           if git diff --cached --quiet; then
             echo "No DFS yardage history changes."
             exit 0

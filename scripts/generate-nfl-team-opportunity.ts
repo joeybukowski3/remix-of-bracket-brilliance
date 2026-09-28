@@ -30,6 +30,7 @@ import {
   archiveProductionPredictions, buildFittedModelManifest, buildSourceManifest, contentHash,
   finalizePredictionSnapshot, type JsonValue, type MarketSnapshotReference, type PredictionSnapshotDraft,
 } from "./lib/nfl-production-prediction-archive";
+import { partitionByKickoff } from "./lib/nfl-prediction-kickoff-cutoff";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PLAY_VOLUME_CACHE_DIR = "data/nfl/nflverse/play-volume-team-game";
@@ -189,7 +190,13 @@ function main(): void {
   const createdAt = new Date().toISOString();
   const runId = process.env.GITHUB_RUN_ID ? `github:${process.env.GITHUB_RUN_ID}` : `local:${artifact.generatedAt}`;
 
-  const records = captures.map(({ row, featureRow }) => {
+  // Skip games that already kicked off BEFORE finalizing: finalizePredictionSnapshot
+  // rejects post-kickoff production snapshots, so filtering afterwards (as this
+  // used to) aborted every run from Thursday kickoff until the week rolled over.
+  const { preKickoff: preKickoffCaptures, postKickoff: postKickoffCaptures } = partitionByKickoff(
+    captures, ({ row }) => ({ predictionTimestamp: row.generatedAt, kickoffUtc: row.kickoff }),
+  );
+  const records = preKickoffCaptures.map(({ row, featureRow }) => {
     const game = gameById.get(row.gameId);
     const marketRefs: MarketSnapshotReference[] = [];
     if (row.flags.marketContextAvailable && featureRow.features.market.spread != null && featureRow.features.market.total != null) {
@@ -235,12 +242,11 @@ function main(): void {
     return finalizePredictionSnapshot(draft);
   });
 
-  const preKickoff = records.filter((r) => Date.parse(r.prediction_timestamp) < Date.parse(r.kickoff_utc));
   const archiveResult = archiveProductionPredictions({
-    rootDir: args.archiveRoot, records: preKickoff,
+    rootDir: args.archiveRoot, records,
     sourceManifests: [sourceManifest], fittedModelManifests: [fittedManifest],
   });
-  console.log(`[nfl:team-opportunity] archive appended=${archiveResult.appended} duplicates=${archiveResult.duplicates} skippedPostKickoff=${records.length - preKickoff.length}`);
+  console.log(`[nfl:team-opportunity] archive appended=${archiveResult.appended} duplicates=${archiveResult.duplicates} skippedPostKickoff=${postKickoffCaptures.length}`);
 
   const outPath = args.output ?? join(ROOT, "public", "data", "nfl", String(args.season), "team-opportunity.json");
   const compact = JSON.stringify(artifact);
