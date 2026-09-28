@@ -204,6 +204,8 @@ export interface HandicapV2Record {
   evidenceRefsUsed: string[];
   sources: HandicapV2Source[];
   warnings: string[];
+  /** Automation only, never published: fingerprint of the inputs this record was produced from. Absent on records written before the v2 slate automation. */
+  inputs?: import("./nfl-handicap-v2-inputs").HandicapV2InputFingerprint;
 }
 
 export type { HandicapV2MarketContext };

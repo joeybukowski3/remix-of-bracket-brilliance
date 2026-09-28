@@ -1,0 +1,243 @@
+name: NFL AI Handicap v2 Slate
+
+run-name: NFL AI Handicap v2 • ${{ github.event_name }} • ${{ github.ref_name }}
+
+# Scheduled, cost-conscious orchestration of the AI Picks v2 pipeline
+# (research -> Stage A -> Stage B -> presentation export) for the current NFL
+# week. The planner (scripts/lib/nfl-ai-v2-slate-plan.ts) decides per game and
+# per provider, WITHOUT any model call, whether anything is worth paying for. A
+# run in which nothing material changed makes zero model calls and commits
+# nothing.
+#
+# WHEN IT RUNS
+#   1. After "NFL Betting Lines Daily" completes successfully (workflow_run).
+#      That workflow refreshes public/data/market/betting-lines-current.json,
+#      the only market input. Chaining on it -- rather than a clock offset --
+#      means the AI run never plans against a stale market even when GitHub
+#      delays the scheduled refresh. This is the daily baseline; no Odds API
+#      spend is duplicated here.
+#   2. A gameday backstop at 1:17 PM ET on Thu / Sat / Sun / Mon (schedule).
+#      The planner runs one final research pass per game/provider once it is
+#      inside the 12h pre-kickoff window, at least 6h after the previous pass.
+#      The daily chain lands ~6-10 AM ET; 1:17 PM ET is the first slot that is
+#      both >= 6h after it and still ahead of the evening kickoffs (Thursday /
+#      Sunday / Monday night 8:15-8:20 PM ET) -- Sunday 1 PM games have already
+#      kicked off by then and are simply locked, so it is free on them.
+#   3. Manual dispatch. Defaults to a DRY RUN (plan only, no spend).
+#
+# SAFETY
+#   Scheduled/chained runs only execute when the repository variable
+#   NFL_AI_V2_AUTOMATION_ENABLED is "true". Until the operator has reviewed a
+#   manual dry run and set it, the job is skipped -- merging this file spends
+#   nothing.
+#
+# WHAT IT COMMITS (exact pathspecs; the manifest is scripts/lib/nfl-ai-v2-persisted-state.ts)
+#   public/data/nfl/<season>/ai-handicaps/*.json     the public artifact
+#   data/nfl/analysis/.../evidence.live-test.json    normalized provider evidence
+#   data/nfl/analysis/.../handicap-v2/*.json         write-once v2 records
+#   data/nfl/analysis/.../v2-attempts.json           failure ledger (error text only)
+# The last three are the minimal state the planner needs on a fresh checkout to
+# avoid re-paying (no-op/evidence detection, locked Stage A for repricing,
+# failure backoff, presentation comparison). NEVER committed: raw provider
+# responses and diagnostics (research/**), the game-context cache, and the v1
+# snapshot lineage (rebuilt for free by the bootstrap when research needs it).
+#
+# ROLLOUT
+#   max_jobs (manual input) and the NFL_AI_V2_MAX_JOBS repository variable
+#   (scheduled/chained runs) cap how many paid provider/game jobs one run may
+#   execute. Leave the variable unset only after rollout is approved.
+on:
+  workflow_run:
+    workflows: ["NFL Betting Lines Daily"]
+    types: [completed]
+  schedule:
+    - cron: "17 13 * 1,2,9,10,11,12 0,1,4,6"
+      timezone: "America/New_York"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Plan only: no model calls, nothing written or committed"
+        type: boolean
+        required: false
+        default: true
+      week:
+        description: "NFL week (default: the week of the next game to kick off)"
+        type: string
+        required: false
+      game:
+        description: "Single game id, e.g. 2026_03_LAC_BUF (overrides week)"
+        type: string
+        required: false
+      provider:
+        description: "Limit to one provider"
+        type: choice
+        required: false
+        default: both
+        options: [both, grok, chatgpt]
+      max_jobs:
+        description: "Execute at most this many paid provider/game jobs (blank = no limit)"
+        type: string
+        required: false
+
+# Share the single lock used by the other automated workflows that commit
+# generated data to main.
+concurrency:
+  group: main-data-writers-${{ github.repository }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  run-slate:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (vars.NFL_AI_V2_AUTOMATION_ENABLED == 'true' &&
+       (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      # The ONLY paths this workflow ever commits, one pathspec per line.
+      GENERATED_PATHSPECS: |
+        :(glob)public/data/nfl/*/ai-handicaps/*.json
+        :(glob)data/nfl/analysis/*/*/*/*/evidence.live-test.json
+        :(glob)data/nfl/analysis/*/*/*/*/handicap-v2/*.json
+        :(glob)data/nfl/analysis/*/*/*/*/v2-attempts.json
+    outputs:
+      deploy_ref: ${{ steps.commit.outputs.pushed_commit }}
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The slate command prints its plan first (games, provider, action, expected
+      # calls) and then, only with --live, executes it. Provider keys are read
+      # only from secrets, only as env vars; they are never echoed or written.
+      # continue-on-error so a failing game/provider still lets the games that
+      # succeeded be committed below; the final step then fails the run.
+      - name: Plan and run the v2 slate
+        id: slate
+        continue-on-error: true
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          INPUT_WEEK: ${{ inputs.week }}
+          INPUT_GAME: ${{ inputs.game }}
+          INPUT_PROVIDER: ${{ inputs.provider }}
+          INPUT_MAX_JOBS: ${{ inputs.max_jobs }}
+          VAR_MAX_JOBS: ${{ vars.NFL_AI_V2_MAX_JOBS }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        run: |
+          set -euo pipefail
+          season="$(date -u +%Y)"
+          args=("--season=${season}")
+          if [ -n "${INPUT_GAME:-}" ]; then args+=("--game=${INPUT_GAME}"); elif [ -n "${INPUT_WEEK:-}" ]; then args+=("--week=${INPUT_WEEK}"); fi
+          if [ "${INPUT_PROVIDER:-both}" != "both" ] && [ -n "${INPUT_PROVIDER:-}" ]; then args+=("--provider=${INPUT_PROVIDER}"); fi
+          max_jobs="${INPUT_MAX_JOBS:-${VAR_MAX_JOBS:-}}"
+          if [ -n "$max_jobs" ]; then args+=("--max-jobs=${max_jobs}"); fi
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "$DRY_RUN" != "false" ]; then
+            npm run nfl:ai-v2-slate -- "${args[@]}" --dry-run | tee slate-report.txt
+          else
+            npm run nfl:ai-v2-slate -- "${args[@]}" --live | tee slate-report.txt
+          fi
+          { echo '```'; cat slate-report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Detect generated artifact changes
+        id: changes
+        if: ${{ !cancelled() && (github.event_name != 'workflow_dispatch' || inputs.dry_run == false) }}
+        shell: bash
+        run: |
+          mapfile -t specs <<< "$GENERATED_PATHSPECS"
+          if [ -z "$(git status --porcelain -- "${specs[@]}")" ]; then
+            echo "No AI handicap v2 artifact changes."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Exact pathspecs only (GENERATED_PATHSPECS above). research/** -- raw provider
+      # responses and run diagnostics -- is deliberately absent and is never staged.
+      # `git add` aborts on a pathspec that matches nothing (a game with no snapshot
+      # lineage yet, say), so each pathspec is staged only when it has something to stage.
+      - name: Stage generated artifacts
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t specs <<< "$GENERATED_PATHSPECS"
+          for spec in "${specs[@]}"; do
+            if [ -n "$(git ls-files --modified --others --exclude-standard -- "$spec")" ]; then
+              git add -- "$spec"
+            fi
+          done
+
+      - name: Commit and push generated AI handicap v2 artifacts
+        id: commit
+        if: steps.changes.outputs.changed == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git diff --cached --quiet; then
+            echo "No staged AI handicap v2 changes � not creating an empty commit."
+            exit 0
+          fi
+
+          git commit -m "data(nfl): update AI handicap v2 analysis"
+
+          pushed=false
+          for attempt in 1 2 3 4 5; do
+            echo "Push attempt ${attempt}/5"
+            git fetch origin main
+            if ! git rebase origin/main; then
+              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
+              git rebase --abort || true
+            elif git push origin HEAD:main; then
+              pushed=true
+              break
+            fi
+            sleep $((attempt * 10))
+          done
+
+          if [ "$pushed" != "true" ]; then
+            echo "::error::Generated AI handicap v2 artifacts could not be pushed; the published site is unchanged."
+            exit 1
+          fi
+
+          echo "AI handicap v2 artifacts pushed to main."
+          echo "pushed_commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Fail the run if the slate reported failures
+        if: steps.slate.outcome == 'failure'
+        run: |
+          echo "::error::The v2 slate reported failures (see the report above). Games that succeeded were committed."
+          exit 1
+
+  deploy-pages:
+    name: Deploy updated AI handicap artifacts to GitHub Pages
+    needs: run-slate
+    if: ${{ !cancelled() && needs.run-slate.outputs.deploy_ref != '' }}
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/deploy.yml
+    with:
+      ref: ${{ needs.run-slate.outputs.deploy_ref }}

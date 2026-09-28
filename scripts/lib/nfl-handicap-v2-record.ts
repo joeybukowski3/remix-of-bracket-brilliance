@@ -16,6 +16,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 
 import { dirname, join } from "node:path";
 import type { EvidenceCategory, EvidenceRecord } from "./nfl-evidence-types";
 import type { HandicapV2MarketContext } from "./nfl-handicap-v2-market";
+import type { HandicapV2InputFingerprint } from "./nfl-handicap-v2-inputs";
 import { contentHash, type JsonValue } from "./nfl-production-prediction-archive";
 import { HANDICAP_V2_PROMPT_VERSION, HANDICAP_V2_SCHEMA_VERSION, type HandicapV2Record, type HandicapV2Source, type StageAV2, type StageBV2 } from "./nfl-handicap-v2-types";
 
@@ -65,6 +66,8 @@ export interface BuildHandicapV2RecordInput {
   stageB: StageBV2;
   market: HandicapV2MarketContext;
   evidenceRecords: readonly EvidenceRecord[];
+  /** Automation fingerprint of the inputs; stored on the record, never published. */
+  inputs?: HandicapV2InputFingerprint;
 }
 
 export function buildHandicapV2Record(input: BuildHandicapV2RecordInput): HandicapV2Record {
@@ -117,6 +120,29 @@ export function buildHandicapV2Record(input: BuildHandicapV2RecordInput): Handic
     evidenceRefsUsed: stageB.evidenceRefsUsed,
     sources: buildHandicapV2Sources({ evidenceRefsUsed: stageB.evidenceRefsUsed, factRefsUsed: stageB.factRefsUsed, evidenceRecords: input.evidenceRecords, market }),
     warnings: stageB.warnings,
+    ...(input.inputs ? { inputs: input.inputs } : {}),
+  };
+}
+
+/**
+ * Rebuilds the LOCKED Stage A a stored record was written from, so a market-only
+ * repricing can hand Stage B the exact same football projection without a new
+ * Stage A call. Every field comes from the record; nothing is re-derived except
+ * the fair score, which the record also stores.
+ */
+export function lockedStageAFromRecord(record: HandicapV2Record): StageAV2 {
+  return {
+    schemaVersion: HANDICAP_V2_SCHEMA_VERSION,
+    model: record.provider,
+    gameId: record.gameId,
+    contextHash: record.contextHash,
+    generatedAt: record.stageAGeneratedAt,
+    fairSpread: record.fairSpread,
+    projectedTotal: record.projectedTotal,
+    fairScore: { home: record.fairScoreHome, away: record.fairScoreAway },
+    keyDrivers: record.keyDrivers,
+    mainRisk: record.mainRisk,
+    uncertainty: record.uncertainty,
   };
 }
 
