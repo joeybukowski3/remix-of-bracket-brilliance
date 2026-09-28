@@ -7,6 +7,7 @@ import { matrixCellStyle, getMatrixRankTier } from "@/lib/nfl/matchupMatrixRankT
 import type { NflMatrixBoard, NflMatrixCell, NflMatrixMetricId } from "@/lib/nfl/matchupMatrixData";
 import type { NflMatrixDisplayMode } from "@/components/nfl/matchups/MatchupMatrixControls";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
+import { nflMatchupPath } from "@/lib/nfl/matchupRoutes";
 import { nflTeamColorFor } from "@/lib/nfl/nflTeamColor";
 import MatchupSummaryStrip from "@/components/nfl/matchups/MatchupSummaryStrip";
 import MatchupCompactSplits from "@/components/nfl/matchups/MatchupCompactSplits";
@@ -138,14 +139,14 @@ function withDividers(
 function TeamIdentityCell({
   team,
   record,
-  matchupSlug,
+  matchupHref,
   side,
   rowSpan,
   separatorClass = "",
 }: {
   team: NflMatchupTeam;
   record: string | null;
-  matchupSlug: string;
+  matchupHref: string;
   side: "away" | "home";
   rowSpan: number;
   separatorClass?: string;
@@ -158,7 +159,7 @@ function TeamIdentityCell({
       className={`${frozenDenseColumn()} overflow-hidden border-r border-slate-300 px-2 py-1.5 text-left align-middle ${separatorClass}`}
     >
       <Link
-        to={`/nfl/matchups/${matchupSlug}`}
+        to={matchupHref}
         className="flex items-center gap-1.5 rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
       >
         <img src={nflLogoUrl(team.abbr)} alt="" aria-hidden className="h-6 w-6 shrink-0 object-contain" loading="lazy" />
@@ -222,7 +223,7 @@ export default function MatchupMatrixRow({
           {kickoffLabel(matchup.kickoffUtc)}
         </span>
         <Link
-          to={`/nfl/matchups/${matchup.slug}`}
+          to={nflMatchupPath(matchup)}
           aria-label={`${away.teamName} at ${home.teamName} — view matchup breakdown`}
           className="text-[10px] font-bold text-emerald-700 hover:underline"
         >
@@ -252,7 +253,7 @@ export default function MatchupMatrixRow({
                   <TeamIdentityCell
                     team={team}
                     record={record}
-                    matchupSlug={matchup.slug}
+                    matchupHref={nflMatchupPath(matchup)}
                     side={side}
                     rowSpan={2}
                     separatorClass={separatorClass}

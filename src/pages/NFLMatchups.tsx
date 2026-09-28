@@ -97,6 +97,11 @@ export default function NFLMatchups() {
     [data, location.search]
   );
   const weeks = weekSelection.availableWeeks;
+  const weekHref = (week: number) => {
+    const params = new URLSearchParams(location.search);
+    params.set("week", String(week));
+    return `${location.pathname}?${params.toString()}`;
+  };
   const activeWeek = weekSelection.week;
   const bettingSplits = useNflBettingSplits({ season: CURRENT_SEASON, week: activeWeek ?? 1 });
   const matchups = useMemo(
@@ -145,11 +150,9 @@ export default function NFLMatchups() {
             size="sm"
             options={weeks}
             value={activeWeek ?? weeks[0]}
-            onChange={(week) => {
-              const params = new URLSearchParams(location.search);
-              params.set("week", String(week));
-              navigate({ pathname: location.pathname, search: `?${params.toString()}` }, { replace: true });
-            }}
+            onChange={(week) => navigate(weekHref(week), { replace: true })}
+            // Real hrefs so crawlers reach every week's matchup detail links.
+            getOptionHref={weekHref}
             formatOption={(week) => `W${week}`}
           />
         )}

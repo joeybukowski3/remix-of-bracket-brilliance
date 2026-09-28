@@ -18,6 +18,7 @@
  */
 
 import { buildMatchupFromGame } from "@/lib/nfl/matchups";
+import { nflMatchupPath } from "@/lib/nfl/matchupRoutes";
 import type { NflGameRecord } from "@/lib/nfl/standings";
 import type { NflSeasonGuide, NflGuideTeamNormalized } from "@/lib/nfl/guideData";
 
@@ -32,8 +33,10 @@ export type TeamScheduleRow = {
   /** HOME/AWAY relative to the selected team; NEUTRAL when nflverse's own location column says so. */
   location: TeamScheduleLocation;
   opponent: NflGuideTeamNormalized;
-  /** Deterministic slug for the existing /nfl/matchups/:gameSlug route. */
+  /** Deterministic matchup slug (buildMatchupSlug). */
   matchupSlug: string;
+  /** Canonical /nfl/matchups/:season/week-:week/:gameSlug detail path. */
+  matchupPath: string;
 };
 
 /**
@@ -75,6 +78,7 @@ export function buildTeamSchedule(
       location,
       opponent,
       matchupSlug: matchup.slug,
+      matchupPath: nflMatchupPath(matchup),
     });
   }
   return rows;

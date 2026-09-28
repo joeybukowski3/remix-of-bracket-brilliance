@@ -71,7 +71,7 @@ describe("weekly matchup compact betting splits", () => {
     expect(within(strip as HTMLElement).getByLabelText("Moneyline: SEA 60% Handle, 47% Bets")).toHaveTextContent("60% Handle / 47% Bets");
     expect(within(strip as HTMLElement).getByLabelText("Total: Under 67% Handle, 33% Bets")).toHaveTextContent("67% Handle / 33% Bets");
     expect(strip.querySelector("a, button")).toBeNull();
-    expect(screen.getByRole("link", { name: /view matchup breakdown/i })).toHaveAttribute("href", `/nfl/matchups/${MATCHUP.slug}`);
+    expect(screen.getByRole("link", { name: /view matchup breakdown/i })).toHaveAttribute("href", `/nfl/matchups/2026/week-3/${MATCHUP.slug}`);
   });
 
   it("keeps balanced percentages and uses dashes for unavailable and missing games", () => {

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 /**
@@ -54,6 +55,7 @@ export function NflFilterChips<T extends string | number>({
   size = "md",
   className = "",
   tone = "neutral",
+  getOptionHref,
 }: {
   label: string;
   options: readonly T[];
@@ -63,30 +65,53 @@ export function NflFilterChips<T extends string | number>({
   size?: "sm" | "md";
   className?: string;
   tone?: NflFilterChipTone;
+  /**
+   * Opt-in: render each chip as a real link to this href (same styling) so
+   * crawlers and middle-click can reach every option. Following the link is
+   * the change (onChange is not called); it replaces the current history
+   * entry, matching the button behaviour, and marks the selected option with
+   * aria-current instead of aria-pressed.
+   */
+  getOptionHref?: (option: T) => string;
 }) {
   return (
     <div role="group" aria-label={label} className={cn("flex flex-wrap gap-1.5", className)}>
       {options.map((option) => {
         const selected = option === value;
+        const chipClassName = cn(
+          "rounded border font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-1",
+          size === "sm" ? "px-2 py-1 text-[11px]" : "px-2.5 py-1 text-xs",
+          tone === "neutral"
+            ? selected
+              ? "border-slate-900 bg-slate-900 text-white"
+              : "border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-900"
+            : selected
+              ? TONE_CLASS[tone].selected
+              : TONE_CLASS[tone].unselected,
+        );
+        const text = formatOption ? formatOption(option) : String(option);
+        if (getOptionHref) {
+          return (
+            <Link
+              key={String(option)}
+              to={getOptionHref(option)}
+              replace
+              aria-current={selected ? "true" : undefined}
+              className={chipClassName}
+            >
+              {text}
+            </Link>
+          );
+        }
         return (
           <button
             key={String(option)}
             type="button"
             onClick={() => onChange(option)}
             aria-pressed={selected}
-            className={cn(
-              "rounded border font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-1",
-              size === "sm" ? "px-2 py-1 text-[11px]" : "px-2.5 py-1 text-xs",
-              tone === "neutral"
-                ? selected
-                  ? "border-slate-900 bg-slate-900 text-white"
-                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-900"
-                : selected
-                  ? TONE_CLASS[tone].selected
-                  : TONE_CLASS[tone].unselected,
-            )}
+            className={chipClassName}
           >
-            {formatOption ? formatOption(option) : String(option)}
+            {text}
           </button>
         );
       })}

@@ -9,6 +9,7 @@ import {
   type MarketArtifact,
 } from "@/lib/nfl/marketData";
 import { buildMatchupSlug } from "@/lib/nfl/matchups";
+import { nflMatchupPath } from "@/lib/nfl/matchupRoutes";
 import {
   compareToMarket,
   formatModelVsMarketDifference,
@@ -273,7 +274,7 @@ export function buildWeeklyDashboard(input: BuildWeeklyDashboardInput): WeeklyDa
       away,
       home,
       matchupSlug,
-      matchupHref: `/nfl/matchups/${matchupSlug}`,
+      matchupHref: nflMatchupPath({ season: game.season, week: game.week, slug: matchupSlug }),
       market: market
         ? {
             homeSpread: market.spread.home,

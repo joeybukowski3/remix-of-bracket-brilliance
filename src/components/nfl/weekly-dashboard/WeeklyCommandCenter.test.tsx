@@ -97,7 +97,7 @@ describe("WeeklyCommandCenter", () => {
     renderDashboard();
     // Mobile board: the whole row is a real <Link>.
     const mobileLink = screen.getByRole("link", { name: /New England Patriots at Seattle Seahawks matchup details/i });
-    expect(mobileLink.getAttribute("href")).toBe("/nfl/matchups/new-england-patriots-at-seattle-seahawks");
+    expect(mobileLink.getAttribute("href")).toBe("/nfl/matchups/2026/week-1/new-england-patriots-at-seattle-seahawks");
     // Desktop board: the whole row is an interactive, keyboard-focusable element.
     const desktopRow = screen.getByRole("button", { name: /New England Patriots at Seattle Seahawks matchup details/i });
     expect(desktopRow.tagName).toBe("TR");
@@ -142,7 +142,7 @@ describe("WeeklyCommandCenter", () => {
     it("navigates to the matchup page when clicking anywhere on the row", () => {
       renderDashboard();
       fireEvent.click(within(desktopRow()).getByText("New England Patriots"));
-      expect(navigateMock).toHaveBeenCalledWith("/nfl/matchups/new-england-patriots-at-seattle-seahawks");
+      expect(navigateMock).toHaveBeenCalledWith("/nfl/matchups/2026/week-1/new-england-patriots-at-seattle-seahawks");
       expect(navigateMock).toHaveBeenCalledTimes(1);
     });
 
@@ -151,7 +151,7 @@ describe("WeeklyCommandCenter", () => {
       const row = desktopRow();
       row.focus();
       fireEvent.keyDown(row, { key: "Enter" });
-      expect(navigateMock).toHaveBeenCalledWith("/nfl/matchups/new-england-patriots-at-seattle-seahawks");
+      expect(navigateMock).toHaveBeenCalledWith("/nfl/matchups/2026/week-1/new-england-patriots-at-seattle-seahawks");
     });
 
     it("navigates on Space when the row has focus", () => {
@@ -159,7 +159,7 @@ describe("WeeklyCommandCenter", () => {
       const row = desktopRow();
       row.focus();
       fireEvent.keyDown(row, { key: " " });
-      expect(navigateMock).toHaveBeenCalledWith("/nfl/matchups/new-england-patriots-at-seattle-seahawks");
+      expect(navigateMock).toHaveBeenCalledWith("/nfl/matchups/2026/week-1/new-england-patriots-at-seattle-seahawks");
     });
 
     it("is keyboard-reachable and shows a pointer cursor", () => {

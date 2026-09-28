@@ -47,7 +47,7 @@ All qualifying trends remain visible. Positive ROI and recent strength are never
 
 ## Public surfaces
 
-- Matchup detail: `/nfl/matchups/:gameSlug#trends`, implemented as the fifth entry in the existing tab system.
+- Matchup detail: `/nfl/matchups/:season/week-:week/:gameSlug#trends`, implemented as the fifth entry in the existing tab system.
 - Standalone library and scanner: `/nfl/trends`, inside `NflPlatformLayout` and the centralized NFL navigation.
 
 Both surfaces consume the same generated artifact and resolver utilities.
