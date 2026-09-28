@@ -403,8 +403,16 @@ describe("explicit, guarded Phase 2 staging paths", () => {
   });
 
   it("the broad directory-level add still exists and is documented as required for legacy files", () => {
-    assert.match(commitStep.run, /git add public\/data\/mlb\/ public\/data\/betting-splits\/ public\/sitemap\.xml/);
+    assert.match(commitStep.run, /git add public\/data\/mlb\/ public\/data\/betting-splits\/\s*\n/);
     assert.match(commitStep.run, /Legacy generated files/);
+  });
+
+  it("never rewrites or commits sitemap lastmod values (no blanket freshness dates)", () => {
+    assert.doesNotMatch(RAW_TEXT, /lastmod/i);
+    assert.doesNotMatch(commitStep.run, /sitemap/);
+    for (const step of Object.values(WORKFLOW.jobs).flatMap((job) => job.steps ?? [])) {
+      assert.doesNotMatch(step.run ?? "", /sitemap\.xml/, `step "${step.name}" must not modify sitemap files`);
+    }
   });
 
   it("no bare git add -A or git add . anywhere in the workflow", () => {

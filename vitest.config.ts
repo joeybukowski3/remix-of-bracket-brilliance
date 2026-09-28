@@ -269,6 +269,8 @@ export default defineConfig({
       // Canonical-schedule coverage diagnostics (sources/panels/canonical
       // match counts, premium-gate detection) -- see scheduleCoverage.mjs.
       "scripts/lib/walter/scheduleCoverage.test.mjs",
+      // SEO Phase 2 -- sitemap index/child generation, inclusion and lastmod policy.
+      "scripts/lib/seo-sitemap.test.ts",
     ],
   },
   resolve: {
