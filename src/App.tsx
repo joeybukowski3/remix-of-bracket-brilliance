@@ -47,6 +47,7 @@ import NFLSchedule from "./pages/NFLSchedule";
 import NFLTeamSchedules from "./pages/NFLTeamSchedules";
 import NFLMatchups from "./pages/NFLMatchups";
 import NFLMatchupDetail from "./pages/NFLMatchupDetail";
+import NFLMatchupLegacyRedirect from "./pages/nfl/NFLMatchupLegacyRedirect";
 import NFLTrends from "./pages/NFLTrends";
 import NFLSuperBowlOdds from "./pages/NFLSuperBowlOdds";
 import NFLBettingSplits from "./pages/NFLBettingSplits";
@@ -177,7 +178,9 @@ const App = () => (
             <Route path="team-schedules" element={<NFLTeamSchedules />} />
             <Route path="team-schedules/:teamSlug" element={<NFLTeamSchedules />} />
             <Route path="matchups" element={<NFLMatchups />} />
-            <Route path="matchups/:gameSlug" element={<NFLMatchupDetail />} />
+            <Route path="matchups/:season/:weekSegment/:gameSlug" element={<NFLMatchupDetail />} />
+            {/* Legacy season-agnostic URL: 301 in vercel.json, client fallback here. */}
+            <Route path="matchups/:gameSlug" element={<NFLMatchupLegacyRedirect />} />
             <Route path="trends" element={<NFLTrends />} />
             <Route path="analytics" element={<NFLAnalytics />} />
             <Route path="performance" element={<Navigate to="/nfl/performance/overview" replace />} />

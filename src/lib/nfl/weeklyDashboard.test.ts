@@ -208,7 +208,7 @@ describe("buildWeeklyDashboard game assembly", () => {
       teams: TEAMS,
     });
     expect(result.games[0].neutralSite).toBe(true);
-    expect(result.games[0].matchupHref).toBe("/nfl/matchups/alpha-aces-vs-beta-bears");
+    expect(result.games[0].matchupHref).toBe("/nfl/matchups/2026/week-1/alpha-aces-vs-beta-bears");
   });
 });
 

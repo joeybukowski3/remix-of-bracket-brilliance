@@ -1,7 +1,7 @@
 import { beforeEach, describe, it, expect, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 
 // Serve real repository fixtures through the data hook (no network in jsdom).
 // require() is used deliberately: this factory is hoisted above ESM imports.
@@ -110,6 +110,8 @@ vi.mock("@/hooks/useNflCurrentRating2026", () => ({
 import NflPlatformLayout from "@/components/nfl/NflPlatformLayout";
 import NFLMatchups from "@/pages/NFLMatchups";
 import NFLMatchupDetail from "@/pages/NFLMatchupDetail";
+import NFLMatchupLegacyRedirect from "@/pages/nfl/NFLMatchupLegacyRedirect";
+import { legacyNflMatchupPath, nflMatchupPath } from "@/lib/nfl/matchupRoutes";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { MATCHUP_CATEGORIES } from "@/lib/nfl/matchupCategoryAdvantage";
 import {
@@ -117,13 +119,26 @@ import {
   matchupPanelId,
 } from "@/components/nfl/matchups/matchupNavigation";
 
+/** Exposes the router's final location so redirects can be asserted. */
+function LocationProbe() {
+  const location = useLocation();
+  return <output data-testid="location">{`${location.pathname}${location.search}${location.hash}`}</output>;
+}
+
+function currentLocation() {
+  return screen.getByTestId("location").textContent;
+}
+
+// Mirrors the /nfl matchup routes in src/App.tsx.
 function renderRoute(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
+      <LocationProbe />
       <Routes>
         <Route path="/nfl" element={<NflPlatformLayout />}>
           <Route path="matchups" element={<NFLMatchups />} />
-          <Route path="matchups/:gameSlug" element={<NFLMatchupDetail />} />
+          <Route path="matchups/:season/:weekSegment/:gameSlug" element={<NFLMatchupDetail />} />
+          <Route path="matchups/:gameSlug" element={<NFLMatchupLegacyRedirect />} />
           <Route path="trends" element={<h1>NFL Trends Page</h1>} />
           <Route path="schedule" element={<h1>Schedule Page</h1>} />
           <Route path="teams/:teamSlug" element={<h1>Team Dashboard</h1>} />
@@ -135,6 +150,7 @@ function renderRoute(path: string) {
 }
 
 const OPENER = "new-england-patriots-at-seattle-seahawks";
+const OPENER_PATH = nflMatchupPath({ season: 2026, week: 1, slug: OPENER });
 
 beforeEach(() => {
   window.history.replaceState(null, "", "/nfl/matchups");
@@ -155,14 +171,13 @@ describe("NFLMatchups landing", () => {
 
   it("honors an explicit week query from the shared resolver", () => {
     renderRoute("/nfl/matchups?week=2");
-    expect(screen.getByRole("button", { name: "W2" }).getAttribute("aria-pressed")).toBe("true");
+    const weekPicker = screen.getByRole("group", { name: "Select week" });
+    expect(within(weekPicker).getByRole("link", { name: "W2" }).getAttribute("aria-current")).toBe("true");
     expect(screen.getAllByText("Matchup →")).toHaveLength(16);
   });
 
-  function linksToMatchup(slug: string) {
-    return screen
-      .getAllByRole("link")
-      .filter((link) => link.getAttribute("href") === `/nfl/matchups/${slug}`);
+  function linksToMatchup(path: string) {
+    return screen.getAllByRole("link").filter((link) => link.getAttribute("href") === path);
   }
 
   it("links each game's matchup control to its detail page", () => {
@@ -170,17 +185,19 @@ describe("NFLMatchups landing", () => {
     // today's date, which may no longer be week 1 by the time this suite
     // runs, but OPENER is specifically the week 1 NE-at-SEA game.
     renderRoute("/nfl/matchups?week=1");
-    expect(linksToMatchup(OPENER).length).toBeGreaterThan(0);
+    expect(linksToMatchup(OPENER_PATH).length).toBeGreaterThan(0);
   });
 
   it("links the header control and both team identity cells to the same matchup detail page, not the stat cells", () => {
     renderRoute("/nfl/matchups?week=1");
     // Header "Matchup →" control + away team identity cell + home team
     // identity cell, all pointing at the same detail page.
-    expect(linksToMatchup(OPENER).length).toBe(3);
+    expect(linksToMatchup(OPENER_PATH).length).toBe(3);
     // Stat cells are plain <td> content and are never their own link — total
-    // links stay well under one per stat cell across all 16 games.
-    expect(screen.getAllByRole("link").length).toBeLessThan(16 * 5);
+    // links stay well under one per stat cell across all 16 games. The week
+    // selector's links are navigation, not matchup cells, so they are excluded.
+    const weekLinks = screen.getByRole("group", { name: "Select week" }).querySelectorAll("a[href]");
+    expect(screen.getAllByRole("link").length - weekLinks.length).toBeLessThan(16 * 5);
   });
 
   it("shows the universal current OVR rank on each matrix row, not the legacy guide powerRank/overallPct", () => {
@@ -249,7 +266,7 @@ const FULL_PAGE_RENDER_TIMEOUT_MS = 30_000;
 
 describe("NFLMatchupDetail", () => {
   it("renders the correct teams and comparison", () => {
-    renderRoute(`/nfl/matchups/${OPENER}`);
+    renderRoute(OPENER_PATH);
     expect(
       screen.getByRole("heading", { name: /New England Patriots at Seattle Seahawks — Week 1 matchup/i })
     ).toBeTruthy();
@@ -267,7 +284,7 @@ describe("NFLMatchupDetail", () => {
   });
 
   it("renders every tab and its panel, in order", () => {
-    renderRoute(`/nfl/matchups/${OPENER}`);
+    renderRoute(OPENER_PATH);
     const tabs = screen.getAllByRole("tab");
     expect(tabs.map((tab) => tab.textContent)).toEqual(MATCHUP_TABS.map((tab) => tab.label));
     for (const tab of MATCHUP_TABS) {
@@ -276,13 +293,13 @@ describe("NFLMatchupDetail", () => {
   });
 
   it("links the Situational Trends panel to the standalone trend library", () => {
-    renderRoute(`/nfl/matchups/${OPENER}`);
+    renderRoute(OPENER_PATH);
     fireEvent.click(screen.getByRole("tab", { name: "Situational Trends" }));
     expect(screen.getByRole("link", { name: /View all NFL trends/i }).getAttribute("href")).toBe("/nfl/trends");
   });
 
   it("renders every comparison category anchor, in registry order", () => {
-    renderRoute(`/nfl/matchups/${OPENER}`);
+    renderRoute(OPENER_PATH);
     const anchors = MATCHUP_CATEGORIES.map((category) =>
       document.getElementById(category.hash)
     );
@@ -297,54 +314,54 @@ describe("NFLMatchupDetail", () => {
   });
 
   it("keeps Advantages and Things to Watch on the analyzer", () => {
-    renderRoute(`/nfl/matchups/${OPENER}`);
+    renderRoute(OPENER_PATH);
     expect(screen.getByRole("heading", { name: "Advantages" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Things to Watch" })).toBeTruthy();
     expect(screen.queryByRole("heading", { name: /Angles to watch/i })).toBeNull();
   });
 
   it("links each team to its canonical dashboard route", () => {
-    renderRoute(`/nfl/matchups/${OPENER}`);
+    renderRoute(OPENER_PATH);
     const away = screen.getByRole("link", { name: "New England Patriots" });
     expect(away.getAttribute("href")).toBe("/nfl/teams/new-england-patriots");
   });
 
   it("highlights Weekly Matchups in the sidebar on the detail route", () => {
-    renderRoute(`/nfl/matchups/${OPENER}`);
+    renderRoute(OPENER_PATH);
     const nav = screen.getByRole("navigation", { name: "NFL sitemap" });
     const navLink = within(nav).getByRole("link", { name: /Weekly Matchups/i });
     expect(navLink.getAttribute("aria-current")).toBe("page");
   });
 
   it("redirects an unknown slug back to the matchups landing", () => {
-    renderRoute("/nfl/matchups/not-a-real-game");
+    renderRoute("/nfl/matchups/2026/week-1/not-a-real-game");
     expect(screen.getByRole("heading", { name: /2026 NFL Weekly Matchups/i })).toBeTruthy();
   });
 
-  /** Every usePageSeo call the detail page made for a given slug. */
-  function detailSeoCalls(slug: string) {
+  /** Every usePageSeo call the detail page made for a given canonical path. */
+  function detailSeoCalls(path: string) {
     return vi
       .mocked(usePageSeo)
       .mock.calls.map(([options]) => options)
-      .filter((options) => options.path === `/nfl/matchups/${slug}`);
+      .filter((options) => options.path === path);
   }
 
   it("marks a valid matchup indexable (index, follow)", () => {
     vi.mocked(usePageSeo).mockClear();
-    renderRoute(`/nfl/matchups/${OPENER}`);
-    const calls = detailSeoCalls(OPENER);
+    renderRoute(OPENER_PATH);
+    const calls = detailSeoCalls(OPENER_PATH);
     expect(calls.length).toBeGreaterThan(0);
     for (const options of calls) {
       expect(options.noindex).toBe(false);
       expect(options.nofollow).toBeUndefined();
     }
-    expect(calls.at(-1)?.title).toBe("New England Patriots at Seattle Seahawks — Week 1 Matchup | Joe Knows Ball");
+    expect(calls.at(-1)?.title).toBe("New England Patriots at Seattle Seahawks — 2026 Week 1 Matchup | Joe Knows Ball");
   });
 
   it("marks an invalid matchup slug noindex (noindex, follow) before redirecting", () => {
     vi.mocked(usePageSeo).mockClear();
-    renderRoute("/nfl/matchups/not-a-real-game");
-    const calls = detailSeoCalls("not-a-real-game");
+    renderRoute("/nfl/matchups/2026/week-1/not-a-real-game");
+    const calls = detailSeoCalls("/nfl/matchups/2026/week-1/not-a-real-game");
     expect(calls.length).toBeGreaterThan(0);
     for (const options of calls) {
       expect(options.noindex).toBe(true);
@@ -370,4 +387,113 @@ describe("NFL matchups scope", () => {
     expect(screen.getByRole("heading", { name: "MLB Page" })).toBeTruthy();
     expect(screen.queryByRole("navigation", { name: "NFL sitemap" })).toBeNull();
   });
+});
+
+describe("season/week matchup URLs", () => {
+  const NEUTRAL = "indianapolis-colts-vs-washington-commanders";
+  const NEUTRAL_PATH = nflMatchupPath({ season: 2026, week: 4, slug: NEUTRAL });
+  const LATE = "san-francisco-49ers-at-la-chargers";
+  const LATE_PATH = nflMatchupPath({ season: 2026, week: 15, slug: LATE });
+
+  function seoCallsFor(path: string) {
+    return vi
+      .mocked(usePageSeo)
+      .mock.calls.map(([options]) => options)
+      .filter((options) => options.path === path);
+  }
+
+  it.each([
+    [OPENER_PATH, "New England Patriots at Seattle Seahawks — 2026 Week 1 Matchup | Joe Knows Ball"],
+    [NEUTRAL_PATH, "Indianapolis Colts vs Washington Commanders — 2026 Week 4 Matchup | Joe Knows Ball"],
+    [LATE_PATH, "San Francisco 49ers at LA Chargers — 2026 Week 15 Matchup | Joe Knows Ball"],
+  ])("renders %s indexable with a self-referencing season/week canonical", (path, title) => {
+    vi.mocked(usePageSeo).mockClear();
+    renderRoute(path);
+    expect(currentLocation()).toBe(path);
+    const calls = seoCallsFor(path);
+    expect(calls.length).toBeGreaterThan(0);
+    expect(calls.at(-1)?.noindex).toBe(false);
+    expect(calls.at(-1)?.title).toBe(title);
+    const schema = calls.at(-1)?.structuredData as Array<Record<string, unknown>>;
+    expect(schema.find((item) => item["@type"] === "SportsEvent")?.url).toBe(`https://www.joeknowsball.com${path}`);
+  }, FULL_PAGE_RENDER_TIMEOUT_MS);
+
+  it("canonicalizes a mixed-case slug to the lowercase URL", () => {
+    vi.mocked(usePageSeo).mockClear();
+    renderRoute("/nfl/matchups/2026/week-1/New-England-Patriots-at-Seattle-Seahawks");
+    expect(seoCallsFor(OPENER_PATH).at(-1)?.noindex).toBe(false);
+  }, FULL_PAGE_RENDER_TIMEOUT_MS);
+
+  it.each([
+    ["an unsupported season", `/nfl/matchups/2025/week-1/${OPENER}`],
+    ["a future season", `/nfl/matchups/2027/week-1/${OPENER}`],
+    ["a non-numeric season", `/nfl/matchups/twenty/week-1/${OPENER}`],
+    ["an out-of-range week", `/nfl/matchups/2026/week-0/${OPENER}`],
+    ["a zero-padded week", `/nfl/matchups/2026/week-01/${OPENER}`],
+    ["a malformed week segment", `/nfl/matchups/2026/1/${OPENER}`],
+    ["an unknown slug", "/nfl/matchups/2026/week-1/not-a-real-game"],
+    ["a week with no such game", "/nfl/matchups/2026/week-19/not-a-real-game"],
+  ])("marks %s noindex and falls back to the landing page", (_label, path) => {
+    vi.mocked(usePageSeo).mockClear();
+    renderRoute(path);
+    const calls = seoCallsFor(path);
+    expect(calls.length).toBeGreaterThan(0);
+    for (const options of calls) expect(options.noindex).toBe(true);
+    expect(currentLocation()).toBe("/nfl/matchups");
+  }, FULL_PAGE_RENDER_TIMEOUT_MS);
+
+  it("sends a real game requested under the wrong week to its one canonical URL, keeping query and hash", () => {
+    vi.mocked(usePageSeo).mockClear();
+    const wrongWeek = nflMatchupPath({ season: 2026, week: 9, slug: OPENER });
+    renderRoute(`${wrongWeek}?ref=x#trends`);
+    for (const options of seoCallsFor(wrongWeek)) expect(options.noindex).toBe(true);
+    expect(currentLocation()).toBe(`${OPENER_PATH}?ref=x#trends`);
+  }, FULL_PAGE_RENDER_TIMEOUT_MS);
+
+  it.each([
+    [OPENER, OPENER_PATH],
+    [NEUTRAL, NEUTRAL_PATH],
+    [LATE, LATE_PATH],
+  ])("redirects legacy /nfl/matchups/%s to its season/week URL", (slug, target) => {
+    vi.mocked(usePageSeo).mockClear();
+    renderRoute(legacyNflMatchupPath(slug));
+    expect(currentLocation()).toBe(target);
+    // The legacy URL never claims to be indexable, even for one render.
+    for (const options of seoCallsFor(target).filter((options) => options.title.startsWith("NFL Weekly Matchup"))) {
+      expect(options.noindex).toBe(true);
+    }
+  }, FULL_PAGE_RENDER_TIMEOUT_MS);
+
+  it("keeps query and hash through the legacy redirect without looping", () => {
+    renderRoute(`${legacyNflMatchupPath(OPENER)}?utm_source=x#trends`);
+    expect(currentLocation()).toBe(`${OPENER_PATH}?utm_source=x#trends`);
+    expect(screen.getByRole("heading", { name: /Week 1 matchup/i })).toBeTruthy();
+  }, FULL_PAGE_RENDER_TIMEOUT_MS);
+
+  it("sends an unknown legacy slug to the landing page, noindex, never to a guessed game", () => {
+    vi.mocked(usePageSeo).mockClear();
+    renderRoute(legacyNflMatchupPath("not-a-real-game"));
+    expect(currentLocation()).toBe("/nfl/matchups");
+    const legacyCalls = vi
+      .mocked(usePageSeo)
+      .mock.calls.map(([options]) => options)
+      .filter((options) => options.title === "NFL Weekly Matchup | Joe Knows Ball");
+    expect(legacyCalls.length).toBeGreaterThan(0);
+    for (const options of legacyCalls) expect(options.noindex).toBe(true);
+  }, FULL_PAGE_RENDER_TIMEOUT_MS);
+
+  it("exposes every week as a crawlable link on the landing page", () => {
+    renderRoute("/nfl/matchups?week=3");
+    const group = screen.getByRole("group", { name: "Select week" });
+    const hrefs = within(group).getAllByRole("link").map((link) => link.getAttribute("href"));
+    expect(hrefs).toContain("/nfl/matchups?week=1");
+    expect(hrefs).toContain("/nfl/matchups?week=18");
+    fireEvent.click(within(group).getByRole("link", { name: "W4" }));
+    expect(currentLocation()).toBe("/nfl/matchups?week=4");
+    expect(linksToWeekFourNeutral().length).toBeGreaterThan(0);
+
+    function linksToWeekFourNeutral() {
+      return screen.getAllByRole("link").filter((link) => link.getAttribute("href") === NEUTRAL_PATH);
+    }
+  }, FULL_PAGE_RENDER_TIMEOUT_MS);
 });

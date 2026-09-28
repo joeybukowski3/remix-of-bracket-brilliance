@@ -111,7 +111,7 @@ describe("NFL Trends page", () => {
     expect(screen.getByRole("heading", { name: /Seattle Seahawks at New York Giants/i })).toBeTruthy();
     expect(screen.getByText(/Awaiting market 1/i)).toBeTruthy();
     const link = screen.getByRole("link", { name: /Matchup trends/i });
-    expect(link.getAttribute("href")).toBe("/nfl/matchups/seattle-seahawks-at-new-york-giants#trends");
+    expect(link.getAttribute("href")).toBe("/nfl/matchups/2026/week-1/seattle-seahawks-at-new-york-giants#trends");
     expect(screen.getAllByRole("img", { name: "Seattle Seahawks" }).some((logo) => logo.getAttribute("src")?.endsWith("/sea.png"))).toBe(true);
     expect(screen.getAllByRole("img", { name: "New York Giants" }).some((logo) => logo.getAttribute("src")?.endsWith("/nyg.png"))).toBe(true);
     expect(container.querySelector('[data-tier="NOTEWORTHY"]')).toBeTruthy();

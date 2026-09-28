@@ -60,7 +60,7 @@ const projections = fixture("public/data/nfl/matchup-projections.json");
 const OPENER_SLUG = "new-england-patriots-at-seattle-seahawks";
 
 function stripValues(slug: string) {
-  const link = document.querySelector(`a[href="/nfl/matchups/${slug}"]`);
+  const link = document.querySelector(`a[href="/nfl/matchups/2026/week-1/${slug}"]`);
   const strip = link?.closest("[data-matrix-game]")?.querySelector("[data-matchup-summary-strip]");
   const read = (key: string) => strip?.querySelector(`[data-summary-field="${key}"] dd`)?.textContent;
   return {

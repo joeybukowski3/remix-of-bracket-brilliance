@@ -181,7 +181,7 @@ describe("NFLTeamSchedules schedule table", () => {
   it("links each matchup row to the existing matchup-detail route", () => {
     renderRoute("/nfl/team-schedules/buffalo-bills");
     const link = screen.getByRole("link", { name: /BUF at Houston Texans/i });
-    expect(link.getAttribute("href")).toBe("/nfl/matchups/buffalo-bills-at-houston-texans");
+    expect(link.getAttribute("href")).toBe("/nfl/matchups/2026/week-1/buffalo-bills-at-houston-texans");
   });
 
   it("shows correct home/away identity", () => {
@@ -294,6 +294,6 @@ describe("NFLTeamSchedules matchup links", () => {
   it("keeps the semantic matchup link unchanged after the column/styling rework", () => {
     renderRoute("/nfl/team-schedules/buffalo-bills");
     const link = screen.getByRole("link", { name: /BUF at Houston Texans/i });
-    expect(link.getAttribute("href")).toBe("/nfl/matchups/buffalo-bills-at-houston-texans");
+    expect(link.getAttribute("href")).toBe("/nfl/matchups/2026/week-1/buffalo-bills-at-houston-texans");
   });
 });

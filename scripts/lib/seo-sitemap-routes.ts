@@ -25,6 +25,7 @@ import { fileURLToPath } from "node:url";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
 import { buildMatchupFromGame } from "@/lib/nfl/matchups";
 import { nflTeamPath } from "@/lib/nfl/teamRoutes";
+import { nflMatchupPath } from "@/lib/nfl/matchupRoutes";
 import type { NflGameRecord } from "@/lib/nfl/standings";
 import { getAllTeams, getTeamsByConference } from "@/data/cfb";
 import { CFB_CONFERENCES, CFB_CONFERENCE_ORDER } from "@/data/cfb/conferences";
@@ -195,11 +196,12 @@ export function loadNflSeasonGames(season = NFL_SITEMAP_SEASON): NflGameRecord[]
 }
 
 /**
- * Regular-season matchup pages: /nfl/matchups/:gameSlug.
+ * Regular-season matchup pages: /nfl/matchups/:season/week-:week/:gameSlug.
  *
- * Mirrors getMatchupBySlug (the page's resolver): only REG games resolve, so
+ * Mirrors findNflMatchup (the page's resolver): only REG games resolve, so
  * postseason/preseason rows are excluded by policy, and rows whose teams do not
  * map to the guide are skipped exactly as the page would fail to find them.
+ * Legacy /nfl/matchups/:gameSlug URLs are 301 redirects and never listed.
  */
 export function buildNflMatchupPaths(games: readonly NflGameRecord[] = loadNflSeasonGames()): string[] {
   const guide = getNflSeasonGuide(NFL_SITEMAP_SEASON);
@@ -208,7 +210,7 @@ export function buildNflMatchupPaths(games: readonly NflGameRecord[] = loadNflSe
   for (const game of games) {
     if (game.seasonType !== "REG" || game.season !== NFL_SITEMAP_SEASON) continue;
     const matchup = buildMatchupFromGame(game, guide);
-    if (matchup) paths.push(`/nfl/matchups/${matchup.slug}`);
+    if (matchup) paths.push(nflMatchupPath(matchup));
   }
   return paths;
 }

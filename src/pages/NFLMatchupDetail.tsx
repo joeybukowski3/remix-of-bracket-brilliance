@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link, Navigate, useParams } from "react-router-dom";
+import { Link, Navigate, useLocation, useParams } from "react-router-dom";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { useNflMatchupMetrics } from "@/hooks/useNflMatchupMetrics";
@@ -24,7 +24,21 @@ import { comparisonCompletedGames } from "@/lib/nfl/comparisonCompletedGames";
 import { createObservedComparisonResolver } from "@/lib/nfl/observedComparisonMetrics";
 import { getProjectionBlendWeights } from "@/lib/nfl/projectionBlendPolicy";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
-import { getMatchupBySlug } from "@/lib/nfl/matchups";
+import {
+  NFL_MATCHUPS_BASE_PATH,
+  findNflMatchup,
+  nflMatchupPath,
+  nflMatchupsWeekPath,
+  parseNflMatchupRoute,
+  resolveUniqueNflMatchup,
+} from "@/lib/nfl/matchupRoutes";
+import {
+  NFL_MATCHUP_FALLBACK_DESCRIPTION,
+  NFL_MATCHUP_FALLBACK_TITLE,
+  buildNflMatchupDescription,
+  buildNflMatchupStructuredData,
+  buildNflMatchupTitle,
+} from "@/lib/nfl/matchupPageSeo";
 import { deriveAdvantages, deriveAngles } from "@/lib/nfl/matchupComparison";
 import {
   MATCHUP_CATEGORIES,
@@ -120,7 +134,14 @@ const GUIDE = getNflSeasonGuide(CURRENT_SEASON)!;
  * estimated to fill a cell.
  */
 export default function NFLMatchupDetail() {
-  const { gameSlug = "" } = useParams();
+  const { season, weekSegment, gameSlug } = useParams();
+  const location = useLocation();
+  // Strict season/week-N/slug parse. Only the current season's schedule is
+  // loaded here, so any other season is not a page on this site.
+  const routeKey = useMemo(() => {
+    const key = parseNflMatchupRoute({ season, weekSegment, gameSlug });
+    return key && key.season === CURRENT_SEASON ? key : null;
+  }, [season, weekSegment, gameSlug]);
   const { loading, error, data } = useNflSeasonData(CURRENT_SEASON);
   // Soft dependency: the analyzer renders fully without it, with detailed rows
   // staying at "N/A".
@@ -191,9 +212,17 @@ export default function NFLMatchupDetail() {
   const isCompactLayout = useIsCompactLayout("(max-width: 639px)");
 
   const matchup = useMemo(
-    () => (data ? getMatchupBySlug(data.games, GUIDE, gameSlug) : null),
-    [data, gameSlug]
+    () => (data && routeKey ? findNflMatchup(data.games, GUIDE, routeKey) : null),
+    [data, routeKey]
   );
+  // A real slug requested under the wrong week (an outdated link, or a game
+  // the schedule later moved) is sent to its one canonical URL. Ambiguous or
+  // unknown slugs resolve to nothing and are handled as invalid below.
+  const correctedPath = useMemo(() => {
+    if (matchup || !data || !routeKey) return null;
+    const moved = resolveUniqueNflMatchup(data.games, GUIDE, routeKey.season, routeKey.slug);
+    return moved ? nflMatchupPath(moved) : null;
+  }, [matchup, data, routeKey]);
 
   // Independent optional enrichment: a game with no generated AI-handicap
   // artifact yet leaves only the AI Picks tab unavailable; every other
@@ -349,18 +378,19 @@ export default function NFLMatchupDetail() {
     return { categoryMetrics: metrics, categoryResults: results };
   }, [matchup, metricResolver, successRate, trench, modelRatings, isProjection, projectedResolver, dedicatedLabel, isBlended, blended, seasonResolver]);
 
+  const structuredData = useMemo(() => (matchup ? buildNflMatchupStructuredData(matchup) : undefined), [matchup]);
   usePageSeo({
-    title: matchup
-      ? `${matchup.away.teamName} at ${matchup.home.teamName} — Week ${matchup.week} Matchup | Joe Knows Ball`
-      : `NFL Weekly Matchup | Joe Knows Ball`,
-    description: matchup
-      ? `${matchup.away.teamName} vs ${matchup.home.teamName} Week ${matchup.week} preview: power ratings, side-by-side comparison, model advantages and matchup angles.`
-      : "NFL weekly matchup preview.",
-    path: `/nfl/matchups/${gameSlug}`,
-    // Valid matchup: index. Once the season data has settled (loaded or
-    // failed) without a matching game, the slug is invalid: noindex. While
+    title: matchup ? buildNflMatchupTitle(matchup) : NFL_MATCHUP_FALLBACK_TITLE,
+    description: matchup ? buildNflMatchupDescription(matchup) : NFL_MATCHUP_FALLBACK_DESCRIPTION,
+    // Canonical is rebuilt from the resolved game record, never echoed from
+    // the request, so case or query variants all point at one URL.
+    path: matchup ? nflMatchupPath(matchup) : location.pathname,
+    // Valid matchup: index. A malformed or other-season URL is invalid
+    // immediately; otherwise, once the season data has settled (loaded or
+    // failed) without a matching game, the URL is invalid: noindex. While
     // loading, the page is not yet known to be invalid, so it is not marked.
-    noindex: !loading && !matchup,
+    noindex: !routeKey || (!loading && !matchup),
+    structuredData,
   });
 
   const advantages = useMemo(
@@ -369,6 +399,7 @@ export default function NFLMatchupDetail() {
   );
   const angles = useMemo(() => (matchup ? deriveAngles(matchup, modelRatings) : []), [matchup, modelRatings]);
 
+  if (!routeKey) return <Navigate to={NFL_MATCHUPS_BASE_PATH} replace />;
   if (loading) {
     return <p className="text-sm text-slate-500">Loading matchup…</p>;
   }
@@ -376,12 +407,13 @@ export default function NFLMatchupDetail() {
     return (
       <>
         <p className="text-sm font-semibold text-red-700">Could not load matchup data. Please try again later.</p>
-        <Link to="/nfl/matchups" className="mt-3 inline-block text-sm font-black text-emerald-700 hover:underline">← All matchups</Link>
+        <Link to={NFL_MATCHUPS_BASE_PATH} className="mt-3 inline-block text-sm font-black text-emerald-700 hover:underline">← All matchups</Link>
       </>
     );
   }
+  if (correctedPath) return <Navigate to={`${correctedPath}${location.search}${location.hash}`} replace />;
   // Loaded but no matching game → safe redirect (invalid/unknown slug).
-  if (!matchup) return <Navigate to="/nfl/matchups" replace />;
+  if (!matchup) return <Navigate to={NFL_MATCHUPS_BASE_PATH} replace />;
 
   const panelProps = (tab: (typeof MATCHUP_TABS)[number]["id"]) => ({
     role: "tabpanel" as const,
@@ -404,7 +436,7 @@ export default function NFLMatchupDetail() {
      */
     <div className="nfl-matchup-sheet space-y-2" data-theme={theme}>
       <div className="matchup-utility-row">
-        <Link to="/nfl/matchups" className="text-xs font-black text-emerald-700 hover:underline">← All weekly matchups</Link>
+        <Link to={nflMatchupsWeekPath(matchup.week)} className="text-xs font-black text-emerald-700 hover:underline">← All weekly matchups</Link>
         <MatchupThemeToggle theme={theme} onChange={setTheme} />
       </div>
 

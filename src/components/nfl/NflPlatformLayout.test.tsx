@@ -19,7 +19,7 @@ function renderNflRoute(path: string) {
           <Route path="standings" element={<h1>Standings Page</h1>} />
           <Route path="schedule" element={<h1>Schedule Page</h1>} />
           <Route path="matchups" element={<h1>Matchups Page</h1>} />
-          <Route path="matchups/:gameSlug" element={<h1>Matchup Detail Page</h1>} />
+          <Route path="matchups/:season/:weekSegment/:gameSlug" element={<h1>Matchup Detail Page</h1>} />
           <Route path="super-bowl" element={<h1>Super Bowl Page</h1>} />
           <Route path="coach-of-year" element={<h1>Coach Page</h1>} />
           <Route path="guide" element={<h1>Guide Page</h1>} />
@@ -41,7 +41,7 @@ describe("NflPlatformLayout", () => {
     ["/nfl/standings", "Standings Page"],
     ["/nfl/schedule", "Schedule Page"],
     ["/nfl/matchups", "Matchups Page"],
-    ["/nfl/matchups/dallas-cowboys-at-ny-giants", "Matchup Detail Page"],
+    ["/nfl/matchups/2026/week-1/dallas-cowboys-at-ny-giants", "Matchup Detail Page"],
     ["/nfl/super-bowl", "Super Bowl Page"],
     ["/nfl/coach-of-year", "Coach Page"],
     ["/nfl/guide", "Guide Page"],
@@ -55,7 +55,7 @@ describe("NflPlatformLayout", () => {
   });
 
   it("shows the shared desktop rail on matchup detail routes, not wrapped in an extra hidden div", () => {
-    renderNflRoute("/nfl/matchups/dallas-cowboys-at-ny-giants");
+    renderNflRoute("/nfl/matchups/2026/week-1/dallas-cowboys-at-ny-giants");
     const nav = screen.getByRole("navigation", { name: "NFL sitemap" });
     // Previously matchup detail wrapped <NflSectionSidebar /> in its own
     // `<div className="hidden">`, on top of the sidebar's own responsive
@@ -94,7 +94,7 @@ describe("NflPlatformLayout", () => {
     const nav = screen.getByRole("navigation", { name: "NFL sitemap" });
     expect(within(nav).getByRole("link", { name: /Weekly Matchups/i }).getAttribute("aria-current")).toBe("page");
 
-    renderNflRoute("/nfl/matchups/dallas-cowboys-at-ny-giants");
+    renderNflRoute("/nfl/matchups/2026/week-1/dallas-cowboys-at-ny-giants");
     const nav2 = screen.getAllByRole("navigation", { name: "NFL sitemap" }).slice(-1)[0];
     expect(within(nav2).getByRole("link", { name: /Weekly Matchups/i }).getAttribute("aria-current")).toBe("page");
   });

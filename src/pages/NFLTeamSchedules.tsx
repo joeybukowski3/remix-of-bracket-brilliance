@@ -103,7 +103,7 @@ function ScheduleRow({
   marketTotal: string;
   jkbSpread: string;
 }) {
-  const detailHref = `/nfl/matchups/${row.matchupSlug}`;
+  const detailHref = row.matchupPath;
   const label = `Week ${row.week}: ${teamAbbr.toUpperCase()} ${row.location === "AWAY" ? "at" : "vs"} ${row.opponent.teamName} — view matchup breakdown`;
 
   return (

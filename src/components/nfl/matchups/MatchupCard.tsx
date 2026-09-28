@@ -9,6 +9,7 @@ import {
   type GameProjection,
 } from "@/lib/nfl/projectionData";
 import type { NflMatchup, NflMatchupTeam } from "@/lib/nfl/matchups";
+import { nflMatchupPath } from "@/lib/nfl/matchupRoutes";
 
 /** Universal current 2026 OVR/rank for one team, from useNflCurrentRating2026(). */
 export type MatchupCardOvr = { rating: number; rank: number };
@@ -119,7 +120,7 @@ export default function MatchupCard({
   const { away, home } = matchup;
   return (
     <Link
-      to={`/nfl/matchups/${matchup.slug}`}
+      to={nflMatchupPath(matchup)}
       aria-label={`${away.teamName} at ${home.teamName} — view matchup breakdown`}
       className="group block rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-emerald-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
     >

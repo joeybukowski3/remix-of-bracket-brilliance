@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { CANONICAL_BASE } from "@/hooks/usePageSeo";
 import { getNflSeasonGuide } from "@/lib/nfl/guideData";
-import { getMatchupBySlug } from "@/lib/nfl/matchups";
+import { findNflMatchup, nflMatchupPath, parseNflMatchupRoute } from "@/lib/nfl/matchupRoutes";
 import { nflTeamCanonicalUrl } from "@/lib/nfl/teamPageSeo";
 import { getAllTeams, getConferenceBySlug, getTeamBySlug } from "@/data/cfb";
 import { researchStudies } from "@/data/researchStudies";
@@ -17,6 +17,12 @@ import {
   matchExcludedRoute,
 } from "./seo-sitemap-routes";
 import { SITE_ORIGIN, SITEMAP_NAMESPACE, renderUrlset, toAbsoluteUrl } from "./seo-sitemap-xml";
+import {
+  VERCEL_CONFIG_PATH,
+  committedLegacyMatchupRedirects,
+  legacyMatchupRedirectsInSync,
+  spliceLegacyMatchupRedirects,
+} from "./seo-legacy-matchup-redirects";
 
 const ROOT = resolve(__dirname, "..", "..");
 const { sections, files } = generateSitemaps();
@@ -173,18 +179,38 @@ describe("data-derived URLs resolve through the pages' own resolvers", () => {
     expect(committed.match(/<loc>https:\/\/www\.joeknowsball\.com\/nfl\/teams\/[a-z0-9-]+<\/loc>/g)).toHaveLength(32);
   });
 
-  it("lists one unique matchup URL per resolvable regular-season game, each found by getMatchupBySlug", () => {
+  it("lists one unique season/week matchup URL per regular-season game, each resolved by the page's own resolver", () => {
     const games = loadNflSeasonGames();
     const regular = games.filter((game) => game.seasonType === "REG" && game.season === NFL_SITEMAP_SEASON);
     const matchupPaths = pathsIn("sitemap-nfl-matchups.xml", "/nfl/matchups/");
+    expect(regular).toHaveLength(272);
     expect(matchupPaths).toHaveLength(locsIn("sitemap-nfl-matchups.xml").length);
     expect(new Set(matchupPaths).size).toBe(matchupPaths.length);
     expect(matchupPaths.length).toBe(regular.length);
+    const resolvedGameIds = new Set<string>();
     for (const path of matchupPaths) {
-      const slug = path.slice("/nfl/matchups/".length);
-      const matchup = getMatchupBySlug(games, guide, slug);
+      const [, , , season, weekSegment, gameSlug, ...rest] = path.split("/");
+      expect(rest, path).toEqual([]);
+      const key = parseNflMatchupRoute({ season, weekSegment, gameSlug });
+      expect(key, path).not.toBeNull();
+      const matchup = findNflMatchup(games, guide, key!);
       expect(matchup, path).not.toBeNull();
       expect(matchup!.seasonType, path).toBe("REG");
+      // The URL is exactly the page's canonical, rebuilt from the game record.
+      expect(nflMatchupPath(matchup!), path).toBe(path);
+      resolvedGameIds.add(matchup!.gameId);
+    }
+    expect(resolvedGameIds).toEqual(new Set(regular.map((game) => game.gameId)));
+  });
+
+  it("lists no legacy single-segment /nfl/matchups/:gameSlug URLs in any sitemap", () => {
+    const legacy = allPaths.filter((path) => /^\/nfl\/matchups\/[^/]+$/.test(path));
+    expect(legacy).toEqual([]);
+    const committed = readFileSync(resolve(ROOT, "public", "sitemap-nfl-matchups.xml"), "utf8");
+    const locs = committed.match(/<loc>[^<]*<\/loc>/g) ?? [];
+    expect(locs).toHaveLength(272);
+    for (const loc of locs) {
+      expect(loc).toMatch(/^<loc>https:\/\/www\.joeknowsball\.com\/nfl\/matchups\/2026\/week-([1-9]|1[0-8])\/[a-z0-9]+(-[a-z0-9]+)*<\/loc>$/);
     }
   });
 
@@ -244,5 +270,44 @@ describe("committed files and build wiring", () => {
     const pkg = JSON.parse(readFileSync(resolve(ROOT, "package.json"), "utf8"));
     expect(pkg.scripts.prebuild).toBe("npm run seo:generate");
     expect(pkg.scripts["seo:generate"]).toBe("tsx scripts/generate-seo-files.ts");
+  });
+});
+
+describe("vercel.json legacy matchup redirects", () => {
+  const vercelText = readFileSync(VERCEL_CONFIG_PATH, "utf8");
+
+  it("match the rules generated from the 2026 schedule (run npm run seo:legacy-redirects)", () => {
+    expect(legacyMatchupRedirectsInSync(vercelText)).toBe(true);
+    expect(committedLegacyMatchupRedirects(vercelText)).toHaveLength(18);
+  });
+
+  it("send every sitemap matchup's legacy slug to that exact sitemap URL", () => {
+    const rules = committedLegacyMatchupRedirects(vercelText).map((rule) => {
+      const [, alternatives] = /^\/nfl\/matchups\/:gameSlug\(([^)]*)\)$/.exec(rule.source)!;
+      return { slugs: new Set(alternatives.split("|")), destination: rule.destination, permanent: rule.permanent };
+    });
+    for (const path of pathsIn("sitemap-nfl-matchups.xml", "/nfl/matchups/")) {
+      const slug = path.split("/").pop()!;
+      const hits = rules.filter((rule) => rule.slugs.has(slug));
+      expect(hits, slug).toHaveLength(1);
+      expect(hits[0].permanent).toBe(true);
+      expect(hits[0].destination.replace(":gameSlug", slug)).toBe(path);
+    }
+  });
+
+  it("keep every other redirect, rewrite and header byte-for-byte when regenerated", () => {
+    expect(spliceLegacyMatchupRedirects(vercelText)).toBe(vercelText);
+    const withoutRules = vercelText.replace(
+      /[ \t]*\{\s*"source": "\/nfl\/matchups\/:gameSlug\([^"]*\)",\s*"destination": "[^"]*",\s*"permanent": true\s*\},\r?\n/g,
+      ""
+    );
+    expect(committedLegacyMatchupRedirects(withoutRules)).toEqual([]);
+    expect(spliceLegacyMatchupRedirects(withoutRules)).toBe(vercelText);
+  });
+
+  it("are checked by seo:check", () => {
+    const pkg = JSON.parse(readFileSync(resolve(ROOT, "package.json"), "utf8"));
+    expect(pkg.scripts["seo:check"]).toBe("tsx scripts/generate-seo-files.ts --check");
+    expect(readFileSync(resolve(ROOT, "scripts", "generate-seo-files.ts"), "utf8")).toContain("legacyMatchupRedirectsInSync()");
   });
 });

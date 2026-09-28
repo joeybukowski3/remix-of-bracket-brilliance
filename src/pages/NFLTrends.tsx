@@ -14,6 +14,7 @@ import {
 } from "@/components/nfl/trends/TrendPresentation";
 import { TREND_TIER_PRESENTATION, resolveTrendTeam } from "@/components/nfl/trends/trendPresentationConfig";
 import { cn } from "@/lib/utils";
+import { nflMatchupPath } from "@/lib/nfl/matchupRoutes";
 import {
   TREND_STATUS_LABELS,
   TREND_TIER_LABELS,
@@ -103,7 +104,7 @@ function CurrentMatchupCard({ artifact, game }: { artifact: NflSituationalTrends
           {strongest && <div className="col-span-2 border-t border-slate-200 pt-2"><dt className="text-[9px] font-bold uppercase tracking-[0.1em] text-slate-500">Strongest evidence</dt><dd className="mt-1 truncate text-[11px] font-bold text-slate-800">{strongest.team.toUpperCase()} · {strongest.trend.name}</dd></div>}
         </dl>
 
-        {game.gameSlug && <Link to={`/nfl/matchups/${game.gameSlug}#trends`} className="inline-flex min-h-10 items-center justify-center gap-1 rounded-md bg-slate-950 px-3 text-xs font-bold text-white hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500">Matchup trends <ChevronRight className="h-3.5 w-3.5" aria-hidden /></Link>}
+        {game.gameSlug && <Link to={`${nflMatchupPath({ season: artifact.season, week: game.week, slug: game.gameSlug })}#trends`} className="inline-flex min-h-10 items-center justify-center gap-1 rounded-md bg-slate-950 px-3 text-xs font-bold text-white hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500">Matchup trends <ChevronRight className="h-3.5 w-3.5" aria-hidden /></Link>}
       </div>
 
       <div className="flex flex-wrap gap-x-4 gap-y-1 border-t border-slate-200 bg-slate-100/80 px-3 py-2 text-[10px] font-medium text-slate-700 sm:px-4">
@@ -173,7 +174,7 @@ function TrendLibraryItem({ artifact, trend, primaryWindow }: { artifact: NflSit
 
         <div>
           <h4 className="text-xs font-bold text-slate-900">Current/upcoming qualifying games</h4>
-          {currentGames.length === 0 ? <p className="mt-1 text-[11px] text-slate-500">No upcoming game is currently confirmed for this trend.</p> : <div className="mt-2 flex flex-wrap gap-1.5">{currentGames.map((game) => game.gameSlug && <Link key={game.gameId} to={`/nfl/matchups/${game.gameSlug}#trends`} className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-[10px] font-bold text-sky-900 hover:bg-sky-100">W{game.week} {game.away.toUpperCase()} at {game.home.toUpperCase()}</Link>)}</div>}
+          {currentGames.length === 0 ? <p className="mt-1 text-[11px] text-slate-500">No upcoming game is currently confirmed for this trend.</p> : <div className="mt-2 flex flex-wrap gap-1.5">{currentGames.map((game) => game.gameSlug && <Link key={game.gameId} to={`${nflMatchupPath({ season: artifact.season, week: game.week, slug: game.gameSlug })}#trends`} className="rounded-md border border-sky-200 bg-sky-50 px-2 py-1 text-[10px] font-bold text-sky-900 hover:bg-sky-100">W{game.week} {game.away.toUpperCase()} at {game.home.toUpperCase()}</Link>)}</div>}
         </div>
       </div>
     </details>
