@@ -166,8 +166,13 @@ describe("StevePoolDashboard discovery isolation", () => {
       "src/components/layout/SiteFooter.tsx",
       "src/components/nfl/NflSectionSidebar.tsx",
       "src/lib/nfl/sectionNav.ts",
-      "scripts/generate-seo-files.mjs",
+      "scripts/generate-seo-files.ts",
       "public/sitemap.xml",
+      "public/sitemap-pages.xml",
+      "public/sitemap-nfl.xml",
+      "public/sitemap-nfl-teams.xml",
+      "public/sitemap-nfl-matchups.xml",
+      "public/sitemap-cfb.xml",
       "public/robots.txt",
     ];
 

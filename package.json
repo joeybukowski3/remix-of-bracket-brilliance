@@ -6,6 +6,7 @@
   "packageManager": "npm@10.9.2",
   "scripts": {
     "dev": "vite",
+    "prebuild": "npm run seo:generate",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "typecheck:scripts": "tsc --noEmit --project tsconfig.scripts.json",
@@ -39,7 +40,8 @@
     "social-card:mlb:confirmed": "node scripts/generate-social-card.mjs --template=mlb_daily_confirmed",
     "social-card:mlb:morning:live": "tsx scripts/generate-social-card-live.ts --edition=morning",
     "social-card:mlb:confirmed:live": "tsx scripts/generate-social-card-live.ts --edition=confirmed",
-    "seo:generate": "node scripts/generate-seo-files.mjs",
+    "seo:generate": "tsx scripts/generate-seo-files.ts",
+    "seo:check": "tsx scripts/generate-seo-files.ts --check",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
