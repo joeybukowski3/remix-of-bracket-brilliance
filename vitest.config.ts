@@ -271,6 +271,11 @@ export default defineConfig({
       "scripts/lib/walter/scheduleCoverage.test.mjs",
       // SEO Phase 2 -- sitemap index/child generation, inclusion and lastmod policy.
       "scripts/lib/seo-sitemap.test.ts",
+      // SEO Phase 5A -- build-time prerender: document injection/validation,
+      // allow-list and the server-only secret guard.
+      "scripts/lib/prerender-html.test.ts",
+      "scripts/lib/prerender-routes.test.ts",
+      "scripts/lib/prerender-secrets.test.ts",
     ],
   },
   resolve: {

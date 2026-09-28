@@ -129,7 +129,7 @@ function currentLocation() {
   return screen.getByTestId("location").textContent;
 }
 
-// Mirrors the /nfl matchup routes in src/App.tsx.
+// Mirrors the /nfl matchup routes in src/AppRoutes.tsx.
 function renderRoute(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>

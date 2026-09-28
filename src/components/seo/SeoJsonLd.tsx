@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useContext, useEffect } from "react";
+import { SeoCollectorContext } from "@/lib/seo/seoCollector";
 
 type Props = {
   id: string;
@@ -6,6 +7,9 @@ type Props = {
 };
 
 export default function SeoJsonLd({ id, data }: Props) {
+  // Build-time prerender only (see seoCollector.ts); a no-op in the browser.
+  useContext(SeoCollectorContext)?.recordJsonLd({ id, data });
+
   useEffect(() => {
     const selector = `script[data-seo-jsonld="${id}"]`;
     let element = document.head.querySelector(selector) as HTMLScriptElement | null;

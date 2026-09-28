@@ -151,7 +151,7 @@ describe("NFL v0.3 internal review validation and loading", () => {
 
 describe("NFL v0.3 hidden route and public isolation", () => {
   it("registers only the exact lazy hidden route outside the NFL layout", () => {
-    const app = readFileSync(join(ROOT, "src", "App.tsx"), "utf8");
+    const app = readFileSync(join(ROOT, "src", "AppRoutes.tsx"), "utf8");
     expect(app).toContain(`path="${HIDDEN_ROUTE}"`);
     expect(app).toContain('lazy(() => import("./pages/NflV03Review"))');
     expect(app).not.toContain('path="/admin/nfl/power-ratings"');

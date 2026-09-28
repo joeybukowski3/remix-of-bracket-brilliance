@@ -153,7 +153,7 @@ describe("StevePoolDashboard rendering", () => {
 
 describe("StevePoolDashboard discovery isolation", () => {
   it("registers the direct route outside the NFL platform layout", () => {
-    const app = readFileSync(join(ROOT, "src", "App.tsx"), "utf8");
+    const app = readFileSync(join(ROOT, "src", "AppRoutes.tsx"), "utf8");
     expect(app).toContain('path="/steve"');
     expect(app).toContain('lazy(() => import("./pages/StevePoolDashboard"))');
     const nflLayoutEnd = app.indexOf('</Route>\n          <Route element={<NflPlatformLayout />}>');

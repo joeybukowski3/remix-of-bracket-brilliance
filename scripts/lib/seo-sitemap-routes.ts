@@ -11,7 +11,7 @@
  * query-string states are never listed; EXCLUDED_ROUTES documents the known
  * ones and the sitemap tests enforce both lists.
  *
- * Static routes are listed explicitly because the router is JSX (src/App.tsx)
+ * Static routes are listed explicitly because the router is JSX (src/AppRoutes.tsx)
  * and cannot be introspected safely. Dynamic routes are derived from the same
  * data and slug/path builders the pages use to resolve them, so a URL can only
  * appear here if its page would find a valid record for it.
