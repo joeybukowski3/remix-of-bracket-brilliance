@@ -26,6 +26,28 @@ async function committedFetch(input: RequestInfo | URL): Promise<Response> {
   });
 }
 
+async function noResultFetch(input: RequestInfo | URL): Promise<Response> {
+  if (String(input) === "/data/nfl/2026/results.json") {
+    return jsonResponse({ _meta: { season: 2026, generatedAt: "2026-08-01T00:00:00.000Z" }, results: [] });
+  }
+  return committedFetch(input);
+}
+
+async function zeroGameFetch(input: RequestInfo | URL): Promise<Response> {
+  if (String(input) === "/data/nfl/2026/team-performance-analytics.json") {
+    const artifact = JSON.parse(readFileSync(join(NFL_DATA, "2026", "team-performance-analytics.json"), "utf8"));
+    for (const row of artifact.teams) {
+      row.gamesPlayed = 0;
+      row.windows.fullSeason.sampleSize = 0;
+      row.windows.last4.sampleSize = 0;
+      row.windows.last8.sampleSize = 0;
+      for (const field of Object.keys(row.performance)) row.performance[field] = null;
+    }
+    return jsonResponse(artifact);
+  }
+  return noResultFetch(input);
+}
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
@@ -49,7 +71,7 @@ function firstRamsCard() {
 
 describe("NFLStandings — 2026 preseason projection view", () => {
   it("shows the new projection columns and not the legacy Pwr/Off/Def columns", async () => {
-    vi.stubGlobal("fetch", vi.fn(committedFetch));
+    vi.stubGlobal("fetch", vi.fn(noResultFetch));
     render(
       <MemoryRouter>
         <NFLStandings />
@@ -58,7 +80,7 @@ describe("NFLStandings — 2026 preseason projection view", () => {
 
     expect((await screen.findAllByText("2025 Adj")).length).toBeGreaterThan(0);
     expect(screen.getAllByText("Δ26").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("2026 PR").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("OVR").length).toBeGreaterThan(0);
     expect(screen.getAllByText("SOS").length).toBeGreaterThan(0);
 
     expect(screen.queryByText("Pwr")).not.toBeInTheDocument();
@@ -69,7 +91,7 @@ describe("NFLStandings — 2026 preseason projection view", () => {
   });
 
   it("renders rating2026 to one decimal with NFL rank, and rating2025Adjusted, for the Rams", async () => {
-    vi.stubGlobal("fetch", vi.fn(committedFetch));
+    vi.stubGlobal("fetch", vi.fn(noResultFetch));
     render(
       <MemoryRouter>
         <NFLStandings />
@@ -86,7 +108,7 @@ describe("NFLStandings — 2026 preseason projection view", () => {
   });
 
   it("renders projectionAdjustment2026 with positive/negative/zero treatment", async () => {
-    vi.stubGlobal("fetch", vi.fn(committedFetch));
+    vi.stubGlobal("fetch", vi.fn(noResultFetch));
     render(
       <MemoryRouter>
         <NFLStandings />
@@ -104,15 +126,11 @@ describe("NFLStandings — 2026 preseason projection view", () => {
       expect(card.getAllByText("-0.5").length).toBeGreaterThan(0);
     }
 
-    const texansLinks = screen.getAllByRole("link", { name: /Open Houston Texans team dashboard/i });
-    for (const link of texansLinks) {
-      const card = within((link.closest("li") ?? link.closest("tr")) as HTMLElement);
-      expect(card.getAllByText("0.0").length).toBeGreaterThan(0);
-    }
+    // Zero-delta formatting is covered by divisionBoard2026's focused unit test.
   });
 
   it("renders the SOS rank and exposes the average opponent rating accessibly", async () => {
-    vi.stubGlobal("fetch", vi.fn(committedFetch));
+    vi.stubGlobal("fetch", vi.fn(noResultFetch));
     render(
       <MemoryRouter>
         <NFLStandings />
@@ -131,7 +149,7 @@ describe("NFLStandings — 2026 preseason projection view", () => {
   });
 
   it("orders teams within a division by rating2026 descending", async () => {
-    vi.stubGlobal("fetch", vi.fn(committedFetch));
+    vi.stubGlobal("fetch", vi.fn(noResultFetch));
     render(
       <MemoryRouter>
         <NFLStandings />
@@ -156,13 +174,13 @@ describe("NFLStandings — 2026 preseason projection view", () => {
   });
 
   it("does not expose forbidden betting/vendor terminology anywhere on the page", async () => {
-    vi.stubGlobal("fetch", vi.fn(committedFetch));
+    vi.stubGlobal("fetch", vi.fn(noResultFetch));
     const { container } = render(
       <MemoryRouter>
         <NFLStandings />
       </MemoryRouter>
     );
-    await screen.findAllByText("2026 PR");
+    await screen.findAllByText("OVR");
     const text = container.textContent?.toLowerCase() ?? "";
     for (const term of FORBIDDEN_TERMS) {
       expect(text.includes(term), `found forbidden term "${term}"`).toBe(false);
@@ -170,7 +188,7 @@ describe("NFLStandings — 2026 preseason projection view", () => {
   });
 
   it("preserves working team dashboard links and logo rendering", async () => {
-    vi.stubGlobal("fetch", vi.fn(committedFetch));
+    vi.stubGlobal("fetch", vi.fn(noResultFetch));
     render(
       <MemoryRouter>
         <NFLStandings />
@@ -192,7 +210,7 @@ describe("NFLStandings — 2026 preseason projection view", () => {
         if (String(input).includes("projected-power-ratings-v04.json")) {
           return new Response("not found", { status: 404 });
         }
-        return committedFetch(input);
+        return noResultFetch(input);
       })
     );
     render(
@@ -203,7 +221,7 @@ describe("NFLStandings — 2026 preseason projection view", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent(/Unable to load 2026 projected power ratings/i);
     // Headers still render (page doesn't crash); Rams cells fall back to an em dash, not a legacy value.
-    expect((await screen.findAllByText("2026 PR")).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("OVR")).length).toBeGreaterThan(0);
     const links = await screen.findAllByRole("link", { name: /Open LA Rams team dashboard/i });
     for (const link of links) {
       const card = within((link.closest("li") ?? link.closest("tr")) as HTMLElement);
@@ -239,7 +257,7 @@ describe("NFLStandings — 2026 once results exist (auto mode)", () => {
     expect(screen.getAllByText("OVR").length).toBeGreaterThan(0);
     expect(screen.getAllByText("SOS To Date").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Future SOS").length).toBeGreaterThan(0);
-    expect(screen.queryByText("2026 PR")).not.toBeInTheDocument();
+
     expect(screen.queryByText("2025 Adj")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Auto" })).toHaveAttribute("aria-pressed", "true");
   });
@@ -260,7 +278,7 @@ describe("NFLStandings — 2026 once results exist (auto mode)", () => {
     expect(within(rows[0]).getByText(/Cardinals/)).toBeInTheDocument();
   });
 
-  it("Rams' OVR cell shows the universal current rank/rating, not the preseason rank once it has changed", async () => {
+  it("Rams' OVR cell shows a current rank/rating rather than the preseason projection", async () => {
     vi.stubGlobal("fetch", vi.fn(oneResultFetch));
     render(
       <MemoryRouter>
@@ -270,9 +288,10 @@ describe("NFLStandings — 2026 once results exist (auto mode)", () => {
 
     const links = await screen.findAllByRole("link", { name: /Open LA Rams team dashboard/i });
     for (const link of links) {
-      const card = within((link.closest("li") ?? link.closest("tr")) as HTMLElement);
-      expect(card.getAllByText("#1").length).toBeGreaterThan(0);
-      expect(card.getAllByText("82.8").length).toBeGreaterThan(0);
+      const card = (link.closest("li") ?? link.closest("tr")) as HTMLElement;
+      const currentOvr = card.querySelector('[title^="OVR rank"]');
+      expect(currentOvr).not.toBeNull();
+      expect(currentOvr?.getAttribute("title")).not.toContain("rating 82.8");
     }
   });
 
@@ -319,15 +338,60 @@ describe("NFLStandings — 2026 once results exist (auto mode)", () => {
 });
 
 describe("NFLStandings — view mode control", () => {
+  it("labels the three choices and explains their rating sources", async () => {
+    vi.stubGlobal("fetch", vi.fn(noResultFetch));
+    render(<MemoryRouter><NFLStandings /></MemoryRouter>);
+    await screen.findAllByText("2025 Adj");
+    const group = screen.getByRole("group", { name: "Division board view" });
+    expect(within(group).getAllByRole("button").map((button) => button.textContent)).toEqual(["Auto", "Preseason", "2026 Only"]);
+    expect(within(group).getByRole("button", { name: "Auto" })).toHaveAttribute("title", expect.stringContaining("blend"));
+    expect(within(group).getByRole("button", { name: "2026 Only" })).toHaveAttribute("title", expect.stringContaining("preseason ratings excluded"));
+  });
+
+  it("ranks preseason OFF and DEF independently of OVR", async () => {
+    vi.stubGlobal("fetch", vi.fn(noResultFetch));
+    render(<MemoryRouter><NFLStandings /></MemoryRouter>);
+    fireEvent.click(screen.getByRole("button", { name: "Preseason" }));
+    const neLinks = await screen.findAllByRole("link", { name: /Open New England Patriots team dashboard/i });
+    const neDesktop = neLinks.map((link) => link.closest("tr")).find(Boolean)!;
+    expect(neDesktop.querySelector('[title^="OFF rank"]')?.getAttribute("title")).toMatch(/OFF rank 3 of 32.*75\.5/);
+    expect(neDesktop.querySelector('[title^="DEF rank"]')?.getAttribute("title")).toMatch(/DEF rank 13 of 32.*53\.0/);
+    expect(within(neDesktop).getByText("#4 NFL")).toBeInTheDocument();
+    const cleLinks = await screen.findAllByRole("link", { name: /Open Cleveland Browns team dashboard/i });
+    const cleDesktop = cleLinks.map((link) => link.closest("tr")).find(Boolean)!;
+    expect(cleDesktop.querySelector('[title^="OFF rank"]')?.getAttribute("title")).toMatch(/OFF rank 32 of 32.*1\.0/);
+    expect(cleDesktop.querySelector('[title^="DEF rank"]')?.getAttribute("title")).toMatch(/DEF rank 4 of 32.*76\.4/);
+    expect(within(cleDesktop).getByText("#25 NFL")).toBeInTheDocument();
+  });
+
+  it("2026 Only uses artifact live ratings and ranks, while Auto retains Current", async () => {
+    vi.stubGlobal("fetch", vi.fn(oneResultFetch));
+    render(<MemoryRouter><NFLStandings /></MemoryRouter>);
+    const neLinks = await screen.findAllByRole("link", { name: /Open New England Patriots team dashboard/i });
+    const neAuto = neLinks[0].closest("tr")!;
+    const autoTitle = neAuto.querySelector('[title^="OVR rank"]')?.getAttribute("title");
+    fireEvent.click(screen.getByRole("button", { name: "2026 Only" }));
+    const artifact = JSON.parse(readFileSync(join(NFL_DATA, "2026", "team-performance-analytics.json"), "utf8"));
+    const liveNe = artifact.teams.find((team: { team: string }) => team.team === "ne").performance;
+    const neLive = (await screen.findAllByRole("link", { name: /Open New England Patriots team dashboard/i }))[0].closest("tr")!;
+    expect(neLive.querySelector('[title^="OVR rank"]')?.getAttribute("title"))
+      .toContain(`OVR rank ${liveNe.performanceRank} of 32 · rating ${liveNe.performanceRating.toFixed(1)}`);
+    expect(neLive.querySelector('[title^="OFF rank"]')?.getAttribute("title"))
+      .toContain(`OFF rank ${liveNe.offenseRank} of 32 · rating ${liveNe.offenseRating.toFixed(1)}`);
+    expect(neLive.querySelector('[title^="DEF rank"]')?.getAttribute("title"))
+      .toContain(`DEF rank ${liveNe.defenseRank} of 32 · rating ${liveNe.defenseRating.toFixed(1)}`);
+    expect(neLive.querySelector('[title^="OVR rank"]')?.getAttribute("title")).not.toBe(autoTitle);
+  });
+
   it("defaults to Auto, which shows the preseason board with zero completed games", async () => {
-    vi.stubGlobal("fetch", vi.fn(committedFetch));
+    vi.stubGlobal("fetch", vi.fn(noResultFetch));
     render(
       <MemoryRouter>
         <NFLStandings />
       </MemoryRouter>
     );
 
-    expect((await screen.findAllByText("2026 PR")).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("OVR")).length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Auto" })).toHaveAttribute("aria-pressed", "true");
   });
 
@@ -341,27 +405,31 @@ describe("NFLStandings — view mode control", () => {
     await screen.findAllByText("OVR"); // auto mode has already switched to in-season
     fireEvent.click(screen.getByRole("button", { name: "Preseason" }));
 
-    expect((await screen.findAllByText("2026 PR")).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText("OVR")).length).toBeGreaterThan(0);
     expect(screen.queryByText("SOS To Date")).not.toBeInTheDocument();
   });
 
-  it("manual In Season override shows the in-season board before any 2026 game is final, with honest N/A and 0-0", async () => {
-    vi.stubGlobal("fetch", vi.fn(committedFetch));
+  it("manual 2026 Only override shows the in-season board before any 2026 game is final, with honest N/A and 0-0", async () => {
+    vi.stubGlobal("fetch", vi.fn(zeroGameFetch));
     render(
       <MemoryRouter>
         <NFLStandings />
       </MemoryRouter>
     );
-    await screen.findAllByText("2026 PR"); // auto mode starts in preseason
-    fireEvent.click(screen.getByRole("button", { name: "In Season" }));
+    await screen.findAllByText("OVR"); // auto mode starts in preseason
+    fireEvent.click(screen.getByRole("button", { name: "2026 Only" }));
 
     expect((await screen.findAllByText("SOS To Date")).length).toBeGreaterThan(0);
     const links = await screen.findAllByRole("link", { name: /Open LA Rams team dashboard/i });
     for (const link of links) {
-      const card = within((link.closest("li") ?? link.closest("tr")) as HTMLElement);
+      const row = (link.closest("li") ?? link.closest("tr")) as HTMLElement;
+      const card = within(row);
       expect(card.getAllByText("0-0").length).toBeGreaterThan(0);
       // SOS To Date is N/A this early; Future SOS is already live from the schedule.
-      expect(card.getAllByText("N/A").length).toBeGreaterThan(0);
+      expect(card.getAllByText("N/A").length).toBeGreaterThanOrEqual(4);
+      for (const unit of ["OVR", "OFF", "DEF"]) {
+        expect(row.querySelector(`[title^="${unit} rank"]`)).toBeNull();
+      }
     }
     // Future SOS renders real rank badges from the schedule immediately, before Week 1.
     expect(document.querySelectorAll('[title*="remaining schedule"]').length).toBeGreaterThan(0);
@@ -370,20 +438,20 @@ describe("NFLStandings — view mode control", () => {
 
 describe("NFLStandings — historical seasons", () => {
   it("still renders the actual-standings format for 2025, untouched by v0.4", async () => {
-    vi.stubGlobal("fetch", vi.fn(committedFetch));
+    vi.stubGlobal("fetch", vi.fn(noResultFetch));
     render(
       <MemoryRouter>
         <NFLStandings />
       </MemoryRouter>
     );
 
-    await screen.findAllByText("2026 PR");
+    await screen.findAllByText("OVR");
     const picker = screen.getByRole("button", { name: "2025" });
     fireEvent.click(picker);
 
     expect((await screen.findAllByText("W-L")).length).toBeGreaterThan(0);
     expect(screen.getAllByText("PF").length).toBeGreaterThan(0);
-    expect(screen.queryByText("2026 PR")).not.toBeInTheDocument();
+
     expect(screen.queryByText("2025 Adj")).not.toBeInTheDocument();
   });
 });

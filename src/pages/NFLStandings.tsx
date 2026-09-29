@@ -11,6 +11,8 @@ import { NFL_TABLE_HEAD_ROW, NFL_TABLE_ROW, NflTableScroller } from "@/component
 import { useNflSeasonData } from "@/hooks/useNflSeasonData";
 import { useNflV04Projection } from "@/hooks/useNflV04Projection";
 import { useNflCurrentRating2026 } from "@/hooks/useNflCurrentRating2026";
+import { useNflV03Artifacts } from "@/hooks/useNflV03Artifacts";
+import { rankByDescending } from "@/lib/nfl/publicPowerRatings";
 import type { NflPublicProjectionTeam } from "@/lib/nfl/publicProjection2026";
 import { deriveStandings, sortStandings, formatStandingRecord, type TeamStanding } from "@/lib/nfl/standings";
 import {
@@ -19,8 +21,10 @@ import {
   formatRating2026,
   formatSignedDelta,
   resolveDivisionBoardMode,
+  selectDivisionRating,
   sortTeamsByProjectedRating,
   sosTone,
+  type DivisionRating,
   type DivisionViewMode,
 } from "@/lib/nfl/divisionBoard2026";
 import { buildSosBoard, type SosBoardRow, type SosMetric } from "@/lib/nfl/sosMetrics2026";
@@ -116,14 +120,7 @@ function ordinalLabel(n: number): string {
   }
 }
 
-type InSeasonOvr = {
-  rating: number;
-  rank: number;
-  offenseRating: number;
-  offenseRank: number;
-  defenseRating: number;
-  defenseRank: number;
-};
+type InSeasonOvr = DivisionRating;
 
 /** SOS To Date / Future SOS cell: league rank primary, average opponent OVR secondary. N/A renders as plain text, never a fabricated rank. */
 function InSeasonSosCell({
@@ -152,7 +149,7 @@ function InSeasonSosCell({
   );
 }
 
-/** Permanent Auto / Preseason / In Season control. Auto is the default and the only data-driven option. */
+/** Standings-only rating source control. Auto remains the canonical default. */
 function DivisionViewPicker({
   value,
   onChange,
@@ -160,10 +157,10 @@ function DivisionViewPicker({
   value: DivisionViewMode;
   onChange: (mode: DivisionViewMode) => void;
 }) {
-  const options: { id: DivisionViewMode; label: string }[] = [
-    { id: "auto", label: "Auto" },
-    { id: "preseason", label: "Preseason" },
-    { id: "inSeason", label: "In Season" },
+  const options: { id: DivisionViewMode; label: string; title: string }[] = [
+    { id: "auto", label: "Auto", title: "Official JKB rating using the current preseason/in-season blend." },
+    { id: "preseason", label: "Preseason", title: "Preseason projection with no 2026 results." },
+    { id: "2026Only", label: "2026 Only", title: "2026 performance only; preseason ratings excluded." },
   ];
   return (
     <div className="inline-flex gap-1.5 rounded-lg border border-slate-200 bg-white p-1" role="group" aria-label="Division board view">
@@ -173,6 +170,7 @@ function DivisionViewPicker({
           type="button"
           onClick={() => onChange(option.id)}
           aria-pressed={value === option.id}
+          title={option.title}
           className={`rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${
             value === option.id ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
           }`}
@@ -184,16 +182,18 @@ function DivisionViewPicker({
   );
 }
 
-/** Projected-preseason division card: Team | 2025 Adj | Δ26 | 2026 PR | SOS, sorted by rating2026 descending. */
+/** Projected-preseason division card, sorted by rating2026 descending. */
 function PreseasonDivisionCard({
   name,
   rows,
   projectionByAbbr,
+  preseasonRatingByAbbr,
   colorByAbbr,
 }: {
   name: string;
   rows: TeamStanding[];
   projectionByAbbr: Map<string, NflPublicProjectionTeam>;
+  preseasonRatingByAbbr: Map<string, InSeasonOvr>;
   colorByAbbr: Map<string, string>;
 }) {
   const sorted = sortTeamsByProjectedRating(rows, projectionByAbbr);
@@ -206,6 +206,7 @@ function PreseasonDivisionCard({
       <ul className="sm:hidden">
         {sorted.map((row) => {
           const projection = projectionByAbbr.get(row.abbr) ?? null;
+          const rating = preseasonRatingByAbbr.get(row.abbr) ?? null;
           const color = colorByAbbr.get(row.abbr) ?? "#334155";
           return (
             <li key={row.abbr} className="border-t border-slate-100 first:border-t-0">
@@ -219,6 +220,10 @@ function PreseasonDivisionCard({
                   </span>
                 </span>
               </TeamLink>
+              <div className="flex gap-3 px-2 pb-1 pl-[46px] text-[11px] text-slate-600">
+                <span>OFF <strong>{rating ? formatRating2026(rating.offenseRating) : "N/A"}</strong> {rating ? `#${rating.offenseRank}` : ""}</span>
+                <span>DEF <strong>{rating ? formatRating2026(rating.defenseRating) : "N/A"}</strong> {rating ? `#${rating.defenseRank}` : ""}</span>
+              </div>
               <div className="flex items-center gap-3 px-2 pb-2 pl-[46px] text-[11px] text-slate-500">
                 <span>
                   2025 <span className="font-semibold tabular-nums text-slate-700">{projection ? formatRating2025Adjusted(projection.rating2025Adjusted) : "—"}</span>
@@ -237,19 +242,22 @@ function PreseasonDivisionCard({
 
       {/* Desktop/tablet: real table, no horizontal scroll needed at these column widths. */}
       <NflTableScroller label={`${name} 2026 preseason projection`} className="hidden sm:block">
-        <table className="w-full min-w-[460px] text-xs">
+        <table className="w-full min-w-[560px] text-xs">
           <thead>
             <tr className={NFL_TABLE_HEAD_ROW}>
               <th scope="col" className="px-2 py-2 text-left">Team</th>
               <th scope="col" className="px-1 py-2">2025 Adj</th>
               <th scope="col" className="px-1 py-2">Δ26</th>
-              <th scope="col" className="px-1 py-2">2026 PR</th>
+              <th scope="col" className="px-1 py-2">OVR</th>
+              <th scope="col" className="px-1 py-2">OFF</th>
+              <th scope="col" className="px-1 py-2">DEF</th>
               <th scope="col" className="px-1 py-2">SOS</th>
             </tr>
           </thead>
           <tbody>
             {sorted.map((row) => {
               const projection = projectionByAbbr.get(row.abbr) ?? null;
+              const rating = preseasonRatingByAbbr.get(row.abbr) ?? null;
               const color = colorByAbbr.get(row.abbr) ?? "#334155";
               return (
                 <tr key={row.abbr} className={NFL_TABLE_ROW}>
@@ -272,6 +280,8 @@ function PreseasonDivisionCard({
                       <span className="text-slate-400">{"—"}</span>
                     )}
                   </td>
+                  <td className="px-1 text-center"><RankHeatCell label="OFF" rank={rating?.offenseRank ?? null} rating={rating?.offenseRating ?? null} /></td>
+                  <td className="px-1 text-center"><RankHeatCell label="DEF" rank={rating?.defenseRank ?? null} rating={rating?.defenseRating ?? null} /></td>
                   <td className="px-1 text-center">
                     {projection ? (
                       <SosBadge sosRank={projection.sosRank} sosAvgOpponentRating={projection.sosAvgOpponentRating} />
@@ -351,12 +361,14 @@ function InSeasonDivisionCard({
   colorByAbbr,
   ovrByAbbr,
   sosByAbbr,
+  showLiveOnly,
 }: {
   name: string;
   rows: TeamStanding[];
   colorByAbbr: Map<string, string>;
   ovrByAbbr: Map<string, InSeasonOvr>;
   sosByAbbr: Map<string, SosBoardRow>;
+  showLiveOnly: boolean;
 }) {
   const sorted = sortStandings(rows);
   return (
@@ -403,13 +415,13 @@ function InSeasonDivisionCard({
                   </td>
                   <td className="px-0.5 text-center text-[13px] font-semibold tabular-nums text-slate-800 sm:px-1 sm:text-xs">{formatStandingRecord(row)}</td>
                   <td className="px-0.5 py-0.5 text-center">
-                    <RankHeatCell label="OVR" rank={ovr?.rank ?? null} rating={ovr?.rating ?? null} />
+                    {showLiveOnly && !ovr ? <span className="text-slate-400">N/A</span> : <RankHeatCell label="OVR" rank={ovr?.rank ?? null} rating={ovr?.rating ?? null} />}
                   </td>
                   <td className="px-0.5 py-0.5 text-center">
-                    <RankHeatCell label="OFF" rank={ovr?.offenseRank ?? null} rating={ovr?.offenseRating ?? null} />
+                    {showLiveOnly && !ovr ? <span className="text-slate-400">N/A</span> : <RankHeatCell label="OFF" rank={ovr?.offenseRank ?? null} rating={ovr?.offenseRating ?? null} />}
                   </td>
                   <td className="px-0.5 py-0.5 text-center">
-                    <RankHeatCell label="DEF" rank={ovr?.defenseRank ?? null} rating={ovr?.defenseRating ?? null} />
+                    {showLiveOnly && !ovr ? <span className="text-slate-400">N/A</span> : <RankHeatCell label="DEF" rank={ovr?.defenseRank ?? null} rating={ovr?.defenseRating ?? null} />}
                   </td>
                   <td className="px-0.5 text-center sm:px-1">
                     <InSeasonSosCell metric={sos?.sosToDate ?? null} rank={sos?.sosToDateRank ?? null} scheduleLabel="schedule to date" />
@@ -436,8 +448,10 @@ export default function NFLStandings() {
   const mode = resolveDivisionBoardMode(viewMode, isCurrent, hasResults);
   const showProjection = mode === "preseasonProjection";
   const showInSeason = mode === "inSeasonCurrent";
+  const showLiveOnly = isCurrent && viewMode === "2026Only";
 
   const projection = useNflV04Projection();
+  const preseason = useNflV03Artifacts(CURRENT_SEASON);
   const currentRating = useNflCurrentRating2026();
 
   usePageSeo({
@@ -472,20 +486,37 @@ export default function NFLStandings() {
     return map;
   }, [projection.data]);
 
-  const ovrByAbbr = useMemo(() => {
+  const preseasonRatingByAbbr = useMemo(() => {
+    const rows = preseason.data?.artifacts.preseason?.ratings ?? [];
+    const rank = (pick: (row: (typeof rows)[number]) => number) => rankByDescending(
+      rows.map((row) => ({ key: row.abbr, value: pick(row), name: row.name, teamId: row.abbr }))
+    );
+    const offRanks = rank((row) => row.offenseRating);
+    const defRanks = rank((row) => row.defenseRating);
     const map = new Map<string, InSeasonOvr>();
-    for (const team of currentRating.data?.teams ?? []) {
-      map.set(team.abbr, {
-        rating: team.rating,
-        rank: team.rank,
-        offenseRating: team.offenseRating,
-        offenseRank: team.offenseRank,
-        defenseRating: team.defenseRating,
-        defenseRank: team.defenseRank,
+    for (const row of rows) {
+      const projection = projectionByAbbr.get(row.abbr);
+      if (!projection) continue;
+      map.set(row.abbr, {
+        rating: projection.rating2026,
+        rank: projection.rank,
+        offenseRating: row.offenseRating,
+        offenseRank: offRanks.get(row.abbr) ?? rows.length,
+        defenseRating: row.defenseRating,
+        defenseRank: defRanks.get(row.abbr) ?? rows.length,
       });
     }
     return map;
-  }, [currentRating.data]);
+  }, [preseason.data, projectionByAbbr]);
+
+  const ovrByAbbr = useMemo(() => {
+    const map = new Map<string, InSeasonOvr>();
+    for (const team of currentRating.data?.teams ?? []) {
+      const rating = selectDivisionRating(team, showLiveOnly ? "2026Only" : "auto");
+      if (rating) map.set(team.abbr, rating);
+    }
+    return map;
+  }, [currentRating.data, showLiveOnly]);
 
   // League-wide (all 32 teams), not just the teams in one division card --
   // SOS rank direction (#1 = hardest) is only meaningful computed across the
@@ -505,7 +536,7 @@ export default function NFLStandings() {
           showProjection
             ? "2026 preseason view — teams are ordered by projected Power Rating until regular-season results are available."
             : showInSeason
-              ? "Standings are sorted by record. OVR reflects the current Joe Knows Ball Power Ranking. SOS uses current opponent Power Ratings."
+              ? `Standings are sorted by record. OVR/OFF/DEF show ${showLiveOnly ? "2026 performance only" : "official current JKB ratings"}. SOS uses current opponent Power Ratings.`
               : "Derived automatically from final game results. Select a team for its full dashboard."
         }
       >
@@ -522,8 +553,8 @@ export default function NFLStandings() {
       )}
       {isCurrent && showInSeason && !hasResults && (
         <p className="rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
-          Previewing the in-season view before any 2026 games are final. Records show 0-0 and SOS To Date shows N/A
-          until results land; Future SOS is already live from the 2026 schedule.
+          2026 Only ratings are N/A until current-season games and performance data are available. Records show 0-0 and
+          SOS To Date shows N/A until results land; Future SOS is already live from the 2026 schedule.
         </p>
       )}
       {showProjection && !projection.loading && projection.error && (
@@ -550,6 +581,7 @@ export default function NFLStandings() {
                 name={division}
                 rows={byDivision.get(division)!}
                 projectionByAbbr={projectionByAbbr}
+                preseasonRatingByAbbr={preseasonRatingByAbbr}
                 colorByAbbr={colorByAbbr}
               />
             ) : showInSeason ? (
@@ -560,6 +592,7 @@ export default function NFLStandings() {
                 colorByAbbr={colorByAbbr}
                 ovrByAbbr={ovrByAbbr}
                 sosByAbbr={sosByAbbr}
+                showLiveOnly={showLiveOnly}
               />
             ) : (
               <ActualStandingsDivisionCard
@@ -575,8 +608,8 @@ export default function NFLStandings() {
 
       {showProjection ? (
         <p className="text-[11px] leading-5 text-slate-500">
-          2025 Adj = schedule/luck-adjusted 2025 strength · Δ26 = projected offseason adjustment · 2026 PR = projected
-          neutral-field team strength · SOS = 2026 schedule difficulty, 1 hardest. SOS is schedule context only and
+          2025 Adj = schedule/luck-adjusted 2025 strength · Δ26 = projected offseason adjustment · OVR/OFF/DEF = preseason
+          ratings with independent league ranks · SOS = 2026 schedule difficulty, 1 hardest. SOS is schedule context only and
           does not affect Power Rating.
         </p>
       ) : showInSeason ? (

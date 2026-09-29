@@ -149,6 +149,11 @@ export type CurrentRatingRow = {
   performanceRating: number | null;
   /** Raw (unblended) Performance Rating league rank, for provenance — null until this team has completed games. */
   performanceRank: number | null;
+  /** Existing opponent-adjusted live OFF/DEF values and ranks, exposed for display-only views. */
+  performanceOffenseRating: number | null;
+  performanceOffenseRank: number | null;
+  performanceDefenseRating: number | null;
+  performanceDefenseRank: number | null;
   /** This team's own completed-game count, from the Performance Analytics artifact. */
   gamesPlayed: number;
   preseasonWeight: number;
@@ -242,6 +247,10 @@ export function buildCurrentRatingBoard(input: BuildCurrentRatingBoardInput): Cu
       defenseRating,
       performanceRating: performanceRow.performance.performanceRating,
       performanceRank: performanceRow.performance.performanceRank,
+      performanceOffenseRating: performanceRow.performance.offenseRating,
+      performanceOffenseRank: performanceRow.performance.offenseRank,
+      performanceDefenseRating: performanceRow.performance.defenseRating,
+      performanceDefenseRank: performanceRow.performance.defenseRank,
       gamesPlayed,
       preseasonWeight: weights.preseasonWeight,
       performanceWeight: weights.performanceWeight,
