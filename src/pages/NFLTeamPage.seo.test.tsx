@@ -141,7 +141,7 @@ describe("team page SEO helpers", () => {
 describe("no production code links to the legacy team path", () => {
   // Only the route declaration may name the legacy pattern; comments in the
   // redirect/route helpers document it.
-  const ALLOWED = new Set(["src/App.tsx", "src/lib/nfl/teamRoutes.ts", "src/pages/nfl/LegacyNflTeamRedirect.tsx"]);
+  const ALLOWED = new Set(["src/AppRoutes.tsx", "src/lib/nfl/teamRoutes.ts", "src/pages/nfl/LegacyNflTeamRedirect.tsx"]);
 
   function sourceFiles(dir: string): string[] {
     return readdirSync(dir).flatMap((name) => {

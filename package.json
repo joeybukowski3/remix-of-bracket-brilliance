@@ -8,6 +8,7 @@
     "dev": "vite",
     "prebuild": "npm run seo:generate",
     "build": "vite build",
+    "postbuild": "tsx scripts/prerender.ts",
     "build:dev": "vite build --mode development",
     "typecheck:scripts": "tsc --noEmit --project tsconfig.scripts.json",
     "typecheck:nfl-ai": "tsc -p tsconfig.nfl-ai-scripts.json --noEmit",

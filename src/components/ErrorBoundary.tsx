@@ -22,7 +22,7 @@ interface State {
  * instead of killing the entire page (blank white screen).
  *
  * Usage:
- *   <ErrorBoundary>              — full-page wrapper in App.tsx
+ *   <ErrorBoundary>              — full-page wrapper in AppRoutes.tsx
  *   <ErrorBoundary section="HR Props" silent> — section wrapper (hides on crash)
  *   <ErrorBoundary section="MLB Tables">      — section wrapper (shows fallback card)
  */

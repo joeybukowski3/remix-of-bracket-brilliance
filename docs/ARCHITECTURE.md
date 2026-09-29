@@ -4,7 +4,7 @@
 
 JoeKnowsBall is a Vite-built React single-page application with a collection of serverless API handlers and repository-run data pipelines.
 
-The browser application starts at `src/main.tsx`, which mounts `src/App.tsx`. `App.tsx` owns top-level providers and React Router routes. Route views live primarily in `src/pages/`; shared layouts and sport-specific UI live in `src/components/`. Hooks orchestrate loading and derived state, while `src/lib/` holds reusable domain logic, schemas, adapters, and model-support code.
+The browser application starts at `src/main.tsx`, which mounts `src/App.tsx`. `App.tsx` owns top-level providers and a `BrowserRouter`; the React Router route table itself lives in `src/AppRoutes.tsx`, which is shared with the build-time prerender entry (see "Build-time prerender" below). Route views live primarily in `src/pages/`; shared layouts and sport-specific UI live in `src/components/`. Hooks orchestrate loading and derived state, while `src/lib/` holds reusable domain logic, schemas, adapters, and model-support code.
 
 This overview describes boundaries. Subject to the authority hierarchy in `docs/DECISIONS.md`, current relevant model documentation owns formulas, weights, thresholds, calibration, and interpretation.
 
@@ -21,6 +21,15 @@ This overview describes boundaries. Subject to the authority hierarchy in `docs/
 - `src/integrations/supabase/` contains the browser Supabase client and generated database types.
 
 The `@/` alias resolves to `src/`. Vite serves local development on port `8080` and writes production build output to `dist/`.
+
+### Build-time prerender (SEO Phase 5A proof of concept)
+
+`npm run build` runs `prebuild` (sitemaps), `vite build`, then `postbuild` (`scripts/prerender.ts`). The prerender loads `src/entry-server.tsx` in Node and renders an allow-listed set of routes (`scripts/lib/prerender-routes.ts`) with `renderToString` + `StaticRouter` over the shared `AppRoutes`. It writes `dist/<route>/index.html` with the route's real head and body markup; the homepage is written to `dist/index.html`. Before that, Vite's original shell is copied unchanged to `dist/spa-fallback.html`, which is the destination of `vercel.json`'s catch-all rewrite for every non-prerendered URL (the copy is made even when `PRERENDER_SKIP=1`). It is not runtime SSR: the browser entry still uses `createRoot`, which replaces the prerendered `#root` on boot.
+
+- SEO comes from the same `usePageSeo` / `SeoJsonLd` calls the browser uses. `src/lib/seo/pageSeoHead.ts` resolves a declaration into head values for both consumers; during the build render the calls report synchronously through `SeoCollectorContext` (`src/lib/seo/seoCollector.ts`), which the browser never provides.
+- Routes whose SEO depends on fetched data (NFL matchups) resolve their head from a second render seeded, via `NflSeasonDataSeedContext`, with the deployment's own `dist/data` files; their body comes from the unseeded render so it matches the browser's first (loading) render.
+- The render runs with network globals replaced by throwing recorders, no browser globals, a scan for server-only secret values, and per-document validation (one title/canonical/og:url/robots/description, expected JSON-LD). Any failure fails the build; `PRERENDER_SKIP=1` deploys the SPA shell only.
+- Prerendered documents carry `data-jkb-prerendered` on `<html>` so the canonical fix-up script in `index.html` leaves their canonical alone.
 
 ### Server-side handlers
 

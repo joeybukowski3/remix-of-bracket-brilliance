@@ -22,11 +22,11 @@ const ALL_TOOL_IDS: MlbToolId[] = [
 
 /**
  * Explicit expected public-route list for `/mlb`'s child routes, hand-verified
- * against `App.tsx`'s `<Route path="/mlb" element={<MlbLayout />}>` subtree
+ * against `AppRoutes.tsx`'s `<Route path="/mlb" element={<MlbLayout />}>` subtree
  * rather than parsed from source text (source-text parsing of JSX route
- * trees is brittle -- this list must be updated by hand alongside App.tsx).
+ * trees is brittle -- this list must be updated by hand alongside AppRoutes.tsx).
  *
- * Deliberately excludes routes that exist in App.tsx but are not ordinary
+ * Deliberately excludes routes that exist in AppRoutes.tsx but are not ordinary
  * public MLB tools:
  *   - "/mlb/numerology/x-export", "/mlb/hr-props/x-export",
  *     "/mlb/strikeout-props/x-export" -- social-export routes, rendered
@@ -309,13 +309,13 @@ describe("canonical naming", () => {
   });
 });
 
-describe("public route coverage against App.tsx", () => {
-  it("every registry route exists in the current App.tsx MLB route tree", () => {
+describe("public route coverage against AppRoutes.tsx", () => {
+  it("every registry route exists in the current AppRoutes.tsx MLB route tree", () => {
     const registryRoutes = MLB_TOOLS.map((tool) => tool.route).sort();
     expect(registryRoutes).toEqual([...EXPECTED_MLB_TOOL_ROUTES].sort());
   });
 
-  it("every intended public MLB route in App.tsx has exactly one registry entry", () => {
+  it("every intended public MLB route in AppRoutes.tsx has exactly one registry entry", () => {
     for (const route of EXPECTED_MLB_TOOL_ROUTES) {
       const matches = MLB_TOOLS.filter((tool) => tool.route === route);
       expect(matches).toHaveLength(1);

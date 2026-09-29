@@ -40,7 +40,7 @@ import type { SeoPage } from "@/lib/seo";
  *
  * SOURCING METHODOLOGY (used for every tool below unless a per-tool note
  * says otherwise):
- * - `route`            -- the child `<Route path="...">` under `/mlb` in `App.tsx`.
+ * - `route`            -- the child `<Route path="...">` under `/mlb` in `AppRoutes.tsx`.
  * - `shortName`         -- the exact label used for this tool in `sectionNav.ts`
  *                          (`MLB_NAV_SECTIONS`), which is also the approved
  *                          canonical public label list for this PR.

@@ -50,10 +50,13 @@
     </script>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5946778263750869" crossorigin="anonymous"></script>
     <script>
-      // Correct canonical tag for non-home routes before JS hydrates
+      // Correct canonical tag for non-home routes before JS hydrates.
+      // Build-time prerendered documents (data-jkb-prerendered) already carry
+      // their own canonical and og:url, so they are left untouched.
       (function() {
         var path = window.location.pathname;
-        if (path && path !== '/') {
+        var prerendered = document.documentElement.hasAttribute('data-jkb-prerendered');
+        if (!prerendered && path && path !== '/') {
           var canonical = document.querySelector('link[rel="canonical"]');
           if (canonical) canonical.setAttribute('href', 'https://www.joeknowsball.com' + path);
           var ogUrl = document.querySelector('meta[property="og:url"]');

@@ -1,0 +1,281 @@
+import { lazy, Suspense } from "react";
+import { Navigate, Route, Routes, useParams } from "react-router-dom";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import MlbMobileHubEnhancements from "@/components/mlb/MlbMobileHubEnhancements";
+import NflPlatformLayout from "@/components/nfl/NflPlatformLayout";
+import CollegeFootballLayout from "@/components/cfb/CollegeFootballLayout";
+import CollegeFootballLanding from "./pages/cfb/CollegeFootballLanding";
+import CollegeFootballRankings from "./pages/cfb/CollegeFootballRankings";
+import CollegeFootballSchedule from "./pages/cfb/CollegeFootballSchedule";
+import CollegeFootballTeamPage from "./pages/cfb/CollegeFootballTeamPage";
+import CollegeFootballMatchup from "./pages/cfb/CollegeFootballMatchup";
+import CollegeFootballConference from "./pages/cfb/CollegeFootballConference";
+import Home from "./pages/Home";
+import Schedule from "./pages/Schedule";
+import GameDetail from "./pages/GameDetail";
+import Matchup from "./pages/Matchup";
+import BracketMatchupPage from "./pages/BracketMatchupPage";
+import Bracket from "./pages/Bracket";
+import BettingEdge from "./pages/BettingEdge";
+import Donate from "./pages/Donate";
+import Support from "./pages/Support";
+import ResearchStudies from "./pages/ResearchStudies";
+import TeamPage from "./pages/TeamPage";
+import MlbLayout from "@/components/mlb/MlbLayout";
+import MlbGameDetail from "./pages/MlbGameDetail";
+import MlbHrProps from "./pages/MlbHrProps";
+import MlbSinCity from "./pages/MlbSinCity";
+import MlbPropsHub from "./pages/MlbPropsHub";
+import MlbStrikeoutProps from "./pages/MlbStrikeoutPropsWithDebug";
+import MlbBatterVsPitcher from "./pages/MlbBatterVsPitcher";
+import MLBPercentileDemo from "./pages/MLBPercentileDemo";
+import MlbPerformancePreview from "./pages/MlbPerformancePreview";
+import MlbNumerologyPage from "./pages/MlbNumerologyPage";
+import MlbNumerologyXExport from "./pages/MlbNumerologyXExport";
+import MlbHrPropsXExport from "./pages/MlbHrPropsXExport";
+import MlbStrikeoutPropsXExport from "./pages/MlbStrikeoutPropsXExport";
+import MlbPowerRankings from "./pages/MlbPowerRankings";
+import MlbVulnerablePitchers from "./pages/MlbVulnerablePitchers";
+import NFL from "./pages/NFL";
+import NFLPowerRatings from "./pages/NFLPowerRatings";
+import NFLStandings from "./pages/NFLStandings";
+import NFLSchedule from "./pages/NFLSchedule";
+import NFLTeamSchedules from "./pages/NFLTeamSchedules";
+import NFLMatchups from "./pages/NFLMatchups";
+import NFLMatchupDetail from "./pages/NFLMatchupDetail";
+import NFLMatchupLegacyRedirect from "./pages/nfl/NFLMatchupLegacyRedirect";
+import NFLTrends from "./pages/NFLTrends";
+import NFLSuperBowlOdds from "./pages/NFLSuperBowlOdds";
+import NFLBettingSplits from "./pages/NFLBettingSplits";
+import NFLGuide2026 from "./pages/NFLGuide2026";
+import NFLRegression2026 from "./pages/NFLRegression2026";
+import NFLTeamGuide2026 from "./pages/NFLTeamGuide2026";
+import NFLCoachOfYear2026 from "./pages/NFLCoachOfYear2026";
+import NFLAnalytics from "./pages/NFLAnalytics";
+import NFLYardagePropsReview from "./pages/nfl/NFLYardagePropsReview";
+import NFLTouchdownScorer from "./pages/nfl/NFLTouchdownScorer";
+import NFLDfsContestAnalyzer from "./pages/nfl/NFLDfsContestAnalyzer";
+import NFLPerformance from "./pages/nfl/NFLPerformance";
+import NFLFantasyPointsAllowed from "./pages/nfl/NFLFantasyPointsAllowed";
+import NFLTdsAllowedByPosition from "./pages/nfl/NFLTdsAllowedByPosition";
+import NFLFantasyPositionMatchupsRedirect from "./pages/nfl/NFLFantasyPositionMatchupsRedirect";
+import LegacyNflTeamRedirect from "./pages/nfl/LegacyNflTeamRedirect";
+import FantasyFootball from "./pages/FantasyFootball";
+import FantasyPointsAllowed from "./pages/FantasyPointsAllowed";
+import FantasyWeeklyRankings from "./pages/FantasyWeeklyRankings";
+import StartSit from "./pages/StartSit";
+import FantasyDraftPreview from "./pages/FantasyDraftPreview";
+import ComingSoon from "./pages/ComingSoon";
+import WorldCup2026 from "./pages/WorldCup2026";
+import WorldCupAnalyzer from "./pages/WorldCupAnalyzer";
+import PublicBetting from "./pages/PublicBetting";
+import NotFound from "./pages/NotFound";
+import PGA from "./pages/PGA";
+import PgaHub from "./pages/PgaHub";
+import PgaHistoryModelWithArticles from "./pages/PgaHistoryModelWithArticles";
+import PgaCustom from "./pages/PgaCustom";
+import PgaDfsUpload from "./pages/PgaDfsUpload";
+import PgaOpenChampionshipBestBets from "./pages/PgaOpenChampionshipBestBets";
+import PgaBestBets from "./pages/PgaBestBets";
+import PGAModel from "./pages/PGAModel";
+import PGAModelTableView from "./pages/PGAModelTableView";
+import PGATop40Picks from "./pages/PGATop40Picks";
+import { FEATURED_PGA_TOURNAMENT, PGA_TOURNAMENTS } from "@/lib/pga/tournaments";
+import { getTournamentModelPath, getTournamentModelTablePath, getTournamentPicksPath } from "@/lib/pga/tournamentConfig";
+import {
+  NCAA_BASE_PATH,
+  NCAA_BETTING_EDGE_PATH,
+  NCAA_BRACKET_PATH,
+  NCAA_MATCHUP_PATH,
+  NCAA_SCHEDULE_PATH,
+  getNcaaMatchupDetailPath,
+  getNcaaScheduleGamePath,
+} from "@/lib/routes";
+
+const NflV03Review = lazy(() => import("./pages/NflV03Review"));
+const WalterResearch = lazy(() => import("./pages/WalterResearch"));
+const SixteenZeroPage = lazy(() => import("./features/sixteen-zero/SixteenZeroPage"));
+const StevePoolDashboard = lazy(() => import("./pages/StevePoolDashboard"));
+
+function LegacyScheduleRedirect() {
+  const { gameId = "" } = useParams();
+  return <Navigate to={getNcaaScheduleGamePath(gameId)} replace />;
+}
+
+function LegacyMatchupRedirect() {
+  const { matchupId = "" } = useParams();
+  return <Navigate to={getNcaaMatchupDetailPath(matchupId)} replace />;
+}
+
+/**
+ * The single route table. Rendered by <App> inside BrowserRouter and by
+ * src/entry-server.tsx inside StaticRouter for build-time prerendering, so the
+ * client and the prerendered HTML can never disagree about routes.
+ */
+export default function AppRoutes() {
+  return (
+    <>
+      <MlbMobileHubEnhancements />
+      <ErrorBoundary section="Page">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/rankings" element={<Navigate to={NCAA_BASE_PATH} replace />} />
+          <Route path="/college-football" element={<CollegeFootballLayout />}>
+            <Route index element={<CollegeFootballLanding />} />
+            <Route path="rankings" element={<CollegeFootballRankings />} />
+            <Route path="schedule" element={<CollegeFootballSchedule />} />
+            <Route path="team/:teamSlug" element={<CollegeFootballTeamPage />} />
+            <Route path="matchup/:gameId" element={<CollegeFootballMatchup />} />
+            <Route path="conference/:conferenceSlug" element={<CollegeFootballConference />} />
+          </Route>
+          <Route
+            path={NCAA_BASE_PATH}
+            element={
+              <ComingSoon
+                sport="NCAA Football"
+                heading="NCAA Football"
+                status="Premium Access Coming Soon"
+                description="Power rankings, matchup analysis, betting models, and team insights are being developed. Access is not currently available."
+                icon="🏈"
+                seoPage="ncaa"
+              />
+            }
+          />
+          <Route path="/schedule" element={<Navigate to={NCAA_SCHEDULE_PATH} replace />} />
+          <Route path="/schedule/:gameId" element={<LegacyScheduleRedirect />} />
+          <Route path={NCAA_SCHEDULE_PATH} element={<Schedule />} />
+          <Route path={`${NCAA_SCHEDULE_PATH}/:gameId`} element={<GameDetail />} />
+          <Route path="/team/:teamId" element={<TeamPage />} />
+          <Route path="/matchup" element={<Navigate to={NCAA_MATCHUP_PATH} replace />} />
+          <Route path="/matchup/:matchupId" element={<LegacyMatchupRedirect />} />
+          <Route path={NCAA_MATCHUP_PATH} element={<Matchup />} />
+          <Route path={`${NCAA_MATCHUP_PATH}/:matchupId`} element={<BracketMatchupPage />} />
+          <Route path="/betting-edge" element={<Navigate to={NCAA_BETTING_EDGE_PATH} replace />} />
+          <Route path={NCAA_BETTING_EDGE_PATH} element={<BettingEdge />} />
+          <Route path="/bracket" element={<Navigate to={NCAA_BRACKET_PATH} replace />} />
+          <Route path={NCAA_BRACKET_PATH} element={<Bracket />} />
+          <Route path="/donate" element={<Donate />} />
+          <Route path="/support" element={<Support />} />
+          <Route path="/research-studies" element={<ResearchStudies />} />
+          <Route path="/research-studies/:studySlug" element={<ResearchStudies />} />
+          <Route
+            path="/16-0/*"
+            element={
+              <Suspense fallback={<div className="min-h-screen bg-slate-950 p-6 text-sm text-slate-300">Loading 16-0…</div>}>
+                <SixteenZeroPage />
+              </Suspense>
+            }
+          />
+          <Route path="/nfl" element={<NflPlatformLayout />}>
+            <Route index element={<NFL />} />
+            <Route path="power-ratings" element={<NFLPowerRatings />} />
+            <Route path="standings" element={<NFLStandings />} />
+            <Route path="schedule" element={<NFLSchedule />} />
+            <Route path="team-schedules" element={<NFLTeamSchedules />} />
+            <Route path="team-schedules/:teamSlug" element={<NFLTeamSchedules />} />
+            <Route path="matchups" element={<NFLMatchups />} />
+            <Route path="matchups/:season/:weekSegment/:gameSlug" element={<NFLMatchupDetail />} />
+            {/* Legacy season-agnostic URL: 301 in vercel.json, client fallback here. */}
+            <Route path="matchups/:gameSlug" element={<NFLMatchupLegacyRedirect />} />
+            <Route path="trends" element={<NFLTrends />} />
+            <Route path="analytics" element={<NFLAnalytics />} />
+            <Route path="performance" element={<Navigate to="/nfl/performance/overview" replace />} />
+            <Route path="performance/:tab" element={<NFLPerformance />} />
+            <Route path="yardage-props-review" element={<NFLYardagePropsReview />} />
+            <Route path="td-scorer" element={<NFLTouchdownScorer />} />
+            <Route path="fantasy-points-allowed" element={<NFLFantasyPointsAllowed />} />
+            <Route path="tds-allowed-by-position" element={<NFLTdsAllowedByPosition />} />
+            <Route path="fantasy-position-matchups" element={<NFLFantasyPositionMatchupsRedirect />} />
+            <Route path="dfs" element={<NFLDfsContestAnalyzer />} />
+            <Route path="super-bowl" element={<NFLSuperBowlOdds />} />
+            <Route path="betting-splits" element={<NFLBettingSplits />} />
+            <Route path="coach-of-year" element={<NFLCoachOfYear2026 />} />
+            <Route path="guide" element={<NFLGuide2026 />} />
+            <Route path="guide/regression" element={<NFLRegression2026 />} />
+            <Route path="guide/team/:teamSlug" element={<LegacyNflTeamRedirect />} />
+            <Route path="teams" element={<Navigate to="/nfl/guide" replace />} />
+            <Route path="teams/:teamSlug" element={<NFLTeamGuide2026 />} />
+            <Route path="2026-guide" element={<Navigate to="/nfl/guide" replace />} />
+          </Route>
+          <Route element={<NflPlatformLayout />}>
+            <Route path="/fantasy-football" element={<FantasyFootball />} />
+            <Route path="/fantasy-football/points-allowed" element={<FantasyPointsAllowed />} />
+            <Route path="/fantasy-football/weekly-rankings" element={<FantasyWeeklyRankings />} />
+            <Route path="/fantasy-football/start-sit" element={<StartSit />} />
+            <Route path="/fantasy-football/draft-preview" element={<FantasyDraftPreview />} />
+          </Route>
+          <Route
+            path="/internal/jkb-nfl-v03-review-7f3c9a"
+            element={
+              <Suspense fallback={<div className="min-h-screen bg-slate-950 p-6 text-sm text-slate-300">Loading internal NFL review…</div>}>
+                <NflV03Review />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/walter"
+            element={
+              <Suspense fallback={<div className="min-h-screen bg-slate-950 p-6 text-sm text-slate-300">Loading Walter research…</div>}>
+                <WalterResearch />
+              </Suspense>
+            }
+          />
+          <Route
+            path="/steve"
+            element={
+              <Suspense fallback={<div className="min-h-screen bg-slate-50 p-6 text-sm text-slate-600">Loading pool dashboard…</div>}>
+                <StevePoolDashboard />
+              </Suspense>
+            }
+          />
+          <Route path="/nba" element={<ComingSoon sport="NBA" />} />
+          <Route path="/world-cup" element={<WorldCup2026 />} />
+          <Route path="/world-cup/analyzer" element={<WorldCupAnalyzer />} />
+          <Route path="/odds-tracker" element={<PublicBetting />} />
+          <Route path="/public-betting" element={<Navigate to="/odds-tracker" replace />} />
+          <Route path="/mlb/numerology/x-export" element={<MlbNumerologyXExport />} />
+          <Route path="/mlb/hr-props/x-export" element={<MlbHrPropsXExport />} />
+          <Route path="/mlb/strikeout-props/x-export" element={<MlbStrikeoutPropsXExport />} />
+          <Route path="/mlb" element={<MlbLayout />}>
+            <Route index element={<MlbGameDetail />} />
+            <Route path="props" element={<MlbPropsHub />} />
+            <Route path="hr-props" element={<MlbHrProps />} />
+            <Route path="sin-city" element={<MlbSinCity />} />
+            <Route path="strikeout-props" element={<MlbStrikeoutProps />} />
+            <Route path="batter-vs-pitcher" element={<MlbBatterVsPitcher />} />
+            <Route path="numerology" element={<MlbNumerologyPage />} />
+            <Route path="power-rankings" element={<MlbPowerRankings />} />
+            <Route path="vulnerable-pitchers" element={<MlbVulnerablePitchers />} />
+          </Route>
+          <Route path="/mlb-demo" element={<MLBPercentileDemo />} />
+          {/* Hidden internal review page -- intentionally not linked from MlbLayout nav or any sidebar. */}
+          <Route path="/mlb/performance-preview" element={<MlbPerformancePreview />} />
+          <Route path="/pga" element={<PgaHistoryModelWithArticles />} />
+          <Route path="/pga/legacy" element={<PgaHub />} />
+          <Route path="/pga/custom" element={<PgaCustom />} />
+          <Route path="/pga/dfs" element={<PgaDfsUpload />} />
+          {/* Frozen historical page for the 2026 Open Championship (a one-off, hand-tuned SEO page for the major). Current-week best bets live at /pga/best-bets below. */}
+          <Route path="/pga/the-open-2026-picks-best-bets-odds" element={<PgaOpenChampionshipBestBets />} />
+          <Route path="/pga/best-bets" element={<PgaBestBets />} />
+          <Route path="/pga/the-open-2026-model-value-bets" element={<Navigate to="/pga/the-open-2026-picks-best-bets-odds" replace />} />
+          <Route path="/pga/model" element={<PGAModel />} />
+          <Route path="/pga/model/table" element={<PGAModelTableView />} />
+          <Route path="/pga/:tournamentSlug" element={<PGA />} />
+          <Route path={getTournamentModelPath(FEATURED_PGA_TOURNAMENT)} element={<PGAModel />} />
+          <Route path={getTournamentModelTablePath(FEATURED_PGA_TOURNAMENT)} element={<PGAModelTableView />} />
+          <Route path="/pga/:tournamentSlug/model" element={<PGAModel />} />
+          <Route path="/pga/:tournamentSlug/model/table" element={<PGAModelTableView />} />
+          {PGA_TOURNAMENTS.map((tournament) => (
+            <Route
+              key={`${tournament.slug}-legacy-alias`}
+              path={`/${tournament.slug}`}
+              element={<Navigate to={getTournamentPicksPath(tournament)} replace />}
+            />
+          ))}
+          <Route path="/pga/top-40-golf-picks" element={<PGATop40Picks />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </ErrorBoundary>
+    </>
+  );
+}
