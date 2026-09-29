@@ -249,6 +249,10 @@ describe("zero-game parity (today's real production state)", () => {
       expect(row.preseasonWeight).toBe(1);
       expect(row.performanceWeight).toBe(0);
       expect(row.performanceRating).toBeNull();
+      expect(row.performanceOffenseRating).toBeNull();
+      expect(row.performanceOffenseRank).toBeNull();
+      expect(row.performanceDefenseRating).toBeNull();
+      expect(row.performanceDefenseRank).toBeNull();
     }
     expect(board.state).toBe("preseason");
   });
@@ -414,9 +418,45 @@ describe("CurrentRatingRow shape", () => {
       "abbr", "team", "division", "rating", "rank",
       "offenseRating", "offenseRank", "defenseRating", "defenseRank",
       "performanceRating", "performanceRank", "gamesPlayed",
+      "performanceOffenseRating", "performanceOffenseRank",
+      "performanceDefenseRating", "performanceDefenseRank",
       "preseasonWeight", "performanceWeight", "state",
       "preseasonV04Rating", "preseasonOffenseRating", "preseasonDefenseRating",
     ];
     for (const key of expectedKeys) expect(key in row).toBe(true);
+  });
+
+  it("exposes existing live values without redefining or mutating canonical Current", () => {
+    const input = buildInput({
+      v04Board: v04Board([v04Team({ rating2026: 66.9 })]),
+      preseasonV03: v03PreseasonArtifact([v03PreseasonRow({ offenseRating: 75.507, defenseRating: 53.005 })]),
+      performanceAnalytics: performanceArtifact([playedPerformanceRow("tst", 3, 44.892, 48.582, 70.528)]),
+    });
+    const performanceBefore = structuredClone(input.performanceAnalytics.teams[0].performance);
+    const board = buildCurrentRatingBoard(input);
+    const row = board.teams[0];
+    expect(row.performanceRating).toBe(44.892);
+    expect(row.performanceOffenseRating).toBe(48.582);
+    expect(row.performanceOffenseRank).toBe(5);
+    expect(row.performanceDefenseRating).toBe(70.528);
+    expect(row.performanceDefenseRank).toBe(7);
+    expect(row.rating).toBeCloseTo(53.6952, 4);
+    expect(row.offenseRating).toBeCloseTo(59.352, 3);
+    expect(row.defenseRating).toBeCloseTo(63.5188, 4);
+    expect(row.preseasonWeight).toBe(0.4);
+    expect(row.performanceWeight).toBe(0.6);
+    expect(input.performanceAnalytics.teams[0].performance).toEqual(performanceBefore);
+  });
+
+  it("keeps Cleveland's Week 3 canonical blend separate from its 2026-only offense", () => {
+    const row = buildCurrentRatingBoard(buildInput({
+      v04Board: v04Board([v04Team({ rating2026: 36.7 })]),
+      preseasonV03: v03PreseasonArtifact([v03PreseasonRow({ offenseRating: 1, defenseRating: 76.361487 })]),
+      performanceAnalytics: performanceArtifact([playedPerformanceRow("tst", 3, 34.45740579034437, 33.28497839060111, 40.81634462411423)]),
+    })).teams[0];
+    expect(row.rating).toBeCloseTo(35.354, 3);
+    expect(row.offenseRating).toBeCloseTo(20.371, 3);
+    expect(row.defenseRating).toBeCloseTo(55.034, 3);
+    expect(row.performanceOffenseRating).toBeCloseTo(33.285, 3);
   });
 });

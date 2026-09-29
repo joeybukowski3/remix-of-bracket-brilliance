@@ -33,6 +33,19 @@ projection. Fantasy authority is documented in
 [Fantasy weekly projections](../models/fantasy-weekly-projections.md) and
 [Fantasy Weekly Rankings](fantasy-weekly-rankings.md).
 
+### 2026 Standings rating display
+
+The Standings page keeps division order and record-based sorting separate from
+its OVR/OFF/DEF display source. **Auto** shows the preseason board before any
+final result and the official canonical **Current** board afterward. Current
+uses the approved games-played preseason/live blend. **Preseason** shows 100%
+preseason OVR/OFF/DEF with independently calculated league ranks. **2026 Only**
+shows the existing opponent-adjusted live OVR/OFF/DEF and ranks from Team
+Performance Analytics with no preseason contribution; teams without live games
+show N/A. SOS remains based on canonical Current opponent ratings in both
+in-season table views. These controls affect Standings display only and do not
+change Current ratings or downstream model inputs.
+
 ## Terms that must remain distinct
 
 - **Current OVR / Power Rating / JKB Power** is the canonical current 1–99
