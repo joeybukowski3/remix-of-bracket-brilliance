@@ -1,281 +1,147 @@
 {
-  "date": "2026-09-29",
-  "generatedAt": "2026-09-29T20:13:30.072Z",
+  "date": "2026-09-30",
+  "generatedAt": "2026-09-30T12:08:57.707Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Daikin Park (1.04) and Yankee Stadium (1.18) stand out as the only true hitter-friendly venues today, while Petco Park (0.89) suppresses power across the board. Murakami and Rice benefit from the best park factors, and both face right-handers who have allowed elevated HR rates (44.9 and 34.1), creating the clearest edges on the slate.",
-    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and park factor over recent HR volume, which is why Murakami ranks first despite only two HR in his last seven games."
+    "slateOverview": "Today's slate features three hitter-friendly parks: Yankee Stadium (1.18), Daikin Park (1.04), and Truist Park (1.03). The top three HR scores all land in these venues, with Alvarez facing Sean Burke in Houston and Rice/Schwarber in the two other boosted parks. Petco Park (0.89) suppresses power for Tatis and Merrill despite their strong underlying metrics.",
+    "modelNote": "The model heavily weights park factors and recent barrel/hard-hit rates, elevating Alvarez to the top spot due to his elite 70.4 HR score in a plus park against a righty with poor opposing HR metrics."
   },
   "bestBets": [
     {
-      "player": "Munetaka Murakami",
-      "team": "CWS",
-      "opponent": "HOU",
-      "opposingPitcher": "AJ Blubaugh",
+      "player": "Yordan Alvarez",
+      "team": "HOU",
+      "opponent": "CWS",
+      "opposingPitcher": "Sean Burke",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=20.5%",
-        "HH=56.8%"
+        "hrScore=70.4",
+        "barrel=16%"
       ],
       "bullets": [
-        "barrel=20.5%",
+        "hrScore=70.4",
         "park=1.04"
       ],
-      "hrOddsYes": "+395",
-      "marketImpliedProbability": 0.20202020202020202,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Fernando Tatis Jr.",
+      "team": "SD",
+      "opponent": "CHC",
+      "opposingPitcher": "Kevin Gausman",
+      "hrScoreRank": 2,
+      "topStats": [
+        "hrScore=62.3",
+        "barrel=12.7%"
+      ],
+      "bullets": [
+        "hrScore=62.3",
+        "HH=53.9%"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Ben Rice",
+      "team": "NYY",
+      "opponent": "BOS",
+      "opposingPitcher": "Sonny Gray",
+      "hrScoreRank": 3,
+      "topStats": [
+        "hrScore=61",
+        "barrel=14.3%"
+      ],
+      "bullets": [
+        "hrScore=61",
+        "park=1.18"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
       "player": "Pete Crow-Armstrong",
       "team": "CHC",
       "opponent": "SD",
-      "opposingPitcher": "Michael King",
-      "hrScoreRank": 2,
-      "topStats": [
-        "barrel=13.3%",
-        "HH=48.6%"
-      ],
-      "bullets": [
-        "barrel=13.3%",
-        "park=0.89"
-      ],
-      "hrOddsYes": "+372",
-      "marketImpliedProbability": 0.211864406779661,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Manny Machado",
-      "team": "SD",
-      "opponent": "CHC",
-      "opposingPitcher": "Matthew Boyd",
-      "hrScoreRank": 3,
-      "topStats": [
-        "barrel=9.7%",
-        "HH=43.6%"
-      ],
-      "bullets": [
-        "barrel=9.7%",
-        "park=0.89"
-      ],
-      "hrOddsYes": "+421",
-      "marketImpliedProbability": 0.19193857965451055,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Ben Rice",
-      "team": "NYY",
-      "opponent": "BOS",
-      "opposingPitcher": "Payton Tolle",
+      "opposingPitcher": "Nick Pivetta",
       "hrScoreRank": 4,
       "topStats": [
-        "Hard Hit%=48.6",
-        "Pitcher HR VS=34.1"
+        "Pitcher HR VS=54.4",
+        "Hard Hit%=48.6"
       ],
       "bullets": [
-        "HR score 54.3 (#4)",
-        "Pitcher HR VS 34.1 at park 1.18"
+        "HR score 55.6 (#4)",
+        "Pitcher HR VS 54.4 at park 0.89"
       ],
-      "hrOddsYes": "+500",
-      "marketImpliedProbability": 0.16666666666666666,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
-      "player": "Miguel Vargas",
+      "player": "Munetaka Murakami",
       "team": "CWS",
       "opponent": "HOU",
-      "opposingPitcher": "AJ Blubaugh",
+      "opposingPitcher": "Hunter Brown",
       "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=44.9",
-        "Hard Hit%=43.8"
+        "Hard Hit%=56.8",
+        "Pitcher HR VS=24.0"
       ],
       "bullets": [
-        "HR score 54.3 (#5)",
-        "Pitcher HR VS 44.9 at park 1.04"
+        "HR score 55.3 (#5)",
+        "Pitcher HR VS 24.0 at park 1.04"
       ],
-      "hrOddsYes": "+427",
-      "marketImpliedProbability": 0.18975332068311196,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
-      "player": "Ben Rice",
-      "team": "NYY",
-      "opponent": "BOS",
-      "opposingPitcher": "Payton Tolle",
-      "hrScoreRank": 4,
-      "topStats": [
-        "barrel=14.3%",
-        "HH=48.6%"
-      ],
-      "bullets": [
-        "barrel=14.3%",
-        "park=1.18"
-      ],
-      "hrOddsYes": "+500",
-      "marketImpliedProbability": 0.16666666666666666,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Miguel Vargas",
-      "team": "CWS",
-      "opponent": "HOU",
-      "opposingPitcher": "AJ Blubaugh",
-      "hrScoreRank": 5,
-      "topStats": [
-        "barrel=13%",
-        "HH=43.8%"
-      ],
-      "bullets": [
-        "barrel=13%",
-        "park=1.04"
-      ],
-      "hrOddsYes": "+427",
-      "marketImpliedProbability": 0.18975332068311196,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Yordan Alvarez",
-      "team": "HOU",
-      "opponent": "CWS",
-      "opposingPitcher": "Hagen Smith",
-      "hrScoreRank": 6,
-      "topStats": [
-        "barrel=16%",
-        "HH=53.8%"
-      ],
-      "bullets": [
-        "barrel=16%",
-        "park=1.04"
-      ],
-      "hrOddsYes": "+381",
-      "marketImpliedProbability": 0.2079002079002079,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Alex Bregman",
+      "player": "Pete Crow-Armstrong",
       "team": "CHC",
       "opponent": "SD",
-      "opposingPitcher": "Michael King",
-      "hrScoreRank": 7,
+      "opposingPitcher": "Nick Pivetta",
+      "hrScoreRank": 4,
       "topStats": [
-        "Pitcher HR VS=46.2",
-        "Hard Hit%=37.7"
+        "hrScore=55.6",
+        "barrel=13.3%"
       ],
       "bullets": [
-        "HR score 49.6 (#7)",
-        "Pitcher HR VS 46.2 at park 0.89"
+        "hrScore=55.6",
+        "park=0.89"
       ],
-      "hrOddsYes": "+750",
-      "marketImpliedProbability": 0.11764705882352941,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
-      "player": "Matt Olson",
-      "team": "ATL",
-      "opponent": "PHI",
-      "opposingPitcher": "Jesús Luzardo",
-      "hrScoreRank": 8,
+      "player": "Munetaka Murakami",
+      "team": "CWS",
+      "opponent": "HOU",
+      "opposingPitcher": "Hunter Brown",
+      "hrScoreRank": 5,
       "topStats": [
-        "Hard Hit%=52.0",
-        "Pitcher HR VS=21.2"
+        "hrScore=55.3",
+        "barrel=20.5%"
       ],
       "bullets": [
-        "HR score 48.0 (#8)",
-        "Pitcher HR VS 21.2 at park 1.03"
+        "hrScore=55.3",
+        "HH=56.8%"
       ],
-      "hrOddsYes": "+438",
-      "marketImpliedProbability": 0.18587360594795538,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ],
-  "longshots": [
-    {
-      "player": "Alex Bregman",
-      "team": "CHC",
-      "opponent": "SD",
-      "opposingPitcher": "Michael King",
-      "hrScoreRank": 7,
-      "topStats": [
-        "barrel=6.4%",
-        "HH=37.7%"
-      ],
-      "bullets": [
-        "barrel=6.4%",
-        "park=0.89"
-      ],
-      "hrOddsYes": "+750",
-      "marketImpliedProbability": 0.11764705882352941,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Matt Olson",
-      "team": "ATL",
-      "opponent": "PHI",
-      "opposingPitcher": "Jesús Luzardo",
-      "hrScoreRank": 8,
-      "topStats": [
-        "barrel=14.2%",
-        "HH=52%"
-      ],
-      "bullets": [
-        "barrel=14.2%",
-        "park=1.03"
-      ],
-      "hrOddsYes": "+438",
-      "marketImpliedProbability": 0.18587360594795538,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Luis Campusano",
-      "team": "SD",
-      "opponent": "CHC",
-      "opposingPitcher": "Matthew Boyd",
-      "hrScoreRank": 22,
-      "topStats": [
-        "Pitcher HR VS=58.2",
-        "Hard Hit%=37.7"
-      ],
-      "bullets": [
-        "HR score 40.0 (#22)",
-        "Pitcher HR VS 58.2 at park 0.89"
-      ],
-      "hrOddsYes": "+800",
-      "marketImpliedProbability": 0.1111111111111111,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Spencer Jones",
-      "team": "NYY",
-      "opponent": "BOS",
-      "opposingPitcher": "Payton Tolle",
-      "hrScoreRank": 11,
-      "topStats": [
-        "Hard Hit%=55.1",
-        "Pitcher HR VS=34.1"
-      ],
-      "bullets": [
-        "HR score 45.9 (#11)",
-        "Pitcher HR VS 34.1 at park 1.18"
-      ],
-      "hrOddsYes": "+700",
-      "marketImpliedProbability": 0.125,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ]
+  "longshots": []
 }
