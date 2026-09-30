@@ -40,8 +40,9 @@ its OVR/OFF/DEF display source. **Auto** shows the preseason board before any
 final result and the official canonical **Current** board afterward. Current
 uses the approved games-played preseason/live blend. **Preseason** shows 100%
 preseason OVR/OFF/DEF with independently calculated league ranks. **2026 Only**
-shows the existing opponent-adjusted live OVR/OFF/DEF and ranks from Team
-Performance Analytics with no preseason contribution; teams without live games
+shows the live performance OVR/OFF/DEF and ranks from Team
+Performance Analytics (OFF and DEF are opponent-adjusted; the point-differential
+component of OVR is raw) with no preseason contribution; teams without live games
 show N/A. SOS remains based on canonical Current opponent ratings in both
 in-season table views. These controls affect Standings display only and do not
 change Current ratings or downstream model inputs.
@@ -110,7 +111,7 @@ change Current ratings or downstream model inputs.
 ## Current, research, presentation, and historical status
 
 **Production/current:** the public routes above; the canonical Current OVR
-consumer path; `jkb-power-number-v1.1.0` projected-spread artifact; schedule,
+consumer path; `jkb-power-number-v1.2.0` projected-spread artifact; schedule,
 market, matchup-context, and fantasy weekly artifacts consumed by those routes.
 “Current” describes committed product behavior, not a claim that every
 underlying research model cleared a promotion gate.

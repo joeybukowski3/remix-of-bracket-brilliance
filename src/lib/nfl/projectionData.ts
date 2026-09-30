@@ -1,5 +1,5 @@
 /**
- * JKB projected spread consumption (jkb-power-number-v1.1.0).
+ * JKB projected spread consumption (jkb-power-number-v1.2.0).
  *
  * Reads the generated public/data/nfl/matchup-projections.json artifact. No
  * modelling happens in the browser and nflverse is never called from it.

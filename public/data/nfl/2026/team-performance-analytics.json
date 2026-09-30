@@ -2,18 +2,18 @@
   "schemaVersion": "nfl-performance-v1",
   "_meta": {
     "season": 2026,
-    "generatedAt": "2026-09-29T17:04:04.264Z",
+    "generatedAt": "2026-09-30T19:54:59.838Z",
     "throughWeek": 3,
     "includedGameCount": 48,
     "source": "nflverse (play-by-play, nflfastR EPA + traditional Success Rate + drives) + public/data/nfl results.json",
-    "currentOvrModelVersion": "nfl-current-ovr-v1.1.0",
+    "currentOvrModelVersion": "nfl-current-ovr-v1.2.0",
     "opponentAdjustment": "leave-one-out-v1",
     "overallWeights": {
       "offense": 0.4,
       "defense": 0.2,
       "pointDifferential": 0.4
     },
-    "ratingFormula": "OFF = mean(z(EPA/Play, garbage-time-filtered, opponent-adjusted), z(Traditional Success Rate, filtered, adjusted), z(Explosive Rate, unfiltered, adjusted)); DEF = mean(-z(same 3 metrics, allowed)); Overall = 0.40*OFF + 0.20*DEF + 0.40*z(opponent-adjusted Point Differential/Game); opponent adjustment applied only at the fullSeason window and leave-one-out: raw - (mean over the team's games of the opponent's comparison value EXCLUDING that game - leagueMean); scale = 50 + 15*(compositeZ / divisor), clamped [1, 99].",
+    "ratingFormula": "OFF = mean(z(EPA/Play, garbage-time-filtered, opponent-adjusted), z(Traditional Success Rate, filtered, adjusted), z(Explosive Rate, unfiltered, adjusted)); DEF = mean(-z(same 3 metrics, allowed)); Overall = 0.40*OFF + 0.20*DEF + 0.40*z(RAW Point Differential/Game, not opponent-adjusted); OFF/DEF opponent adjustment applied only at the fullSeason window and leave-one-out: raw - (mean over the team's games of the opponent's comparison value EXCLUDING that game - leagueMean); fullSeason.adjusted.pointDifferentialPerGame.adjusted is a legacy diagnostic and does not feed the rating; scale = 50 + 15*(compositeZ / divisor), clamped [1, 99].",
     "scaleDivisors": {
       "offense": 0.9248507883569935,
       "defense": 0.8648390483639914,
@@ -340,8 +340,8 @@
         "offenseRank": 15,
         "defenseRating": 50.53681551163199,
         "defenseRank": 16,
-        "performanceRating": 45.1534209633793,
-        "performanceRank": 18
+        "performanceRating": 46.274723373342184,
+        "performanceRank": 19
       }
     },
     {
@@ -663,8 +663,8 @@
         "offenseRank": 22,
         "defenseRating": 59.366768668968334,
         "defenseRank": 10,
-        "performanceRating": 48.85440837743285,
-        "performanceRank": 15
+        "performanceRating": 41.51157590923402,
+        "performanceRank": 22
       }
     },
     {
@@ -986,8 +986,8 @@
         "offenseRank": 8,
         "defenseRating": 60.58112360631124,
         "defenseRank": 8,
-        "performanceRating": 60.86098109779729,
-        "performanceRank": 7
+        "performanceRating": 61.887860310563546,
+        "performanceRank": 8
       }
     },
     {
@@ -1309,8 +1309,8 @@
         "offenseRank": 2,
         "defenseRating": 37.881201483737186,
         "defenseRank": 25,
-        "performanceRating": 68.12344795039084,
-        "performanceRank": 3
+        "performanceRating": 66.39707674238348,
+        "performanceRank": 5
       }
     },
     {
@@ -1632,8 +1632,8 @@
         "offenseRank": 9,
         "defenseRating": 43.01017998304339,
         "defenseRank": 21,
-        "performanceRating": 53.065111843355865,
-        "performanceRank": 12
+        "performanceRating": 54.452919811697,
+        "performanceRank": 11
       }
     },
     {
@@ -1955,8 +1955,8 @@
         "offenseRank": 5,
         "defenseRating": 29.746188276756993,
         "defenseRank": 28,
-        "performanceRating": 56.262261238422326,
-        "performanceRank": 10
+        "performanceRating": 65.71351890272153,
+        "performanceRank": 6
       }
     },
     {
@@ -2278,8 +2278,8 @@
         "offenseRank": 3,
         "defenseRating": 21.82220779868866,
         "defenseRank": 31,
-        "performanceRating": 62.46980735923213,
-        "performanceRank": 6
+        "performanceRating": 60.7049200079865,
+        "performanceRank": 9
       }
     },
     {
@@ -2601,8 +2601,8 @@
         "offenseRank": 28,
         "defenseRating": 40.81634462411423,
         "defenseRank": 22,
-        "performanceRating": 34.45740579034437,
-        "performanceRank": 31
+        "performanceRating": 35.09788328733759,
+        "performanceRank": 28
       }
     },
     {
@@ -2924,8 +2924,8 @@
         "offenseRank": 13,
         "defenseRating": 16.146437107130964,
         "defenseRank": 32,
-        "performanceRating": 46.81486236635916,
-        "performanceRank": 17
+        "performanceRating": 46.62849653874693,
+        "performanceRank": 18
       }
     },
     {
@@ -3247,8 +3247,8 @@
         "offenseRank": 12,
         "defenseRating": 84.94034918936705,
         "defenseRank": 2,
-        "performanceRating": 49.75218873724709,
-        "performanceRank": 14
+        "performanceRating": 57.034139546299016,
+        "performanceRank": 10
       }
     },
     {
@@ -3570,8 +3570,8 @@
         "offenseRank": 6,
         "defenseRating": 39.768760927445484,
         "defenseRank": 23,
-        "performanceRating": 51.36089097584397,
-        "performanceRank": 13
+        "performanceRating": 53.671832626886186,
+        "performanceRank": 12
       }
     },
     {
@@ -3893,8 +3893,8 @@
         "offenseRank": 18,
         "defenseRating": 28.12855061304709,
         "defenseRank": 29,
-        "performanceRating": 38.68589054718353,
-        "performanceRank": 28
+        "performanceRating": 33.701211328625234,
+        "performanceRank": 31
       }
     },
     {
@@ -4216,7 +4216,7 @@
         "offenseRank": 27,
         "defenseRating": 59.78691340719139,
         "defenseRank": 9,
-        "performanceRating": 40.231940494659284,
+        "performanceRating": 38.52296019737204,
         "performanceRank": 25
       }
     },
@@ -4539,8 +4539,8 @@
         "offenseRank": 14,
         "defenseRating": 44.0003436480039,
         "defenseRank": 19,
-        "performanceRating": 44.88128766682771,
-        "performanceRank": 21
+        "performanceRating": 44.68435922295642,
+        "performanceRank": 20
       }
     },
     {
@@ -4862,8 +4862,8 @@
         "offenseRank": 4,
         "defenseRating": 35.82901722056086,
         "defenseRank": 27,
-        "performanceRating": 66.71045884822254,
-        "performanceRank": 5
+        "performanceRating": 70.90370344112414,
+        "performanceRank": 2
       }
     },
     {
@@ -5185,7 +5185,7 @@
         "offenseRank": 10,
         "defenseRating": 57.42223152446249,
         "defenseRank": 11,
-        "performanceRating": 68.08375080762158,
+        "performanceRating": 66.56611094313509,
         "performanceRank": 4
       }
     },
@@ -5508,8 +5508,8 @@
         "offenseRank": 29,
         "defenseRating": 68.097441841554,
         "defenseRank": 6,
-        "performanceRating": 36.48334350976326,
-        "performanceRank": 30
+        "performanceRating": 34.66626995473081,
+        "performanceRank": 29
       }
     },
     {
@@ -5831,8 +5831,8 @@
         "offenseRank": 7,
         "defenseRating": 84.95798531292257,
         "defenseRank": 1,
-        "performanceRating": 60.546138580566215,
-        "performanceRank": 8
+        "performanceRating": 63.41928515873463,
+        "performanceRank": 7
       }
     },
     {
@@ -6154,8 +6154,8 @@
         "offenseRank": 26,
         "defenseRating": 43.10228702969548,
         "defenseRank": 20,
-        "performanceRating": 55.126992725269005,
-        "performanceRank": 11
+        "performanceRating": 52.2718639353292,
+        "performanceRank": 13
       }
     },
     {
@@ -6477,7 +6477,7 @@
         "offenseRank": 25,
         "defenseRating": 27.718198103639818,
         "defenseRank": 30,
-        "performanceRating": 19.49585012785385,
+        "performanceRating": 23.297718399793887,
         "performanceRank": 32
       }
     },
@@ -6800,8 +6800,8 @@
         "offenseRank": 32,
         "defenseRating": 74.9429553214821,
         "defenseRank": 4,
-        "performanceRating": 48.17126506195633,
-        "performanceRank": 16
+        "performanceRating": 52.18683928260576,
+        "performanceRank": 14
       }
     },
     {
@@ -7123,8 +7123,8 @@
         "offenseRank": 17,
         "defenseRating": 70.5275637776142,
         "defenseRank": 5,
-        "performanceRating": 44.89218871539914,
-        "performanceRank": 20
+        "performanceRating": 49.18109678888788,
+        "performanceRank": 17
       }
     },
     {
@@ -7446,8 +7446,8 @@
         "offenseRank": 19,
         "defenseRating": 56.18921282609529,
         "defenseRank": 12,
-        "performanceRating": 44.72912251322674,
-        "performanceRank": 22
+        "performanceRating": 49.513765843624235,
+        "performanceRank": 16
       }
     },
     {
@@ -7769,7 +7769,7 @@
         "offenseRank": 23,
         "defenseRating": 39.49228751345659,
         "defenseRank": 24,
-        "performanceRating": 43.257898516431325,
+        "performanceRating": 39.48957178254103,
         "performanceRank": 23
       }
     },
@@ -8092,8 +8092,8 @@
         "offenseRank": 16,
         "defenseRating": 50.83176290080414,
         "defenseRank": 14,
-        "performanceRating": 57.417073981092464,
-        "performanceRank": 9
+        "performanceRating": 51.36451883974863,
+        "performanceRank": 15
       }
     },
     {
@@ -8415,8 +8415,8 @@
         "offenseRank": 24,
         "defenseRating": 36.58793227295168,
         "defenseRank": 26,
-        "performanceRating": 40.18656493192977,
-        "performanceRank": 27
+        "performanceRating": 37.1357479815092,
+        "performanceRank": 26
       }
     },
     {
@@ -8738,8 +8738,8 @@
         "offenseRank": 21,
         "defenseRating": 46.5546843391697,
         "defenseRank": 17,
-        "performanceRating": 45.139250495678645,
-        "performanceRank": 19
+        "performanceRating": 42.095888717227616,
+        "performanceRank": 21
       }
     },
     {
@@ -9061,8 +9061,8 @@
         "offenseRank": 11,
         "defenseRating": 80.94959638247718,
         "defenseRank": 3,
-        "performanceRating": 68.14598467664214,
-        "performanceRank": 2
+        "performanceRating": 67.36946039492453,
+        "performanceRank": 3
       }
     },
     {
@@ -9384,7 +9384,7 @@
         "offenseRank": 1,
         "defenseRating": 50.75513413924867,
         "defenseRank": 15,
-        "performanceRating": 82.97242601807311,
+        "performanceRating": 84.40496501823154,
         "performanceRank": 1
       }
     },
@@ -9707,8 +9707,8 @@
         "offenseRank": 31,
         "defenseRating": 61.27607711820197,
         "defenseRank": 7,
-        "performanceRating": 36.57638519678757,
-        "performanceRank": 29
+        "performanceRating": 36.65465776665459,
+        "performanceRank": 27
       }
     },
     {
@@ -10030,8 +10030,8 @@
         "offenseRank": 30,
         "defenseRating": 53.53253272377495,
         "defenseRank": 13,
-        "performanceRating": 40.88469188862736,
-        "performanceRank": 24
+        "performanceRating": 34.371810189323504,
+        "performanceRank": 30
       }
     },
     {
@@ -10353,8 +10353,8 @@
         "offenseRank": 20,
         "defenseRating": 44.70091480645041,
         "defenseRank": 18,
-        "performanceRating": 40.206707996383216,
-        "performanceRank": 26
+        "performanceRating": 38.823247755722115,
+        "performanceRank": 24
       }
     }
   ]

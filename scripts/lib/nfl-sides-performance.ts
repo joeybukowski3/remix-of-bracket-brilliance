@@ -10,7 +10,7 @@
  *
  * This module contains NO file I/O and NO model math. It composes:
  *  - archived `spread` prediction snapshots from the live side model
- *    (jkb-power-number-v1.1.0; v1.0.0 history stays graded), already produced by the power-number
+ *    (jkb-power-number-v1.2.0; v1.0.0 and v1.1.0 history stay graded), already produced by the power-number
  *    generator / archive,
  *  - already-resolved actual outcomes (produced by the canonical
  *    resolvePredictionOutcome() in nfl-prediction-outcome-resolver.ts),
@@ -25,15 +25,20 @@
 import { absPointBucket } from "./nfl-evaluation-cohorts";
 import type { PregameGameContext } from "./nfl-game-context";
 
-export const SIDES_LIVE_MODEL_VERSION = "jkb-power-number-v1.1.0" as const;
+export const SIDES_LIVE_MODEL_VERSION = "jkb-power-number-v1.2.0" as const;
 
 /**
  * Every side-model version whose archived pregame snapshots are graded here. v1.0.0 predictions
- * (2026 weeks before the nfl-current-ovr-v1.1.0 change) are immutable production history and stay
- * on the page under their own version (each row carries model_version); only the LIVE version
- * changes. A snapshot from any other version (e.g. a stray v0.9.0) is still rejected.
+ * (2026 weeks before the nfl-current-ovr-v1.1.0 change) and v1.1.0 predictions (before the
+ * nfl-current-ovr-v1.2.0 raw-PD change) are immutable production history and stay on the page under
+ * their own version (each row carries model_version); only the LIVE version changes. A snapshot from
+ * any other version (e.g. a stray v0.9.0) is still rejected.
  */
-export const SIDES_SUPPORTED_MODEL_VERSIONS = ["jkb-power-number-v1.0.0", SIDES_LIVE_MODEL_VERSION] as const;
+export const SIDES_SUPPORTED_MODEL_VERSIONS = [
+  "jkb-power-number-v1.0.0",
+  "jkb-power-number-v1.1.0",
+  SIDES_LIVE_MODEL_VERSION,
+] as const;
 
 /** Absolute market-spread magnitude boundaries (field goal / touchdown / two scores). */
 export const MARKET_SPREAD_BUCKET_BOUNDARIES = Object.freeze([3, 7, 10]);
@@ -75,8 +80,8 @@ function latestByPredictionTimestamp(rows: readonly SpreadSnapshot[]): SpreadSna
 /**
  * Selects the canonical pregame spread snapshot for one game: the
  * latest-by-`predictionTimestamp` row, requiring a supported side model
- * identity (`jkb-power-number-v1.0.0` or `jkb-power-number-v1.1.0`; the LATEST snapshot decides,
- * so a game whose final pregame snapshot predates the v1.1.0 change is graded under v1.0.0).
+ * identity (`jkb-power-number-v1.0.0`, `-v1.1.0` or `-v1.2.0`; the LATEST snapshot decides,
+ * so a game whose final pregame snapshot predates a later change is graded under its own version).
  * Never averages snapshots and never
  * considers a post-kickoff revision -- the archive validator already
  * rejects `prediction_timestamp >= kickoff_utc` for production rows, so

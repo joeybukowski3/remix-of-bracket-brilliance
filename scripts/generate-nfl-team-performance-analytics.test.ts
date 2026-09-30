@@ -94,14 +94,18 @@ describe("generateTeamPerformanceAnalytics — 2026", () => {
     expect(PERFORMANCE_SCALE_DIVISORS.overall).toBeCloseTo(0.8016, 4);
   });
 
-  it("10. Overall weights are exactly 40/20/40 (nfl-current-ovr-v1.1.0) and the artifact says so", async () => {
+  it("10. Overall weights are exactly 40/20/40 (nfl-current-ovr-v1.2.0) and the artifact says so", async () => {
     expect(PERFORMANCE_OVERALL_WEIGHTS).toEqual({ offense: 0.4, defense: 0.2, pointDifferential: 0.4 });
     const artifact = await generateTeamPerformanceAnalytics(2026);
     expect(artifact._meta.overallWeights).toEqual({ offense: 0.4, defense: 0.2, pointDifferential: 0.4 });
-    expect(artifact._meta.currentOvrModelVersion).toBe("nfl-current-ovr-v1.1.0");
+    expect(artifact._meta.currentOvrModelVersion).toBe("nfl-current-ovr-v1.2.0");
     expect(artifact._meta.opponentAdjustment).toBe("leave-one-out-v1");
     expect(artifact._meta.ratingFormula).toMatch(/0\.40\*OFF \+ 0\.20\*DEF \+ 0\.40\*z/);
     expect(artifact._meta.ratingFormula).toMatch(/EXCLUDING that game/);
+    // v1.2.0: point differential is RAW in the rating; the adjusted PD value is a legacy diagnostic only.
+    expect(artifact._meta.ratingFormula).toMatch(/z\(RAW Point Differential\/Game, not opponent-adjusted\)/);
+    expect(artifact._meta.ratingFormula).not.toMatch(/z\(opponent-adjusted Point Differential/);
+    expect(artifact._meta.ratingFormula).toMatch(/legacy diagnostic/);
   });
 
   it("10b. the published performance ratings are the production board's, not a second calculation (per-team OFF/DEF/overall ratings are finite and consistently ranked)", async () => {

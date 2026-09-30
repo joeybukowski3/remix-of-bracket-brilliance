@@ -16,10 +16,10 @@ nfl-power-v0.4-beta rating2026       -> preseason OVR anchor
 nfl-power-v0.3.1 OFF / DEF ratings   -> preseason OFF / DEF anchors
 Team Performance Rating             -> live OVR / OFF / DEF evidence
 team-specific completed-game blend  -> canonical Current OVR / OFF / DEF
-canonical Current OVR (nfl-current-ovr-v1.1.0) -> jkb-power-number-v1.1.0 -> projected margin
+canonical Current OVR (nfl-current-ovr-v1.2.0) -> jkb-power-number-v1.2.0 -> projected margin
 ```
 
-The composed board has its own model identity, `nfl-current-ovr-v1.1.0`
+The composed board has its own model identity, `nfl-current-ovr-v1.2.0`
 ([`currentOvrModelVersion.ts`](../../src/lib/nfl/currentOvrModelVersion.ts)),
 stamped into `team-performance-analytics.json` (`_meta.currentOvrModelVersion`)
 and `matchup-projections.json` (`model.currentOvrModelVersion`). The artifact
@@ -33,7 +33,7 @@ that name. Its independently versioned inputs remain `nfl-power-v0.4-beta`,
 `nfl-power-v0.3.1`, and the `nfl-performance-v1` artifact schema. The current
 board must never be described as `nfl-power-v0.3.1` or `jkb-power-number-*`.
 
-`jkb-power-number-v1.1.0` is downstream of Current OVR. It converts strength to
+`jkb-power-number-v1.2.0` is downstream of Current OVR. It converts strength to
 NFL points and projects a game margin; it does not own or replace the 1–99
 Current OVR calculation. See
 [`nfl-projected-spread.md`](nfl-projected-spread.md).
@@ -160,8 +160,13 @@ DEF composite = mean(
 
 Overall composite = 0.40 * OFF composite
                   + 0.20 * DEF composite
-                  + 0.40 * z(opponent-adjusted point differential/game)
+                  + 0.40 * z(RAW point differential/game)
 ```
+
+OFF and DEF are opponent-adjusted. **Point differential is RAW** (the team's
+unadjusted mean game margin, z-scored across the league) as of
+`nfl-current-ovr-v1.2.0`; v1.0.0 and v1.1.0 used an opponent-adjusted PD whose
+direction was wrong (see "Current OVR v1.2.0 change record").
 
 The three metrics within OFF and DEF have equal weight. The top-level weights
 are exactly 40% offense, 20% defense, and 40% point differential (v1.0.0 used
@@ -180,12 +185,13 @@ backtest found filtering degraded predictive performance.
 
 Point differential per game comes from completed final scores in
 `public/data/nfl/<season>/results.json`, which is also the source for opponents
-faced. It is not derived from a sportsbook line.
+faced. It is not derived from a sportsbook line. It enters the composite RAW:
+no opponent adjustment is applied to it.
 
 ### Opponent adjustment and sample behavior
 
 The engine performs one full-season, leave-one-out (LOO) adjustment
-(`leave-one-out-v1`):
+(`leave-one-out-v1`) of the six OFF/DEF metrics:
 
 ```text
 adjusted metric = raw metric
@@ -194,8 +200,10 @@ adjusted metric = raw metric
 ```
 
 Offense compares against opponents' matching defense-allowed metric; defense
-compares against opponents' matching offense metric; point differential
-compares against opponents' own point differential. Each game contributes one
+compares against opponents' matching offense metric. (The engine still computes
+the same LOO quantity for point differential against opponents' own point
+differential, but only as a legacy diagnostic, `pointDifferential.adjusted`; it
+does not feed the rating.) Each game contributes one
 term (rematches appear once per game). The comparison value for a game is the
 opponent's rate over the opponent's OTHER games, so a game never partially
 grades itself. When the opponent has no other games (every team after Week 1),
@@ -346,7 +354,9 @@ must not be silently equated with either historical aggregation contract.
   exact anchors, blend weights, per-team game counts, clamps, missing-data
   failures, ranks, and retirement of the v0.3.1-delta calculation.
 - [`performanceComposite2026.test.ts`](../../src/lib/nfl/performanceComposite2026.test.ts):
-  Model C metrics, weights, opponent adjustment, public divisors, and clamps.
+  Model C metrics, weights, opponent adjustment, public divisors, and clamps;
+  raw-PD guards (PD z equals the z-score of raw margin, invariance to opponent
+  strength at constant raw PD, OFF/DEF golden values from v1.1.0).
 - [`teamPerformanceAnalytics.test.ts`](../../src/lib/nfl/teamPerformanceAnalytics.test.ts)
   and
   [`generate-nfl-team-performance-analytics.test.ts`](../../scripts/generate-nfl-team-performance-analytics.test.ts):
@@ -424,3 +434,62 @@ no edge or value claim follows (KS-008). The audit's dynamic scale matching gave
 preseason anchors (2021-2022 used a prior-season proxy), roughly 100 audited
 variants without multiplicity correction, and 2026 sample size. Effective
 production timestamp: set when this version's first artifact run is published.
+
+## Current OVR v1.2.0 change record
+
+Approved 2026-09-30. Change: the **point-differential (PD) component of the live
+performance composite is now RAW point differential per game** instead of the
+leave-one-out opponent-adjusted value. Nothing else changed.
+
+```text
+before (v1.1.0)  Overall = 0.40*OFF + 0.20*DEF + 0.40*z(opponent-adjusted PD/game)
+after  (v1.2.0)  Overall = 0.40*OFF + 0.20*DEF + 0.40*z(RAW PD/game)
+```
+
+- OFF: opponent-adjusted (leave-one-out) - unchanged.
+- DEF: opponent-adjusted (leave-one-out) - unchanged.
+- PD: RAW mean game margin, z-scored across the league (population SD, as before).
+- OVR: 40% OFF / 20% DEF / 40% PD - unchanged, as are the divisors, the
+  preseason/live blend, 0.24 points per OVR point and the 2.0 home-field
+  advantage (0.0 at neutral sites).
+
+**Why.** The v1.0.0/v1.1.0 PD adjustment applied the same `raw - (opponent value
+- league mean)` rule used for OFF/DEF. For OFF/DEF the comparison value is an
+"allowed" metric (higher = weaker opponent), so subtracting it is correct. For
+point differential the comparison value was the opponent's own point
+differential (higher = STRONGER opponent), so subtracting it penalized a team
+for playing stronger opponents. `nfl-power-v0.3.1` documents and implements the
+opposite direction for its margin adjustment (`pointDifferential +
+(opponentPD - league mean)`). Historical validation (2021-2025) did not support
+simply flipping the sign at full strength - early-season opponent-strength
+estimates are far too noisy - so raw PD was selected. The retired PD adjustment
+is not a documented v0.3.1-style adjustment and should not be revived without a
+new validation.
+
+**Evidence and what is NOT claimed.** With the spread transform held fixed
+(0.24 x dOVR + 2.0 HFA) on 2023-2025 (n = 816, real preseason anchors,
+production libraries at kickoff-time cutoffs):
+
+| OVR construction | MAE | RMSE | Correlation |
+| --- | ---: | ---: | ---: |
+| v1.1.0 (adjusted PD) | 10.186 | 13.148 | 0.4048 |
+| v1.2.0 (raw PD) | 10.199 | 13.142 | 0.4035 |
+| PD adjustment sign-corrected at full strength | 10.245 | 13.177 | 0.3962 |
+
+The MAE difference between v1.1.0 and raw PD (+0.014, 95% CI about [-0.03,
++0.06]) is statistically inconclusive. **This change is a correctness /
+model-semantics fix, not a claimed improvement in spread accuracy.** Both
+constructions remain about 0.4 MAE worse than the market benchmark.
+
+**Artifact field.** `windows.fullSeason.adjusted.pointDifferentialPerGame.raw`
+is the value the rating uses. `...adjusted` is retained purely as a legacy
+diagnostic (unchanged computation, still wrong-signed) so the artifact shape is
+stable; it does not feed any rating.
+
+**Effect.** All 32 Current OVR values move and about 25 ranks change (2026 Week
+3). Every projected margin changes by exactly 0.24 x the change in the OVR
+differential of the two teams; OFF and DEF values and ranks are unchanged.
+Versions: `nfl-current-ovr-v1.2.0`, `jkb-power-number-v1.2.0` (MINOR: an
+intentional methodology change to one composite input; snapshots archived under
+v1.0.0 and v1.1.0 are immutable history). Effective production timestamp: set
+when this version's first artifact run is published.

@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   HOME_FIELD_ADVANTAGE_POINTS,
+  JKB_POWER_NUMBER_MODEL_VERSION,
   NEUTRAL_SITE_HOME_FIELD_ADVANTAGE_POINTS,
   OVR_TO_POINTS_COEFFICIENT,
   buildPowerNumberBoard,
@@ -320,5 +321,27 @@ describe("powerNumberFor", () => {
   it("returns null for an unknown abbreviation rather than throwing", () => {
     const board = buildPowerNumberBoard(fixture32Board());
     expect(powerNumberFor(board, "zzz")).toBeNull();
+  });
+});
+
+describe("unchanged by the nfl-current-ovr-v1.2.0 raw-PD change (literal pins)", () => {
+  it("the spread transform constants are exactly 0.24 points per OVR point, +2.0 home-field advantage, 0.0 neutral", () => {
+    expect(OVR_TO_POINTS_COEFFICIENT).toBe(0.24);
+    expect(HOME_FIELD_ADVANTAGE_POINTS).toBe(2.0);
+    expect(NEUTRAL_SITE_HOME_FIELD_ADVANTAGE_POINTS).toBe(0);
+    expect(homeFieldAdvantageFor(false)).toBe(2.0);
+    expect(homeFieldAdvantageFor(true)).toBe(0);
+  });
+
+  it("the projected home margin is exactly 0.24 x OVR differential + HFA", () => {
+    const [home, away] = [64.5, 41.25];
+    expect(0.24 * (home - away) + 2.0).toBeCloseTo(7.58, 12);
+    const pn = (ovr: number, avg: number) => (ovr - avg) * OVR_TO_POINTS_COEFFICIENT;
+    expect(expectedHomeMarginFor(pn(home, 50), pn(away, 50), false)).toBeCloseTo(0.24 * (home - away) + 2.0, 12);
+    expect(expectedHomeMarginFor(pn(home, 50), pn(away, 50), true)).toBeCloseTo(0.24 * (home - away), 12);
+  });
+
+  it("the spread model identity is jkb-power-number-v1.2.0 (its only input, Current OVR, moved to nfl-current-ovr-v1.2.0)", () => {
+    expect(JKB_POWER_NUMBER_MODEL_VERSION).toBe("jkb-power-number-v1.2.0");
   });
 });

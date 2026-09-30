@@ -33,7 +33,7 @@ const allOr = (allLabel: string) => (option: string) => (option === "all" ? allL
 /**
  * WU6 -- detailed Sides (spread) performance view, backed by the dedicated
  * canonical artifact public/data/nfl/performance/sides.json (live side model
- * jkb-power-number-v1.1.0; v1.0.0 history included). It never parses the raw spread archive; every
+ * jkb-power-number-v1.2.0; v1.0.0 and v1.1.0 history included). It never parses the raw spread archive; every
  * row/metric/bucket is read verbatim from that artifact. ATS is the artifact's own `ats_result`;
  * SU is derived in lib/nfl/performance/records.ts from projected_home_margin vs actual_margin.
  */
