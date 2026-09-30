@@ -39,6 +39,11 @@ export type TeamPerformanceWindowMetrics = {
 export type TeamPerformanceFullSeasonAdjusted = {
   offense: { epaPerPlay: number | null; successRate: number | null; explosiveRate: number | null };
   defenseAllowed: { epaPerPlay: number | null; successRate: number | null; explosiveRate: number | null };
+  /**
+   * `raw` is the point differential per game the rating USES (nfl-current-ovr-v1.2.0: the PD component is
+   * raw PD). `adjusted` is a LEGACY DIAGNOSTIC ONLY — the v1.1.0 leave-one-out PD adjustment (wrong-signed:
+   * `raw - (opponentPD - league)`), kept for artifact-shape stability. It does NOT feed the rating.
+   */
   pointDifferentialPerGame: { raw: number | null; adjusted: number | null };
 };
 
@@ -79,7 +84,10 @@ export type TeamPerformanceAnalyticsArtifact = {
     source: string;
     /** Composed Current OVR model identity the ratings in this artifact were produced under. */
     currentOvrModelVersion: typeof NFL_CURRENT_OVR_MODEL_VERSION;
-    /** Opponent-adjustment method behind the performance ratings and the fullSeason.adjusted values. */
+    /**
+     * Opponent-adjustment method behind the OFF/DEF performance ratings and the fullSeason.adjusted values.
+     * (As of v1.2.0 point differential is RAW in the rating; the adjusted PD value is diagnostic only.)
+     */
     opponentAdjustment: typeof NFL_OPPONENT_ADJUSTMENT_METHOD;
     /** Top-level live composite weights (offense / defense / pointDifferential). */
     overallWeights: { offense: number; defense: number; pointDifferential: number };

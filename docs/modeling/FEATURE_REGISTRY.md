@@ -137,7 +137,7 @@ Coherence is a hard accounting constraint, not evidence of predictiveness: playe
 | Success rate | Traditional down-based success plus EPA-positive diagnostic | Spread Current OVR and UI |
 | Explosive rate | Explosive pass+rush rate/count | Spread Current OVR and UI |
 | Points/drive | Offense and allowed | Available/display; excluded from Current OVR composite as collinear |
-| Point differential/game | Raw and opponent-adjusted | Spread Current OVR |
+| Point differential/game | Raw (the Current OVR input since `nfl-current-ovr-v1.2.0`); a leave-one-out opponent-adjusted value is retained only as a legacy diagnostic and does not feed any rating | Spread Current OVR (raw) |
 | Play volume/pass tendency | Plays/game, pass/rush attempts, dropback rate, early neutral pass rate, PROE | Player models; reusable for totals |
 | Schedule strength/opponent adjustment | One-pass opponent comparison | v0.3.1/live performance; SOS fields are separately available |
 | Scores | Final home/away scores, margin, total | Outcomes/backtests |

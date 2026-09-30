@@ -366,8 +366,9 @@ export async function generateTeamPerformanceAnalytics(season: number): Promise<
       ...CURRENT_PERFORMANCE_MODEL_META,
       ratingFormula:
         "OFF = mean(z(EPA/Play, garbage-time-filtered, opponent-adjusted), z(Traditional Success Rate, filtered, adjusted), z(Explosive Rate, unfiltered, adjusted)); " +
-        "DEF = mean(-z(same 3 metrics, allowed)); Overall = 0.40*OFF + 0.20*DEF + 0.40*z(opponent-adjusted Point Differential/Game); " +
-        "opponent adjustment applied only at the fullSeason window and leave-one-out: raw - (mean over the team's games of the opponent's comparison value EXCLUDING that game - leagueMean); " +
+        "DEF = mean(-z(same 3 metrics, allowed)); Overall = 0.40*OFF + 0.20*DEF + 0.40*z(RAW Point Differential/Game, not opponent-adjusted); " +
+        "OFF/DEF opponent adjustment applied only at the fullSeason window and leave-one-out: raw - (mean over the team's games of the opponent's comparison value EXCLUDING that game - leagueMean); " +
+        "fullSeason.adjusted.pointDifferentialPerGame.adjusted is a legacy diagnostic and does not feed the rating; " +
         "scale = 50 + 15*(compositeZ / divisor), clamped [1, 99].",
       scaleDivisors: PERFORMANCE_SCALE_DIVISORS,
     },

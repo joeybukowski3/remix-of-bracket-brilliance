@@ -1,6 +1,6 @@
 /**
  * Generate public/data/nfl/matchup-projections.json — the canonical public
- * JKB Projected Spread (jkb-power-number-v1.1.0).
+ * JKB Projected Spread (jkb-power-number-v1.2.0).
  *
  * REPLACES the nfl-spread-v0.1.0 shadow composite as the authoritative
  * public spread generator. That model's own code (scripts/lib/nfl-spread-

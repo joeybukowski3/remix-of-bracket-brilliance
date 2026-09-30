@@ -130,7 +130,7 @@ describe("teamPerformanceAnalytics validator", () => {
     expect(DEFENSE_METRIC_RANK_DIRECTIONS.explosiveRate).toBe("lower-is-better");
   });
 });
-describe("stale Current OVR model guard (nfl-current-ovr-v1.1.0)", () => {
+describe("stale Current OVR model guard (nfl-current-ovr-v1.2.0)", () => {
   const withMeta = (patch: Record<string, unknown>) => {
     const base = artifact();
     return { ...base, _meta: { ...base._meta, ...patch } };
@@ -151,6 +151,11 @@ describe("stale Current OVR model guard (nfl-current-ovr-v1.1.0)", () => {
 
   it("rejects an artifact stamped with a previous or unknown model version", () => {
     expect(() => validateTeamPerformanceAnalyticsArtifact(withMeta({ currentOvrModelVersion: "nfl-current-ovr-v1.0.0" }))).toThrow(/currentOvrModelVersion/);
+  });
+
+  it("rejects an artifact produced under v1.1.0 (adjusted PD fed the rating) so it cannot be loaded as the raw-PD model", () => {
+    expect(() => validateTeamPerformanceAnalyticsArtifact(withMeta({ currentOvrModelVersion: "nfl-current-ovr-v1.1.0" }))).toThrow(/currentOvrModelVersion/);
+    expect(NFL_CURRENT_OVR_MODEL_VERSION).toBe("nfl-current-ovr-v1.2.0");
   });
 
   it("rejects the retired one-pass opponent adjustment", () => {

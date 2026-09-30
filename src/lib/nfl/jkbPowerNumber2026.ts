@@ -71,8 +71,13 @@ export const NEUTRAL_SITE_HOME_FIELD_ADVANTAGE_POINTS = 0.0;
  * canonical Current OVR board, moved to nfl-current-ovr-v1.1.0 (40/20/40 live composite +
  * leave-one-out opponent adjustment), so every projected number can change. Snapshots archived
  * under v1.0.0 remain valid and are never rewritten.
+ *
+ * MINOR bump v1.1.0 -> v1.2.0 for the same reason: the transform is still byte-identical, but its only
+ * input moved to nfl-current-ovr-v1.2.0 (the PD component is now RAW point differential instead of the
+ * wrong-signed opponent-adjusted PD), so every projected number can change. Snapshots archived under
+ * v1.0.0 and v1.1.0 remain valid and are never rewritten.
  */
-export const JKB_POWER_NUMBER_MODEL_VERSION = "jkb-power-number-v1.1.0";
+export const JKB_POWER_NUMBER_MODEL_VERSION = "jkb-power-number-v1.2.0";
 
 export type PowerNumberTeamRow = {
   abbr: string;

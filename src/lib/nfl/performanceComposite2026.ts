@@ -1,6 +1,6 @@
 /**
  * Performance Rating engine — composite + 1-99 public scale.
- * Model identity: nfl-current-ovr-v1.1.0 (see currentOvrModelVersion.ts).
+ * Model identity: nfl-current-ovr-v1.2.0 (see currentOvrModelVersion.ts).
  *
  * Consumes the full 9+9 metric bundle from performanceMetricsCore2026.ts but
  * the APPROVED composite (Model C from the 2026 Performance Model Backtest)
@@ -8,12 +8,30 @@
  *
  *   OFF Performance = mean( z(EPA/Play), z(Traditional Success Rate), z(Explosive Rate) )
  *   DEF Performance = mean( z(-EPA/Play Allowed), z(-Success Rate Allowed), z(-Explosive Rate Allowed) )
- *   Overall Performance = 0.40 * OFF + 0.20 * DEF + 0.40 * z(opponent-adjusted Point Differential/Game)
+ *   Overall Performance = 0.40 * OFF + 0.20 * DEF + 0.40 * z(RAW Point Differential/Game)
+ *
+ * OFF and DEF are opponent-adjusted (leave-one-out, below). Point differential
+ * is RAW: it enters the composite as the team's unadjusted mean game margin,
+ * z-scored across the league. (v1.1.0 used z(opponent-adjusted PD); see the
+ * v1.2.0 note below.)
  *
  * (v1.1.0 re-weighted the top-level composite from 40/40/20 to 40/20/40 after
  * the 2026-09 Current-OVR forensic audit: opponent-adjusted defense carried
  * almost no forward signal, point differential the most. OFF/DEF component
  * calculations and sub-weights are unchanged.)
+ *
+ * v1.2.0 — PD IS NO LONGER OPPONENT-ADJUSTED. The v1.0.0/v1.1.0 point-
+ * differential adjustment applied `raw - (opponentPD - leagueMean)`, i.e. it
+ * SUBTRACTED opponent strength, so a team was penalized for playing stronger
+ * opponents (v0.3.1's documented margin adjustment adds it). OFF/DEF use the
+ * same subtraction correctly because their comparison values are "allowed"
+ * metrics. Historical validation did not support replacing the wrong-signed
+ * adjustment with a full-strength sign-corrected one (early-season estimates of
+ * opponent strength are far too noisy), so raw PD was selected. This is a
+ * correctness / model-semantics change, NOT a claimed spread-accuracy
+ * improvement. The LOO-adjusted PD value is still computed and exposed as
+ * `pointDifferential.adjusted` purely as a legacy DIAGNOSTIC (same wrong-signed
+ * definition as before); it does NOT feed the rating.
  *
  * All other 6 offense + 6 defense metrics (Points/Drive, Early Down,
  * Passing/Rushing Efficiency, Third-Down Performance, Sack Rate, and the
@@ -28,16 +46,18 @@
  * UNFILTERED bundle (`offense.all` / `defenseAllowed.all`) because filtering
  * measurably hurt its out-of-sample predictive power in the backtest.
  *
- * OPPONENT ADJUSTMENT — LEAVE-ONE-OUT (v1.1.0). Applied ONLY at full-season
- * granularity (the backtest found opponent adjustment harmful at 9-game
- * half-season granularity, so no L4/L8 variant exists here):
+ * OPPONENT ADJUSTMENT — LEAVE-ONE-OUT (v1.1.0; applies to OFF and DEF only as
+ * of v1.2.0). Applied ONLY at full-season granularity (the backtest found
+ * opponent adjustment harmful at 9-game half-season granularity, so no L4/L8
+ * variant exists here):
  *
  *   adjusted = raw - (mean over the team's games of the opponent's comparison
  *                     value EXCLUDING that game  -  league mean comparison)
  *
- * Offense compares against opponents' matching defense-allowed metric, defense
- * against opponents' matching offense metric, point differential against
- * opponents' own point differential. The exclusion is the whole point: the
+ * Offense compares against opponents' matching defense-allowed metric and
+ * defense against opponents' matching offense metric. (The legacy point-
+ * differential diagnostic compares against opponents' own point differential;
+ * it does not feed the rating — see v1.2.0 above.) The exclusion is the whole point: the
  * pre-v1.1.0 one-pass method used each opponent's season-to-date aggregate,
  * which INCLUDES the game against the team being adjusted, so the game
  * partially graded itself (100% at one game played, 50% at two, 1/n in general).
@@ -83,7 +103,7 @@ export const PERFORMANCE_PUBLIC_SCALE = Object.freeze({
   maximum: 99,
 });
 
-/** nfl-current-ovr-v1.1.0 top-level live composite weights (v1.0.0 was 0.40 / 0.40 / 0.20). */
+/** Top-level live composite weights, introduced in nfl-current-ovr-v1.1.0 and unchanged in v1.2.0 (v1.0.0 was 0.40 / 0.40 / 0.20). */
 export const PERFORMANCE_OVERALL_WEIGHTS = Object.freeze({
   offense: 0.4,
   defense: 0.2,
@@ -247,8 +267,14 @@ export type PerformanceRatingRow = {
     compositeZ: number | null;
   };
   pointDifferential: {
+    /** RAW mean game margin per game. This is the value the rating actually uses. */
     raw: number;
+    /**
+     * LEGACY DIAGNOSTIC ONLY — NOT used by the rating (v1.2.0). The v1.1.0 leave-one-out PD adjustment,
+     * unchanged and still wrong-signed (`raw - (opponentPD - league)`). Kept so the artifact shape is stable.
+     */
     adjusted: number | null;
+    /** z-score of `raw` across the league. This is the PD component of the composite. */
     z: number | null;
   };
   overallComposite: number | null;
@@ -341,16 +367,17 @@ export function buildPerformanceRatingBoard(entries: readonly TeamPerformanceSea
   const leagueDefEpaAdj = leagueMeanAndStandardDeviation(adjusted.map((a) => a.defEpaAdj));
   const leagueDefSrAdj = leagueMeanAndStandardDeviation(adjusted.map((a) => a.defSrAdj));
   const leagueDefExpAdj = leagueMeanAndStandardDeviation(adjusted.map((a) => a.defExpAdj));
-  const leaguePointDiffAdj = leagueMeanAndStandardDeviation(adjusted.map((a) => a.pointDiffAdj));
 
-  const composites = adjusted.map((a) => {
+  const composites = adjusted.map((a, i) => {
     const offEpaZ = stableZScore(a.offEpaAdj, leagueOffEpaAdj);
     const offSrZ = stableZScore(a.offSrAdj, leagueOffSrAdj);
     const offExpZ = stableZScore(a.offExpAdj, leagueOffExpAdj);
     const defEpaZ = stableZScore(a.defEpaAdj, leagueDefEpaAdj);
     const defSrZ = stableZScore(a.defSrAdj, leagueDefSrAdj);
     const defExpZ = stableZScore(a.defExpAdj, leagueDefExpAdj);
-    const pointDiffZ = stableZScore(a.pointDiffAdj, leaguePointDiffAdj);
+    // v1.2.0: the PD component is the z-score of RAW point differential per game (league statistics over the raw values).
+    // `a.pointDiffAdj` is a legacy diagnostic and deliberately does not enter the rating.
+    const pointDiffZ = stableZScore(pointDiffRaw[i], leaguePointDiff);
 
     const offComponents = [offEpaZ, offSrZ, offExpZ];
     const offComposite = offComponents.every(isFiniteNumber)

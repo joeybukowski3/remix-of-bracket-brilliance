@@ -12,6 +12,7 @@ import { validateNflV03ReviewArtifact } from "@/lib/nfl/v03Review";
 import { validateNflV04ProjectionArtifact } from "@/lib/nfl/v04Projection";
 import { buildPublicProjectionBoard } from "@/lib/nfl/publicProjection2026";
 import { validateTeamPerformanceAnalyticsArtifact } from "@/lib/nfl/teamPerformanceAnalytics";
+import { PERFORMANCE_SCALE_DIVISORS } from "@/lib/nfl/performanceComposite2026";
 import { HOME_FIELD_ADVANTAGE_POINTS, JKB_POWER_NUMBER_MODEL_VERSION, OVR_TO_POINTS_COEFFICIENT, homeFieldAdvantageFor } from "@/lib/nfl/jkbPowerNumber2026";
 import { NFL_CURRENT_OVR_MODEL_VERSION } from "@/lib/nfl/currentOvrModelVersion";
 import { createHeroModelRatingResolver } from "@/lib/nfl/heroModelRatings";
@@ -19,7 +20,7 @@ import { buildDfsTeamRankContext } from "@/lib/nfl/dfs/teamRankContext";
 import { buildWeeklyDashboard } from "@/lib/nfl/weeklyDashboard";
 
 /**
- * Architecture guard for the canonical 2026 Current OVR (nfl-current-ovr-v1.1.0):
+ * Architecture guard for the canonical 2026 Current OVR (nfl-current-ovr-v1.2.0):
  *   one production path   generator -> team-performance-analytics.json -> buildCurrentRatingBoard -> every consumer
  *   one spread transform  0.24 x dOVR + HFA, in jkbPowerNumber2026.ts only
  *   no hidden old model   nothing in production code can reach the retired composite or spread model
@@ -47,6 +48,22 @@ describe("canonical board from the committed artifacts", () => {
     expect(analytics._meta.currentOvrModelVersion).toBe(NFL_CURRENT_OVR_MODEL_VERSION);
     expect(board.teams).toHaveLength(32);
     expect(board.state).toBe("live");
+  });
+
+  it("the committed performance ratings use RAW point differential: OVR re-derived from OFF, DEF and z(raw PD/game) matches for all 32 teams", () => {
+    const D = PERFORMANCE_SCALE_DIVISORS;
+    const raw = analytics.teams.map((t) => t.windows.fullSeason.adjusted.pointDifferentialPerGame.raw as number);
+    expect(raw.every((v) => Number.isFinite(v))).toBe(true);
+    const mean = raw.reduce((s, v) => s + v, 0) / raw.length;
+    const sd = Math.sqrt(raw.reduce((s, v) => s + (v - mean) ** 2, 0) / raw.length);
+    analytics.teams.forEach((t, i) => {
+      const p = t.performance;
+      // Ratings are 50 + 15*z/divisor; none of these are clamped, so OFF/DEF z can be recovered exactly from the published ratings.
+      const offZ = ((p.offenseRating as number) - 50) * D.offense / 15;
+      const defZ = ((p.defenseRating as number) - 50) * D.defense / 15;
+      const composite = 0.4 * offZ + 0.2 * defZ + 0.4 * ((raw[i] - mean) / sd);
+      expect(p.performanceRating as number, `${t.team} OVR from raw PD`).toBeCloseTo(50 + (15 * composite) / D.overall, 8);
+    });
   });
 
   it("ranks are exactly the descending order of the ratings (OVR, OFF and DEF)", () => {

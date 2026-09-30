@@ -18,10 +18,27 @@
  * garbage-time treatment, OFF/DEF sub-weights, 1-99 scale, 0.24 coefficient,
  * 2.0 home-field advantage.
  *
+ * v1.2.0 (MINOR: an intentional methodology change to one composite input, not a
+ * restoration of documented behavior — the documented v1.1.0 method was
+ * "opponent-adjusted PD"):
+ *   - the PD component is the z-score of RAW point differential per game
+ *     (was the leave-one-out opponent-adjusted PD)
+ * Why: the PD opponent adjustment carried the wrong directional sign
+ * (`raw - (opponentPD - league)` penalizes strong schedules; v0.3.1 adds it), and
+ * historical validation did not support replacing it with a full-strength
+ * sign-corrected adjustment, so raw PD was selected. This is a correctness /
+ * model-semantics change and is NOT claimed to improve spread accuracy.
+ * Unchanged: OFF and DEF (including their leave-one-out opponent adjustment),
+ * 40/20/40 weights, EPA/SR/explosive inputs, divisors, blend schedule,
+ * 0.24 coefficient, 2.0 home-field advantage.
+ *
  * This module is intentionally dependency-free so the browser, the generators
  * and the artifact validator can all import the same constant.
  */
-export const NFL_CURRENT_OVR_MODEL_VERSION = "nfl-current-ovr-v1.1.0" as const;
+export const NFL_CURRENT_OVR_MODEL_VERSION = "nfl-current-ovr-v1.2.0" as const;
 
-/** Identifier of the opponent-adjustment method in force for this model version. */
+/**
+ * Identifier of the leave-one-out opponent-adjustment method in force for this model version.
+ * Since v1.2.0 it applies to OFF and DEF only (the PD component is raw); the method itself is unchanged.
+ */
 export const NFL_OPPONENT_ADJUSTMENT_METHOD = "leave-one-out-v1" as const;
