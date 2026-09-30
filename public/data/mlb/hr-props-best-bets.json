@@ -1,10 +1,10 @@
 {
   "date": "2026-09-30",
-  "generatedAt": "2026-09-30T12:08:57.707Z",
+  "generatedAt": "2026-09-30T12:36:56.905Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Today's slate features three hitter-friendly parks: Yankee Stadium (1.18), Daikin Park (1.04), and Truist Park (1.03). The top three HR scores all land in these venues, with Alvarez facing Sean Burke in Houston and Rice/Schwarber in the two other boosted parks. Petco Park (0.89) suppresses power for Tatis and Merrill despite their strong underlying metrics.",
-    "modelNote": "The model heavily weights park factors and recent barrel/hard-hit rates, elevating Alvarez to the top spot due to his elite 70.4 HR score in a plus park against a righty with poor opposing HR metrics."
+    "slateOverview": "Today's slate features three hitter-friendly parks: Yankee Stadium (1.18), Daikin Park (1.04), and Truist Park (1.03), with Petco Park (0.89) as the lone pitcher-friendly outlier. Right-handed pitchers dominate the slate, including Sean Burke, Kevin Gausman, Sonny Gray, and Tyler Mahle, creating favorable platoon advantages for left-handed power bats like Yordan Alvarez and Kyle Schwarber. Warm, dry conditions are expected across most venues, amplifying fly-ball carry in the elevated parks.",
+    "modelNote": "The model prioritizes barrel rate, hard-hit rate, and park-adjusted HR/FB ratios, elevating Alvarez to the top spot due to his elite 16% barrel rate and 53.8% hard-hit rate against a vulnerable righty in a boosted park, while Tatis ranks second despite Petco's suppression given his strong recent power surge and favorable matchup metrics."
   },
   "bestBets": [
     {
@@ -14,16 +14,16 @@
       "opposingPitcher": "Sean Burke",
       "hrScoreRank": 1,
       "topStats": [
-        "hrScore=70.4",
-        "barrel=16%"
+        "barrel=16%",
+        "HH=53.8%"
       ],
       "bullets": [
-        "hrScore=70.4",
-        "park=1.04"
+        "park=1.04",
+        "barrel=16%"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+313",
+      "marketImpliedProbability": 0.24213075060532688,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -33,16 +33,16 @@
       "opposingPitcher": "Kevin Gausman",
       "hrScoreRank": 2,
       "topStats": [
-        "hrScore=62.3",
-        "barrel=12.7%"
-      ],
-      "bullets": [
-        "hrScore=62.3",
+        "barrel=12.7%",
         "HH=53.9%"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "bullets": [
+        "park=0.89",
+        "HH=53.9%"
+      ],
+      "hrOddsYes": "+375",
+      "marketImpliedProbability": 0.21052631578947367,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -52,35 +52,16 @@
       "opposingPitcher": "Sonny Gray",
       "hrScoreRank": 3,
       "topStats": [
-        "hrScore=61",
+        "barrel=14.3%",
+        "HH=48.6%"
+      ],
+      "bullets": [
+        "park=1.18",
         "barrel=14.3%"
       ],
-      "bullets": [
-        "hrScore=61",
-        "park=1.18"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Pete Crow-Armstrong",
-      "team": "CHC",
-      "opponent": "SD",
-      "opposingPitcher": "Nick Pivetta",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Pitcher HR VS=54.4",
-        "Hard Hit%=48.6"
-      ],
-      "bullets": [
-        "HR score 55.6 (#4)",
-        "Pitcher HR VS 54.4 at park 0.89"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+294",
+      "marketImpliedProbability": 0.25380710659898476,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
@@ -88,60 +69,213 @@
       "team": "CWS",
       "opponent": "HOU",
       "opposingPitcher": "Hunter Brown",
-      "hrScoreRank": 5,
+      "hrScoreRank": 4,
       "topStats": [
         "Hard Hit%=56.8",
         "Pitcher HR VS=24.0"
       ],
       "bullets": [
-        "HR score 55.3 (#5)",
+        "HR score 55.4 (#4)",
         "Pitcher HR VS 24.0 at park 1.04"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
+    },
     {
       "player": "Pete Crow-Armstrong",
       "team": "CHC",
       "opponent": "SD",
       "opposingPitcher": "Nick Pivetta",
-      "hrScoreRank": 4,
+      "hrScoreRank": 5,
       "topStats": [
-        "hrScore=55.6",
-        "barrel=13.3%"
+        "Pitcher HR VS=54.4",
+        "Hard Hit%=48.6"
       ],
       "bullets": [
-        "hrScore=55.6",
-        "park=0.89"
+        "HR score 55.2 (#5)",
+        "Pitcher HR VS 54.4 at park 0.89"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+275",
+      "marketImpliedProbability": 0.26666666666666666,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
-    },
+    }
+  ],
+  "valueBets": [
     {
       "player": "Munetaka Murakami",
       "team": "CWS",
       "opponent": "HOU",
       "opposingPitcher": "Hunter Brown",
-      "hrScoreRank": 5,
+      "hrScoreRank": 4,
       "topStats": [
-        "hrScore=55.3",
-        "barrel=20.5%"
-      ],
-      "bullets": [
-        "hrScore=55.3",
+        "barrel=20.5%",
         "HH=56.8%"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "bullets": [
+        "barrel=20.5%",
+        "HH=56.8%"
+      ],
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Pete Crow-Armstrong",
+      "team": "CHC",
+      "opponent": "SD",
+      "opposingPitcher": "Nick Pivetta",
+      "hrScoreRank": 5,
+      "topStats": [
+        "barrel=13.3%",
+        "HH=48.6%"
+      ],
+      "bullets": [
+        "park=0.89",
+        "barrel=13.3%"
+      ],
+      "hrOddsYes": "+275",
+      "marketImpliedProbability": 0.26666666666666666,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jackson Merrill",
+      "team": "SD",
+      "opponent": "CHC",
+      "opposingPitcher": "Kevin Gausman",
+      "hrScoreRank": 6,
+      "topStats": [
+        "barrel=12.4%",
+        "HH=48.7%"
+      ],
+      "bullets": [
+        "park=0.89",
+        "HH=48.7%"
+      ],
+      "hrOddsYes": "+475",
+      "marketImpliedProbability": 0.17391304347826086,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Kyle Schwarber",
+      "team": "PHI",
+      "opponent": "ATL",
+      "opposingPitcher": "Tyler Mahle",
+      "hrScoreRank": 7,
+      "topStats": [
+        "Hard Hit%=49.3",
+        "Pitcher HR VS=41.1"
+      ],
+      "bullets": [
+        "HR score 53.4 (#7)",
+        "Pitcher HR VS 41.1 at park 1.03"
+      ],
+      "hrOddsYes": "+250",
+      "marketImpliedProbability": 0.2857142857142857,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Luis García Jr.",
+      "team": "NYY",
+      "opponent": "BOS",
+      "opposingPitcher": "Sonny Gray",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Pitcher HR VS=46.9",
+        "Hard Hit%=46.1"
+      ],
+      "bullets": [
+        "HR score 53.3 (#8)",
+        "Pitcher HR VS 46.9 at park 1.18"
+      ],
+      "hrOddsYes": "+490",
+      "marketImpliedProbability": 0.1694915254237288,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
-  "longshots": []
+  "longshots": [
+    {
+      "player": "Kyle Schwarber",
+      "team": "PHI",
+      "opponent": "ATL",
+      "opposingPitcher": "Tyler Mahle",
+      "hrScoreRank": 7,
+      "topStats": [
+        "barrel=15.6%",
+        "HH=49.3%"
+      ],
+      "bullets": [
+        "park=1.03",
+        "barrel=15.6%"
+      ],
+      "hrOddsYes": "+250",
+      "marketImpliedProbability": 0.2857142857142857,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Luis García Jr.",
+      "team": "NYY",
+      "opponent": "BOS",
+      "opposingPitcher": "Sonny Gray",
+      "hrScoreRank": 8,
+      "topStats": [
+        "barrel=12.2%",
+        "HH=46.1%"
+      ],
+      "bullets": [
+        "park=1.18",
+        "HH=46.1%"
+      ],
+      "hrOddsYes": "+490",
+      "marketImpliedProbability": 0.1694915254237288,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Lucas Spence",
+      "team": "HOU",
+      "opponent": "CWS",
+      "opposingPitcher": "Sean Burke",
+      "hrScoreRank": 9,
+      "topStats": [
+        "Pitcher HR VS=56.6",
+        "Hard Hit%=48.5"
+      ],
+      "bullets": [
+        "HR score 52.5 (#9)",
+        "Pitcher HR VS 56.6 at park 1.04"
+      ],
+      "hrOddsYes": "+800",
+      "marketImpliedProbability": 0.1111111111111111,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Drake Baldwin",
+      "team": "ATL",
+      "opponent": "PHI",
+      "opposingPitcher": "Cristopher Sánchez",
+      "hrScoreRank": 10,
+      "topStats": [
+        "Hard Hit%=50.6",
+        "Pitcher HR VS=40.6"
+      ],
+      "bullets": [
+        "HR score 52.0 (#10)",
+        "Pitcher HR VS 40.6 at park 1.03"
+      ],
+      "hrOddsYes": "+700",
+      "marketImpliedProbability": 0.125,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ]
 }
