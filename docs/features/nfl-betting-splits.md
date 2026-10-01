@@ -123,6 +123,23 @@ gap preferred on equal magnitude. Compact Highest Public Sides, Sharp Sides,
 and Contrarian Sides tables use the shared display selectors and thresholds.
 Market tabs continue to show both sides as separate rows.
 
+### Current page presentation
+
+The Overview now shows one game per desktop table row and one compact card per
+game on mobile. Each market displays its higher-handle side with that side's
+handle (Money), bets (Tickets), and signed Money Gap. This is a display choice;
+the source side percentages and gap formula are unchanged. The Sharp Signal
+callout uses the existing Sharp Sides threshold (+10 points or more) and shows
+the highest qualifying positive gap, or “No sharp side.” The earlier WU4
+strongest-discrepancy selector ranks absolute gaps and can identify a negative
+public-heavy side, so it remains distinct from this callout.
+
+Spread, Moneyline, and Total use the same ranking presentation over their
+existing two-sided source rows. Desktop shows Money and Tickets tables together;
+mobile selects one. Each ranking has independent share order and deterministic
+ties. Value sorting uses signed spread lines, moneyline odds, or total lines.
+Total rows remain Over/Under sides of a matchup, not team totals.
+
 ## Matchup detail view (WU5)
 
 The Comparison tab's “What the Book Says” group includes a Betting Splits view

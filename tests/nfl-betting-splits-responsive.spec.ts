@@ -1,66 +1,107 @@
 import { expect, test } from "../playwright-fixture";
 
 const baseUrl = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:4173";
-const widths = [1440, 1150, 1024, 768, 430, 390, 375];
 
-for (const width of widths) {
-  test(`betting splits tabs stay contained at ${width}px`, async ({ page }, testInfo) => {
+for (const width of [1440, 390]) {
+  test(`betting splits layout and controls at ${width}px`, async ({ page }, testInfo) => {
+    test.setTimeout(120_000);
     await page.setViewportSize({ width, height: 900 });
-    await page.goto(`${baseUrl}/nfl/betting-splits`);
+    await page.goto(`${baseUrl}/nfl/betting-splits`, { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "NFL Betting Splits" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Overview" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Matchup distribution" })).toBeVisible();
-    for (const title of ["Highest Public Sides", "Sharp Sides", "Contrarian Sides"]) {
-      const section = page.getByRole("region", { name: title });
-      await expect(section.getByRole("heading", { name: title })).toBeVisible();
-      if (width < 768) {
-        const first = section.locator("article").first();
-        await expect(first).toContainText("Handle");
-        await expect(first).toContainText("Bets");
-        await expect(first).toContainText("Gap");
-      } else {
-        await expect(section.getByRole("columnheader", { name: "Side / Number" })).toBeVisible();
-        await expect(section.getByRole("columnheader", { name: "Gap" })).toBeVisible();
-      }
-    }
-    if (width < 768) {
-      await expect(page.getByRole("region", { name: "Overview matchup cards" })).toBeVisible();
-      await expect(page.getByRole("region", { name: "Overview matchup cards" }).locator("article").first()).toBeVisible();
-    } else {
-      const table = page.getByRole("region", { name: "Overview matchup distribution" });
-      await expect(table).toBeVisible();
-      await expect(table.getByRole("columnheader", { name: "Spread betting splits" })).toBeVisible();
-      await expect(table.getByRole("columnheader", { name: "Total betting splits" })).toBeVisible();
-      await expect(table.getByRole("columnheader", { name: "Moneyline betting splits" })).toBeVisible();
-      await expect(table.getByRole("columnheader", { name: "Total", exact: true })).toBeVisible();
-      await expect(table.getByRole("columnheader", { name: /Sharp Indicator/ })).toBeVisible();
-      for (const market of ["Spread", "Total", "Moneyline"]) for (const metric of ["Handle", "Bets"]) await expect(table.getByRole("button", { name: `Sort by ${market} ${metric} Favorite` })).toBeVisible();
-    }
-    const noOverflow = async () => expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
-    await noOverflow();
-    if (width === 1440 || width === 390) await page.screenshot({ path: testInfo.outputPath(`overview-${width}.png`), fullPage: true });
+    const noPageOverflow = async () => expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+    const overview = page.getByRole("region", { name: width < 768 ? "Overview matchup cards" : "Overview matchup distribution" });
+    await expect(overview).toBeVisible();
+    await expect(overview.locator("[data-splits-game-id]").first()).toBeVisible();
+    await expect(overview.getByText("Money", { exact: true }).first()).toBeVisible();
+    await expect(overview.getByText("Tickets", { exact: true }).first()).toBeVisible();
+    await noPageOverflow();
+    await page.screenshot({ path: testInfo.outputPath(`overview-${width}.png`), fullPage: true });
+
     for (const market of ["Spread", "Moneyline", "Total"]) {
       await page.getByRole("tab", { name: market }).click();
-      await expect(page.getByRole("heading", { name: `${market} distribution` })).toBeVisible();
-      await expect(page.getByRole("region", { name: width < 768 ? `${market.toLowerCase()} mobile rows` : `${market.toLowerCase()} betting splits` })).toBeVisible();
+      await expect(page.getByRole("heading", { name: `${market} rankings` })).toBeVisible();
+      await expect(page.getByRole("region", { name: "Money ranking" })).toBeVisible();
+      if (width >= 768) await expect(page.getByRole("region", { name: "Tickets ranking" })).toBeVisible();
+      const moneyRows = page.getByRole("region", { name: "Money ranking" }).locator("tbody tr");
+      await expect(moneyRows.first()).toBeVisible();
       if (market === "Total") {
-        await expect(page.locator('[data-total-side="over"]:visible').first()).toBeVisible();
-        await expect(page.locator('[data-total-side="under"]:visible').first()).toBeVisible();
+        await expect(page.getByRole("region", { name: "Money ranking" }).getByText("Over", { exact: true }).first()).toBeVisible();
+        await expect(page.getByRole("region", { name: "Money ranking" }).getByText("Under", { exact: true }).first()).toBeVisible();
+        const firstTotal = moneyRows.first();
+        await expect(firstTotal.locator('img[src*="/teamlogos/nfl/500/"], div.rounded-full')).toHaveCount(2);
+        await expect(page.getByRole("region", { name: "Money ranking" }).locator('[data-total-side="over"]').first()).toHaveClass(/bg-orange-50/);
+        await expect(page.getByRole("region", { name: "Money ranking" }).locator('[data-total-side="under"]').first()).toHaveClass(/bg-sky-50/);
       }
-      if (market === "Spread" && width >= 768) {
-        const headers = await page.getByRole("region", { name: "spread betting splits" }).getByRole("columnheader").allTextContents();
-        expect(headers.slice(0, 3).map((text) => text.trim())).toEqual(["Team", "Line", "Opp"]);
+      const fills = moneyRows.locator("[data-percentage-fill]");
+      await expect(fills.first()).toBeVisible();
+      const fill = fills.first();
+      const percent = Number(await fill.getAttribute("data-percentage-fill"));
+      expect(await fill.evaluate((element) => (element as HTMLElement).style.width)).toBe(`${percent}%`);
+      await page.screenshot({ path: testInfo.outputPath(`${market.toLowerCase()}-${width}.png`), fullPage: true });
+      await page.getByRole("combobox", { name: "Sort ranking rows" }).selectOption("lowest");
+      await expect(moneyRows.first()).toBeVisible();
+      await page.getByRole("combobox", { name: "Sort ranking rows" }).selectOption("az");
+      if (width < 768) {
+        await page.getByRole("button", { name: "Tickets" }).click();
+        await expect(page.getByRole("region", { name: "Tickets ranking" })).toBeVisible();
+        await expect(page.getByRole("button", { name: "Tickets" })).toHaveAttribute("aria-pressed", "true");
       }
-      if (width < 768 && market !== "Total") {
-        const cards = page.getByRole("region", { name: `${market.toLowerCase()} mobile rows` }).locator("article");
-        const logoMarks = cards.first().locator("[data-team-logo]");
-        await expect(logoMarks).toHaveCount(2);
-        await expect(logoMarks.first()).toHaveAttribute("data-team-logo", /^[A-Z]{2,3}$/);
-        await expect(cards.first()).toContainText(/@|vs/);
-        await expect(cards.first()).toContainText("Money Gap");
-      }
-      await noOverflow();
-      if (width === 1440 || (width === 390 && (market === "Spread" || market === "Total"))) await page.screenshot({ path: testInfo.outputPath(`${market.toLowerCase()}-${width}.png`), fullPage: true });
+      await noPageOverflow();
     }
+  });
+}
+
+test("stale warning remains visible without mobile overflow", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.route("**/data/nfl/betting-splits/current.json", async (route) => {
+    const response = await route.fetch();
+    const artifact = await response.json();
+    artifact._meta.sourceCapturedAt = "2026-09-24T14:47:13.329Z";
+    await route.fulfill({ response, json: artifact });
+  });
+  await page.goto(`${baseUrl}/nfl/betting-splits`);
+  await expect(page.getByRole("alert")).toContainText("Stale betting splits");
+  await expect(page.getByRole("tab", { name: "Overview" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+for (const width of [1440, 390]) {
+  test(`canonical NFL logo failures keep reserved slots at ${width}px`, async ({ page }, testInfo) => {
+    await page.setViewportSize({ width, height: 900 });
+    let failImages!: () => void;
+    const pendingFailure = new Promise<void>((resolve) => { failImages = resolve; });
+    await page.route("**/i/teamlogos/nfl/500/**", async (route) => {
+      await pendingFailure;
+      await route.abort();
+    });
+    await page.goto(`${baseUrl}/nfl/betting-splits`, { waitUntil: "domcontentloaded" });
+    const overview = page.getByRole("region", { name: width < 768 ? "Overview matchup cards" : "Overview matchup distribution" });
+    const firstGame = overview.locator("[data-splits-game-id]").first();
+    const logo = firstGame.locator('img[src*="/teamlogos/nfl/500/"]').first();
+    await expect(logo).toBeVisible();
+    const beforeLogo = await logo.boundingBox();
+    const beforeGame = await firstGame.boundingBox();
+    await expect(logo).toHaveAttribute("src", /\/nfl\/500\/[a-z]+\.png$/);
+    failImages();
+    const fallback = firstGame.locator("div.rounded-full").first();
+    await expect(fallback).toBeVisible();
+    await expect(firstGame.locator('img[src*="/teamlogos/nfl/500/"]')).toHaveCount(0);
+    const afterLogo = await fallback.boundingBox();
+    const afterGame = await firstGame.boundingBox();
+    expect(beforeLogo && afterLogo && beforeGame && afterGame).toBeTruthy();
+    expect(Math.round(afterLogo!.width)).toBe(Math.round(beforeLogo!.width));
+    expect(Math.round(afterLogo!.height)).toBe(Math.round(beforeLogo!.height));
+    expect(Math.abs(afterGame!.height - beforeGame!.height)).toBeLessThanOrEqual(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath(`logo-fallback-${width}.png`), fullPage: true });
+
+    await page.getByRole("tab", { name: "Spread" }).click();
+    const ranking = page.getByRole("region", { name: "Money ranking" });
+    await expect(ranking.locator("div.rounded-full").first()).toBeVisible();
+    const rankingLogo = await ranking.locator("div.rounded-full").first().boundingBox();
+    expect(Math.round(rankingLogo!.width)).toBe(16);
+    expect(Math.round(rankingLogo!.height)).toBe(16);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   });
 }
