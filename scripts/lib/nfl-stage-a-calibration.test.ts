@@ -14,6 +14,7 @@ import type { NflGameContextPacket } from "./nfl-full-game-context";
 import { buildStageAInitialPrompt as buildGrokStageA, type AnalysisGameFacts } from "./nfl-grok-analysis-adapter";
 import { validateJkbContextRefs } from "./nfl-grok-analysis-validator";
 import { buildStageAV2Prompt } from "./nfl-handicap-v2-prompts";
+import { buildEvidenceAliasMap } from "./nfl-handicap-v2-evidence-aliases";
 import { buildPriorSeasonBaseline } from "./nfl-prior-season-baseline";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -26,8 +27,8 @@ const GAME: AnalysisGameFacts = { gameId: GAME_ID, homeTeamFull: PACKET.identity
 
 const DATA = buildBlindContextSummaryLines(BLIND).join("\n");
 const PROMPTS = {
-  v2Grok: buildStageAV2Prompt({ provider: "grok", game: GAME, packet: PACKET, evidenceLines: [] }),
-  v2Chatgpt: buildStageAV2Prompt({ provider: "chatgpt", game: GAME, packet: PACKET, evidenceLines: [] }),
+  v2Grok: buildStageAV2Prompt({ provider: "grok", game: GAME, packet: PACKET, evidenceLines: [], evidenceAliases: buildEvidenceAliasMap([], "grok") }),
+  v2Chatgpt: buildStageAV2Prompt({ provider: "chatgpt", game: GAME, packet: PACKET, evidenceLines: [], evidenceAliases: buildEvidenceAliasMap([], "chatgpt") }),
   v1Grok: buildGrokStageA(GAME, PACKET, []),
   v1Chatgpt: buildChatgptStageA(GAME, PACKET, []),
 };

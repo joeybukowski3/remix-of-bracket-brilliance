@@ -430,3 +430,72 @@ describe.skipIf(!hasBash)("the slate step reports a failed run instead of losing
     expect(run.summary).toContain("V2 SLATE LIVE SUMMARY");
   }, SPAWN_TIMEOUT_MS);
 });
+
+/* -------------------------------------------------------------------------- */
+/* retry_failed: manual-only recovery control                                 */
+/* -------------------------------------------------------------------------- */
+
+describe("retry_failed workflow input", () => {
+  it("is a boolean, optional, default false, on workflow_dispatch only", () => {
+    expect(workflow.on.workflow_dispatch.inputs.retry_failed).toMatchObject({ type: "boolean", required: false, default: false });
+    expect(workflow.on.workflow_run).not.toHaveProperty("inputs");
+    expect(workflow.on.schedule).toEqual([{ cron: "17 13 * 1,2,9,10,11,12 0,1,4,6", timezone: "America/New_York" }]);
+  });
+
+  it("is read from the dispatch input only -- no repository variable, secret or other context can switch it on", () => {
+    expect(step("Plan and run the v2 slate").env.INPUT_RETRY_FAILED).toBe("${{ inputs.retry_failed }}");
+    expect(workflowText).not.toMatch(/vars\.[A-Z_]*RETRY/);
+    expect(step("Plan and run the v2 slate").run.match(/--retry-failed/g)).toHaveLength(1);
+  });
+});
+
+describe.skipIf(!hasBash)("retry_failed reaches the slate CLI only for an explicit manual dispatch", () => {
+  /** Runs the real slate step with a stand-in `npm` that records the arguments it receives, one per line. */
+  function slateArgs(env: Record<string, string>): string[] {
+    const dir = mkdtempSync(join(tmpdir(), "nfl-ai-v2-retry-"));
+    try {
+      const bin = join(dir, "bin");
+      mkdirSync(bin);
+      writeFileSync(join(bin, "npm"), '#!/usr/bin/env bash\nfor a in "$@"; do echo "$a"; done >> "$ARGS_FILE"\n', { mode: 0o755 });
+      const argsFile = join(dir, "args.txt");
+      writeFileSync(argsFile, "");
+      const summaryFile = join(dir, "summary.md");
+      writeFileSync(summaryFile, "");
+      const result = spawnSync("bash", ["-eo", "pipefail", "-c", step("Plan and run the v2 slate").run], {
+        cwd: dir,
+        encoding: "utf8",
+        env: { ...process.env, PATH: `${bin}${process.platform === "win32" ? ";" : ":"}${process.env.PATH}`, ARGS_FILE: argsFile, EVENT_NAME: "schedule", DRY_RUN: "", INPUT_WEEK: "", INPUT_GAME: "2026_04_PIT_CLE", INPUT_PROVIDER: "", INPUT_MAX_JOBS: "", VAR_MAX_JOBS: "", INPUT_RETRY_FAILED: "", GITHUB_STEP_SUMMARY: summaryFile, ...env },
+      });
+      expect(result.status, result.stderr).toBe(0);
+      return readFileSync(argsFile, "utf8").split("\n").filter(Boolean);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+  const count = (args: string[]) => args.filter((a) => a === "--retry-failed").length;
+
+  it("1. manual dispatch with retry_failed=false does not pass it (live or dry run)", () => {
+    expect(count(slateArgs({ EVENT_NAME: "workflow_dispatch", DRY_RUN: "false", INPUT_RETRY_FAILED: "false" }))).toBe(0);
+    expect(count(slateArgs({ EVENT_NAME: "workflow_dispatch", DRY_RUN: "true", INPUT_RETRY_FAILED: "false" }))).toBe(0);
+    expect(count(slateArgs({ EVENT_NAME: "workflow_dispatch", DRY_RUN: "false", INPUT_RETRY_FAILED: "" }))).toBe(0);
+  }, SPAWN_TIMEOUT_MS);
+
+  it("2. manual dispatch with retry_failed=true passes it exactly once, alongside the other flags", () => {
+    const live = slateArgs({ EVENT_NAME: "workflow_dispatch", DRY_RUN: "false", INPUT_RETRY_FAILED: "true", INPUT_MAX_JOBS: "2" });
+    expect(count(live)).toBe(1);
+    expect(live).toEqual(expect.arrayContaining(["--game=2026_04_PIT_CLE", "--max-jobs=2", "--live"]));
+    const dry = slateArgs({ EVENT_NAME: "workflow_dispatch", DRY_RUN: "true", INPUT_RETRY_FAILED: "true" });
+    expect(count(dry)).toBe(1);
+    expect(dry).toContain("--dry-run");
+  }, SPAWN_TIMEOUT_MS);
+
+  it("3. a scheduled run never passes it -- even if the input variable were somehow populated", () => {
+    expect(count(slateArgs({ EVENT_NAME: "schedule" }))).toBe(0);
+    expect(count(slateArgs({ EVENT_NAME: "schedule", INPUT_RETRY_FAILED: "true" }))).toBe(0);
+  }, SPAWN_TIMEOUT_MS);
+
+  it("4. a workflow_run (chained) run never passes it -- even if the input variable were somehow populated", () => {
+    expect(count(slateArgs({ EVENT_NAME: "workflow_run" }))).toBe(0);
+    expect(count(slateArgs({ EVENT_NAME: "workflow_run", INPUT_RETRY_FAILED: "true" }))).toBe(0);
+  }, SPAWN_TIMEOUT_MS);
+});

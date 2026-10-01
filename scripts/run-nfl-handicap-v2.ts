@@ -37,6 +37,7 @@ import { footballContextHash, type NflGameContextPacket, type TeamsArtifact } fr
 import { loadFreshGameContextPacket } from "./lib/nfl-full-game-context-loader";
 import { validateGameContextPacket } from "./lib/nfl-game-context-validators";
 import { buildCitableEvidenceLines as buildGrokEvidenceLines, runGrokHandicapV2Stage } from "./lib/nfl-grok-analysis-adapter";
+import { buildEvidenceAliasMap, resolveStageAEvidenceAliases, resolveStageBEvidenceAliases, type EvidenceAliasMap } from "./lib/nfl-handicap-v2-evidence-aliases";
 import { buildInputFingerprint, type HandicapV2InputFingerprint, loadHandicapV2MarketContext, recordFingerprint, stageAEvidenceHash } from "./lib/nfl-handicap-v2-inputs";
 import { emitTelemetryMarker, type AnyProviderTelemetry } from "./lib/nfl-ai-telemetry";
 import { formatFailureMarker, providerCallFailure, validationFailure, type V2HandicapFailure } from "./lib/nfl-ai-v2-failure";
@@ -179,7 +180,9 @@ async function main(): Promise<void> {
   const authority = resolveEvidenceAuthority(allEvidence);
   const blindEvidence = filterEvidenceRecordsForBlindStageA(allEvidence);
   const stageBEvidence = filterEvidenceRecordsForStageBV2(allEvidence);
-  console.log(`Evidence: ${allEvidence.length} total, ${blindEvidence.length} citable in Stage A (market/betting-opinion records excluded), ${stageBEvidence.length} citable in Stage B.`);
+  // One alias map per run, over the full ordered citable set: E1.. means the same record in Stage A and Stage B.
+  const evidenceAliases = buildEvidenceAliasMap(allEvidence, provider);
+  console.log(`Evidence: ${allEvidence.length} total, ${blindEvidence.length} citable in Stage A (market/betting-opinion records excluded), ${stageBEvidence.length} citable in Stage B; ${evidenceAliases.entries.length} short references (E1..) assigned.`);
 
   // Market context: the exact line JKB displays, plus the range across the other books.
   const market = loadHandicapV2MarketContext(ROOT, packet, args.gameId);
@@ -211,7 +214,7 @@ async function main(): Promise<void> {
     }
     const lockedStageA = lockedStageAFromRecord(prior);
     const repriceBEvidenceLines = bindings.buildEvidenceLines(stageBEvidence, authority);
-    const repricePrompt = buildStageBV2Prompt({ provider, game, packet, lockedStageA, market, evidenceLines: repriceBEvidenceLines });
+    const repricePrompt = buildStageBV2Prompt({ provider, game, packet, lockedStageA, market, evidenceLines: repriceBEvidenceLines, evidenceAliases });
     if (!args.live) {
       banner(`DRY RUN REPRICING (${provider}, ${game.gameId}) -- no provider call is made and nothing is written`);
       console.log(repricePrompt);
@@ -226,11 +229,11 @@ To run for real: npx tsx scripts/run-nfl-handicap-v2.ts --provider=${provider} -
       return;
     }
     banner(`STAGE B REPRICING (${provider}) -- locked Stage A from ${prior.stageAGeneratedAt}`);
-    await runStageBAndWrite({ provider, bindings, apiKey: repriceKey, game, packet, lockedStageA, market, stageBEvidenceLines: repriceBEvidenceLines, allEvidence, contextHash, season, week, inputs, cliMode: "repricing" });
+    await runStageBAndWrite({ provider, bindings, apiKey: repriceKey, game, packet, lockedStageA, market, stageBEvidenceLines: repriceBEvidenceLines, allEvidence, evidenceAliases, contextHash, season, week, inputs, cliMode: "repricing" });
     return;
   }
 
-  const stageAPrompt = buildStageAV2Prompt({ provider, game, packet, evidenceLines: bindings.buildEvidenceLines(blindEvidence, authority) });
+  const stageAPrompt = buildStageAV2Prompt({ provider, game, packet, evidenceLines: bindings.buildEvidenceLines(blindEvidence, authority), evidenceAliases });
   const audit = auditStageAPromptForMarketPricing(stageAPrompt, sanitizeGameContextPacketForBlindStageA(packet), blindEvidence);
   if (!audit.pass) {
     for (const f of audit.findings) console.error(`  [Stage A audit] rule=${f.matched} class=${f.sourceClass} snippet="${f.snippet}"`);
@@ -247,7 +250,7 @@ To run for real: npx tsx scripts/run-nfl-handicap-v2.ts --provider=${provider} -
     banner("STAGE A PROMPT");
     console.log(stageAPrompt);
     banner("STAGE B PROMPT (built around a placeholder Stage A)");
-    console.log(buildStageBV2Prompt({ provider, game, packet, lockedStageA: placeholderStageA(packet, game, contextHash, market.total.line), market, evidenceLines: stageBEvidenceLines }));
+    console.log(buildStageBV2Prompt({ provider, game, packet, lockedStageA: placeholderStageA(packet, game, contextHash, market.total.line), market, evidenceLines: stageBEvidenceLines, evidenceAliases }));
     banner("SUMMARY");
     console.log(`Stage A prompt: ${stageAPrompt.length} chars; market: ${market.sideLabels.home} / ${market.sideLabels.away}, total ${market.total.line}; key numbers material: ${market.keyNumbers.material}`);
     console.log(`To run for real: npx tsx scripts/run-nfl-handicap-v2.ts --provider=${provider} --game=${game.gameId} --live   (needs ${bindings.apiKeyHint}; two billed calls)`);
@@ -271,7 +274,9 @@ To run for real: npx tsx scripts/run-nfl-handicap-v2.ts --provider=${provider} -
     return;
   }
   emitTelemetryMarker({ provider, gameId: game.gameId, cliMode: "initial", stage: "A", telemetry: stageAResult.telemetry as AnyProviderTelemetry });
-  const stageA = validateStageAV2(stageAResult.raw, { model: provider, gameId: game.gameId, generatedAt: new Date().toISOString(), contextHash, homeTeam: game.homeTeam, awayTeam: game.awayTeam, contextPacket: packet, allEvidenceRecords: allEvidence });
+  // Aliases -> canonical ids FIRST (unknown reference = failure); the strict canonical validator then runs unchanged on the result.
+  const resolvedA = resolveStageAEvidenceAliases(stageAResult.raw, evidenceAliases);
+  const stageA = !resolvedA.ok ? { ok: false as const, reasons: resolvedA.reasons } : validateStageAV2(resolvedA.raw, { model: provider, gameId: game.gameId, generatedAt: new Date().toISOString(), contextHash, homeTeam: game.homeTeam, awayTeam: game.awayTeam, contextPacket: packet, allEvidenceRecords: allEvidence });
   if (!stageA.ok) {
     reportFailure(validationFailure("A", stageA.reasons));
     console.error("Stage A FAILED validation:");
@@ -283,7 +288,7 @@ To run for real: npx tsx scripts/run-nfl-handicap-v2.ts --provider=${provider} -
   console.log(`LOCKED: ${stageA.analysis.fairSpread.team.toUpperCase()} ${stageA.analysis.fairSpread.line}, total ${stageA.analysis.projectedTotal}, uncertainty ${stageA.analysis.uncertainty}`);
 
   banner(`STAGE B (${provider}) -- market decision and write-up`);
-  await runStageBAndWrite({ provider, bindings, apiKey, game, packet, lockedStageA: stageA.analysis, market, stageBEvidenceLines, allEvidence, contextHash, season, week, inputs, cliMode: "initial" });
+  await runStageBAndWrite({ provider, bindings, apiKey, game, packet, lockedStageA: stageA.analysis, market, stageBEvidenceLines, allEvidence, evidenceAliases, contextHash, season, week, inputs, cliMode: "initial" });
 }
 
 interface StageBRunInput {
@@ -296,6 +301,7 @@ interface StageBRunInput {
   market: HandicapV2MarketContext;
   stageBEvidenceLines: string[];
   allEvidence: EvidenceRecord[];
+  evidenceAliases: EvidenceAliasMap;
   contextHash: string;
   season: number;
   week: number;
@@ -306,7 +312,7 @@ interface StageBRunInput {
 /** Stage B -> validate -> write-once record. Shared by the full run and the market-only repricing run. */
 async function runStageBAndWrite(run: StageBRunInput): Promise<void> {
   const { provider, game, market } = run;
-  const stageBPrompt = buildStageBV2Prompt({ provider, game, packet: run.packet, lockedStageA: run.lockedStageA, market, evidenceLines: run.stageBEvidenceLines });
+  const stageBPrompt = buildStageBV2Prompt({ provider, game, packet: run.packet, lockedStageA: run.lockedStageA, market, evidenceLines: run.stageBEvidenceLines, evidenceAliases: run.evidenceAliases });
   const stageBResult = await run.bindings.runStage({ stage: "B", prompt: stageBPrompt, apiKey: run.apiKey });
   console.log(JSON.stringify(stageBResult.telemetry, null, 2));
   if (!stageBResult.ok) {
@@ -316,7 +322,8 @@ async function runStageBAndWrite(run: StageBRunInput): Promise<void> {
     return;
   }
   emitTelemetryMarker({ provider, gameId: game.gameId, cliMode: run.cliMode, stage: "B", telemetry: stageBResult.telemetry as AnyProviderTelemetry });
-  const stageB = validateStageBV2(stageBResult.raw, { model: provider, gameId: game.gameId, generatedAt: new Date().toISOString(), contextHash: run.contextHash, game, lockedStageA: run.lockedStageA, market, contextPacket: run.packet, allEvidenceRecords: run.allEvidence });
+  const resolvedB = resolveStageBEvidenceAliases(stageBResult.raw, run.evidenceAliases);
+  const stageB = !resolvedB.ok ? { ok: false as const, reasons: resolvedB.reasons } : validateStageBV2(resolvedB.raw, { model: provider, gameId: game.gameId, generatedAt: new Date().toISOString(), contextHash: run.contextHash, game, lockedStageA: run.lockedStageA, market, contextPacket: run.packet, allEvidenceRecords: run.allEvidence });
   if (!stageB.ok) {
     reportFailure(validationFailure("B", stageB.reasons));
     console.error("Stage B FAILED validation:");
