@@ -42,6 +42,15 @@ run-name: NFL AI Handicap v2 • ${{ github.event_name }} • ${{ github.ref_nam
 # responses and diagnostics (research/**), the game-context cache, and the v1
 # snapshot lineage (rebuilt for free by the bootstrap when research needs it).
 #
+# PERSISTING STATE IS NOT THE SAME AS SUCCEEDING
+#   Whatever normalized state a run produced is committed even when the slate
+#   reported failures: paid research that succeeded must not be bought twice
+#   (evidence.live-test.json), and a failed paid attempt must be remembered so
+#   the next run does not repeat it (v2-attempts.json). The run is still marked
+#   FAILED by the last step. A handicap that did not validate has no record and
+#   no public artifact, so nothing invalid is ever published; the Pages deploy
+#   runs only when the commit actually changed public/.
+#
 # ROLLOUT
 #   max_jobs (manual input) and the NFL_AI_V2_MAX_JOBS repository variable
 #   (scheduled/chained runs) cap how many paid provider/game jobs one run may
@@ -105,6 +114,7 @@ jobs:
         :(glob)data/nfl/analysis/*/*/*/*/v2-attempts.json
     outputs:
       deploy_ref: ${{ steps.commit.outputs.pushed_commit }}
+      public_changed: ${{ steps.commit.outputs.public_changed }}
     steps:
       - name: Check out main
         uses: actions/checkout@v4
@@ -150,19 +160,26 @@ jobs:
           if [ "${INPUT_PROVIDER:-both}" != "both" ] && [ -n "${INPUT_PROVIDER:-}" ]; then args+=("--provider=${INPUT_PROVIDER}"); fi
           max_jobs="${INPUT_MAX_JOBS:-${VAR_MAX_JOBS:-}}"
           if [ -n "$max_jobs" ]; then args+=("--max-jobs=${max_jobs}"); fi
+          # Capture the slate's exit status instead of letting `set -e` end the script: the report must reach the
+          # step summary precisely when the slate FAILED, and the status is re-raised afterwards.
+          status=0
           if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "$DRY_RUN" != "false" ]; then
-            npm run nfl:ai-v2-slate -- "${args[@]}" --dry-run | tee slate-report.txt
+            npm run nfl:ai-v2-slate -- "${args[@]}" --dry-run | tee slate-report.txt || status=$?
           else
-            npm run nfl:ai-v2-slate -- "${args[@]}" --live | tee slate-report.txt
+            npm run nfl:ai-v2-slate -- "${args[@]}" --live | tee slate-report.txt || status=$?
           fi
           { echo '```'; cat slate-report.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
 
       - name: Detect generated artifact changes
         id: changes
         if: ${{ !cancelled() && (github.event_name != 'workflow_dispatch' || inputs.dry_run == false) }}
         shell: bash
         run: |
-          mapfile -t specs <<< "$GENERATED_PATHSPECS"
+          # GENERATED_PATHSPECS is a YAML block scalar that ends in a newline; read it without the blank trailing
+          # entry, because git rejects an empty pathspec ("fatal: empty string is not a valid pathspec") and an
+          # empty status would then read as "nothing changed" and silently skip every commit.
+          mapfile -t specs < <(printf '%s\n' "$GENERATED_PATHSPECS" | sed '/^[[:space:]]*$/d')
           if [ -z "$(git status --porcelain -- "${specs[@]}")" ]; then
             echo "No AI handicap v2 artifact changes."
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -179,12 +196,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mapfile -t specs <<< "$GENERATED_PATHSPECS"
+          mapfile -t specs < <(printf '%s\n' "$GENERATED_PATHSPECS" | sed '/^[[:space:]]*$/d')
           for spec in "${specs[@]}"; do
             if [ -n "$(git ls-files --modified --others --exclude-standard -- "$spec")" ]; then
               git add -- "$spec"
             fi
           done
+          # Belt and braces behind the pathspec whitelist: raw provider output and run diagnostics must never be staged.
+          if git diff --cached --name-only | grep -E '(^|/)research/|raw[-_.]|[.](txt|log)$'; then
+            echo "::error::A raw/diagnostic path was staged; refusing to commit it." >&2
+            git reset --quiet
+            exit 1
+          fi
 
       - name: Commit and push generated AI handicap v2 artifacts
         id: commit
@@ -196,7 +219,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           if git diff --cached --quiet; then
-            echo "No staged AI handicap v2 changes � not creating an empty commit."
+            echo "No staged AI handicap v2 changes -- not creating an empty commit."
             exit 0
           fi
 
@@ -223,17 +246,23 @@ jobs:
 
           echo "AI handicap v2 artifacts pushed to main."
           echo "pushed_commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          # A commit that only carries planner state (evidence, attempt ledger) changes nothing on the site.
+          if git diff-tree --no-commit-id --name-only -r HEAD -- public/ | grep -q .; then
+            echo "public_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "public_changed=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Fail the run if the slate reported failures
         if: steps.slate.outcome == 'failure'
         run: |
-          echo "::error::The v2 slate reported failures (see the report above). Games that succeeded were committed."
+          echo "::error::The v2 slate reported failures (see the step summary). Normalized state that succeeded (evidence, attempt ledger, valid records) was committed; nothing invalid was published."
           exit 1
 
   deploy-pages:
     name: Deploy updated AI handicap artifacts to GitHub Pages
     needs: run-slate
-    if: ${{ !cancelled() && needs.run-slate.outputs.deploy_ref != '' }}
+    if: ${{ !cancelled() && needs.run-slate.outputs.deploy_ref != '' && needs.run-slate.outputs.public_changed == 'true' }}
     permissions:
       contents: read
       pages: write

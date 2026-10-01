@@ -20,6 +20,7 @@ import { rebuildAndPersistGameContext } from "./nfl-game-context-preflight";
 import { executeResearchStage, runScript, spawnTsxCommandRunner, writePresentation, type CommandRunner, type StageOutcome } from "./nfl-ai-slate-executor";
 import { parseTelemetryMarkers } from "./nfl-ai-telemetry";
 import { readAttemptLedger, truncateError, writeAttemptLedger } from "./nfl-ai-v2-attempt-ledger";
+import { parseHandicapFailure } from "./nfl-ai-v2-failure";
 import { gatherProviderFacts, handicapInputKey, isPresentationStale, planProviderV2, type V2GameFacts, type V2GamePlan, type V2HandicapStep, type V2PlanOptions, type V2ProviderFacts, type V2ProviderPlan } from "./nfl-ai-v2-slate-plan";
 import type { EvidenceModel } from "./nfl-evidence-types";
 
@@ -82,7 +83,12 @@ function runHandicap(runCommand: CommandRunner, live: boolean, gameId: string, p
   const mode = step === "repricing" ? "repricing" : "full";
   if (!live) return { stage: "handicap", provider, action: step, ran: false, ok: true, detail: `would run (dry-run): ${HANDICAP_SCRIPT} --provider=${provider} --game=${gameId} --mode=${mode} --live` };
   const result = runScript(runCommand, HANDICAP_SCRIPT, [`--provider=${provider}`, `--game=${gameId}`, `--mode=${mode}`, "--live"]);
-  return { stage: "handicap", provider, action: step, ran: true, ok: result.ok, detail: result.ok ? "handicap pass completed" : result.stderr, telemetry: parseTelemetryMarkers(result.stdout) };
+  const telemetry = parseTelemetryMarkers(result.stdout);
+  if (result.ok) return { stage: "handicap", provider, action: step, ran: true, ok: true, detail: "handicap pass completed", telemetry };
+  // The child's stderr ends with the model's raw JSON on a validation failure. Only the classified, bounded diagnostic
+  // leaves this function: it is what the attempt ledger (committed) and the run summary (logged) carry.
+  const failure = parseHandicapFailure(result.stderr);
+  return { stage: "handicap", provider, action: step, ran: true, ok: false, detail: failure.summary, failure: { kind: failure.kind, stage: failure.stage }, telemetry };
 }
 
 function recordFailures(options: V2ExecuteOptions, game: V2GameFacts, provider: EvidenceModel, research: StageOutcome, handicap: StageOutcome, attempt: { key: string; action: string } | null): void {
@@ -96,7 +102,7 @@ function recordFailures(options: V2ExecuteOptions, game: V2GameFacts, provider: 
   }
   if (handicap.ran) {
     if (handicap.ok) delete next.handicap;
-    else if (attempt) next.handicap = { failedAt: now, action: attempt.action, inputKey: attempt.key, error: truncateError(handicap.detail) };
+    else if (attempt) next.handicap = { failedAt: now, action: attempt.action, inputKey: attempt.key, kind: handicap.failure?.kind ?? "unknown", stage: handicap.failure?.stage ?? null, error: truncateError(handicap.detail) };
   }
   if (JSON.stringify(next) !== JSON.stringify(ledger)) writeAttemptLedger(options.root, game.season, game.week, game.gameId, provider, next);
 }

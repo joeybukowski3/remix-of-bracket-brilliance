@@ -39,6 +39,7 @@ import { validateGameContextPacket } from "./lib/nfl-game-context-validators";
 import { buildCitableEvidenceLines as buildGrokEvidenceLines, runGrokHandicapV2Stage } from "./lib/nfl-grok-analysis-adapter";
 import { buildInputFingerprint, type HandicapV2InputFingerprint, loadHandicapV2MarketContext, recordFingerprint, stageAEvidenceHash } from "./lib/nfl-handicap-v2-inputs";
 import { emitTelemetryMarker, type AnyProviderTelemetry } from "./lib/nfl-ai-telemetry";
+import { formatFailureMarker, providerCallFailure, validationFailure, type V2HandicapFailure } from "./lib/nfl-ai-v2-failure";
 import type { HandicapV2MarketContext } from "./lib/nfl-handicap-v2-market";
 import { buildStageAV2Prompt, buildStageBV2Prompt, type HandicapV2GameFacts } from "./lib/nfl-handicap-v2-prompts";
 import { buildHandicapV2Record, lockedStageAFromRecord, writeHandicapV2Record } from "./lib/nfl-handicap-v2-record";
@@ -81,6 +82,11 @@ function readJson<T>(path: string): T | null {
   } catch {
     return null;
   }
+}
+
+/** Machine-readable failure line for the slate executor (nfl-ai-v2-failure.ts). Carries a transport error or validator reasons only -- never the model's output, which is printed separately for an operator and never stored. */
+function reportFailure(failure: V2HandicapFailure): void {
+  console.error(formatFailureMarker(failure));
 }
 
 function banner(title: string): void {
@@ -259,6 +265,7 @@ To run for real: npx tsx scripts/run-nfl-handicap-v2.ts --provider=${provider} -
   const stageAResult = await bindings.runStage({ stage: "A", prompt: stageAPrompt, apiKey });
   console.log(JSON.stringify(stageAResult.telemetry, null, 2));
   if (!stageAResult.ok) {
+    reportFailure(providerCallFailure("A", stageAResult.error));
     console.error(`Stage A FAILED: ${stageAResult.error}`);
     process.exitCode = 1;
     return;
@@ -266,6 +273,7 @@ To run for real: npx tsx scripts/run-nfl-handicap-v2.ts --provider=${provider} -
   emitTelemetryMarker({ provider, gameId: game.gameId, cliMode: "initial", stage: "A", telemetry: stageAResult.telemetry as AnyProviderTelemetry });
   const stageA = validateStageAV2(stageAResult.raw, { model: provider, gameId: game.gameId, generatedAt: new Date().toISOString(), contextHash, homeTeam: game.homeTeam, awayTeam: game.awayTeam, contextPacket: packet, allEvidenceRecords: allEvidence });
   if (!stageA.ok) {
+    reportFailure(validationFailure("A", stageA.reasons));
     console.error("Stage A FAILED validation:");
     for (const reason of stageA.reasons) console.error(`  - ${reason}`);
     console.error("Raw Stage A output:", JSON.stringify(stageAResult.raw, null, 2));
@@ -302,6 +310,7 @@ async function runStageBAndWrite(run: StageBRunInput): Promise<void> {
   const stageBResult = await run.bindings.runStage({ stage: "B", prompt: stageBPrompt, apiKey: run.apiKey });
   console.log(JSON.stringify(stageBResult.telemetry, null, 2));
   if (!stageBResult.ok) {
+    reportFailure(providerCallFailure("B", stageBResult.error));
     console.error(`Stage B FAILED: ${stageBResult.error}`);
     process.exitCode = 1;
     return;
@@ -309,6 +318,7 @@ async function runStageBAndWrite(run: StageBRunInput): Promise<void> {
   emitTelemetryMarker({ provider, gameId: game.gameId, cliMode: run.cliMode, stage: "B", telemetry: stageBResult.telemetry as AnyProviderTelemetry });
   const stageB = validateStageBV2(stageBResult.raw, { model: provider, gameId: game.gameId, generatedAt: new Date().toISOString(), contextHash: run.contextHash, game, lockedStageA: run.lockedStageA, market, contextPacket: run.packet, allEvidenceRecords: run.allEvidence });
   if (!stageB.ok) {
+    reportFailure(validationFailure("B", stageB.reasons));
     console.error("Stage B FAILED validation:");
     for (const reason of stageB.reasons) console.error(`  - ${reason}`);
     console.error("Raw Stage B output:", JSON.stringify(stageBResult.raw, null, 2));
