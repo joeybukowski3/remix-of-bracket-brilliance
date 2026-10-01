@@ -15,7 +15,8 @@ import { filterEvidenceRecordsForBlindStageA, filterEvidenceRecordsForStageBV2 }
 import { attemptLedgerPath, readAttemptLedger } from "./nfl-ai-v2-attempt-ledger";
 import { classifyProviderError, formatFailureMarker, parseHandicapFailure, providerCallFailure, validationFailure } from "./nfl-ai-v2-failure";
 import { executeGamePlanV2 } from "./nfl-ai-v2-slate-executor";
-import { planGameV2, planProviderV2 } from "./nfl-ai-v2-slate-plan";
+import { handicapInputKey, planGameV2, planProviderV2 } from "./nfl-ai-v2-slate-plan";
+import { parseSlateV2Args } from "../run-nfl-ai-handicap-v2-slate";
 import { GAME_ID, gameFacts, market, providerFacts } from "./nfl-ai-v2-slate.fixtures";
 import type { CommandOutcome, CommandRunner } from "./nfl-ai-slate-executor";
 import { buildCitableEvidenceLines as chatgptEvidenceLines, runChatGptHandicapV2Stage } from "./nfl-chatgpt-analysis-adapter";
@@ -23,7 +24,8 @@ import { resolveEvidenceAuthority } from "./nfl-evidence-store";
 import type { EvidenceModel } from "./nfl-evidence-types";
 import { buildCitableEvidenceLines as grokEvidenceLines, resolveGrokHandicapV2Config, runGrokHandicapV2Stage } from "./nfl-grok-analysis-adapter";
 import { GROK_HANDICAP_V2_REQUEST_TIMEOUT_MS, resolveGrokAnalysisConfig } from "./nfl-grok-analysis-config";
-import { EVIDENCE_ID_RULES, buildStageAV2Prompt, buildStageBV2Prompt } from "./nfl-handicap-v2-prompts";
+import { buildEvidenceAliasMap } from "./nfl-handicap-v2-evidence-aliases";
+import { EVIDENCE_REF_RULES, buildStageAV2Prompt, buildStageBV2Prompt } from "./nfl-handicap-v2-prompts";
 import { HANDICAP_V2_OUTPUT_TOKENS } from "./nfl-handicap-v2-types";
 import { validateStageAV2, validateStageBV2, type StageAV2ValidationContext, type StageBV2ValidationContext } from "./nfl-handicap-v2-validator";
 import { V2_CONTEXT_HASH, V2_EVIDENCE, V2_FACT_REFS, V2_GAME, V2_GAME_ID, V2_MARKET_MINUS_7, V2_PACKET, V2_STAGE_A_TIME, V2_STAGE_B_TIME, stageARaw, stageBRaw, trustedStageA } from "./__fixtures__/nfl-handicap-v2-fixtures";
@@ -46,7 +48,7 @@ function evidenceLines(model: EvidenceModel, records = V2_EVIDENCE[model].all): 
 /** The real id with its last character dropped: the exact failure mode of the production run (a 15-hex id where 16 are required). */
 const nearValid = (id: string): string => id.slice(0, -1);
 
-describe("1. evidence refs: the validator stays strict, the prompt makes exact copying easy", () => {
+describe("1. evidence refs: the canonical validator stays strict; the model cites short aliases", () => {
   describe.each(PROVIDERS)("(%s)", (model) => {
     const injuryId = () => V2_EVIDENCE[model].injury.evidenceId;
     const withDriverRefs = (evidenceRefs: string[]) => {
@@ -97,46 +99,41 @@ describe("1. evidence refs: the validator stays strict, the prompt makes exact c
       expect(result.ok).toBe(false);
     });
 
-    const stageA = () => buildStageAV2Prompt({ provider: model, game: V2_GAME, packet: V2_PACKET, evidenceLines: evidenceLines(model, filterEvidenceRecordsForBlindStageA(V2_EVIDENCE[model].all)) });
-    const stageB = () => buildStageBV2Prompt({ provider: model, game: V2_GAME, packet: V2_PACKET, lockedStageA: trustedStageA(model), market: V2_MARKET_MINUS_7, evidenceLines: evidenceLines(model, filterEvidenceRecordsForStageBV2(V2_EVIDENCE[model].all)) });
+    // The model-facing evidence is aliased (E1..); the validator-level tests above and the alias suite (nfl-ai-v2-evidence-aliases.test.ts) cover the mapping itself.
+    const aliases = () => buildEvidenceAliasMap(V2_EVIDENCE[model].all, model);
+    const stageA = () => buildStageAV2Prompt({ provider: model, game: V2_GAME, packet: V2_PACKET, evidenceLines: evidenceLines(model, filterEvidenceRecordsForBlindStageA(V2_EVIDENCE[model].all)), evidenceAliases: aliases() });
+    const stageB = () => buildStageBV2Prompt({ provider: model, game: V2_GAME, packet: V2_PACKET, lockedStageA: trustedStageA(model), market: V2_MARKET_MINUS_7, evidenceLines: evidenceLines(model, filterEvidenceRecordsForStageBV2(V2_EVIDENCE[model].all)), evidenceAliases: aliases() });
 
-    it.each([["Stage A", stageA], ["Stage B", stageB]])("%s prompt says ids must be copied verbatim and never constructed", (_name, build) => {
+    it.each([["Stage A", stageA], ["Stage B", stageB]])("%s prompt tells the model to cite only the printed short references, smallest set, [] when unsupported", (_name, build) => {
       const prompt = build();
-      for (const rule of EVIDENCE_ID_RULES) expect(prompt).toContain(rule);
-      expect(prompt).toMatch(/copy each id EXACTLY, verbatim/);
-      expect(prompt).toMatch(/Never construct, shorten, complete, infer or synthesize an id/);
+      for (const rule of EVIDENCE_REF_RULES) expect(prompt).toContain(rule);
+      expect(prompt).toMatch(/only the short references \(E1, E2, \.\.\.\) printed in the evidence list, exactly as printed/);
+      expect(prompt).toMatch(/Never invent, combine, renumber or extend a reference/);
       expect(prompt).toMatch(/smallest set of evidence records/);
       expect(prompt).toMatch(/leave evidenceRefs \/ evidenceRefsUsed empty \(\[\]\)/);
     });
 
-    it.each([["Stage A", stageA], ["Stage B", stageB]])("%s prompt lists every citable id alone on its own line, exactly as it is in the evidence set", (_name, build) => {
+    it.each([["Stage A", stageA], ["Stage B", stageB]])("%s prompt never shows an opaque canonical evidence id, so none has to be copied", (_name, build) => {
       const prompt = build();
-      const lines = prompt.split("\n");
-      const allowed = lines.slice(lines.findIndex((l) => l.startsWith("Allowed evidence ids")) + 1).filter((l) => l.startsWith("  ")).map((l) => l.trim());
-      const expected = [V2_EVIDENCE[model].injury.evidenceId, V2_EVIDENCE[model].weather.evidenceId];
-      expect(allowed.slice(0, expected.length)).toEqual(expected);
-      expect(lines).toContain(`  ${V2_EVIDENCE[model].injury.evidenceId}`);
-      // the betting-opinion record is not citable, so it must not be offered
-      expect(prompt).not.toContain(V2_EVIDENCE[model].bettingOpinion.evidenceId);
-    });
-
-    it("no longer shows a near-valid example id the model could imitate or shorten", () => {
-      for (const prompt of [stageA(), stageB()]) {
-        expect(prompt).not.toMatch(/ab12\.\.\./);
-        expect(prompt).not.toMatch(new RegExp(`\\[${model}-\\d{4}_\\d{2}_[A-Z]{3}_[A-Z]{3}-[0-9a-f.]+\\]\\s*or`));
-      }
+      for (const record of V2_EVIDENCE[model].all) expect(prompt).not.toContain(record.evidenceId);
+      expect(prompt).not.toMatch(new RegExp(`${model}-\\d{4}_\\d{2}_[A-Z]{3}_[A-Z]{3}-[0-9a-f]`));
+      expect(prompt).not.toMatch(/ab12\.\.\./);
     });
 
     it("tells the model every evidence array must be empty when no evidence exists", () => {
-      const prompt = buildStageAV2Prompt({ provider: model, game: V2_GAME, packet: V2_PACKET, evidenceLines: [] });
+      const prompt = buildStageAV2Prompt({ provider: model, game: V2_GAME, packet: V2_PACKET, evidenceLines: [], evidenceAliases: buildEvidenceAliasMap([], model) });
       expect(prompt).toMatch(/no citable evidence available/);
       expect(prompt).toMatch(/every evidenceRefs \/ evidenceRefsUsed array must be empty/);
-      expect(prompt).not.toContain("Allowed evidence ids");
+      expect(prompt).not.toContain("Cite evidence ONLY by its short reference");
     });
   });
 
   it("refuses to build a prompt whose evidence line does not begin with its id (a record the model could see but not cite)", () => {
-    expect(() => buildStageAV2Prompt({ provider: "grok", game: V2_GAME, packet: V2_PACKET, evidenceLines: ["no bracketed id here"] })).toThrow(/bracketed evidenceId/);
+    expect(() => buildStageAV2Prompt({ provider: "grok", game: V2_GAME, packet: V2_PACKET, evidenceLines: ["no bracketed id here"], evidenceAliases: buildEvidenceAliasMap([], "grok") })).toThrow(/bracketed evidenceId/);
+  });
+
+  it("refuses to build a prompt that shows a record the alias map does not contain", () => {
+    expect(() => buildStageAV2Prompt({ provider: "grok", game: V2_GAME, packet: V2_PACKET, evidenceLines: evidenceLines("grok"), evidenceAliases: buildEvidenceAliasMap([], "grok") })).toThrow(/has no alias/);
   });
 });
 
@@ -313,5 +310,52 @@ describe("4. attempt ledger: both failure types are recorded, blocked on identic
     runProductionFailures();
     const ledger = readAttemptLedger(root, 2026, 3, GAME_ID, "grok");
     expect(planProviderV2(gameFacts(), providerFacts("grok", { record: null, ledger })).research).toBe("none");
+  });
+});
+
+describe("5-7. manual retry control at the planner: PIT-CLE shape (Grok succeeded, ChatGPT failed Stage A)", () => {
+  const noEvidenceChange = { exists: true, generatedAt: "2026-09-25T10:00:00.000Z", stageAEvidenceHash: "ev1", count: 12 };
+
+  /** Grok has its record and no failure; ChatGPT has evidence, no record, and a failed Stage A attempt recorded on exactly today's inputs. */
+  function pitCleFacts() {
+    const game = gameFacts();
+    const chatgptKey = handicapInputKey("handicap_initial", game, providerFacts("chatgpt", { record: null, evidence: noEvidenceChange }));
+    const failed = { failedAt: "2026-10-01T19:39:53.558Z", action: "handicap_initial", inputKey: chatgptKey, kind: "validation", stage: "A" as const, error: "Stage A validation failed: bad evidence reference" };
+    return { game, grok: providerFacts("grok", { evidence: noEvidenceChange }), chatgpt: providerFacts("chatgpt", { record: null, evidence: noEvidenceChange, ledger: { handicap: failed } }) };
+  }
+
+  it("5. by default the failed attempt blocks an identical paid retry, and Grok needs nothing", () => {
+    const { game, grok, chatgpt } = pitCleFacts();
+    const plan = planGameV2(game, [grok, chatgpt]);
+    expect(plan.providers.chatgpt).toMatchObject({ action: "blocked", blockedKind: "failed_attempt", handicap: "none", research: "none" });
+    expect(plan.providers.chatgpt.reasons.join(" ")).toMatch(/not retried automatically/);
+    expect(plan.providers.grok.action).toBe("none");
+  });
+
+  it("6. ChatGPT becomes runnable only when the explicit retry flag is supplied -- one Stage A + B attempt, no research", () => {
+    const { game, grok, chatgpt } = pitCleFacts();
+    expect(planProviderV2(game, chatgpt).action).toBe("blocked");
+    const retried = planProviderV2(game, chatgpt, { retryFailed: true });
+    expect(retried).toMatchObject({ action: "handicap_initial", handicap: "initial", research: "none" });
+    expect(planGameV2(game, [grok, chatgpt], { retryFailed: true }).providers.chatgpt.action).toBe("handicap_initial");
+  });
+
+  it("7. Grok stays 'none' and is not rerun, with or without the flag", () => {
+    const { game, grok, chatgpt } = pitCleFacts();
+    for (const opts of [{}, { retryFailed: true }]) {
+      expect(planGameV2(game, [grok, chatgpt], opts).providers.grok).toMatchObject({ action: "none", handicap: "none", research: "none" });
+    }
+  });
+
+  it("the flag does not delete or bypass the ledger: the failure stays on file and a changed line is still the only other way through", () => {
+    const { game, chatgpt } = pitCleFacts();
+    planProviderV2(game, chatgpt, { retryFailed: true });
+    expect(chatgpt.ledger.handicap?.kind).toBe("validation");
+    expect(planProviderV2(game, chatgpt).action).toBe("blocked");
+  });
+
+  it("the CLI flag is off unless --retry-failed is given", () => {
+    expect(parseSlateV2Args(["--game=2026_04_PIT_CLE"]).retryFailed).toBe(false);
+    expect(parseSlateV2Args(["--game=2026_04_PIT_CLE", "--retry-failed"]).retryFailed).toBe(true);
   });
 });

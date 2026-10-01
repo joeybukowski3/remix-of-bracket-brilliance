@@ -9,6 +9,7 @@ import { resolveEvidenceAuthority } from "./nfl-evidence-store";
 import type { EvidenceModel } from "./nfl-evidence-types";
 import { buildCitableEvidenceLines as grokEvidenceLines } from "./nfl-grok-analysis-adapter";
 import { buildStageAV2Prompt, buildStageBV2Prompt } from "./nfl-handicap-v2-prompts";
+import { buildEvidenceAliasMap } from "./nfl-handicap-v2-evidence-aliases";
 import { validateStageBV2, type StageBV2ValidationContext } from "./nfl-handicap-v2-validator";
 import { filterEvidenceRecordsForStageBV2 } from "./nfl-ai-context-sanitizer";
 import { V2_CONTEXT_HASH, V2_EVIDENCE, V2_GAME, V2_GAME_ID, V2_MARKET_MINUS_7, V2_PACKET, V2_STAGE_B_TIME, stageBRaw, trustedStageA } from "./__fixtures__/nfl-handicap-v2-fixtures";
@@ -27,7 +28,7 @@ function run(model: EvidenceModel, patch: Record<string, unknown>): { ok: boolea
 function stageBPrompt(model: EvidenceModel): string {
   const authority = resolveEvidenceAuthority(V2_EVIDENCE[model].all);
   const lines = (model === "grok" ? grokEvidenceLines : chatgptEvidenceLines)(filterEvidenceRecordsForStageBV2(V2_EVIDENCE[model].all), authority);
-  return buildStageBV2Prompt({ provider: model, game: V2_GAME, packet: V2_PACKET, evidenceLines: lines, market: V2_MARKET_MINUS_7, lockedStageA: trustedStageA(model) });
+  return buildStageBV2Prompt({ provider: model, game: V2_GAME, packet: V2_PACKET, evidenceLines: lines, evidenceAliases: buildEvidenceAliasMap(V2_EVIDENCE[model].all, model), market: V2_MARKET_MINUS_7, lockedStageA: trustedStageA(model) });
 }
 
 describe.each(PROVIDERS)("Stage B output format (%s)", (model) => {
@@ -72,7 +73,7 @@ describe("both providers get identical format instructions", () => {
     expect(rules(stageBPrompt("grok")).length).toBeGreaterThan(200);
   });
   it("Stage A carries the no-ids-in-prose rule too", () => {
-    const a = (m: EvidenceModel) => buildStageAV2Prompt({ provider: m, game: V2_GAME, packet: V2_PACKET, evidenceLines: [] });
+    const a = (m: EvidenceModel) => buildStageAV2Prompt({ provider: m, game: V2_GAME, packet: V2_PACKET, evidenceLines: [], evidenceAliases: buildEvidenceAliasMap([], m) });
     expect(a("grok")).toContain("Do not paste evidence IDs");
     expect(a("chatgpt")).toContain("Do not paste evidence IDs");
   });

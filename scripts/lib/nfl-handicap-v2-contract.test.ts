@@ -9,6 +9,7 @@ import { resolveEvidenceAuthority } from "./nfl-evidence-store";
 import type { EvidenceModel } from "./nfl-evidence-types";
 import { buildCitableEvidenceLines as grokEvidenceLines, runGrokHandicapV2Stage } from "./nfl-grok-analysis-adapter";
 import { buildStageAV2Prompt, buildStageBV2Prompt } from "./nfl-handicap-v2-prompts";
+import { buildEvidenceAliasMap } from "./nfl-handicap-v2-evidence-aliases";
 import { validateStageAV2, validateStageBV2, type StageAV2ValidationContext, type StageBV2ValidationContext } from "./nfl-handicap-v2-validator";
 import { HANDICAP_V2_OUTPUT_TOKENS } from "./nfl-handicap-v2-types";
 import {
@@ -61,7 +62,7 @@ function withMarkdown(model: EvidenceModel, transform: (md: string) => string, b
 }
 
 describe.each(PROVIDERS)("STAGE A v2 (%s)", (model) => {
-  const stageAPrompt = buildStageAV2Prompt({ provider: model, game: V2_GAME, packet: V2_PACKET, evidenceLines: evidenceLines(model, filterEvidenceRecordsForBlindStageA(V2_EVIDENCE[model].all)) });
+  const stageAPrompt = buildStageAV2Prompt({ provider: model, game: V2_GAME, packet: V2_PACKET, evidenceLines: evidenceLines(model, filterEvidenceRecordsForBlindStageA(V2_EVIDENCE[model].all)), evidenceAliases: buildEvidenceAliasMap(V2_EVIDENCE[model].all, model) });
 
   it("1. stays market blind: passes the prompt audit and carries no market or JKB opinion", () => {
     const blind = sanitizeGameContextPacketForBlindStageA(V2_PACKET);
@@ -81,7 +82,8 @@ describe.each(PROVIDERS)("STAGE A v2 (%s)", (model) => {
     expect(stageAPrompt).toContain("record=0-2");
     expect(stageAPrompt).toContain("score=14-26");
     expect(stageAPrompt).toContain("Current-season samples may still be small.");
-    expect(stageAPrompt).toContain(V2_EVIDENCE[model].injury.evidenceId);
+    expect(stageAPrompt).toContain("E1 | (category=");
+    expect(stageAPrompt).not.toContain(V2_EVIDENCE[model].injury.evidenceId);
     expect(stageAPrompt).not.toContain(V2_EVIDENCE[model].bettingOpinion.evidenceId);
     expect(stageAPrompt).toContain("every injury, availability, weather or reporting claim you make must come from a cited evidence record");
   });
@@ -146,7 +148,7 @@ describe.each(PROVIDERS)("STAGE A v2 (%s)", (model) => {
 });
 
 describe.each(PROVIDERS)("STAGE B v2 prompt (%s)", (model) => {
-  const stageBPrompt = buildStageBV2Prompt({ provider: model, game: V2_GAME, packet: V2_PACKET, lockedStageA: trustedStageA(model), market: V2_MARKET_MINUS_7, evidenceLines: evidenceLines(model, filterEvidenceRecordsForStageBV2(V2_EVIDENCE[model].all)) });
+  const stageBPrompt = buildStageBV2Prompt({ provider: model, game: V2_GAME, packet: V2_PACKET, lockedStageA: trustedStageA(model), market: V2_MARKET_MINUS_7, evidenceLines: evidenceLines(model, filterEvidenceRecordsForStageBV2(V2_EVIDENCE[model].all)), evidenceAliases: buildEvidenceAliasMap(V2_EVIDENCE[model].all, model) });
 
   it("5. receives the WU1 current-form facts for both teams", () => {
     expect(stageBPrompt).toContain("away (LAC):");
@@ -173,8 +175,9 @@ describe.each(PROVIDERS)("STAGE B v2 prompt (%s)", (model) => {
   });
 
   it("carries the validated evidence and excludes outside betting opinion", () => {
-    expect(stageBPrompt).toContain(V2_EVIDENCE[model].injury.evidenceId);
-    expect(stageBPrompt).toContain(V2_EVIDENCE[model].weather.evidenceId);
+    expect(stageBPrompt).toContain("E1 | (category=");
+    expect(stageBPrompt).not.toContain(V2_EVIDENCE[model].injury.evidenceId);
+    expect(stageBPrompt).not.toContain(V2_EVIDENCE[model].weather.evidenceId);
     expect(stageBPrompt).not.toContain(V2_EVIDENCE[model].bettingOpinion.evidenceId);
   });
 
@@ -330,9 +333,11 @@ describe("20. Grok and ChatGPT implement the same v2 contract", () => {
   const unify = (prompt: string) => prompt.replace(/"model": "(grok|chatgpt)"/, '"model": "<provider>"');
 
   it("build byte-identical Stage A and Stage B prompts apart from the model name", () => {
-    const lines = evidenceLines("grok", filterEvidenceRecordsForBlindStageA(V2_EVIDENCE.grok.all)).map((l) => l.replace(/\[[^\]]+\]/, "[id]"));
-    const a = (provider: EvidenceModel) => buildStageAV2Prompt({ provider, game: V2_GAME, packet: V2_PACKET, evidenceLines: lines });
-    const b = (provider: EvidenceModel) => buildStageBV2Prompt({ provider, game: V2_GAME, packet: V2_PACKET, lockedStageA: trustedStageA("grok"), market: V2_MARKET_MINUS_7, evidenceLines: lines });
+    // Each provider gets ITS OWN evidence lines and alias map: because the model only ever sees E1.., the opaque ids no longer make the prompts differ.
+    const lines = (provider: EvidenceModel, filter: typeof filterEvidenceRecordsForBlindStageA) => evidenceLines(provider, filter(V2_EVIDENCE[provider].all));
+    const aliases = (provider: EvidenceModel) => buildEvidenceAliasMap(V2_EVIDENCE[provider].all, provider);
+    const a = (provider: EvidenceModel) => buildStageAV2Prompt({ provider, game: V2_GAME, packet: V2_PACKET, evidenceLines: lines(provider, filterEvidenceRecordsForBlindStageA), evidenceAliases: aliases(provider) });
+    const b = (provider: EvidenceModel) => buildStageBV2Prompt({ provider, game: V2_GAME, packet: V2_PACKET, lockedStageA: trustedStageA(provider), market: V2_MARKET_MINUS_7, evidenceLines: lines(provider, filterEvidenceRecordsForStageBV2), evidenceAliases: aliases(provider) });
     expect(unify(a("grok"))).toBe(unify(a("chatgpt")));
     expect(unify(b("grok"))).toBe(unify(b("chatgpt")));
   });

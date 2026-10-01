@@ -55,6 +55,14 @@ run-name: NFL AI Handicap v2 • ${{ github.event_name }} • ${{ github.ref_nam
 #   max_jobs (manual input) and the NFL_AI_V2_MAX_JOBS repository variable
 #   (scheduled/chained runs) cap how many paid provider/game jobs one run may
 #   execute. Leave the variable unset only after rollout is approved.
+#
+# MANUAL RECOVERY
+#   retry_failed (manual input only, default false) passes --retry-failed to the
+#   slate: a provider/game whose last paid attempt failed on inputs identical to
+#   the ones now planned is normally blocked by the attempt ledger (v2-attempts.json);
+#   with the flag, ONE new bounded attempt is allowed. The ledger is never deleted or
+#   bypassed -- a failure is simply recorded again. Scheduled and chained runs never
+#   pass it, whatever the inputs context says.
 on:
   workflow_run:
     workflows: ["NFL Betting Lines Daily"]
@@ -87,6 +95,11 @@ on:
         description: "Execute at most this many paid provider/game jobs (blank = no limit)"
         type: string
         required: false
+      retry_failed:
+        description: "Allow one new attempt for a provider/game whose last paid attempt failed on identical inputs (manual recovery; never set by scheduled runs)"
+        type: boolean
+        required: false
+        default: false
 
 # Share the single lock used by the other automated workflows that commit
 # generated data to main.
@@ -148,6 +161,7 @@ jobs:
           INPUT_GAME: ${{ inputs.game }}
           INPUT_PROVIDER: ${{ inputs.provider }}
           INPUT_MAX_JOBS: ${{ inputs.max_jobs }}
+          INPUT_RETRY_FAILED: ${{ inputs.retry_failed }}
           VAR_MAX_JOBS: ${{ vars.NFL_AI_V2_MAX_JOBS }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
@@ -160,6 +174,8 @@ jobs:
           if [ "${INPUT_PROVIDER:-both}" != "both" ] && [ -n "${INPUT_PROVIDER:-}" ]; then args+=("--provider=${INPUT_PROVIDER}"); fi
           max_jobs="${INPUT_MAX_JOBS:-${VAR_MAX_JOBS:-}}"
           if [ -n "$max_jobs" ]; then args+=("--max-jobs=${max_jobs}"); fi
+          # Manual recovery only: honoured for workflow_dispatch and nothing else.
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "${INPUT_RETRY_FAILED:-}" = "true" ]; then args+=("--retry-failed"); fi
           # Capture the slate's exit status instead of letting `set -e` end the script: the report must reach the
           # step summary precisely when the slate FAILED, and the status is re-raised afterwards.
           status=0

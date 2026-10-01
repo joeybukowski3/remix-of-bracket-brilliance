@@ -19,6 +19,7 @@
 import { buildBlindContextSummaryLines } from "./nfl-ai-blind-context-lines";
 import { sanitizeGameContextPacketForBlindStageA } from "./nfl-ai-context-sanitizer";
 import type { EvidenceModel } from "./nfl-evidence-types";
+import type { EvidenceAliasMap } from "./nfl-handicap-v2-evidence-aliases";
 import type { NflGameContextPacket } from "./nfl-full-game-context";
 import type { HandicapV2MarketContext } from "./nfl-handicap-v2-market";
 import { formatSignedLine, renderHandicapV2MarketLines, teamNickname } from "./nfl-handicap-v2-market";
@@ -43,31 +44,36 @@ function teamCodeLines(game: HandicapV2GameFacts): string[] {
   ];
 }
 
-/** The id at the start of a rendered evidence line (`[<evidenceId>] (category=...) claim`), or null if the line is not shaped like one. */
-function evidenceIdOfLine(line: string): string | null {
-  return /^\[([^\]\s]+)\]/.exec(line)?.[1] ?? null;
+/** Splits a rendered evidence line (`[<evidenceId>] (category=...) claim`) into its canonical id and the rest, or null if it is not shaped like one. */
+function splitEvidenceLine(line: string): { id: string; rest: string } | null {
+  const match = /^\[([^\]\s]+)\]\s*([\s\S]*)$/.exec(line);
+  return match ? { id: match[1], rest: match[2] } : null;
 }
 
 /**
- * The evidence block. Besides the descriptive records it prints the ids ALONE, one per line, as the single list
- * the model copies from: a 16-hex-character hash embedded mid-line is easy to mis-transcribe (production once
- * produced an id one character short), a line that is nothing but the id is not. The list is also stated to be
- * complete, so the model has no reason to reach for an id that is not on it.
+ * The evidence block, in terms of the short aliases (E1, E2, ...) and never a canonical id: the model is
+ * asked to cite `E3`, not to reproduce a 16-hex hash, which production showed it cannot do reliably. Each
+ * record line begins `E<n> | `. Aliases come from the caller's map (nfl-handicap-v2-evidence-aliases.ts),
+ * so an alias means the same record in Stage A and Stage B. Throws -- before anything is paid for -- if a
+ * line is not an evidence line or its record has no alias: a record the model can see but is not allowed
+ * to cite is a guaranteed failed call.
  */
-function evidenceSection(header: string, evidenceLines: readonly string[]): string[] {
+function evidenceSection(header: string, evidenceLines: readonly string[], aliases: EvidenceAliasMap): string[] {
   if (evidenceLines.length === 0) {
     return [header, "(no citable evidence available -- make no claim about injuries, participation, quarterback status, personnel changes, weather or outside reporting; every evidenceRefs / evidenceRefsUsed array must be empty)"];
   }
-  const ids = evidenceLines.map(evidenceIdOfLine).filter((id): id is string => id !== null);
-  // Refuse to build a prompt whose id list and record list disagree: a record the model can see but is not allowed to cite is a guaranteed paid failure.
-  if (ids.length !== evidenceLines.length) throw new Error("evidence line does not begin with its bracketed evidenceId -- cannot build the allowed-ids list");
+  const rows = evidenceLines.map((line) => {
+    const parts = splitEvidenceLine(line);
+    if (!parts) throw new Error("evidence line does not begin with its bracketed evidenceId -- cannot alias it");
+    const alias = aliases.idToAlias.get(parts.id);
+    if (!alias) throw new Error(`evidence record ${parts.id} has no alias -- it is not in the alias map for this call`);
+    return { alias, order: Number(alias.slice(1)), text: `${alias} | ${parts.rest}` };
+  });
+  rows.sort((x, y) => x.order - y.order);
   return [
     header,
-    "Allowed evidence ids -- the COMPLETE list. Copy an id exactly, character for character; an id that is not on this list is rejected:",
-    ...ids.map((id) => `  ${id}`),
-    "",
-    "The evidence records (each begins with its id in brackets):",
-    ...evidenceLines,
+    `Cite evidence ONLY by its short reference (${rows.map((r) => r.alias).join(", ")}) exactly as printed at the start of a line below. That is the complete list of references; anything else is rejected.`,
+    ...rows.map((r) => r.text),
   ];
 }
 
@@ -77,9 +83,9 @@ const EVIDENCE_RULES: readonly string[] = [
   "There is no internal injury or availability data in the football data above: every injury, availability, weather or reporting claim you make must come from a cited evidence record. Never use anyone's picks, predictions or betting opinions.",
 ];
 
-/** Shared by both stages: how evidence ids may be used in the reference arrays. Validation is strict and never repairs a bad id, so these are the only guard against a near-miss. */
-export const EVIDENCE_ID_RULES: readonly string[] = [
-  "Evidence ids: copy each id EXACTLY, verbatim, from the allowed-ids list in the evidence section. Never construct, shorten, complete, infer or synthesize an id, and never build one from a provider name, a game id or a hash you remember. An id that is not on the list is rejected and discards the whole answer.",
+/** Shared by both stages: how evidence references may be used. Validation is strict and never repairs a bad reference, so these are the only guard against a near-miss. */
+export const EVIDENCE_REF_RULES: readonly string[] = [
+  "Evidence references: put in evidenceRefs / evidenceRefsUsed only the short references (E1, E2, ...) printed in the evidence list, exactly as printed. Never invent, combine, renumber or extend a reference, and never write anything else in those arrays. A reference that is not printed in the list is rejected and discards the whole answer. References (E1, E2, ...) belong ONLY in those arrays: never write one in a summary, mainRisk, counterargument or analysisMarkdown.",
   "Cite only the smallest set of evidence records the statement actually needs. If no supplied record directly supports a statement -- for example a driver that rests only on the football data -- leave evidenceRefs / evidenceRefsUsed empty ([]) rather than guessing: a driver tied to football-data factRefs alone is complete.",
 ];
 
@@ -98,6 +104,8 @@ export interface StageAV2PromptInput {
   game: HandicapV2GameFacts;
   packet: NflGameContextPacket;
   evidenceLines: readonly string[];
+  /** Short model-facing references for this run's evidence (buildEvidenceAliasMap); the SAME map must be used for Stage A and Stage B. */
+  evidenceAliases: EvidenceAliasMap;
 }
 
 export function buildStageAV2Prompt(input: StageAV2PromptInput): string {
@@ -110,7 +118,7 @@ export function buildStageAV2Prompt(input: StageAV2PromptInput): string {
     contextHash: "<leave as empty string -- the engine fills this in>",
     fairSpread: { team: "<the favored team's abbreviation>", line: "<number <= 0, in half-point steps>" },
     projectedTotal: "<number>",
-    keyDrivers: [{ summary: "<1-2 plain sentences: the fact AND why it moves your projection>", factRefs: ["<dot-path into the football data>"], evidenceRefs: ["<an id copied exactly from the allowed-ids list, or leave the array empty>"] }],
+    keyDrivers: [{ summary: "<1-2 plain sentences: the fact AND why it moves your projection>", factRefs: ["<dot-path into the football data>"], evidenceRefs: ["<a short reference such as E1 from the evidence list, or leave the array empty>"] }],
     mainRisk: "<the single most realistic way your projection is wrong, specific to this game>",
     uncertainty: UNCERTAINTY_LEVELS.join("|"),
   };
@@ -124,7 +132,7 @@ export function buildStageAV2Prompt(input: StageAV2PromptInput): string {
     "=== FOOTBALL DATA (deterministic facts; no market pricing and no model opinion of any kind) ===",
     ...buildBlindContextSummaryLines(blind),
     "",
-    ...evidenceSection("=== CITABLE EVIDENCE (only the ids listed here may be cited) ===", input.evidenceLines),
+    ...evidenceSection("=== CITABLE EVIDENCE (cite by the short reference at the start of each line) ===", input.evidenceLines, input.evidenceAliases),
     "",
     "=== HOW TO HANDICAP ===",
     `- Choose ${KEY_DRIVERS_MIN} to ${KEY_DRIVERS_MAX} keyDrivers: only the things that actually move the projected margin or total. Do NOT cover every unit or category and do not pad; leave out anything that does not matter.`,
@@ -133,7 +141,7 @@ export function buildStageAV2Prompt(input: StageAV2PromptInput): string {
     "- mainRisk is the single most realistic reason your projection turns out wrong. It must be specific to this game (name the team, player, unit or number). Generic lines such as \"anything can happen\" are rejected.",
     "- uncertainty (LOW, MEDIUM or HIGH) is how confident you are in the projected margin given sample size and information quality.",
     ...EVIDENCE_RULES.map((rule) => `- ${rule}`),
-    ...EVIDENCE_ID_RULES.map((rule) => `- ${rule}`),
+    ...EVIDENCE_REF_RULES.map((rule) => `- ${rule}`),
     ...NO_INVENTION_RULES.map((rule) => `- ${rule}`),
     "",
     ...teamCodeLines(game),
@@ -156,6 +164,8 @@ export interface StageBV2PromptInput {
   lockedStageA: StageAV2;
   market: HandicapV2MarketContext;
   evidenceLines: readonly string[];
+  /** The same alias map Stage A used for this run. The locked Stage A's canonical evidence ids are shown through it. */
+  evidenceAliases: EvidenceAliasMap;
 }
 
 /** "~50" for a whole number, "~50.5" for a half. */
@@ -171,7 +181,7 @@ export function projectedTotalLine(stageA: StageAV2): string {
   return `Projected total: ~${formatProjectedTotal(stageA.projectedTotal)}`;
 }
 
-function lockedStageALines(game: HandicapV2GameFacts, stageA: StageAV2): string[] {
+function lockedStageALines(game: HandicapV2GameFacts, stageA: StageAV2, aliases: EvidenceAliasMap): string[] {
   const favorite = stageA.fairSpread.team.toUpperCase();
   return [
     `fair spread: ${favorite} ${formatSignedLine(stageA.fairSpread.line)}`,
@@ -179,7 +189,11 @@ function lockedStageALines(game: HandicapV2GameFacts, stageA: StageAV2): string[
     `${fairScoreLine(game, stageA).replace("Fair-ish score", "fair-ish score")} (derived from your two numbers)`,
     `uncertainty: ${stageA.uncertainty}`,
     "key drivers:",
-    ...stageA.keyDrivers.map((d, i) => `  ${i + 1}. ${d.summary}${d.factRefs.length + d.evidenceRefs.length > 0 ? ` [refs: ${[...d.factRefs, ...d.evidenceRefs].join(", ")}]` : ""}`),
+    ...stageA.keyDrivers.map((d, i) => {
+      // The stored Stage A carries canonical ids; Stage B sees them only as this call's aliases (a ref with no alias is simply not shown).
+      const refs = [...d.factRefs, ...d.evidenceRefs.flatMap((id) => aliases.idToAlias.get(id) ?? [])];
+      return `  ${i + 1}. ${d.summary}${refs.length > 0 ? ` [refs: ${refs.join(", ")}]` : ""}`;
+    }),
     `main risk: ${stageA.mainRisk}`,
   ];
 }
@@ -202,7 +216,7 @@ export function buildStageBV2Prompt(input: StageBV2PromptInput): string {
     counterargument: "<1-2 sentences: the strongest realistic reason the preferred side fails to cover at this exact line>",
     analysisMarkdown: "<the 250-450 word write-up described below, as one string with \\n\\n between paragraphs>",
     factRefsUsed: ["<dot-path into the football data>"],
-    evidenceRefsUsed: ["<an id copied exactly from the allowed-ids list that the write-up actually relies on, or leave the array empty>"],
+    evidenceRefsUsed: ["<a short reference such as E1 from the evidence list that the write-up actually relies on, or leave the array empty>"],
   };
   return [
     `You are an experienced NFL bettor. Someone asks you: "What do you think about this game and spread?" Game: ${game.awayTeamFull} at ${game.homeTeamFull} (gameId ${game.gameId}, kickoff ${game.kickoffUtc}).`,
@@ -210,12 +224,12 @@ export function buildStageBV2Prompt(input: StageBV2PromptInput): string {
     "STAGE 1 already produced your LOCKED football projection below, formed before you saw any market number. You may not revise it. Your job now is to compare it to the exact current line, decide what you think of the number, and explain it.",
     "",
     "=== YOUR LOCKED FOOTBALL PROJECTION (immutable) ===",
-    ...lockedStageALines(game, lockedStageA),
+    ...lockedStageALines(game, lockedStageA, input.evidenceAliases),
     "",
     "=== FOOTBALL DATA (deterministic facts; the same data Stage 1 saw) ===",
     ...buildBlindContextSummaryLines(blind),
     "",
-    ...evidenceSection("=== CITABLE EVIDENCE (only the ids listed here may be cited) ===", input.evidenceLines),
+    ...evidenceSection("=== CITABLE EVIDENCE (cite by the short reference at the start of each line) ===", input.evidenceLines, input.evidenceAliases),
     "",
     "=== CURRENT MARKET (the exact line JKB displays for this game; do not search for or restate other numbers) ===",
     ...renderHandicapV2MarketLines(market),
@@ -229,7 +243,7 @@ export function buildStageBV2Prompt(input: StageBV2PromptInput): string {
     "- keyNumberSensitivity is required when the market block marks key numbers MATERIAL: say where the number gets meaningfully better or worse (for example how -7 vs -7.5 changes the case). Otherwise use null. Do not force a key-number discussion.",
     "- counterargument is the strongest realistic reason the side you prefer fails to cover at this exact line. It must be specific (name the team, player, unit or number); \"anything can happen\" is rejected. Say it again in your write-up in your own words.",
     ...EVIDENCE_RULES.map((rule) => `- ${rule}`),
-    ...EVIDENCE_ID_RULES.map((rule) => `- ${rule}`),
+    ...EVIDENCE_REF_RULES.map((rule) => `- ${rule}`),
     ...NO_INVENTION_RULES.map((rule) => `- ${rule}`),
     "",
     "=== HOW TO WRITE analysisMarkdown ===",

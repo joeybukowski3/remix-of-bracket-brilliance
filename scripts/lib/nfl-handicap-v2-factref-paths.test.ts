@@ -10,6 +10,7 @@ import { resolveEvidenceAuthority } from "./nfl-evidence-store";
 import type { EvidenceModel } from "./nfl-evidence-types";
 import { buildCitableEvidenceLines as grokEvidenceLines } from "./nfl-grok-analysis-adapter";
 import { buildStageAV2Prompt } from "./nfl-handicap-v2-prompts";
+import { buildEvidenceAliasMap } from "./nfl-handicap-v2-evidence-aliases";
 import { validateStageAV2, type StageAV2ValidationContext } from "./nfl-handicap-v2-validator";
 import { V2_CONTEXT_HASH, V2_EVIDENCE, V2_GAME, V2_GAME_ID, V2_PACKET, V2_STAGE_A_TIME, stageARaw } from "./__fixtures__/nfl-handicap-v2-fixtures";
 
@@ -22,7 +23,7 @@ function ctx(model: EvidenceModel): StageAV2ValidationContext {
 function prompt(model: EvidenceModel): string {
   const authority = resolveEvidenceAuthority(V2_EVIDENCE[model].all);
   const lines = (model === "grok" ? grokEvidenceLines : chatgptEvidenceLines)(filterEvidenceRecordsForBlindStageA(V2_EVIDENCE[model].all), authority);
-  return buildStageAV2Prompt({ provider: model, game: V2_GAME, packet: V2_PACKET, evidenceLines: lines });
+  return buildStageAV2Prompt({ provider: model, game: V2_GAME, packet: V2_PACKET, evidenceLines: lines, evidenceAliases: buildEvidenceAliasMap(V2_EVIDENCE[model].all, model) });
 }
 
 function reasonsFor(model: EvidenceModel, ref: string): string {
