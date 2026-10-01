@@ -214,3 +214,219 @@ describe("what the workflow commits", () => {
     expect(step("Detect generated artifact changes").if).toMatch(/github\.event_name != 'workflow_dispatch' \|\| inputs\.dry_run == false/);
   });
 });
+
+/* -------------------------------------------------------------------------- */
+/* Partial state persists; the run still fails                                */
+/* -------------------------------------------------------------------------- */
+
+/** Parses the GITHUB_OUTPUT file a step wrote. */
+function readOutputs(file: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const line of readFileSync(file, "utf8").split("\n")) {
+    const eq = line.indexOf("=");
+    if (eq > 0) out[line.slice(0, eq)] = line.slice(eq + 1);
+  }
+  return out;
+}
+
+/** A working clone with a bare `origin` on `main`, so the real commit step's fetch / rebase / push runs unmodified. */
+function scratchRepoWithOrigin(files: Record<string, string>): { repo: string; origin: string; outputFile: string; cleanup: () => void } {
+  const origin = mkdtempSync(join(tmpdir(), "nfl-ai-v2-origin-"));
+  git(origin, "init", "--quiet", "--bare", "--initial-branch=main");
+  const repo = mkdtempSync(join(tmpdir(), "nfl-ai-v2-wf-"));
+  git(repo, "init", "--quiet", "--initial-branch=main");
+  git(repo, "config", "user.email", "t@example.com");
+  git(repo, "config", "user.name", "tester");
+  git(repo, "config", "commit.gpgsign", "false");
+  writeFileSync(join(repo, "README"), "x");
+  git(repo, "add", "README");
+  git(repo, "commit", "--quiet", "--message", "init");
+  git(repo, "remote", "add", "origin", origin);
+  git(repo, "push", "--quiet", "origin", "main");
+  for (const [file, content] of Object.entries(files)) {
+    mkdirSync(dirname(join(repo, file)), { recursive: true });
+    writeFileSync(join(repo, file), content);
+  }
+  const outputFile = `${repo}-github-output`;
+  writeFileSync(outputFile, "");
+  return { repo, origin, outputFile, cleanup: () => [repo, origin, outputFile].forEach((p) => rmSync(p, { recursive: true, force: true })) };
+}
+
+/** Runs a workflow step's `run` script the way Actions does for `shell: bash` (bash -eo pipefail). */
+function runWorkflowStep(name: string, cwd: string, outputFile: string, extraEnv: Record<string, string> = {}) {
+  return spawnSync("bash", ["-eo", "pipefail", "-c", step(name).run], {
+    cwd,
+    encoding: "utf8",
+    env: { ...process.env, GENERATED_PATHSPECS: workflow.jobs["run-slate"].env.GENERATED_PATHSPECS, GITHUB_OUTPUT: outputFile, ...extraEnv },
+  });
+}
+
+/** The workflow's persistence tail, in order: detect -> stage -> commit/push -> fail-if-slate-failed. Stage/commit run only when detect says so, as their `if` does. */
+function runPersistenceSteps(repo: string, outputFile: string) {
+  const detect = runWorkflowStep("Detect generated artifact changes", repo, outputFile);
+  const changed = readOutputs(outputFile).changed === "true";
+  const stage = changed ? runWorkflowStep("Stage generated artifacts", repo, outputFile) : null;
+  const commit = changed ? runWorkflowStep("Commit and push generated AI handicap v2 artifacts", repo, outputFile) : null;
+  const fail = runWorkflowStep("Fail the run if the slate reported failures", repo, outputFile);
+  return { detect, changed, stage, commit, fail, outputs: readOutputs(outputFile) };
+}
+
+const PIT = "data/nfl/analysis/2026/4/2026_04_PIT_CLE";
+const committedFiles = (origin: string): string[] =>
+  git(origin, "ls-tree", "-r", "--name-only", "main")
+    .trim()
+    .split("\n")
+    .filter((f) => f !== "README")
+    .sort();
+
+describe.skipIf(!hasBash)("partial state persists while the run still fails", () => {
+  it("detects changes (regression: a trailing blank pathspec made git fatal, so every run read as 'nothing changed')", () => {
+    const { repo, outputFile, cleanup } = scratchRepoWithOrigin({ [`${PIT}/grok/evidence.live-test.json`]: "{}\n" });
+    try {
+      const detect = runWorkflowStep("Detect generated artifact changes", repo, outputFile);
+      expect(detect.status, detect.stderr).toBe(0);
+      expect(detect.stderr).not.toMatch(/empty string is not a valid pathspec/);
+      expect(readOutputs(outputFile).changed).toBe("true");
+    } finally {
+      cleanup();
+    }
+  }, SPAWN_TIMEOUT_MS);
+
+  it("reports no change (and exits 0) when nothing in the whitelist changed", () => {
+    const { repo, outputFile, cleanup } = scratchRepoWithOrigin({ [`${PIT}/grok/research/initial-x/provider-response.raw.json`]: "{}\n" });
+    try {
+      const detect = runWorkflowStep("Detect generated artifact changes", repo, outputFile);
+      expect(detect.status).toBe(0);
+      expect(readOutputs(outputFile).changed).toBe("false");
+    } finally {
+      cleanup();
+    }
+  }, SPAWN_TIMEOUT_MS);
+
+  it("research ok -> handicaps failed: commits the evidence and attempt ledger, publishes nothing, and the run exits nonzero", () => {
+    const { repo, origin, outputFile, cleanup } = scratchRepoWithOrigin({
+      // paid research that succeeded
+      [`${PIT}/grok/evidence.live-test.json`]: '{"evidence":[]}\n',
+      [`${PIT}/chatgpt/evidence.live-test.json`]: '{"evidence":[]}\n',
+      // the failure ledger written by the executor
+      [`${PIT}/grok/v2-attempts.json`]: '{"handicap":{"kind":"transport_timeout"}}\n',
+      [`${PIT}/chatgpt/v2-attempts.json`]: '{"handicap":{"kind":"validation"}}\n',
+      // things that must never be committed: raw diagnostics and failed raw model output
+      [`${PIT}/grok/research/initial-x/provider-response.raw.json`]: "{}\n",
+      [`${PIT}/chatgpt/research/initial-x/research-run.json`]: "{}\n",
+      [`${PIT}/chatgpt/handicap-v2/failed-stage-a-raw-output.txt`]: "raw",
+      [`${PIT}/chatgpt/stage-a-raw-output.json`]: "{}\n",
+      "slate-report.txt": "report",
+    });
+    try {
+      const run = runPersistenceSteps(repo, outputFile);
+      expect(run.detect.status, run.detect.stderr).toBe(0);
+      expect(run.stage?.status, run.stage?.stderr).toBe(0);
+      expect(run.commit?.status, run.commit?.stderr).toBe(0);
+      expect(committedFiles(origin)).toEqual([`${PIT}/chatgpt/evidence.live-test.json`, `${PIT}/chatgpt/v2-attempts.json`, `${PIT}/grok/evidence.live-test.json`, `${PIT}/grok/v2-attempts.json`].sort());
+      // no handicap record and no public artifact exist, so none can have been published
+      expect(committedFiles(origin).filter((f) => f.startsWith("public/") || f.includes("/handicap-v2/"))).toEqual([]);
+      // a state-only commit changes nothing on the site, so Pages is not redeployed for it
+      expect(run.outputs.public_changed).toBe("false");
+      expect(run.outputs.pushed_commit).toMatch(/^[0-9a-f]{40}$/);
+      // ...and the workflow run itself is still failed
+      expect(run.fail.status).not.toBe(0);
+      expect(run.fail.stdout + run.fail.stderr).toMatch(/slate reported failures/);
+    } finally {
+      cleanup();
+    }
+  }, SPAWN_TIMEOUT_MS);
+
+  it("one provider succeeds, one fails: the record, the mixed-state public artifact and the other's ledger persist, and the run still fails", () => {
+    const { repo, origin, outputFile, cleanup } = scratchRepoWithOrigin({
+      [`${PIT}/grok/evidence.live-test.json`]: "{}\n",
+      [`${PIT}/grok/handicap-v2/20261001T150000000Z-abc123def456.json`]: "{}\n",
+      "public/data/nfl/2026/ai-handicaps/2026_04_PIT_CLE.json": '{"providers":{"grok":"ok","chatgpt":"unavailable"}}\n',
+      [`${PIT}/chatgpt/evidence.live-test.json`]: "{}\n",
+      [`${PIT}/chatgpt/v2-attempts.json`]: '{"handicap":{"kind":"validation"}}\n',
+      [`${PIT}/chatgpt/research/initial-x/provider-response.raw.json`]: "{}\n",
+    });
+    try {
+      const run = runPersistenceSteps(repo, outputFile);
+      expect(run.commit?.status, run.commit?.stderr).toBe(0);
+      expect(committedFiles(origin)).toEqual(
+        [
+          "public/data/nfl/2026/ai-handicaps/2026_04_PIT_CLE.json",
+          `${PIT}/chatgpt/evidence.live-test.json`,
+          `${PIT}/chatgpt/v2-attempts.json`,
+          `${PIT}/grok/evidence.live-test.json`,
+          `${PIT}/grok/handicap-v2/20261001T150000000Z-abc123def456.json`,
+        ].sort()
+      );
+      expect(run.outputs.public_changed).toBe("true");
+      expect(run.fail.status).not.toBe(0);
+    } finally {
+      cleanup();
+    }
+  }, SPAWN_TIMEOUT_MS);
+
+  it("refuses (and unstages) if a raw/diagnostic path somehow reaches the index", () => {
+    const { repo, outputFile, cleanup } = scratchRepoWithOrigin({
+      [`${PIT}/grok/evidence.live-test.json`]: "{}\n",
+      [`${PIT}/grok/research/initial-x/provider-response.raw.json`]: "{}\n",
+    });
+    try {
+      git(repo, "add", "-f", "--", `${PIT}/grok/research/initial-x/provider-response.raw.json`);
+      const stage = runWorkflowStep("Stage generated artifacts", repo, outputFile);
+      expect(stage.status).not.toBe(0);
+      expect(stage.stderr).toMatch(/raw\/diagnostic path was staged/);
+      expect(git(repo, "diff", "--cached", "--name-only").trim()).toBe("");
+    } finally {
+      cleanup();
+    }
+  }, SPAWN_TIMEOUT_MS);
+
+  it("deploys Pages only when the pushed commit changed public/, never for a state-only commit", () => {
+    const expr: string = workflow.jobs["deploy-pages"].if;
+    expect(expr).toMatch(/needs\.run-slate\.outputs\.public_changed == 'true'/);
+    expect(expr).toMatch(/needs\.run-slate\.outputs\.deploy_ref != ''/);
+    expect(workflow.jobs["run-slate"].outputs.public_changed).toBe("${{ steps.commit.outputs.public_changed }}");
+  });
+
+  it("commits whatever succeeded even when the slate failed: persistence is not gated on the slate's outcome", () => {
+    for (const name of ["Detect generated artifact changes", "Stage generated artifacts", "Commit and push generated AI handicap v2 artifacts"]) {
+      expect(String(step(name).if ?? "")).not.toMatch(/steps\.slate\.outcome/);
+    }
+    expect(step("Fail the run if the slate reported failures").if).toBe("steps.slate.outcome == 'failure'");
+  });
+});
+
+describe.skipIf(!hasBash)("the slate step reports a failed run instead of losing the report", () => {
+  /** Runs the real slate step script with a stand-in `npm` that prints a report and exits with `exitCode`. */
+  function runSlateStep(exitCode: number): { status: number | null; summary: string; report: string } {
+    const dir = mkdtempSync(join(tmpdir(), "nfl-ai-v2-slate-step-"));
+    try {
+      const bin = join(dir, "bin");
+      mkdirSync(bin);
+      writeFileSync(join(bin, "npm"), `#!/usr/bin/env bash\necho "=== V2 SLATE LIVE SUMMARY ==="\necho "Failures (1):"\nexit ${exitCode}\n`, { mode: 0o755 });
+      const summaryFile = join(dir, "summary.md");
+      writeFileSync(summaryFile, "");
+      const result = spawnSync("bash", ["-eo", "pipefail", "-c", step("Plan and run the v2 slate").run], {
+        cwd: dir,
+        encoding: "utf8",
+        env: { ...process.env, PATH: `${bin}${process.platform === "win32" ? ";" : ":"}${process.env.PATH}`, EVENT_NAME: "schedule", DRY_RUN: "", INPUT_WEEK: "", INPUT_GAME: "", INPUT_PROVIDER: "", INPUT_MAX_JOBS: "", VAR_MAX_JOBS: "", GITHUB_STEP_SUMMARY: summaryFile },
+      });
+      return { status: result.status, summary: readFileSync(summaryFile, "utf8"), report: readFileSync(join(dir, "slate-report.txt"), "utf8") };
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+
+  it("a failing slate still writes its report to the step summary, then exits nonzero", () => {
+    const run = runSlateStep(1);
+    expect(run.status).toBe(1);
+    expect(run.summary).toContain("Failures (1):");
+    expect(run.report).toContain("=== V2 SLATE LIVE SUMMARY ===");
+  }, SPAWN_TIMEOUT_MS);
+
+  it("a clean slate exits 0 and writes the same summary", () => {
+    const run = runSlateStep(0);
+    expect(run.status).toBe(0);
+    expect(run.summary).toContain("V2 SLATE LIVE SUMMARY");
+  }, SPAWN_TIMEOUT_MS);
+});

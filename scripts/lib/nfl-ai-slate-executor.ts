@@ -117,6 +117,8 @@ export interface StageOutcome {
   ran: boolean;
   ok: boolean;
   detail: string;
+  /** v2 handicap only: the classified reason a paid handicap run failed (nfl-ai-v2-failure.ts). Absent on success and on v1 stages. */
+  failure?: { kind: string; stage: "A" | "B" | null };
   /**
    * WU6.9 (handicap) / WU7.3 (research) -- telemetry markers parsed from this stage's
    * child-process stdout, if any. Only ever populated for a research or handicap stage that

@@ -431,7 +431,12 @@ async function attemptChatGptAnalysisRequest(prompt: string, maxOutputTokens: nu
   };
 
   const controller = new AbortController();
-  const timeoutHandle = setTimeout(() => controller.abort(), config.requestTimeoutMs);
+  // Set only by OUR timer, so a client timeout can be told apart from any other abort.
+  let timedOut = false;
+  const timeoutHandle = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, config.requestTimeoutMs);
 
   const started = Date.now();
   let httpStatus: number | null = null;
@@ -453,8 +458,9 @@ async function attemptChatGptAnalysisRequest(prompt: string, maxOutputTokens: nu
       };
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { kind: "failure", error: `Request to OpenAI /v1/responses failed: ${message}`, attempt: buildAttemptTelemetry(maxOutputTokens, httpStatus, Date.now() - started, null, null) };
+    const latencyMs = Date.now() - started;
+    const message = timedOut ? `client timeout: no complete response within ${config.requestTimeoutMs}ms (${config.mode}, aborted after ${latencyMs}ms)` : error instanceof Error ? error.message : String(error);
+    return { kind: "failure", error: `Request to OpenAI /v1/responses ${timedOut ? "timed out" : "failed"}: ${message}`, attempt: buildAttemptTelemetry(maxOutputTokens, httpStatus, latencyMs, null, null) };
   } finally {
     clearTimeout(timeoutHandle);
   }

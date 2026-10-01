@@ -68,3 +68,18 @@ export function resolveGrokAnalysisConfig(mode: GrokAnalysisMode, overrides?: Pa
   }
   return { ...base, ...overrides, mode };
 }
+
+/**
+ * AI Picks v2 -- client timeout for the shared v2 handicap stages through Grok
+ * (runGrokHandicapV2Stage). Deliberately NOT the v1 `stageBInitial` value: that
+ * 120s was sized for a 1,500-token side/total decision, while the v2 Stage B
+ * returns the full 250-450 word write-up under a 5,000-token output budget
+ * (HANDICAP_V2_OUTPUT_TOKENS), larger than Stage A's 3,500. The first
+ * production run's Stage B was aborted by this client timer, and the only
+ * recorded Grok reasoning-model latencies in the repo (a v1 handicap, 130.5s
+ * and 125.0s, docs/nfl-grok-chatgpt-handicap-architecture.md) are already above
+ * 120s for a smaller output. Stage B therefore gets the same ceiling as Stage A.
+ * One request per stage, no retry -- a timeout is recorded in the attempt
+ * ledger and is not repeated on identical inputs.
+ */
+export const GROK_HANDICAP_V2_REQUEST_TIMEOUT_MS = { A: 180_000, B: 180_000 } as const;

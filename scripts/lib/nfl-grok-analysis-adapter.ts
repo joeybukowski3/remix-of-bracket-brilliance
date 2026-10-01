@@ -40,7 +40,7 @@ import type { NflGameContextPacket } from "./nfl-full-game-context";
 import { sanitizeGameContextPacketForBlindStageA } from "./nfl-ai-context-sanitizer";
 import { buildBlindContextSummaryLines } from "./nfl-ai-blind-context-lines";
 import { HANDICAP_V2_OUTPUT_TOKENS } from "./nfl-handicap-v2-types";
-import { resolveGrokAnalysisConfig, type GrokAnalysisConfig, type GrokAnalysisMode } from "./nfl-grok-analysis-config";
+import { GROK_HANDICAP_V2_REQUEST_TIMEOUT_MS, resolveGrokAnalysisConfig, type GrokAnalysisConfig, type GrokAnalysisMode } from "./nfl-grok-analysis-config";
 import { MATCHUP_FACTOR_AREAS, type GrokStageAV1 } from "./nfl-grok-analysis-types";
 import { parseResponsesOutput, parseUsageTelemetry } from "./nfl-grok-research-parsing";
 import { ticksToUsd } from "./nfl-grok-research-config";
@@ -462,7 +462,12 @@ async function callGrokAnalysis(prompt: string, config: GrokAnalysisConfig, apiK
   };
 
   const controller = new AbortController();
-  const timeoutHandle = setTimeout(() => controller.abort(), config.requestTimeoutMs);
+  // Set only by OUR timer, so a client timeout can be told apart from any other abort (a CI cancellation kills the process and never reaches this handler).
+  let timedOut = false;
+  const timeoutHandle = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, config.requestTimeoutMs);
 
   const started = Date.now();
   let httpStatus: number | null = null;
@@ -480,8 +485,9 @@ async function callGrokAnalysis(prompt: string, config: GrokAnalysisConfig, apiK
       return { ok: false, error: `HTTP ${response.status} from xAI /v1/responses: ${responseText.slice(0, 500)}`, telemetry: buildTelemetry(config, httpStatus, Date.now() - started, null) };
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { ok: false, error: `Request to xAI /v1/responses failed: ${message}`, telemetry: buildTelemetry(config, httpStatus, Date.now() - started, null) };
+    const latencyMs = Date.now() - started;
+    const message = timedOut ? `client timeout: no complete response within ${config.requestTimeoutMs}ms (${config.mode}, aborted after ${latencyMs}ms)` : error instanceof Error ? error.message : String(error);
+    return { ok: false, error: `Request to xAI /v1/responses ${timedOut ? "timed out" : "failed"}: ${message}`, telemetry: buildTelemetry(config, httpStatus, latencyMs, null) };
   } finally {
     clearTimeout(timeoutHandle);
   }
@@ -590,9 +596,18 @@ export interface RunGrokHandicapV2StageInput {
   prompt: string;
   apiKey: string;
   fetchImpl?: typeof fetch;
+  /** Test seam only; production uses GROK_HANDICAP_V2_REQUEST_TIMEOUT_MS. */
+  requestTimeoutMs?: number;
+}
+
+/** The exact request configuration a v2 stage runs with (exported so a test can pin the budget and timeout). */
+export function resolveGrokHandicapV2Config(stage: "A" | "B", requestTimeoutMs?: number): GrokAnalysisConfig {
+  return resolveGrokAnalysisConfig(stage === "A" ? "stageAInitial" : "stageBInitial", {
+    maxOutputTokens: HANDICAP_V2_OUTPUT_TOKENS[stage].first,
+    requestTimeoutMs: requestTimeoutMs ?? GROK_HANDICAP_V2_REQUEST_TIMEOUT_MS[stage],
+  });
 }
 
 export async function runGrokHandicapV2Stage(input: RunGrokHandicapV2StageInput): Promise<GrokAnalysisRawResult> {
-  const config = resolveGrokAnalysisConfig(input.stage === "A" ? "stageAInitial" : "stageBInitial", { maxOutputTokens: HANDICAP_V2_OUTPUT_TOKENS[input.stage].first });
-  return callGrokAnalysis(input.prompt, config, input.apiKey, input.fetchImpl ?? fetch);
+  return callGrokAnalysis(input.prompt, resolveGrokHandicapV2Config(input.stage, input.requestTimeoutMs), input.apiKey, input.fetchImpl ?? fetch);
 }

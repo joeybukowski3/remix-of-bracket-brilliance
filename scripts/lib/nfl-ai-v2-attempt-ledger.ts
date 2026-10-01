@@ -11,8 +11,9 @@
  *   research: blocked for RESEARCH_RETRY_COOLDOWN_HOURS after a failed pass.
  *
  * Small JSON next to the provider's other analysis state; committed by the
- * workflow with the rest of the state (it contains only error text, no raw
- * provider output).
+ * workflow with the rest of the state, including from a run that FAILED -- the
+ * ledger is exactly what stops the next run re-paying for the same failure. It
+ * contains only a failure kind and bounded diagnostic text, no raw provider output.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -23,6 +24,11 @@ export interface FailedHandicapAttempt {
   action: string;
   /** Identifies the exact inputs of the failed attempt (see nfl-ai-v2-slate-plan.ts handicapInputKey). */
   inputKey: string;
+  /** Why it failed (nfl-ai-v2-failure.ts). Absent on entries written before the classification existed. */
+  kind?: string;
+  /** Which stage failed, when known. */
+  stage?: "A" | "B" | null;
+  /** Safe text only: a transport error or the validator's reasons, bounded -- never raw model output. */
   error: string;
 }
 
