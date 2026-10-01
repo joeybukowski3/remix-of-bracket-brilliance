@@ -1,0 +1,180 @@
+{
+  "schemaVersion": "nfl-handicap-v2",
+  "gameId": "2026_04_PIT_CLE",
+  "provider": "grok",
+  "generatedAt": "2026-10-01T19:44:18.933Z",
+  "stageAGeneratedAt": "2026-10-01T19:42:01.918Z",
+  "contextHash": "c6a203a31a61c36d79a2f8a0a1a32c49904d3eec3168b1816e0ea7a48b8e097f",
+  "promptVersion": "nfl-handicap-v2-prompts-1",
+  "marketSpread": {
+    "sportsbook": "draftkings",
+    "homeLine": 2.5,
+    "awayLine": -2.5,
+    "homePrice": 100,
+    "awayPrice": -120,
+    "asOf": "2026-10-01T16:55:57.542Z"
+  },
+  "marketTotal": 38.5,
+  "preferredSide": "home",
+  "preferredTeam": "cle",
+  "preferredLine": 2.5,
+  "coverProbabilityPreferred": 54,
+  "coverProbabilityOther": 46,
+  "impliedPushProbability": 0,
+  "fairSpread": {
+    "team": "pit",
+    "line": -1.5
+  },
+  "fairScoreAway": 20,
+  "fairScoreHome": 19,
+  "projectedTotal": 39,
+  "confidence": "MEDIUM",
+  "uncertainty": "HIGH",
+  "verdict": "LEAN",
+  "keyNumberSensitivity": "Books are split between Browns +2.5 and Browns +3, so a three-point Steelers win is a loss here and a cover at +3. I would be more interested at +3 and would pass if Cleveland were only +2, which sits inside my number.",
+  "keyNumberContext": {
+    "favoriteLine": 2.5,
+    "onKeyNumber": null,
+    "nearKeyNumber": 3,
+    "halfPointBetterForFavorite": {
+      "favoriteLine": 2,
+      "crossesKeyNumbers": []
+    },
+    "halfPointWorseForFavorite": {
+      "favoriteLine": 3,
+      "crossesKeyNumbers": [
+        3
+      ]
+    },
+    "bookRangeCrossesKeyNumber": true,
+    "material": true
+  },
+  "keyDrivers": [
+    {
+      "summary": "Pittsburgh was a 10-7 team last season with a functional offense while Cleveland went 5-12 and posted one of the league's worst offensive EPA marks; that quality gap still outweighs two 2-1 clubs that have both scored about 18 points per game through three unadjusted 2026 games.",
+      "factRefs": [
+        "teamMetrics.priorSeasonBaseline",
+        "teamMetrics.epa",
+        "teamForm.away.seasonToDate.points",
+        "teamForm.home.seasonToDate.points"
+      ],
+      "evidenceRefs": []
+    },
+    {
+      "summary": "Cleveland's rushing EPA is already disastrous this season, and both first-team interior linemen are out, which should further mute a home offense that has lived on the pass and keep this a one-score game.",
+      "factRefs": [
+        "teamForm.home.seasonToDate.efficiency.offense.epaPerRush",
+        "teamForm.home.seasonToDate.efficiency.offense.epaPerPass"
+      ],
+      "evidenceRefs": [
+        "grok-2026_04_PIT_CLE-cf686ddd46de8259",
+        "grok-2026_04_PIT_CLE-8a9cdd2884b56abc"
+      ]
+    },
+    {
+      "summary": "Both 2026 offenses sit in negative EPA with success rates around 40 percent and scoring in the high teens, so the matchup projects as a low-total divisional slog rather than a shootout even after Pittsburgh's 30-point week.",
+      "factRefs": [
+        "teamForm.away.seasonToDate.efficiency.offense.epaPerPlay",
+        "teamForm.home.seasonToDate.efficiency.offense.epaPerPlay",
+        "teamForm.away.seasonToDate.efficiency.offense.successRate",
+        "teamForm.home.seasonToDate.efficiency.offense.successRate",
+        "teamForm.away.seasonToDate.points",
+        "teamForm.home.seasonToDate.points"
+      ],
+      "evidenceRefs": []
+    },
+    {
+      "summary": "Pittsburgh is without Joey Porter Jr. and has Jalen Ramsey listed as questionable, which chips away at a pass defense that just allowed a huge EPA game and keeps Cleveland's only functional offensive unit in striking distance.",
+      "factRefs": [
+        "teamForm.away.recentGame.facts.efficiency.defense.epaPerPass",
+        "teamForm.home.seasonToDate.efficiency.offense.epaPerPass"
+      ],
+      "evidenceRefs": [
+        "grok-2026_04_PIT_CLE-7bfc75cc0615334e",
+        "grok-2026_04_PIT_CLE-ad75fd507895d0db"
+      ]
+    },
+    {
+      "summary": "Rico Dowdle is out, but Jaylen Warren just handled 17 carries for 127 yards as the stated focal point, so Pittsburgh's ground game is not similarly compromised and can still sustain drives on the road.",
+      "factRefs": [
+        "teamForm.away.recentGame.facts.efficiency.offense.epaPerRush"
+      ],
+      "evidenceRefs": [
+        "grok-2026_04_PIT_CLE-2db4000c0f895ce8",
+        "grok-2026_04_PIT_CLE-34f065b2f764a1ef"
+      ]
+    }
+  ],
+  "mainRisk": "Deshaun Watson and Cleveland's passing game, already the only positive EPA unit on that offense, exploit a Steelers secondary missing Porter and possibly Ramsey and turn a short-week home underdog into a cover or an outright win.",
+  "counterargument": "Deshaun Watson's passing game, the only Cleveland unit that has actually worked, catches a Steelers secondary missing Joey Porter Jr. with Jalen Ramsey questionable and Cleveland covers or wins outright at home.",
+  "analysisMarkdown": "I lean Browns +2.5 at even money. It is not a play I would press. I have Pittsburgh closer to a field-goal favorite, so this number is a little generous, but the 2026 sample is noisy and both offenses still look stuck. I would not treat it as automatic.\n\nYou are getting plus money on the dog against -120 on the favorite, with the total at 38.5. Books are split, and some hang Browns +3. That key number is the shopping story: a Pittsburgh field-goal win loses at this number and cashes at three. I am pricing this number, not the three.\n\nLast year's gap still outweighs the matching records. Pittsburgh had a functional offense on a playoff-level club; Cleveland was among the league's worst. Both 2026 offenses sit in negative EPA and in the high teens, so this looks like a slog even after Pittsburgh's outburst against Cincinnati. Cleveland's rushing EPA is already disastrous.\n\nThe Browns are without starting interior linemen Elgton Jenkins and Teven Jenkins, which should mute that run game further. Pittsburgh is missing Joey Porter Jr. with Jalen Ramsey questionable, so Watson's passing unit still has a path. Rico Dowdle is out, but Jaylen Warren just took over as the stated focal point, so I am not fading Pittsburgh's ground game the same way.\n\nWhat keeps me from calling it a bet is Watson exploiting that thinned Steelers secondary, which just allowed a huge passing game, and Cleveland covering or winning outright at home.\n\n**Browns +2.5: ~54% cover probability**\n**Steelers -2.5: ~46%**\n**Fair-ish score: Steelers 20, Browns 19**\n**Projected total: ~39**\n\nSo at the exact line I would lean Browns +2.5. If it moved to Browns +3 I would be more interested because a three-point game would then cover. If they were only plus 2, I would pass.",
+  "wordCount": 302,
+  "factRefsUsed": [
+    "teamMetrics.priorSeasonBaseline",
+    "teamForm.away.seasonToDate.points",
+    "teamForm.home.seasonToDate.points",
+    "teamForm.away.seasonToDate.efficiency.offense.epaPerPlay",
+    "teamForm.home.seasonToDate.efficiency.offense.epaPerPlay",
+    "teamForm.home.seasonToDate.efficiency.offense.epaPerRush",
+    "teamForm.home.seasonToDate.efficiency.offense.epaPerPass",
+    "teamForm.away.recentGame.facts.points",
+    "teamForm.away.recentGame.facts.efficiency.defense.epaPerPass"
+  ],
+  "evidenceRefsUsed": [
+    "grok-2026_04_PIT_CLE-cf686ddd46de8259",
+    "grok-2026_04_PIT_CLE-2db4000c0f895ce8",
+    "grok-2026_04_PIT_CLE-ad75fd507895d0db",
+    "grok-2026_04_PIT_CLE-578a941fe15ca052",
+    "grok-2026_04_PIT_CLE-8a9cdd2884b56abc",
+    "grok-2026_04_PIT_CLE-34f065b2f764a1ef"
+  ],
+  "sources": [
+    {
+      "label": "NFL.com",
+      "url": "https://www.nfl.com/news/nfl-week-4-injury-report-player-statuses-for-all-16-games",
+      "type": "injury",
+      "evidenceId": "grok-2026_04_PIT_CLE-cf686ddd46de8259"
+    },
+    {
+      "label": "Cleveland Browns",
+      "url": "https://www.clevelandbrowns.com/news/browns-announce-unofficial-depth-chart-for-week-4-vs-the-steelers",
+      "type": "injury",
+      "evidenceId": "grok-2026_04_PIT_CLE-578a941fe15ca052"
+    },
+    {
+      "label": "Cleveland Browns",
+      "url": "https://www.clevelandbrowns.com/news/browns-announce-unofficial-depth-chart-for-week-4-vs-the-steelers",
+      "type": "news",
+      "evidenceId": "grok-2026_04_PIT_CLE-8a9cdd2884b56abc"
+    },
+    {
+      "label": "Steelers.com",
+      "url": "https://www.steelers.com/news/week-4-injury-report-browns",
+      "type": "news",
+      "evidenceId": "grok-2026_04_PIT_CLE-34f065b2f764a1ef"
+    },
+    {
+      "label": "draftkings spread and total (JKB betting lines, as of 2026-10-01T16:55:57.542Z)",
+      "url": null,
+      "type": "market"
+    },
+    {
+      "label": "Team game data: nflverse play-by-play and official team stats (JKB)",
+      "url": null,
+      "type": "other"
+    }
+  ],
+  "warnings": [],
+  "inputs": {
+    "stageAEvidenceHash": "85aa39fe559b26c3d60bb078692d3197fa9fc1afea334758916cffda158149f2",
+    "availabilityHash": "365f774406158cd7c357c53d801dc797e4e3dcf9638ff58284c809e67599cb9b",
+    "weatherHash": "674fb0aebb9b68e27295e49fedca8f249478d8fdb54331129da03ebb676aa532",
+    "bookRange": {
+      "bookCount": 9,
+      "homeLineMin": 2.5,
+      "homeLineMax": 3,
+      "totalMin": 37.5,
+      "totalMax": 38.5
+    }
+  }
+}
