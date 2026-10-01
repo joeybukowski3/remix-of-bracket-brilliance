@@ -1,14 +1,14 @@
 {
   "_meta": {
     "schemaVersion": "nfl-v0.1",
-    "generatedAt": "2026-09-30T16:24:39.682Z",
+    "generatedAt": "2026-10-01T17:01:55.220Z",
     "source": "generated (data/nfl/predictions/**/jkb-power-number.jsonl + prediction-outcome resolver + embedded market_snapshot_refs)",
     "season": null,
     "week": null,
     "modelVersion": null,
     "notes": [
       "Canonical derived sides (spread) performance artifact for /nfl/performance. Not a raw archive -- do not parse JSONL for this view.",
-      "Live side model: jkb-power-number-v1.1.0 (Current OVR nfl-current-ovr-v1.1.0). Games whose final pregame snapshot was archived under jkb-power-number-v1.0.0 stay graded under that version; every row carries its own model_version. Side-model math is untouched by this artifact.",
+      "Live side model: jkb-power-number-v1.2.0 (Current OVR nfl-current-ovr-v1.2.0). Games whose final pregame snapshot was archived under jkb-power-number-v1.0.0 or -v1.1.0 stay graded under that version; every row carries its own model_version. Side-model math is untouched by this artifact.",
       "Actual outcomes are computed exclusively via resolvePredictionOutcome() from nfl-prediction-outcome-resolver.ts -- no independent grading logic exists here.",
       "Sign contract: every margin (projected, market-implied, actual) and every signed error is a HOME margin (home points - away points). market_spread is the posted home line (negative = home favored); market_implied_home_margin = -market_spread. Positive jkb_minus_market = JKB more bullish on the home team than the market.",
       "Market spread = latest valid pregame comparison line (spread/comparison ref, observed strictly before kickoff, highest-priority book then latest observed_at). Never chosen after seeing the result.",
@@ -19,7 +19,7 @@
   "schemaVersion": "nfl-sides-performance-v1",
   "performanceMeta": {
     "schemaVersion": "nfl-sides-performance-v1",
-    "generatedAt": "2026-09-30T16:24:39.682Z",
+    "generatedAt": "2026-10-01T17:01:55.220Z",
     "seasons": [
       2026
     ],
@@ -27,9 +27,9 @@
       "jkb-power-number-v1.0.0",
       "jkb-power-number-v1.1.0"
     ],
-    "liveModelVersion": "jkb-power-number-v1.1.0",
+    "liveModelVersion": "jkb-power-number-v1.2.0",
     "gradedGames": 48,
-    "latestPredictionTimestamp": "2026-09-29T18:03:25.198Z",
+    "latestPredictionTimestamp": "2026-09-30T17:59:45.008Z",
     "latestOutcomeTimestamp": "2026-09-28T19:38:12.014Z",
     "marketCoverageCount": 48,
     "contextCoverage": {
