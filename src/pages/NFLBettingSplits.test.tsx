@@ -4,13 +4,21 @@ import { MemoryRouter } from "react-router-dom";
 import NFLBettingSplits from "./NFLBettingSplits";
 import { NFL_SECTION_NAV_CATEGORIES } from "@/lib/nfl/sectionNav";
 import type { NflDkSplitsAvailability } from "@/lib/nfl/bettingSplitsData";
+import { moneyGap } from "@/lib/nfl/bettingSplitsData";
 
 const artifact = {
-  games: [{ gameId: "2026_03_BUF_MIA", away: "buf", home: "mia", markets: {
-    spread: [{ side: "away", team: "buf", line: -2.5, odds: -110, handlePct: 75, betsPct: 50 }, { side: "home", team: "mia", line: 2.5, odds: -110, handlePct: 25, betsPct: 50 }],
-    moneyline: [{ side: "away", team: "buf", line: null, odds: -140, handlePct: 80, betsPct: 45 }, { side: "home", team: "mia", line: null, odds: 120, handlePct: 20, betsPct: 55 }],
-    total: [{ side: "over", line: 45.5, odds: -110, handlePct: 65, betsPct: 35 }, { side: "under", line: 45.5, odds: -110, handlePct: 35, betsPct: 65 }],
-  } }],
+  games: [
+    { gameId: "2026_03_BUF_MIA", away: "buf", home: "mia", markets: {
+      spread: [{ side: "away", team: "buf", line: -2.5, odds: -110, handlePct: 75, betsPct: 50 }, { side: "home", team: "mia", line: 2.5, odds: -110, handlePct: 25, betsPct: 50 }],
+      moneyline: [{ side: "away", team: "buf", line: null, odds: -140, handlePct: 80, betsPct: 45 }, { side: "home", team: "mia", line: null, odds: 120, handlePct: 20, betsPct: 55 }],
+      total: [{ side: "over", line: 45.5, odds: -110, handlePct: 65, betsPct: 35 }, { side: "under", line: 45.5, odds: -110, handlePct: 35, betsPct: 65 }],
+    } },
+    { gameId: "2026_03_LAC_SEA", away: "lac", home: "sea", markets: {
+      spread: [{ side: "away", team: "lac", line: 7, odds: -110, handlePct: 51, betsPct: 80 }, { side: "home", team: "sea", line: -7, odds: -110, handlePct: 49, betsPct: 20 }],
+      moneyline: [{ side: "away", team: "lac", line: null, odds: 240, handlePct: 50, betsPct: 50 }, { side: "home", team: "sea", line: null, odds: -300, handlePct: 50, betsPct: 50 }],
+      total: [{ side: "over", line: 42.5, odds: -110, handlePct: 50, betsPct: 50 }, { side: "under", line: 42.5, odds: -110, handlePct: 50, betsPct: 50 }],
+    } },
+  ],
 } as unknown as NonNullable<NflDkSplitsAvailability["artifact"]>;
 let state: ReturnType<typeof import("@/hooks/useNflBettingSplits")["useNflBettingSplits"]>;
 vi.mock("@/hooks/useCurrentNflWeek", () => ({ useCurrentNflWeek: () => ({ loading: false, week: 3, error: null }) }));
@@ -20,75 +28,98 @@ function setup(freshness: NflDkSplitsAvailability["freshness"] = "fresh") {
   state = { loading: false, error: null, freshness, reason: freshness === "stale" ? "age" : null, artifact: freshness === "unavailable" ? null : artifact, sourceCapturedAt: freshness === "unavailable" ? null : "2026-09-25T14:47:13.329Z", generatedAt: "2026-09-25T14:48:00.000Z", ageMs: 1000, source: "DraftKings Network / DraftKings Sportsbook", season: 2026, week: 3 };
   return render(<MemoryRouter><NFLBettingSplits /></MemoryRouter>);
 }
+function ranking(name: "Money" | "Tickets") {
+  return screen.getByRole("region", { name: `${name} ranking` });
+}
+function bodyRows(name: "Money" | "Tickets") {
+  return within(ranking(name)).getAllByRole("row").slice(1);
+}
 
-describe("NFL Betting Splits page", () => {
-  it("renders Overview by default and the current source capture timestamp", () => {
+describe("NFL Betting Splits presentation", () => {
+  it("renders one desktop overview row per game, logos, and the source capture time", () => {
     setup();
     expect(screen.getByRole("heading", { name: "NFL Betting Splits" })).toBeTruthy();
     expect(screen.getByRole("tab", { name: "Overview" }).getAttribute("aria-selected")).toBe("true");
-    expect(screen.getByRole("status").textContent).toContain("Fresh");
-    expect(screen.getByText("Matchup distribution")).toBeTruthy();
-    expect(screen.getByText(/Captured Sep 25, 2026/)).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toContain("Captured Sep 25, 2026");
     expect(screen.getByRole("status").textContent).toContain("10:47 AM");
     expect(screen.getByRole("status").textContent).not.toContain("10:48 AM");
     const table = screen.getByRole("region", { name: "Overview matchup distribution" });
     expect(within(table).getAllByRole("row")).toHaveLength(3);
-    expect(within(table).getByText("BUF Moneyline +35 [Strong Sharp Side]")).toBeTruthy();
-    const gameRow = within(table).getAllByRole("row")[2];
-    expect(within(gameRow).getAllByRole("cell").slice(1, 8).map((cell) => cell.textContent)).toEqual(["BUF 75%", "BUF 50%", "45.5", "Over 65%", "Under 65%", "BUF 80%", "MIA 55%"]);
-    expect(within(gameRow).getByLabelText("BUF [-2.5] @ MIA")).toBeTruthy();
-    expect(within(table).getByRole("columnheader", { name: /Sharp Indicator/ })).toBeTruthy();
-    for (const market of ["Spread", "Total", "Moneyline"]) for (const metric of ["Handle", "Bets"]) expect(within(table).getByRole("button", { name: `Sort by ${market} ${metric} Favorite` })).toBeTruthy();
-    expect(gameRow.querySelectorAll("[data-heat-pct]")).toHaveLength(6);
-    for (const [title, tone] of [["Highest Public Sides", "bg-amber-50"], ["Sharp Sides", "bg-emerald-50"], ["Contrarian Sides", "bg-violet-50"]]) {
-      const section = screen.getByRole("region", { name: title });
-      expect(within(section).getByRole("heading", { name: title }).className).toContain(tone);
-      expect(within(section).getAllByRole("row").length).toBeGreaterThan(1);
-    }
-    expect(within(screen.getByRole("region", { name: "Highest Public Sides" })).getAllByRole("row")[1].textContent).toContain("BUF @ MIAtotalUnder 45.5 · -11035%65%-30 pp");
-    expect(within(screen.getByRole("region", { name: "Sharp Sides" })).getAllByRole("row")[1].textContent).toContain("BUF @ MIAmoneylineBUF -14080%45%+35 pp");
-    expect(within(screen.getByRole("region", { name: "Contrarian Sides" })).getAllByRole("row")[1].textContent).toContain("BUF @ MIAtotalOver 45.5 · -11065%35%+30 pp");
-    const cards = screen.getByRole("region", { name: "Overview matchup cards" });
-    expect(within(cards).getByText("BUF 75%")).toBeTruthy();
-    expect(within(cards).getByText("MIA 55%")).toBeTruthy();
+    expect(table.querySelectorAll('img[src$="/buf.png"]')).toHaveLength(1);
+    expect(table.querySelectorAll('img[src$="/sea.png"]')).toHaveLength(1);
+    expect(screen.getByRole("region", { name: "Overview matchup cards" }).querySelectorAll("article")).toHaveLength(2);
   });
-  it("shows both sides with market-specific columns, odds and shared signals", () => {
+  it("keeps Money and Tickets on the displayed side and retains signed gaps", () => {
     setup();
-    for (const market of ["Spread", "Moneyline", "Total"]) {
-      fireEvent.click(screen.getByRole("tab", { name: market }));
-      const table = screen.getByRole("region", { name: `${market.toLowerCase()} betting splits` });
-      expect(within(table).getAllByRole("row").length).toBe(3);
-      expect(within(table).getByRole("columnheader", { name: /Handle/ })).toBeTruthy();
-      expect(within(table).getByRole("columnheader", { name: /Bets/ })).toBeTruthy();
-      expect(within(table).getByRole("columnheader", { name: /Money Gap/ })).toBeTruthy();
-      expect(within(table).getByRole("columnheader", { name: "Signal" })).toBeTruthy();
-      const sides = within(table).getAllByRole("row").slice(1).map((row) => within(row).getAllByRole("cell").map((cell) => cell.textContent?.trim()));
-      if (market === "Moneyline") { expect(within(table).queryByRole("columnheader", { name: "Line" })).toBeNull(); expect(within(table).getByText("-140")).toBeTruthy(); }
-      if (market === "Total") { expect(within(table).getByText("Over")).toBeTruthy(); expect(within(table).getByText("Under")).toBeTruthy(); expect(within(table).getAllByText("45.5")).toHaveLength(2); }
-      if (market === "Spread") { expect(within(table).getByText("-2.5")).toBeTruthy(); expect(within(table).getByText("+2.5")).toBeTruthy(); }
-      expect(sides[0]).toEqual(market === "Spread" ? ["BUF", "-2.5", "MIA", "-110", "75%", "50%", "+25 pp", "Strong Money Gap"] : market === "Moneyline" ? ["BUF", "MIA", "-140", "80%", "45%", "+35 pp", "Strong Money Gap"] : ["BUF@MIA", "Over", "45.5", "-110", "65%", "35%", "+30 pp", "Strong Money Gap"]);
-      if (market === "Total") { expect(within(table).getByText("Over").getAttribute("data-total-side")).toBe("over"); expect(within(table).getByText("Under").getAttribute("data-total-side")).toBe("under"); }
-      expect(sides[1]?.at(-1)).toBe("Public Heavy");
-    }
+    const table = screen.getByRole("region", { name: "Overview matchup distribution" });
+    const [buf, lac] = within(table).getAllByRole("row").slice(1);
+    expect(within(buf).getByRole("img", { name: "Money 75%" })).toBeTruthy();
+    expect(within(buf).getByRole("img", { name: "Tickets 50%" })).toBeTruthy();
+    expect(buf.textContent).toContain("+25 pp");
+    expect(lac.textContent).toContain("-29 pp");
+    expect(moneyGap(artifact.games[1].markets.spread[0])).toBe(-29);
+    expect(artifact.games[1].markets.spread[0].handlePct).toBe(51);
+    expect(artifact.games[1].markets.spread[0].betsPct).toBe(80);
   });
-  it("keeps mobile spread and moneyline rows side-specific and compact", () => {
+  it("shows the strongest existing qualifying sharp side and its source percentages", () => {
     setup();
-    for (const market of ["Spread", "Moneyline"]) {
-      fireEvent.click(screen.getByRole("tab", { name: market }));
-      const cards = screen.getByRole("region", { name: `${market.toLowerCase()} mobile rows` });
-      const [away, home] = within(cards).getAllByRole("article");
-      expect(away.textContent).toContain("BUF @ MIA");
-      expect(home.textContent).toContain("MIA vs BUF");
-      expect(away.textContent).not.toContain("BUF vs MIA");
-      expect(home.textContent).not.toContain("BUF @ MIA");
-      expect(away.textContent).toContain(market === "Spread" ? "Handle 75%Bets 50%" : "Handle 80%Bets 45%");
-      expect(home.textContent).toContain(market === "Spread" ? "Handle 25%Bets 50%" : "Handle 20%Bets 55%");
-      expect(away.querySelectorAll('img[src$="/buf.png"]')).toHaveLength(2);
-      expect(home.querySelectorAll('img[src$="/mia.png"]')).toHaveLength(2);
-      expect(away.textContent).toContain("Money Gap");
-    }
+    const table = screen.getByRole("region", { name: "Overview matchup distribution" });
+    const [buf, lac] = within(table).getAllByRole("row").slice(1);
+    expect(buf.textContent).toContain("BUF ML+35 pp");
+    expect(buf.textContent).toContain("80% of money on 45% of tickets");
+    expect(lac.textContent).toContain("SEA -7+29 pp");
   });
-  it("keeps stale data visible with a warning, and hides unavailable data", () => {
+  it("ranks both spread sides independently and switches the mobile share view", () => {
+    setup();
+    fireEvent.click(screen.getByRole("tab", { name: "Spread" }));
+    expect(bodyRows("Money")).toHaveLength(4);
+    expect(bodyRows("Tickets")).toHaveLength(4);
+    expect(bodyRows("Money")[0].textContent).toContain("BUF");
+    expect(bodyRows("Money")[0].textContent).toContain("75%");
+    expect(bodyRows("Tickets")[0].textContent).toContain("LAC");
+    expect(bodyRows("Tickets")[0].textContent).toContain("80%");
+    expect(ranking("Money").querySelectorAll('img[src$="/buf.png"]')).toHaveLength(1);
+    expect(within(ranking("Money")).getByAltText("BUF").getAttribute("src")).toBe("https://a.espncdn.com/i/teamlogos/nfl/500/buf.png");
+    fireEvent.click(screen.getByRole("button", { name: "Tickets" }));
+    expect(screen.getByRole("button", { name: "Tickets" }).getAttribute("aria-pressed")).toBe("true");
+  });
+  it("sorts highest, lowest, alphabetically, and by signed spread value", () => {
+    setup();
+    fireEvent.click(screen.getByRole("tab", { name: "Spread" }));
+    const select = screen.getByRole("combobox", { name: "Sort ranking rows" });
+    expect(bodyRows("Money")[0].textContent).toContain("BUF");
+    fireEvent.change(select, { target: { value: "lowest" } });
+    expect(bodyRows("Money")[0].textContent).toContain("MIA");
+    fireEvent.change(select, { target: { value: "az" } });
+    expect(bodyRows("Money").map((row) => row.textContent?.match(/BUF|LAC|MIA|SEA/)?.[0])).toEqual(["BUF", "LAC", "MIA", "SEA"]);
+    fireEvent.change(select, { target: { value: "value-high" } });
+    expect(bodyRows("Money")[0].textContent).toContain("LAC");
+    expect(bodyRows("Money")[0].textContent).toContain("+7");
+    fireEvent.change(select, { target: { value: "value-low" } });
+    expect(bodyRows("Money")[0].textContent).toContain("SEA");
+    expect(bodyRows("Money")[0].textContent).toContain("-7");
+  });
+  it("ranks both moneyline team sides with ML-specific price sorting", () => {
+    setup();
+    fireEvent.click(screen.getByRole("tab", { name: "Moneyline" }));
+    expect(bodyRows("Money")).toHaveLength(4);
+    expect(bodyRows("Money")[0].textContent).toContain("BUF");
+    expect(bodyRows("Money")[0].textContent).toContain("-140");
+    fireEvent.change(screen.getByRole("combobox", { name: "Sort ranking rows" }), { target: { value: "value-high" } });
+    expect(bodyRows("Money")[0].textContent).toContain("LAC");
+    expect(bodyRows("Money")[0].textContent).toContain("+240");
+  });
+  it("ranks Over and Under without treating totals as team sides", () => {
+    setup();
+    fireEvent.click(screen.getByRole("tab", { name: "Total" }));
+    expect(bodyRows("Money")).toHaveLength(4);
+    expect(bodyRows("Money")[0].textContent).toContain("Over");
+    expect(bodyRows("Money")[0].textContent).toContain("65%");
+    expect(bodyRows("Tickets")[0].textContent).toContain("Under");
+    expect(bodyRows("Tickets")[0].textContent).toContain("65%");
+    expect(ranking("Money").querySelectorAll("img")).toHaveLength(0);
+  });
+  it("keeps stale data visible, unavailable data hidden, and the route registered", () => {
     const view = setup("stale");
     expect(screen.getByRole("alert").textContent).toContain("Stale betting splits");
     expect(screen.getByRole("tab", { name: "Overview" })).toBeTruthy();
@@ -96,16 +127,6 @@ describe("NFL Betting Splits page", () => {
     setup("unavailable");
     expect(screen.getByText("Betting splits unavailable")).toBeTruthy();
     expect(screen.queryByRole("tab")).toBeNull();
-  });
-  it("uses a loading placeholder", () => {
-    setup().unmount();
-    state = { ...state, loading: true };
-    render(<MemoryRouter><NFLBettingSplits /></MemoryRouter>);
-    expect(screen.getByLabelText("Loading betting splits")).toBeTruthy();
-    expect(screen.queryByRole("tab")).toBeNull();
-  });
-  it("registers the route in Markets & Predictions", () => {
-    const markets = NFL_SECTION_NAV_CATEGORIES.find((item) => item.id === "markets");
-    expect(markets?.items.find((item) => item.to === "/nfl/betting-splits")?.label).toBe("Betting Splits");
+    expect(NFL_SECTION_NAV_CATEGORIES.find((item) => item.id === "markets")?.items.find((item) => item.to === "/nfl/betting-splits")?.label).toBe("Betting Splits");
   });
 });

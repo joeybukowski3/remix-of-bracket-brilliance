@@ -6,180 +6,97 @@ import { nflLogoUrl } from "@/data/nflPreseason2026";
 import { useNflBettingSplits } from "@/hooks/useNflBettingSplits";
 import { useCurrentNflWeek } from "@/hooks/useCurrentNflWeek";
 import { usePageSeo } from "@/hooks/usePageSeo";
-import { nflTeamColor } from "@/lib/nfl/nflTeamColor";
 import { formatNflMetadataTimestamp } from "@/lib/nfl/provenance";
-import { contrarianSides, formatSplitsGap, formatSplitsLine, formatSplitsOdds, publicSides, rankedSideNumber, sharpIndicator, sharpSides, sortSplitsMatchupRows, sortSplitsRows, splitsHeatStyle, splitsMatchupLabel, splitsMatchupRows, splitsMatchupWithSpread, splitsRows, splitsSignal, totalSidePillClass, SPLITS_SIGNAL_CLASS, SPLITS_SIGNAL_LABEL, type SplitsFavorites, type SplitsMarket, type SplitsMatchupRow, type SplitsMatchupSortKey, type SplitsRow, type SplitsSortKey } from "@/lib/nfl/bettingSplitsView";
+import { moneyGap, publicGap } from "@/lib/nfl/bettingSplitsData";
+import { formatSplitsGap, formatSplitsLine, formatSplitsOdds, sharpSides, splitsMatchupRows, splitsRows, type SplitsMarket, type SplitsMatchupRow, type SplitsRow } from "@/lib/nfl/bettingSplitsView";
 import { cn } from "@/lib/utils";
 
 type Tab = "overview" | SplitsMarket;
-type SortDirection = "asc" | "desc";
+type Metric = "handlePct" | "betsPct";
+type RankingSort = "highest" | "lowest" | "value-high" | "value-low" | "az";
 const TABS: { id: Tab; label: string }[] = [
   { id: "overview", label: "Overview" }, { id: "spread", label: "Spread" },
   { id: "moneyline", label: "Moneyline" }, { id: "total", label: "Total" },
 ];
 
 function TeamMark({ abbr }: { abbr: string }) {
-  return <span className="inline-flex items-center gap-1 whitespace-nowrap font-semibold text-slate-900"><span className="h-4 w-0.5 rounded" style={{ backgroundColor: nflTeamColor(abbr) ?? "#64748b" }} aria-hidden /><TeamLogo name={abbr.toUpperCase()} logo={nflLogoUrl(abbr)} fallbackLabel={abbr.slice(0, 2).toUpperCase()} className="h-4 w-4 bg-transparent" /><span>{abbr.toUpperCase()}</span></span>;
+  return <span className="inline-flex min-w-0 items-center gap-1.5 whitespace-nowrap font-semibold text-slate-900"><TeamLogo name={abbr.toUpperCase()} logo={nflLogoUrl(abbr)} fallbackLabel={abbr.slice(0, 2).toUpperCase()} className="h-5 w-5 bg-transparent" /><span>{abbr.toUpperCase()}</span></span>;
 }
-
 function MatchupMark({ away, home }: { away: string; home: string }) {
-  return <span className="inline-flex items-center gap-1 whitespace-nowrap"><TeamMark abbr={away} /><span className="text-slate-400">@</span><TeamMark abbr={home} /></span>;
+  return <span className="inline-flex items-center gap-1.5 whitespace-nowrap"><TeamMark abbr={away} /><span className="text-slate-400">@</span><TeamMark abbr={home} /></span>;
 }
-
-function MatchupSpread({ row }: { row: SplitsMatchupRow }) {
-  const label = splitsMatchupWithSpread(row.game);
-  const bracket = label.match(/\[-[^\]]+\]/)?.[0];
-  return <span className="inline-flex items-center gap-1 whitespace-nowrap" aria-label={label}><TeamMark abbr={row.game.away} />{label.startsWith(`${row.game.away.toUpperCase()} [`) && <span className="font-semibold tabular-nums text-slate-600">{bracket}</span>}<span className="text-slate-400">@</span><TeamMark abbr={row.game.home} />{label.endsWith("]") && <span className="font-semibold tabular-nums text-slate-600">{bracket}</span>}</span>;
+function matchupNumbers(row: SplitsMatchupRow) {
+  const favored = row.game.markets.spread.find((side) => side.line !== null && side.line < 0);
+  const spread = favored ? `${favored.side === "away" ? row.game.away : row.game.home} ${formatSplitsLine("spread", favored.line)}` : "Spread —";
+  return `${spread.toUpperCase()} · O/U ${formatSplitsLine("total", row.total.handle.line)}`;
 }
-
-function TotalPill({ side }: { side: "over" | "under" }) {
-  return <span data-total-side={side} className={cn("inline-flex rounded-full border px-1.5 py-0.5 text-[10px] font-bold leading-none", totalSidePillClass(side))}>{side === "over" ? "Over" : "Under"}</span>;
+function GapBadge({ gap }: { gap: number }) {
+  return <span className={cn("inline-flex shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold tabular-nums", gap > 0 ? "bg-emerald-50 text-emerald-800" : gap < 0 ? "bg-rose-50 text-rose-800" : "bg-slate-100 text-slate-700")}>{formatSplitsGap(gap)}</span>;
 }
-
-function HeatValue({ value, children }: { value: number; children: React.ReactNode }) {
-  return <span data-heat-pct={value} style={splitsHeatStyle(value)} className="inline-flex rounded px-1.5 py-0.5 tabular-nums text-slate-900">{children}</span>;
+function SplitBars({ handlePct, betsPct, compact = false }: { handlePct: number; betsPct: number; compact?: boolean }) {
+  return <div className={cn("space-y-1", compact ? "text-[10px]" : "text-[11px]")}>
+    {([["Money", handlePct, "bg-sky-700"], ["Tickets", betsPct, "bg-sky-300"]] as const).map(([label, value, color]) => <div key={label} className="grid grid-cols-[2.6rem_minmax(0,1fr)_2rem] items-center gap-1.5"><span className="text-slate-600">{label}</span><span className="h-1.5 overflow-hidden rounded-full bg-slate-100" role="img" aria-label={`${label} ${value}%`}><span className={cn("block h-full rounded-full", color)} style={{ width: `${value}%` }} /></span><span className="text-right font-semibold tabular-nums text-slate-800">{value}%</span></div>)}
+  </div>;
 }
-
-function SignalBadge({ gap }: { gap: number }) {
-  const signal = splitsSignal(gap);
-  return <span className={cn("inline-block whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-semibold", SPLITS_SIGNAL_CLASS[signal])}>{SPLITS_SIGNAL_LABEL[signal]}</span>;
+function sideName(row: SplitsRow) {
+  return row.side.side === "away" ? row.game.away.toUpperCase() : row.side.side === "home" ? row.game.home.toUpperCase() : row.side.side === "over" ? "Over" : "Under";
 }
-
-function GapCell({ gap }: { gap: number }) {
-  return <span className={cn("font-bold tabular-nums", gap > 0 ? "text-emerald-700" : gap < 0 ? "text-rose-700" : "text-slate-600")}>{formatSplitsGap(gap)}</span>;
+function sideValue(row: SplitsRow) {
+  return row.market === "moneyline" ? formatSplitsOdds(row.side.odds) : formatSplitsLine(row.market, row.side.line);
 }
-
-function Favorite({ row, side, metric, logo = true }: { row: SplitsMatchupRow; side: SplitsFavorites["handle"]; metric: "handlePct" | "betsPct"; logo?: boolean }) {
-  const label = side.side === "away" ? row.game.away : side.side === "home" ? row.game.home : side.side === "over" ? "Over" : "Under";
-  return <HeatValue value={side[metric]}><span className="inline-flex items-center gap-1 whitespace-nowrap font-semibold">{logo && (side.side === "away" || side.side === "home") && <TeamLogo name={label.toUpperCase()} logo={nflLogoUrl(label)} fallbackLabel={label.slice(0, 2).toUpperCase()} className="h-4 w-4 shrink-0 bg-transparent" />}{side.side === "over" || side.side === "under" ? <TotalPill side={side.side} /> : label.toUpperCase()} {side[metric]}%</span></HeatValue>;
+function displayedSide(row: SplitsMatchupRow, market: SplitsMarket): SplitsRow {
+  const side = row[market].handle;
+  return { game: row.game, market, side, gap: moneyGap(side), publicGap: publicGap(side) };
 }
-
-function MobileFavorites({ row, title, favorites }: { row: SplitsMatchupRow; title: string; favorites: SplitsFavorites }) {
-  return <div className="grid grid-cols-[4.5rem_minmax(0,1fr)_minmax(0,1fr)] items-center gap-2 border-t border-slate-100 py-1.5 text-[11px] first:border-0"><strong className="text-slate-700">{title}{title === "Total" && <span className="block font-medium tabular-nums">{formatSplitsLine("total", row.total.handle.line)}</span>}</strong><span className="min-w-0"><span className="block text-[10px] text-slate-500">Handle</span><Favorite row={row} side={favorites.handle} metric="handlePct" /></span><span className="min-w-0"><span className="block text-[10px] text-slate-500">Bets</span><Favorite row={row} side={favorites.bets} metric="betsPct" /></span></div>;
+function MarketSplit({ row, compact = false }: { row: SplitsRow; compact?: boolean }) {
+  return <div className={cn("min-w-0", compact ? "grid grid-cols-[4.4rem_minmax(0,1fr)] gap-2" : "space-y-1.5")}>
+    <div className={cn("flex items-center gap-1 font-semibold text-slate-900", compact ? "flex-col items-start justify-center text-[11px]" : "text-xs")}><span className="whitespace-nowrap">{sideName(row)} <span className="tabular-nums">{sideValue(row)}</span></span>{!compact && <GapBadge gap={row.gap} />}</div>
+    <div className="min-w-0"><SplitBars handlePct={row.side.handlePct} betsPct={row.side.betsPct} compact={compact} />{compact && <div className="mt-1 flex justify-end"><GapBadge gap={row.gap} /></div>}</div>
+  </div>;
 }
-
-const overviewOptions: { key: SplitsMatchupSortKey; label: string }[] = [
-  { key: "gap", label: "Money Gap" }, { key: "matchup", label: "Matchup" },
-  { key: "handlePct", label: "Strongest Handle %" }, { key: "betsPct", label: "Strongest Bets %" },
-  { key: "spreadHandle", label: "Spread Handle Favorite" }, { key: "spreadBets", label: "Spread Bets Favorite" },
-  { key: "totalHandle", label: "Total Handle Favorite" }, { key: "totalBets", label: "Total Bets Favorite" },
-  { key: "moneylineHandle", label: "Moneyline Handle Favorite" }, { key: "moneylineBets", label: "Moneyline Bets Favorite" },
-];
-
-function OverviewTable({ rows }: { rows: readonly SplitsMatchupRow[] }) {
-  const [sort, setSort] = useState<{ key: SplitsMatchupSortKey; direction: SortDirection }>({ key: "gap", direction: "desc" });
-  const shown = sortSplitsMatchupRows(rows, sort.key, sort.direction);
-  const toggle = (key: SplitsMatchupSortKey) => setSort((current) => ({ key, direction: current.key === key && current.direction === "desc" ? "asc" : "desc" }));
-  const sortButton = (key: SplitsMatchupSortKey, label: string) => <button type="button" onClick={() => toggle(key)} aria-label={`Sort by ${label}`} className="whitespace-nowrap hover:text-sky-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500">{label}{sort.key === key ? sort.direction === "desc" ? " ↓" : " ↑" : ""}</button>;
+function SharpSignal({ row }: { row: SplitsMatchupRow }) {
+  const candidates = sharpSides((["spread", "total", "moneyline"] as const).flatMap((market) => row.game.markets[market].map((side): SplitsRow => ({ game: row.game, market, side, gap: moneyGap(side), publicGap: publicGap(side) }))));
+  const signal = candidates[0];
+  if (!signal) return <span className="text-xs text-slate-500">No sharp side</span>;
+  return <div className="min-w-0"><div className="flex flex-wrap items-center gap-1.5 text-xs font-bold text-slate-900"><span>{sideName(signal)} {signal.market === "moneyline" ? "ML" : sideValue(signal)}</span><GapBadge gap={signal.gap} /></div><p className="mt-1 text-[10px] leading-4 text-slate-600">{signal.side.handlePct}% of money on {signal.side.betsPct}% of tickets</p></div>;
+}
+function Overview({ rows }: { rows: readonly SplitsMatchupRow[] }) {
   return <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
-    <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-slate-100 px-3 py-2.5"><h2 className="text-sm font-bold text-slate-900">Matchup distribution</h2><p className="text-[11px] text-slate-600">Higher Handle and Bets side in each market</p></div>
-    <div className="px-3 py-2 md:hidden"><label className="flex items-center gap-2 text-[11px] font-semibold text-slate-600">Sort by <select aria-label="Sort overview rows" value={`${sort.key}:${sort.direction}`} onChange={(event) => { const [key, direction] = event.target.value.split(":") as [SplitsMatchupSortKey, SortDirection]; setSort({ key, direction }); }} className="min-w-0 rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900">{overviewOptions.flatMap(({ key, label }) => ([<option key={`${key}:desc`} value={`${key}:desc`}>{label} ↓</option>, <option key={`${key}:asc`} value={`${key}:asc`}>{label} ↑</option>]))}</select></label></div>
-    <div role="region" aria-label="Overview matchup cards" className="divide-y divide-slate-200 md:hidden">{shown.map((row) => <article key={row.game.gameId} data-splits-game-id={row.game.gameId} className="px-3 py-2.5"><MatchupSpread row={row} /><div className="mt-1.5"><MobileFavorites row={row} title="Spread" favorites={row.spread} /><MobileFavorites row={row} title="Total" favorites={row.total} /><MobileFavorites row={row} title="Moneyline" favorites={row.moneyline} /></div><div className="border-t border-slate-100 pt-1.5 text-[11px] text-slate-700">Sharp Indicator · {sharpIndicator(row.strongest)}</div></article>)}</div>
-    <DenseTableScroller label="Overview matchup distribution" className="hidden w-full md:block"><table className="min-w-[980px] w-full text-[11px]">
-      <thead><tr className={DENSE_TABLE_HEAD_ROW}>
-        <th rowSpan={2} scope="col" className="px-2 py-2 text-left">{sortButton("matchup", "Matchup")}</th>
-        <th colSpan={2} scope="colgroup" className="border-l border-slate-200 px-2 py-1.5 text-center">Spread betting splits</th>
-        <th colSpan={3} scope="colgroup" className="border-l border-slate-200 px-2 py-1.5 text-center">Total betting splits</th>
-        <th colSpan={2} scope="colgroup" className="border-l border-slate-200 px-2 py-1.5 text-center">Moneyline betting splits</th>
-        <th rowSpan={2} scope="col" className="border-l border-slate-200 px-2 py-2 text-left">{sortButton("gap", "Sharp Indicator")}</th>
-      </tr><tr className={DENSE_TABLE_HEAD_ROW}>
-        <th scope="col" className="border-l border-slate-200 px-2 py-1.5 text-left">{sortButton("spreadHandle", "Spread Handle Favorite")}</th>
-        <th scope="col" className="px-2 py-1.5 text-left">{sortButton("spreadBets", "Spread Bets Favorite")}</th>
-        <th scope="col" className="border-l border-slate-200 px-2 py-1.5 text-right">Total</th>
-        <th scope="col" className="px-2 py-1.5 text-left">{sortButton("totalHandle", "Total Handle Favorite")}</th>
-        <th scope="col" className="px-2 py-1.5 text-left">{sortButton("totalBets", "Total Bets Favorite")}</th>
-        <th scope="col" className="border-l border-slate-200 px-2 py-1.5 text-left">{sortButton("moneylineHandle", "Moneyline Handle Favorite")}</th>
-        <th scope="col" className="px-2 py-1.5 text-left">{sortButton("moneylineBets", "Moneyline Bets Favorite")}</th>
-      </tr></thead><tbody>{shown.map((row) => <tr key={row.game.gameId} data-splits-game-id={row.game.gameId} className={DENSE_TABLE_ROW}>
-        <td className="whitespace-nowrap px-2 py-2"><MatchupSpread row={row} /></td>
-        <td className="border-l border-slate-200 px-2 py-2"><Favorite row={row} side={row.spread.handle} metric="handlePct" /></td>
-        <td className="px-2 py-2"><Favorite row={row} side={row.spread.bets} metric="betsPct" /></td>
-        <td className="border-l border-slate-200 px-2 py-2 text-right tabular-nums">{formatSplitsLine("total", row.total.handle.line)}</td>
-        <td className="px-2 py-2"><Favorite row={row} side={row.total.handle} metric="handlePct" /></td>
-        <td className="px-2 py-2"><Favorite row={row} side={row.total.bets} metric="betsPct" /></td>
-        <td className="border-l border-slate-200 px-2 py-2"><Favorite row={row} side={row.moneyline.handle} metric="handlePct" /></td>
-        <td className="px-2 py-2"><Favorite row={row} side={row.moneyline.bets} metric="betsPct" /></td>
-        <td className="border-l border-slate-200 px-2 py-2 text-[10px] leading-4 text-slate-700">{sharpIndicator(row.strongest)}</td>
-      </tr>)}</tbody></table></DenseTableScroller>
-    <div className="hidden border-t border-slate-100 px-3 py-1.5 text-[10px] text-slate-600 md:block">Sort by strongest Handle % or Bets %: {sortButton("handlePct", "Handle %")} · {sortButton("betsPct", "Bets %")}</div>
+    <div className="border-b border-slate-100 px-3 py-2.5"><h2 className="text-sm font-bold text-slate-900">Matchup distribution</h2><p className="text-[11px] text-slate-600">Money = handle · Tickets = bets · gap shown for the money-leading side</p></div>
+    <div role="region" aria-label="Overview matchup cards" className="divide-y divide-slate-200 md:hidden">{rows.map((row) => <article key={row.game.gameId} data-splits-game-id={row.game.gameId} className="px-3 py-3"><div className="flex items-start justify-between gap-2"><div className="min-w-0"><MatchupMark away={row.game.away} home={row.game.home} /><p className="mt-1 text-[10px] font-medium tabular-nums text-slate-600">{matchupNumbers(row)}</p></div><div className="max-w-[9rem] text-right"><span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Sharp signal</span><SharpSignal row={row} /></div></div><div className="mt-2 divide-y divide-slate-100 border-t border-slate-100">{(["spread", "total", "moneyline"] as const).map((market) => <div key={market} className="grid grid-cols-[4.3rem_minmax(0,1fr)] gap-1 py-2"><strong className="pt-0.5 text-[10px] uppercase tracking-wide text-slate-600">{market}</strong><MarketSplit row={displayedSide(row, market)} compact /></div>)}</div></article>)}</div>
+    <DenseTableScroller label="Overview matchup distribution" className="hidden md:block"><table className="w-full min-w-[960px] table-fixed text-left"><colgroup><col className="w-[18%]" /><col className="w-[20%]" /><col className="w-[20%]" /><col className="w-[20%]" /><col className="w-[22%]" /></colgroup><thead><tr className={DENSE_TABLE_HEAD_ROW}>{["Matchup", "Spread", "Total", "Moneyline", "Sharp signal"].map((label) => <th key={label} scope="col" className="px-3 py-2">{label}</th>)}</tr></thead><tbody>{rows.map((row) => <tr key={row.game.gameId} data-splits-game-id={row.game.gameId} className={cn(DENSE_TABLE_ROW, "align-top")}><td className="px-3 py-3"><MatchupMark away={row.game.away} home={row.game.home} /><p className="mt-1.5 whitespace-nowrap text-[10px] tabular-nums text-slate-600">{matchupNumbers(row)}</p></td>{(["spread", "total", "moneyline"] as const).map((market) => <td key={market} className="border-l border-slate-100 px-3 py-3"><MarketSplit row={displayedSide(row, market)} /></td>)}<td className="border-l border-slate-100 px-3 py-3"><SharpSignal row={row} /></td></tr>)}</tbody></table></DenseTableScroller>
   </section>;
 }
-
-function RankedSideNumber({ row }: { row: SplitsRow }) {
-  return row.market === "total" ? <><TotalPill side={row.side.side as "over" | "under"} /> <span className="tabular-nums">{formatSplitsLine("total", row.side.line)} · {formatSplitsOdds(row.side.odds)}</span></> : <span className="tabular-nums">{rankedSideNumber(row)}</span>;
+function rankingSortRows(rows: readonly SplitsRow[], metric: Metric, sort: RankingSort): SplitsRow[] {
+  const identity = (row: SplitsRow) => `${sideName(row)}:${row.game.gameId}:${row.side.side}`;
+  const value = (row: SplitsRow) => row.market === "moneyline" ? row.side.odds : row.side.line ?? 0;
+  return [...rows].sort((a, b) => {
+    const result = sort === "highest" ? b.side[metric] - a.side[metric] : sort === "lowest" ? a.side[metric] - b.side[metric] : sort === "value-high" ? value(b) - value(a) : sort === "value-low" ? value(a) - value(b) : sideName(a).localeCompare(sideName(b));
+    return result || identity(a).localeCompare(identity(b));
+  });
 }
-
-function RankedTable({ title, rows, tone }: { title: string; rows: readonly SplitsRow[]; tone: "public" | "sharp" | "contrarian" }) {
-  const tones = { public: "bg-amber-50 text-amber-900 border-amber-200", sharp: "bg-emerald-50 text-emerald-900 border-emerald-200", contrarian: "bg-violet-50 text-violet-900 border-violet-200" };
-  return <section aria-label={title} className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white">
-    <h2 className={cn("border-b px-3 py-2 text-xs font-bold", tones[tone])}>{title}</h2>
-    <div className="divide-y divide-slate-100 md:hidden">{rows.slice(0, 5).map((row) => <article key={`${row.game.gameId}:${row.market}:${row.side.side}`} className="px-3 py-2 text-[11px]">
-      <div className="flex items-center justify-between gap-2"><strong className="text-slate-900">{splitsMatchupLabel(row.game)}</strong><span className="font-semibold capitalize text-slate-600">{row.market}</span></div>
-      <div className="mt-1"><RankedSideNumber row={row} /></div>
-      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1"><span>Handle <HeatValue value={row.side.handlePct}>{row.side.handlePct}%</HeatValue></span><span>Bets <HeatValue value={row.side.betsPct}>{row.side.betsPct}%</HeatValue></span><span>Gap <GapCell gap={row.gap} /></span></div>
-    </article>)}</div>
-    <div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[570px] text-[11px]"><thead><tr className={DENSE_TABLE_HEAD_ROW}><th scope="col" className="px-3 py-1.5 text-left">Matchup</th><th scope="col" className="px-2 py-1.5 text-left">Market</th><th scope="col" className="px-2 py-1.5 text-left">Side / Number</th><th scope="col" className="px-2 py-1.5 text-right">Handle</th><th scope="col" className="px-2 py-1.5 text-right">Bets</th><th scope="col" className="px-3 py-1.5 text-right">Gap</th></tr></thead><tbody>{rows.slice(0, 5).map((row) => <tr key={`${row.game.gameId}:${row.market}:${row.side.side}`} className={DENSE_TABLE_ROW}><td className="whitespace-nowrap px-3 py-1.5">{splitsMatchupLabel(row.game)}</td><td className="px-2 py-1.5 capitalize">{row.market}</td><td className="whitespace-nowrap px-2 py-1.5"><RankedSideNumber row={row} /></td><td className="px-2 py-1.5 text-right"><HeatValue value={row.side.handlePct}>{row.side.handlePct}%</HeatValue></td><td className="px-2 py-1.5 text-right"><HeatValue value={row.side.betsPct}>{row.side.betsPct}%</HeatValue></td><td className="px-3 py-1.5 text-right tabular-nums"><GapCell gap={row.gap} /></td></tr>)}</tbody></table></div>
-    {rows.length === 0 && <p className="px-3 py-3 text-xs text-slate-600">No sides meet this definition this week.</p>}
-  </section>;
+function RankingTable({ rows, market, metric }: { rows: readonly SplitsRow[]; market: SplitsMarket; metric: Metric }) {
+  return <section aria-label={`${metric === "handlePct" ? "Money" : "Tickets"} ranking`} className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white"><div className="border-b border-slate-200 bg-slate-50 px-3 py-2"><h3 className="text-xs font-bold uppercase tracking-wide text-slate-800">{metric === "handlePct" ? "Money" : "Tickets"}</h3><p className="text-[10px] text-slate-600">{metric === "handlePct" ? "Handle %" : "Bets %"} on each {market === "total" ? "total side" : "team side"}</p></div><table className="w-full table-fixed text-left text-xs"><colgroup><col className="w-7 md:w-9" /><col className="w-[30%] md:w-[34%]" /><col className="w-[19%]" /><col /><col className="w-10 md:w-12" /></colgroup><thead><tr className={DENSE_TABLE_HEAD_ROW}><th scope="col" className="px-1.5 py-2 text-center">#</th><th scope="col" className="px-1 py-2">{market === "total" ? "Matchup / side" : "Team"}</th><th scope="col" className="px-1 py-2">{market === "spread" ? "Spread" : market === "moneyline" ? "ML" : "Total"}</th><th scope="col" className="px-1 py-2">Share</th><th scope="col" className="px-1.5 py-2 text-right">%</th></tr></thead><tbody>{rows.map((row, index) => <tr key={`${row.game.gameId}:${row.side.side}`} data-splits-game-id={row.game.gameId} className={DENSE_TABLE_ROW}><td className="px-1.5 py-2 text-center tabular-nums text-slate-500">{index + 1}</td><td className="overflow-hidden px-1 py-2"><div className="flex min-w-0 items-center gap-1">{market !== "total" && <TeamLogo name={sideName(row)} logo={nflLogoUrl(row.side.side === "away" ? row.game.away : row.game.home)} fallbackLabel={sideName(row).slice(0, 2)} className="h-4 w-4 bg-transparent" />}<span className="truncate font-semibold text-slate-900" title={market === "total" ? `${row.game.away.toUpperCase()} @ ${row.game.home.toUpperCase()} ${sideName(row)}` : sideName(row)}>{market === "total" ? <>{row.game.away.toUpperCase()} @ {row.game.home.toUpperCase()} <span className="text-sky-800">{sideName(row)}</span></> : <>{sideName(row)} <span className="hidden text-[10px] font-normal text-slate-500 lg:inline">{row.side.side === "away" ? `@ ${row.game.home.toUpperCase()}` : `vs ${row.game.away.toUpperCase()}`}</span></>}</span></div></td><td className="whitespace-nowrap px-1 py-2 font-medium tabular-nums text-slate-700">{sideValue(row)}</td><td className="px-1 py-2"><span role="img" aria-label={`${metric === "handlePct" ? "Money" : "Tickets"} ${row.side[metric]}%`} className="block h-2 overflow-hidden rounded-full bg-slate-100"><span className={cn("block h-full rounded-full", metric === "handlePct" ? "bg-sky-700" : "bg-sky-300")} style={{ width: `${row.side[metric]}%` }} /></span></td><td className="whitespace-nowrap px-1.5 py-2 text-right font-bold tabular-nums text-slate-900">{row.side[metric]}%</td></tr>)}</tbody></table></section>;
 }
-
-function MobileMarketRow({ row, market }: { row: SplitsRow; market: SplitsMarket }) {
-  const isTeam = row.side.side === "away" || row.side.side === "home";
-  const team = isTeam ? (row.side.side === "away" ? row.game.away : row.game.home) : null;
-  const matchup = row.side.side === "away" ? `${row.game.away.toUpperCase()} @ ${row.game.home.toUpperCase()}` : row.side.side === "home" ? `${row.game.home.toUpperCase()} vs ${row.game.away.toUpperCase()}` : splitsMatchupLabel(row.game);
-  const logo = team ? <span data-team-logo={team.toUpperCase()}><TeamLogo name={team.toUpperCase()} logo={nflLogoUrl(team)} fallbackLabel={team.slice(0, 2).toUpperCase()} className="h-4 w-4 shrink-0 bg-transparent" /></span> : null;
-  return <article data-splits-game-id={row.game.gameId} className="px-3 py-2.5 text-xs"><div className="flex flex-wrap items-center justify-between gap-1"><strong className="text-slate-900">{matchup}</strong>{market === "total" && <TotalPill side={row.side.side as "over" | "under"} />}<SignalBadge gap={row.gap} /></div><div className="mt-1 flex flex-wrap items-center justify-between gap-2 text-[11px] tabular-nums"><span className="inline-flex items-center gap-1">{logo}<span>Handle <HeatValue value={row.side.handlePct}><strong>{row.side.handlePct}%</strong></HeatValue></span></span><span className="inline-flex items-center gap-1">{logo}<span>Bets <HeatValue value={row.side.betsPct}><strong>{row.side.betsPct}%</strong></HeatValue></span></span><span className="text-slate-600">{market !== "moneyline" && <>{formatSplitsLine(market, row.side.line)} · </>}{formatSplitsOdds(row.side.odds)}</span></div><div className="mt-1 text-[11px] text-slate-600">Money Gap <GapCell gap={row.gap} /></div></article>;
+function Rankings({ rows, market }: { rows: readonly SplitsRow[]; market: SplitsMarket }) {
+  const [sort, setSort] = useState<RankingSort>("highest");
+  const [mobileMetric, setMobileMetric] = useState<Metric>("handlePct");
+  const valueLabel = market === "spread" ? "spread" : market === "moneyline" ? "ML price" : "total";
+  const options: { value: RankingSort; label: string }[] = [{ value: "highest", label: "Highest %" }, { value: "lowest", label: "Lowest %" }, { value: "value-high", label: `Highest ${valueLabel}` }, { value: "value-low", label: `Lowest ${valueLabel}` }, { value: "az", label: "A-Z" }];
+  return <div className="min-w-0 space-y-3"><div className="flex flex-wrap items-end justify-between gap-2"><div><h2 className="text-sm font-bold text-slate-900">{market === "spread" ? "Spread" : market === "moneyline" ? "Moneyline" : "Total"} rankings</h2><p className="text-[11px] text-slate-600">Both source sides of each matchup, ranked independently by share.</p></div><label className="flex items-center gap-2 text-[11px] font-semibold text-slate-600">Sort by <select aria-label="Sort ranking rows" value={sort} onChange={(event) => setSort(event.target.value as RankingSort)} className="rounded border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500">{options.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}</select></label></div><div role="group" aria-label="Ranking share" className="inline-flex rounded-md border border-slate-200 bg-slate-100 p-0.5 md:hidden">{([["handlePct", "Money"], ["betsPct", "Tickets"]] as const).map(([metric, label]) => <button key={metric} type="button" aria-pressed={mobileMetric === metric} onClick={() => setMobileMetric(metric)} className={cn("min-h-8 rounded px-4 text-xs font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500", mobileMetric === metric ? "bg-white text-slate-900 shadow-sm" : "text-slate-600")}>{label}</button>)}</div><div className="grid min-w-0 gap-3 md:grid-cols-2"><div className={mobileMetric === "handlePct" ? "min-w-0" : "hidden min-w-0 md:block"}><RankingTable rows={rankingSortRows(rows, "handlePct", sort)} market={market} metric="handlePct" /></div><div className={mobileMetric === "betsPct" ? "min-w-0" : "hidden min-w-0 md:block"}><RankingTable rows={rankingSortRows(rows, "betsPct", sort)} market={market} metric="betsPct" /></div></div></div>;
 }
-
-function MarketTable({ rows, market }: { rows: readonly SplitsRow[]; market: SplitsMarket }) {
-  const [sort, setSort] = useState<{ key: SplitsSortKey; direction: SortDirection }>({ key: "gap", direction: "desc" });
-  const shown = sortSplitsRows(rows, sort.key, sort.direction);
-  const keys: { key: SplitsSortKey; label: string }[] = [{ key: "handlePct", label: "Handle" }, { key: "betsPct", label: "Bets" }, { key: "gap", label: "Money Gap" }, ...(market === "moneyline" ? [] : [{ key: "line" as const, label: market === "total" ? "Total" : "Line" }]), { key: "odds", label: "Odds" }];
-  const toggle = (key: SplitsSortKey) => setSort((current) => ({ key, direction: current.key === key && current.direction === "desc" ? "asc" : "desc" }));
-  const sortButton = (key: SplitsSortKey, label: string) => <button type="button" onClick={() => toggle(key)} aria-label={`Sort by ${label}`} className="whitespace-nowrap hover:text-sky-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500">{label}{sort.key === key ? sort.direction === "desc" ? " ↓" : " ↑" : ""}</button>;
-  const sideLabel = (row: SplitsRow) => row.side.side === "away" ? row.game.away : row.side.side === "home" ? row.game.home : null;
-  return <section className="min-w-0 overflow-hidden rounded-lg border border-slate-200 bg-white"><div className="border-b border-slate-100 px-3 py-2.5"><h2 className="text-sm font-bold text-slate-900">{market === "moneyline" ? "Moneyline" : market === "spread" ? "Spread" : "Total"} distribution</h2><p className="text-[11px] text-slate-600">Both sides of every eligible game · select a column to sort</p></div>
-    <div className="px-3 py-2 md:hidden"><label className="flex items-center gap-2 text-[11px] font-semibold text-slate-600">Sort by <select aria-label="Sort market rows" value={`${sort.key}:${sort.direction}`} onChange={(event) => { const [key, direction] = event.target.value.split(":") as [SplitsSortKey, SortDirection]; setSort({ key, direction }); }} className="rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900">{keys.flatMap(({ key, label }) => ([<option key={`${key}:desc`} value={`${key}:desc`}>{label} ↓</option>, <option key={`${key}:asc`} value={`${key}:asc`}>{label} ↑</option>]))}</select></label></div>
-    <div role="region" aria-label={`${market} mobile rows`} className="divide-y divide-slate-200 md:hidden">{shown.map((row) => <MobileMarketRow key={`${row.game.gameId}:${row.side.side}`} row={row} market={market} />)}</div>
-    <DenseTableScroller label={`${market} betting splits`} className="hidden w-full md:block"><table className="min-w-[690px] w-full text-xs"><thead><tr className={DENSE_TABLE_HEAD_ROW}>
-      <th scope="col" className="px-3 py-2 text-left">{market === "total" ? "Matchup" : "Team"}</th>
-      {market === "spread" && <th scope="col" className="px-2 py-2 text-right">{sortButton("line", "Line")}</th>}
-      {market === "total" && <th scope="col" className="px-2 py-2 text-left">Side</th>}
-      {market !== "total" && <th scope="col" className="px-2 py-2 text-left">Opp</th>}
-      {market === "total" && <th scope="col" className="px-2 py-2 text-right">{sortButton("line", "Total")}</th>}
-      <th scope="col" className="px-2 py-2 text-right">{sortButton("odds", "Odds")}</th>
-      <th scope="col" className="px-2 py-2 text-right">{sortButton("handlePct", "Handle")}</th>
-      <th scope="col" className="px-2 py-2 text-right">{sortButton("betsPct", "Bets")}</th>
-      <th scope="col" className="px-2 py-2 text-right">{sortButton("gap", "Money Gap")}</th>
-      <th scope="col" className="px-3 py-2 text-left">Signal</th>
-    </tr></thead><tbody>{shown.map((row) => <tr key={`${row.game.gameId}:${row.side.side}`} data-splits-game-id={row.game.gameId} className={DENSE_TABLE_ROW}>
-      <td className="whitespace-nowrap px-3 py-2">{market === "total" ? <MatchupMark away={row.game.away} home={row.game.home} /> : <TeamMark abbr={sideLabel(row)!} />}</td>
-      {market === "spread" && <td className="px-2 py-2 text-right tabular-nums">{formatSplitsLine(market, row.side.line)}</td>}
-      <td className="px-2 py-2">{market === "total" ? <TotalPill side={row.side.side as "over" | "under"} /> : <TeamMark abbr={row.side.side === "away" ? row.game.home : row.game.away} />}</td>
-      {market === "total" && <td className="px-2 py-2 text-right tabular-nums">{formatSplitsLine(market, row.side.line)}</td>}
-      <td className="px-2 py-2 text-right tabular-nums">{formatSplitsOdds(row.side.odds)}</td>
-      <td className="px-2 py-2 text-right font-semibold"><HeatValue value={row.side.handlePct}>{row.side.handlePct}%</HeatValue></td>
-      <td className="px-2 py-2 text-right"><HeatValue value={row.side.betsPct}>{row.side.betsPct}%</HeatValue></td>
-      <td className="px-2 py-2 text-right whitespace-nowrap"><GapCell gap={row.gap} /></td>
-      <td className="px-3 py-2"><SignalBadge gap={row.gap} /></td>
-    </tr>)}</tbody></table></DenseTableScroller>
-  </section>;
-}
-
 function BettingSplitsContent({ week }: { week: number }) {
   const data = useNflBettingSplits({ season: 2026, week });
   const [tab, setTab] = useState<Tab>("overview");
   const overview = useMemo(() => data.artifact ? splitsMatchupRows(data.artifact) : [], [data.artifact]);
-  const allRows = useMemo(() => data.artifact ? splitsRows(data.artifact) : [], [data.artifact]);
   const captured = data.sourceCapturedAt ? formatNflMetadataTimestamp(data.sourceCapturedAt) : null;
   return <>
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-600" role="status"><span className={cn("font-bold", data.loading ? "text-slate-600" : data.freshness === "fresh" ? "text-emerald-700" : data.freshness === "stale" ? "text-amber-800" : "text-rose-700")}>{data.loading ? "Loading" : data.freshness === "fresh" ? "Fresh" : data.freshness === "stale" ? "Stale" : "Unavailable"}</span><span>Week {data.week ?? week}</span><span>{data.source ?? "DraftKings Network / DraftKings Sportsbook"}</span>{captured && <span>Captured {captured}</span>}</div>
     {data.loading ? <div aria-label="Loading betting splits" className="space-y-2 rounded-lg border border-slate-200 bg-white p-4">{[0, 1, 2, 3].map((n) => <div key={n} className="h-8 animate-pulse rounded bg-slate-100" />)}</div>
       : data.freshness === "unavailable" || !data.artifact ? <section className="rounded-lg border border-slate-200 bg-white p-5"><h2 className="text-sm font-bold text-slate-900">Betting splits unavailable</h2><p className="mt-1 text-xs leading-5 text-slate-600">Source data for the current week is currently unavailable. Check back after the next DraftKings capture.</p></section>
-      : <>{data.freshness === "stale" && <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">Stale betting splits. These figures were captured {captured} and may not reflect the current market{data.reason === "week_mismatch" ? ` (source Week ${data.week}; current Week ${week})` : ""}.</div>}<div role="tablist" aria-label="Betting splits markets" className="flex w-full gap-1 overflow-x-auto border-b border-slate-200">{TABS.map(({ id, label }) => <button key={id} type="button" role="tab" id={`splits-tab-${id}`} aria-selected={tab === id} aria-controls={`splits-panel-${id}`} onClick={() => setTab(id)} className={cn("shrink-0 border-b-2 px-3 py-2 text-xs font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500", tab === id ? "border-slate-900 text-slate-900" : "border-transparent text-slate-600 hover:text-slate-900")}>{label}</button>)}</div><div role="tabpanel" id={`splits-panel-${tab}`} aria-labelledby={`splits-tab-${tab}`} className="min-w-0">{tab === "overview" ? <div className="space-y-4"><OverviewTable rows={overview} /><div className="grid min-w-0 gap-3"><RankedTable title="Highest Public Sides" rows={publicSides(allRows)} tone="public" /><RankedTable title="Sharp Sides" rows={sharpSides(allRows)} tone="sharp" /><RankedTable title="Contrarian Sides" rows={contrarianSides(allRows)} tone="contrarian" /></div></div> : <MarketTable key={tab} rows={splitsRows(data.artifact, tab)} market={tab} />}</div><details className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-600"><summary className="cursor-pointer font-semibold text-slate-800">How these labels work</summary><p className="mt-2 leading-5">Money Gap = Handle % − Bets %. Strong Money Gap is +20 points or more; Money Lean is +10 to +19; Balanced is −9 to +9; Public Heavy is −10 or lower. “Sharp Side” is a JKB heuristic based on handle-vs-ticket imbalance. DraftKings does not identify professional bettors. These labels describe distribution, not predictive advantage.</p></details></>}
+      : <>{data.freshness === "stale" && <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-900">Stale betting splits. These figures were captured {captured} and may not reflect the current market{data.reason === "week_mismatch" ? ` (source Week ${data.week}; current Week ${week})` : ""}.</div>}<div role="tablist" aria-label="Betting splits markets" className="grid w-full grid-cols-4 border-b border-slate-200">{TABS.map(({ id, label }) => <button key={id} type="button" role="tab" aria-label={label} id={`splits-tab-${id}`} aria-selected={tab === id} aria-controls={`splits-panel-${id}`} onClick={() => setTab(id)} className={cn("min-w-0 border-b-2 px-1.5 py-2 text-[11px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 sm:text-xs", tab === id ? "border-slate-900 text-slate-900" : "border-transparent text-slate-600 hover:text-slate-900")}>{id === "moneyline" ? <><span className="sm:hidden">ML</span><span className="hidden sm:inline">Moneyline</span></> : label}</button>)}</div><div role="tabpanel" id={`splits-panel-${tab}`} aria-labelledby={`splits-tab-${tab}`} className="min-w-0">{tab === "overview" ? <Overview rows={overview} /> : <Rankings key={tab} rows={splitsRows(data.artifact, tab)} market={tab} />}</div><details className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-600"><summary className="cursor-pointer font-semibold text-slate-800">How these labels work</summary><p className="mt-2 leading-5">Money Gap = Handle % − Bets %. Strong Money Gap is +20 points or more; Money Lean is +10 to +19; Balanced is −9 to +9; Public Heavy is −10 or lower. “Sharp Side” is a JKB heuristic based on handle-vs-ticket imbalance. DraftKings does not identify professional bettors. These labels describe distribution, not predictive advantage.</p></details></>}
   </>;
 }
-
 export default function NFLBettingSplits() {
   usePageSeo({ title: "NFL Betting Splits | Joe Knows Ball", description: "DraftKings Network NFL spread, moneyline and total betting distribution by handle and bets.", path: "/nfl/betting-splits", noindex: false });
   const current = useCurrentNflWeek(2026);
