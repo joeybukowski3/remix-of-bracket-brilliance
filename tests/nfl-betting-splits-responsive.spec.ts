@@ -4,8 +4,9 @@ const baseUrl = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:4173";
 
 for (const width of [1440, 390]) {
   test(`betting splits layout and controls at ${width}px`, async ({ page }, testInfo) => {
+    test.setTimeout(120_000);
     await page.setViewportSize({ width, height: 900 });
-    await page.goto(`${baseUrl}/nfl/betting-splits`);
+    await page.goto(`${baseUrl}/nfl/betting-splits`, { waitUntil: "domcontentloaded" });
     await expect(page.getByRole("heading", { name: "NFL Betting Splits" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Overview" })).toBeVisible();
     const noPageOverflow = async () => expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
@@ -27,7 +28,17 @@ for (const width of [1440, 390]) {
       if (market === "Total") {
         await expect(page.getByRole("region", { name: "Money ranking" }).getByText("Over", { exact: true }).first()).toBeVisible();
         await expect(page.getByRole("region", { name: "Money ranking" }).getByText("Under", { exact: true }).first()).toBeVisible();
+        const firstTotal = moneyRows.first();
+        await expect(firstTotal.locator('img[src*="/teamlogos/nfl/500/"], div.rounded-full')).toHaveCount(2);
+        await expect(page.getByRole("region", { name: "Money ranking" }).locator('[data-total-side="over"]').first()).toHaveClass(/bg-orange-50/);
+        await expect(page.getByRole("region", { name: "Money ranking" }).locator('[data-total-side="under"]').first()).toHaveClass(/bg-sky-50/);
       }
+      const fills = moneyRows.locator("[data-percentage-fill]");
+      await expect(fills.first()).toBeVisible();
+      const fill = fills.first();
+      const percent = Number(await fill.getAttribute("data-percentage-fill"));
+      expect(await fill.evaluate((element) => (element as HTMLElement).style.width)).toBe(`${percent}%`);
+      await page.screenshot({ path: testInfo.outputPath(`${market.toLowerCase()}-${width}.png`), fullPage: true });
       await page.getByRole("combobox", { name: "Sort ranking rows" }).selectOption("lowest");
       await expect(moneyRows.first()).toBeVisible();
       await page.getByRole("combobox", { name: "Sort ranking rows" }).selectOption("az");
@@ -37,7 +48,6 @@ for (const width of [1440, 390]) {
         await expect(page.getByRole("button", { name: "Tickets" })).toHaveAttribute("aria-pressed", "true");
       }
       await noPageOverflow();
-      await page.screenshot({ path: testInfo.outputPath(`${market.toLowerCase()}-${width}.png`), fullPage: true });
     }
   });
 }

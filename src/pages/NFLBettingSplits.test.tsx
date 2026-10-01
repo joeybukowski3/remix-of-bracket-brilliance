@@ -5,6 +5,7 @@ import NFLBettingSplits from "./NFLBettingSplits";
 import { NFL_SECTION_NAV_CATEGORIES } from "@/lib/nfl/sectionNav";
 import type { NflDkSplitsAvailability } from "@/lib/nfl/bettingSplitsData";
 import { moneyGap } from "@/lib/nfl/bettingSplitsData";
+import { percentageBarColor } from "@/lib/nfl/bettingSplitsColor";
 
 const artifact = {
   games: [
@@ -117,7 +118,20 @@ describe("NFL Betting Splits presentation", () => {
     expect(bodyRows("Money")[0].textContent).toContain("65%");
     expect(bodyRows("Tickets")[0].textContent).toContain("Under");
     expect(bodyRows("Tickets")[0].textContent).toContain("65%");
-    expect(ranking("Money").querySelectorAll("img")).toHaveLength(0);
+    const totalRows = bodyRows("Money");
+    expect(within(totalRows[0]).getByAltText("BUF").getAttribute("src")).toBe("https://a.espncdn.com/i/teamlogos/nfl/500/buf.png");
+    expect(within(totalRows[0]).getByAltText("MIA").getAttribute("src")).toBe("https://a.espncdn.com/i/teamlogos/nfl/500/mia.png");
+    expect(totalRows[0].querySelector('[data-total-side="over"]')?.className).toContain("bg-orange-50");
+    expect(totalRows.find((row) => row.querySelector('[data-total-side="under"]'))?.querySelector('[data-total-side="under"]')?.className).toContain("bg-sky-50");
+  });
+  it.each(["Spread", "Moneyline", "Total"] as const)("uses percentage-derived ranking bar fills on %s", (market) => {
+    setup();
+    fireEvent.click(screen.getByRole("tab", { name: market }));
+    const row = bodyRows("Money")[0];
+    const percentage = Number(row.querySelector("[data-percentage-fill]")?.getAttribute("data-percentage-fill"));
+    const fill = row.querySelector("[data-percentage-fill]") as HTMLElement;
+    expect(fill.style.backgroundColor).toBe(percentageBarColor(percentage));
+    expect(fill.style.width).toBe(`${percentage}%`);
   });
   it("keeps stale data visible, unavailable data hidden, and the route registered", () => {
     const view = setup("stale");
