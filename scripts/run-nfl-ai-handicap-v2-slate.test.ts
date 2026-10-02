@@ -7,10 +7,15 @@ import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { formatDryRunReport, formatLiveSummary, parseSlateV2Args, runSlateV2 } from "./run-nfl-ai-handicap-v2-slate";
+import { formatDryRunReport, formatLiveSummary, parseSlateV2Args, runSlateV2 as runSlateV2Mode } from "./run-nfl-ai-handicap-v2-slate";
 import type { CommandRunner } from "./lib/nfl-ai-slate-executor";
-import { planGameV2 } from "./lib/nfl-ai-v2-slate-plan";
+import { planGameV2 as planGameV2Mode } from "./lib/nfl-ai-v2-slate-plan";
 import { gameFacts, market, providerFacts } from "./lib/nfl-ai-v2-slate.fixtures";
+
+// These cases pin the LIVE-research lifecycle (research passes, cadence, backoff, evidence change). The planner/executor default is
+// now "site-only", so they request live explicitly -- which is also what proves live mode is preserved.
+const planGameV2: typeof planGameV2Mode = (game, providers, opts = {}) => planGameV2Mode(game, providers, { researchMode: "live", ...opts });
+const runSlateV2: typeof runSlateV2Mode = (options) => runSlateV2Mode({ researchMode: "live", ...options });
 
 const noEvidence = { exists: false, generatedAt: null, stageAEvidenceHash: null, count: 0 };
 

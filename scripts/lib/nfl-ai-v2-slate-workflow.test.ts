@@ -499,3 +499,76 @@ describe.skipIf(!hasBash)("retry_failed reaches the slate CLI only for an explic
     expect(count(slateArgs({ EVENT_NAME: "workflow_run", INPUT_RETRY_FAILED: "true" }))).toBe(0);
   }, SPAWN_TIMEOUT_MS);
 });
+
+/* -------------------------------------------------------------------------- */
+/* research_mode: site-only by default                                        */
+/* -------------------------------------------------------------------------- */
+
+describe("research_mode workflow input", () => {
+  it("is a choice of site-only | live, optional, defaulting to site-only", () => {
+    expect(workflow.on.workflow_dispatch.inputs.research_mode).toMatchObject({ type: "choice", required: false, default: "site-only", options: ["site-only", "live"] });
+  });
+
+  it("is wired from the dispatch input and an optional repository variable, and the slate always receives an explicit --research-mode", () => {
+    const s = step("Plan and run the v2 slate");
+    expect(s.env.INPUT_RESEARCH_MODE).toBe("${{ inputs.research_mode }}");
+    expect(s.env.VAR_RESEARCH_MODE).toBe("${{ vars.NFL_AI_V2_RESEARCH_MODE }}");
+    expect(s.run).toMatch(/args\+=\("--research-mode=\$\{research_mode\}"\)/);
+  });
+});
+
+describe.skipIf(!hasBash)("15. the workflow runs site-only unless live is explicitly chosen", () => {
+  /** Runs the real slate step with a stand-in `npm` that records its arguments, one per line. */
+  function slateArgs(env: Record<string, string>): string[] {
+    const dir = mkdtempSync(join(tmpdir(), "nfl-ai-v2-mode-"));
+    try {
+      const bin = join(dir, "bin");
+      mkdirSync(bin);
+      writeFileSync(join(bin, "npm"), '#!/usr/bin/env bash\nfor a in "$@"; do echo "$a"; done >> "$ARGS_FILE"\n', { mode: 0o755 });
+      const argsFile = join(dir, "args.txt");
+      writeFileSync(argsFile, "");
+      const summaryFile = join(dir, "summary.md");
+      writeFileSync(summaryFile, "");
+      const result = spawnSync("bash", ["-eo", "pipefail", "-c", step("Plan and run the v2 slate").run], {
+        cwd: dir,
+        encoding: "utf8",
+        env: { ...process.env, PATH: `${bin}${process.platform === "win32" ? ";" : ":"}${process.env.PATH}`, ARGS_FILE: argsFile, EVENT_NAME: "schedule", DRY_RUN: "", INPUT_WEEK: "", INPUT_GAME: "", INPUT_PROVIDER: "", INPUT_MAX_JOBS: "", VAR_MAX_JOBS: "", INPUT_RETRY_FAILED: "", INPUT_RESEARCH_MODE: "", VAR_RESEARCH_MODE: "", GITHUB_STEP_SUMMARY: summaryFile, ...env },
+      });
+      expect(result.status, result.stderr).toBe(0);
+      return readFileSync(argsFile, "utf8").split("\n").filter(Boolean);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+  const modeArgs = (args: string[]) => args.filter((a) => a.startsWith("--research-mode="));
+
+  it("scheduled and chained runs pass exactly --research-mode=site-only by default", () => {
+    expect(modeArgs(slateArgs({ EVENT_NAME: "schedule" }))).toEqual(["--research-mode=site-only"]);
+    expect(modeArgs(slateArgs({ EVENT_NAME: "workflow_run" }))).toEqual(["--research-mode=site-only"]);
+  }, SPAWN_TIMEOUT_MS);
+
+  it("a manual dispatch defaults to site-only, in live and dry-run form, with the input blank or site-only", () => {
+    for (const input of ["", "site-only"]) {
+      expect(modeArgs(slateArgs({ EVENT_NAME: "workflow_dispatch", DRY_RUN: "false", INPUT_RESEARCH_MODE: input }))).toEqual(["--research-mode=site-only"]);
+      expect(modeArgs(slateArgs({ EVENT_NAME: "workflow_dispatch", DRY_RUN: "true", INPUT_RESEARCH_MODE: input }))).toEqual(["--research-mode=site-only"]);
+    }
+  }, SPAWN_TIMEOUT_MS);
+
+  it("live is passed only when explicitly chosen: the dispatch input, or the repository variable for scheduled/chained runs", () => {
+    expect(modeArgs(slateArgs({ EVENT_NAME: "workflow_dispatch", DRY_RUN: "false", INPUT_RESEARCH_MODE: "live" }))).toEqual(["--research-mode=live"]);
+    expect(modeArgs(slateArgs({ EVENT_NAME: "schedule", VAR_RESEARCH_MODE: "live" }))).toEqual(["--research-mode=live"]);
+    expect(modeArgs(slateArgs({ EVENT_NAME: "workflow_run", VAR_RESEARCH_MODE: "live" }))).toEqual(["--research-mode=live"]);
+  }, SPAWN_TIMEOUT_MS);
+
+  it("anything else is site-only: an unrecognised variable value, a stray dispatch input on a scheduled run, or the variable on a dispatch", () => {
+    expect(modeArgs(slateArgs({ EVENT_NAME: "schedule", VAR_RESEARCH_MODE: "Live" }))).toEqual(["--research-mode=site-only"]);
+    expect(modeArgs(slateArgs({ EVENT_NAME: "schedule", VAR_RESEARCH_MODE: "yes" }))).toEqual(["--research-mode=site-only"]);
+    expect(modeArgs(slateArgs({ EVENT_NAME: "schedule", INPUT_RESEARCH_MODE: "live" }))).toEqual(["--research-mode=site-only"]);
+    expect(modeArgs(slateArgs({ EVENT_NAME: "workflow_dispatch", DRY_RUN: "false", INPUT_RESEARCH_MODE: "site-only", VAR_RESEARCH_MODE: "live" }))).toEqual(["--research-mode=site-only"]);
+  }, SPAWN_TIMEOUT_MS);
+
+  it("is independent of the retry control and the other flags", () => {
+    const args = slateArgs({ EVENT_NAME: "workflow_dispatch", DRY_RUN: "false", INPUT_RETRY_FAILED: "true", INPUT_MAX_JOBS: "1", INPUT_GAME: "2026_04_IND_WAS", INPUT_PROVIDER: "chatgpt" });
+    expect(args).toEqual(expect.arrayContaining(["--game=2026_04_IND_WAS", "--provider=chatgpt", "--max-jobs=1", "--research-mode=site-only", "--retry-failed", "--live"]));
+  }, SPAWN_TIMEOUT_MS);
+});

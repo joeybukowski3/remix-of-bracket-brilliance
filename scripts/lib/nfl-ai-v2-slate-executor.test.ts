@@ -7,13 +7,20 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, 
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { runSlateV2 } from "../run-nfl-ai-handicap-v2-slate";
+import { runSlateV2 as runSlateV2Mode } from "../run-nfl-ai-handicap-v2-slate";
 import type { CommandOutcome, CommandRunner } from "./nfl-ai-slate-executor";
 import { attemptLedgerPath, readAttemptLedger } from "./nfl-ai-v2-attempt-ledger";
-import { executeGamePlanV2 } from "./nfl-ai-v2-slate-executor";
-import { planGameV2, planProviderV2, type V2GameFacts, type V2ProviderFacts } from "./nfl-ai-v2-slate-plan";
+import { executeGamePlanV2 as executeGamePlanV2Mode } from "./nfl-ai-v2-slate-executor";
+import { planGameV2 as planGameV2Mode, planProviderV2 as planProviderV2Mode, type V2GameFacts, type V2ProviderFacts } from "./nfl-ai-v2-slate-plan";
 import { GAME_ID, NOW, gameFacts, market, providerFacts } from "./nfl-ai-v2-slate.fixtures";
 import type { EvidenceModel } from "./nfl-evidence-types";
+
+// These cases pin the LIVE-research lifecycle (research passes, cadence, backoff, evidence change). The planner/executor default is
+// now "site-only", so they request live explicitly -- which is also what proves live mode is preserved.
+const planGameV2: typeof planGameV2Mode = (game, providers, opts = {}) => planGameV2Mode(game, providers, { researchMode: "live", ...opts });
+const planProviderV2: typeof planProviderV2Mode = (game, facts, opts = {}) => planProviderV2Mode(game, facts, { researchMode: "live", ...opts });
+const executeGamePlanV2: typeof executeGamePlanV2Mode = (game, providerFacts, plan, options) => executeGamePlanV2Mode(game, providerFacts, plan, { researchMode: "live", ...options });
+const runSlateV2: typeof runSlateV2Mode = (options) => runSlateV2Mode({ researchMode: "live", ...options });
 
 const GAMEDAY = new Date("2026-09-27T09:00:00.000Z");
 const noEvidence = { exists: false, generatedAt: null, stageAEvidenceHash: null, count: 0 };

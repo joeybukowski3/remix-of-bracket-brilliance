@@ -40,6 +40,8 @@ import { buildCitableEvidenceLines as buildGrokEvidenceLines, runGrokHandicapV2S
 import { buildEvidenceAliasMap, resolveStageAEvidenceAliases, resolveStageBEvidenceAliases, type EvidenceAliasMap } from "./lib/nfl-handicap-v2-evidence-aliases";
 import { buildInputFingerprint, type HandicapV2InputFingerprint, loadHandicapV2MarketContext, recordFingerprint, stageAEvidenceHash } from "./lib/nfl-handicap-v2-inputs";
 import { emitTelemetryMarker, type AnyProviderTelemetry } from "./lib/nfl-ai-telemetry";
+import { parseResearchMode, type ResearchMode } from "./lib/nfl-ai-v2-research-mode";
+import { buildSitePromptContext, selectHandicapEvidence, type SitePromptContext } from "./lib/nfl-handicap-v2-site-context";
 import { formatFailureMarker, providerCallFailure, validationFailure, type V2HandicapFailure } from "./lib/nfl-ai-v2-failure";
 import type { HandicapV2MarketContext } from "./lib/nfl-handicap-v2-market";
 import { buildStageAV2Prompt, buildStageBV2Prompt, type HandicapV2GameFacts } from "./lib/nfl-handicap-v2-prompts";
@@ -64,7 +66,7 @@ const PROVIDERS: Record<EvidenceModel, ProviderBindings> = {
   chatgpt: { buildEvidenceLines: buildChatGptEvidenceLines, runStage: runChatGptHandicapV2Stage, apiKey: () => process.env.OPENAI_API_KEY, apiKeyHint: "OPENAI_API_KEY" },
 };
 
-function parseArgs(argv: string[]): { provider: EvidenceModel | null; gameId: string; live: boolean; mode: "full" | "repricing" | null } {
+function parseArgs(argv: string[]): { provider: EvidenceModel | null; gameId: string; live: boolean; mode: "full" | "repricing" | null; researchMode: ResearchMode | null } {
   const flags = new Map<string, string>();
   let live = false;
   for (const arg of argv) {
@@ -74,7 +76,14 @@ function parseArgs(argv: string[]): { provider: EvidenceModel | null; gameId: st
   }
   const provider = flags.get("provider");
   const mode = flags.get("mode") ?? "full";
-  return { provider: provider === "grok" || provider === "chatgpt" ? provider : null, gameId: flags.get("game") ?? "", live, mode: mode === "full" || mode === "repricing" ? mode : null };
+  let researchMode: ResearchMode | null;
+  try {
+    researchMode = parseResearchMode(flags.get("research-mode"));
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    researchMode = null;
+  }
+  return { provider: provider === "grok" || provider === "chatgpt" ? provider : null, gameId: flags.get("game") ?? "", live, mode: mode === "full" || mode === "repricing" ? mode : null, researchMode };
 }
 
 function readJson<T>(path: string): T | null {
@@ -119,12 +128,13 @@ function placeholderStageA(packet: NflGameContextPacket, game: HandicapV2GameFac
 
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
-  if (!args.provider || !args.gameId || !args.mode) {
-    console.error("Usage: npx tsx scripts/run-nfl-handicap-v2.ts --provider=grok|chatgpt --game=2026_03_LAC_BUF [--mode=full|repricing] [--live]");
+  if (!args.provider || !args.gameId || !args.mode || !args.researchMode) {
+    console.error("Usage: npx tsx scripts/run-nfl-handicap-v2.ts --provider=grok|chatgpt --game=2026_03_LAC_BUF [--mode=full|repricing] [--research-mode=site-only|live] [--live]");
     process.exitCode = 1;
     return;
   }
   const provider = args.provider;
+  const researchMode = args.researchMode;
   const bindings = PROVIDERS[provider];
   const [seasonToken, weekToken] = args.gameId.split("_");
   const season = Number(seasonToken);
@@ -167,16 +177,22 @@ async function main(): Promise<void> {
   };
   const contextHash = footballContextHash(packet);
 
-  // Evidence: the provider's real research stream (same file the v1 runners use).
-  const canonicalPath = evidenceArtifactPath(ROOT, season, week, args.gameId, provider);
-  const evidenceArtifact = readEvidenceArtifact(join(dirname(canonicalPath), "evidence.live-test.json"));
-  if (args.live && (!evidenceArtifact || evidenceArtifact.fixture)) {
-    console.error(`No real ${provider} evidence found for ${args.gameId} (or it is marked fixture:true) -- a live handicap needs validated evidence. Run the research pass first.`);
-    process.exitCode = 1;
-    return;
+  // Evidence. site-only (default): NONE -- the model runs on the JKB football data and the local availability block alone, and no
+  // research artifact is read, needed or required. live: the provider's real research stream (same file the v1 runners use).
+  let evidenceArtifact: ReturnType<typeof readEvidenceArtifact> = null;
+  if (researchMode === "live") {
+    const canonicalPath = evidenceArtifactPath(ROOT, season, week, args.gameId, provider);
+    evidenceArtifact = readEvidenceArtifact(join(dirname(canonicalPath), "evidence.live-test.json"));
+    if (args.live && (!evidenceArtifact || evidenceArtifact.fixture)) {
+      console.error(`No real ${provider} evidence found for ${args.gameId} (or it is marked fixture:true) -- a live-research handicap needs validated evidence. Run the research pass first, or use --research-mode=site-only.`);
+      process.exitCode = 1;
+      return;
+    }
   }
-  const allEvidence = evidenceArtifact && !evidenceArtifact.fixture ? evidenceArtifact.evidence : [];
-  if (allEvidence.length === 0) console.log("NOTE: no real evidence is available for this game/provider; prompts below carry an explicit 'no citable evidence' section.");
+  const allEvidence = selectHandicapEvidence(researchMode, evidenceArtifact);
+  const site: SitePromptContext | undefined = researchMode === "site-only" ? buildSitePromptContext(packet, now) : undefined;
+  console.log(`Research mode: ${researchMode}${site ? ` (no provider research, no web search; local availability: ${site.availability.status}${site.availability.status === "unavailable" ? ` -- ${site.availability.reason}` : ""})` : ""}`);
+  if (allEvidence.length === 0 && researchMode === "live") console.log("NOTE: no real evidence is available for this game/provider; prompts below carry an explicit 'no citable evidence' section.");
   const authority = resolveEvidenceAuthority(allEvidence);
   const blindEvidence = filterEvidenceRecordsForBlindStageA(allEvidence);
   const stageBEvidence = filterEvidenceRecordsForStageBV2(allEvidence);
@@ -207,14 +223,15 @@ async function main(): Promise<void> {
       return;
     }
     const priorInputs = recordFingerprint(prior);
-    if (priorInputs && priorInputs.stageAEvidenceHash !== stageAEvidenceHash(allEvidence)) {
+    // site-only: evidence is deliberately not an input, so a record produced from research evidence is repriced against its locked Stage A.
+    if (researchMode === "live" && priorInputs && priorInputs.stageAEvidenceHash !== stageAEvidenceHash(allEvidence)) {
       console.error("Refusing to reprice: the Stage A-visible evidence changed since the stored record. Stage A must rerun -- use the full mode.");
       process.exitCode = 1;
       return;
     }
     const lockedStageA = lockedStageAFromRecord(prior);
     const repriceBEvidenceLines = bindings.buildEvidenceLines(stageBEvidence, authority);
-    const repricePrompt = buildStageBV2Prompt({ provider, game, packet, lockedStageA, market, evidenceLines: repriceBEvidenceLines, evidenceAliases });
+    const repricePrompt = buildStageBV2Prompt({ provider, game, packet, lockedStageA, market, evidenceLines: repriceBEvidenceLines, evidenceAliases, site });
     if (!args.live) {
       banner(`DRY RUN REPRICING (${provider}, ${game.gameId}) -- no provider call is made and nothing is written`);
       console.log(repricePrompt);
@@ -229,11 +246,11 @@ To run for real: npx tsx scripts/run-nfl-handicap-v2.ts --provider=${provider} -
       return;
     }
     banner(`STAGE B REPRICING (${provider}) -- locked Stage A from ${prior.stageAGeneratedAt}`);
-    await runStageBAndWrite({ provider, bindings, apiKey: repriceKey, game, packet, lockedStageA, market, stageBEvidenceLines: repriceBEvidenceLines, allEvidence, evidenceAliases, contextHash, season, week, inputs, cliMode: "repricing" });
+    await runStageBAndWrite({ provider, bindings, apiKey: repriceKey, game, packet, lockedStageA, market, stageBEvidenceLines: repriceBEvidenceLines, allEvidence, evidenceAliases, site, researchMode, contextHash, season, week, inputs, cliMode: "repricing" });
     return;
   }
 
-  const stageAPrompt = buildStageAV2Prompt({ provider, game, packet, evidenceLines: bindings.buildEvidenceLines(blindEvidence, authority), evidenceAliases });
+  const stageAPrompt = buildStageAV2Prompt({ provider, game, packet, evidenceLines: bindings.buildEvidenceLines(blindEvidence, authority), evidenceAliases, site });
   const audit = auditStageAPromptForMarketPricing(stageAPrompt, sanitizeGameContextPacketForBlindStageA(packet), blindEvidence);
   if (!audit.pass) {
     for (const f of audit.findings) console.error(`  [Stage A audit] rule=${f.matched} class=${f.sourceClass} snippet="${f.snippet}"`);
@@ -250,7 +267,7 @@ To run for real: npx tsx scripts/run-nfl-handicap-v2.ts --provider=${provider} -
     banner("STAGE A PROMPT");
     console.log(stageAPrompt);
     banner("STAGE B PROMPT (built around a placeholder Stage A)");
-    console.log(buildStageBV2Prompt({ provider, game, packet, lockedStageA: placeholderStageA(packet, game, contextHash, market.total.line), market, evidenceLines: stageBEvidenceLines, evidenceAliases }));
+    console.log(buildStageBV2Prompt({ provider, game, packet, lockedStageA: placeholderStageA(packet, game, contextHash, market.total.line), market, evidenceLines: stageBEvidenceLines, evidenceAliases, site }));
     banner("SUMMARY");
     console.log(`Stage A prompt: ${stageAPrompt.length} chars; market: ${market.sideLabels.home} / ${market.sideLabels.away}, total ${market.total.line}; key numbers material: ${market.keyNumbers.material}`);
     console.log(`To run for real: npx tsx scripts/run-nfl-handicap-v2.ts --provider=${provider} --game=${game.gameId} --live   (needs ${bindings.apiKeyHint}; two billed calls)`);
@@ -288,7 +305,7 @@ To run for real: npx tsx scripts/run-nfl-handicap-v2.ts --provider=${provider} -
   console.log(`LOCKED: ${stageA.analysis.fairSpread.team.toUpperCase()} ${stageA.analysis.fairSpread.line}, total ${stageA.analysis.projectedTotal}, uncertainty ${stageA.analysis.uncertainty}`);
 
   banner(`STAGE B (${provider}) -- market decision and write-up`);
-  await runStageBAndWrite({ provider, bindings, apiKey, game, packet, lockedStageA: stageA.analysis, market, stageBEvidenceLines, allEvidence, evidenceAliases, contextHash, season, week, inputs, cliMode: "initial" });
+  await runStageBAndWrite({ provider, bindings, apiKey, game, packet, lockedStageA: stageA.analysis, market, stageBEvidenceLines, allEvidence, evidenceAliases, site, researchMode, contextHash, season, week, inputs, cliMode: "initial" });
 }
 
 interface StageBRunInput {
@@ -302,6 +319,9 @@ interface StageBRunInput {
   stageBEvidenceLines: string[];
   allEvidence: EvidenceRecord[];
   evidenceAliases: EvidenceAliasMap;
+  /** Site-only mode context (local availability); undefined in live-research mode. */
+  site: SitePromptContext | undefined;
+  researchMode: ResearchMode;
   contextHash: string;
   season: number;
   week: number;
@@ -312,7 +332,7 @@ interface StageBRunInput {
 /** Stage B -> validate -> write-once record. Shared by the full run and the market-only repricing run. */
 async function runStageBAndWrite(run: StageBRunInput): Promise<void> {
   const { provider, game, market } = run;
-  const stageBPrompt = buildStageBV2Prompt({ provider, game, packet: run.packet, lockedStageA: run.lockedStageA, market, evidenceLines: run.stageBEvidenceLines, evidenceAliases: run.evidenceAliases });
+  const stageBPrompt = buildStageBV2Prompt({ provider, game, packet: run.packet, lockedStageA: run.lockedStageA, market, evidenceLines: run.stageBEvidenceLines, evidenceAliases: run.evidenceAliases, site: run.site });
   const stageBResult = await run.bindings.runStage({ stage: "B", prompt: stageBPrompt, apiKey: run.apiKey });
   console.log(JSON.stringify(stageBResult.telemetry, null, 2));
   if (!stageBResult.ok) {
@@ -323,7 +343,7 @@ async function runStageBAndWrite(run: StageBRunInput): Promise<void> {
   }
   emitTelemetryMarker({ provider, gameId: game.gameId, cliMode: run.cliMode, stage: "B", telemetry: stageBResult.telemetry as AnyProviderTelemetry });
   const resolvedB = resolveStageBEvidenceAliases(stageBResult.raw, run.evidenceAliases);
-  const stageB = !resolvedB.ok ? { ok: false as const, reasons: resolvedB.reasons } : validateStageBV2(resolvedB.raw, { model: provider, gameId: game.gameId, generatedAt: new Date().toISOString(), contextHash: run.contextHash, game, lockedStageA: run.lockedStageA, market, contextPacket: run.packet, allEvidenceRecords: run.allEvidence });
+  const stageB = !resolvedB.ok ? { ok: false as const, reasons: resolvedB.reasons } : validateStageBV2(resolvedB.raw, { model: provider, gameId: game.gameId, generatedAt: new Date().toISOString(), contextHash: run.contextHash, game, lockedStageA: run.lockedStageA, market, contextPacket: run.packet, allEvidenceRecords: run.allEvidence, localAvailabilityCurrent: run.site?.availability.status === "current" });
   if (!stageB.ok) {
     reportFailure(validationFailure("B", stageB.reasons));
     console.error("Stage B FAILED validation:");
@@ -333,7 +353,7 @@ async function runStageBAndWrite(run: StageBRunInput): Promise<void> {
     return;
   }
 
-  const record = buildHandicapV2Record({ stageA: run.lockedStageA, stageB: stageB.analysis, market, evidenceRecords: run.allEvidence, inputs: run.inputs });
+  const record = buildHandicapV2Record({ stageA: run.lockedStageA, stageB: stageB.analysis, market, evidenceRecords: run.allEvidence, inputs: run.inputs, researchMode: run.researchMode });
   const path = writeHandicapV2Record(ROOT, run.season, run.week, record);
   banner("RESULT");
   console.log(`${record.verdict} | preferred ${market.sideLabels[record.preferredSide]} | cover ${record.coverProbabilityPreferred}% vs ${record.coverProbabilityOther}% | confidence ${record.confidence} | ${record.wordCount} words`);

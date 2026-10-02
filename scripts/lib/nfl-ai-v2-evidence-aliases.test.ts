@@ -253,7 +253,7 @@ describe.each(PROVIDERS)("stored record carries canonical ids only (%s)", (model
     expect(stageB.ok).toBe(true);
     if (!stageB.ok) return;
 
-    const record = buildHandicapV2Record({ stageA: stageA.analysis, stageB: stageB.analysis, market: V2_MARKET_MINUS_7, evidenceRecords: V2_EVIDENCE[model].all });
+    const record = buildHandicapV2Record({ stageA: stageA.analysis, stageB: stageB.analysis, market: V2_MARKET_MINUS_7, evidenceRecords: V2_EVIDENCE[model].all, researchMode: "live" });
     const injuryId = V2_EVIDENCE[model].injury.evidenceId;
     expect(record.evidenceRefsUsed).toEqual([injuryId]);
     expect(record.keyDrivers.flatMap((d) => d.evidenceRefs)).toEqual([injuryId]);

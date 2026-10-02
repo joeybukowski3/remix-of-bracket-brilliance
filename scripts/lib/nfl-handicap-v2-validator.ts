@@ -262,6 +262,13 @@ export interface StageBV2ValidationContext {
   market: HandicapV2MarketContext;
   contextPacket: NflGameContextPacket;
   allEvidenceRecords: readonly EvidenceRecord[];
+  /**
+   * Site-only mode only: the prompt showed the model a CURRENT local availability block (nfl-handicap-v2-site-context.ts).
+   * Injury/availability language is then also accepted when the write-up cites an `availability.*` factRef, because that
+   * deterministic site data -- not an external evidence record -- is what it relied on. Absent/false (live mode, or an
+   * unavailable/stale feed) leaves the original rule untouched: injury language needs a cited evidence record.
+   */
+  localAvailabilityCurrent?: boolean;
 }
 
 export type StageBV2ValidateResult = { ok: true; analysis: StageBV2 } | { ok: false; reasons: string[] };
@@ -514,7 +521,8 @@ export function validateStageBV2(raw: unknown, ctx: StageBV2ValidationContext): 
       if (typeof raw.counterargument === "string" && overlapRatio(raw.counterargument, markdown) < OVERLAP_MIN) {
         reasons.push("the counterargument is not reflected in the write-up -- state the same hesitation in the paragraph about the risk");
       }
-      if (INJURY_LANGUAGE.test(analyticalText) && evidenceRefsUsed && evidenceRefsUsed.length === 0) {
+      const citesLocalAvailability = ctx.localAvailabilityCurrent === true && (factRefsUsed ?? []).some((ref) => ref === "availability" || ref.startsWith("availability."));
+      if (INJURY_LANGUAGE.test(analyticalText) && evidenceRefsUsed && evidenceRefsUsed.length === 0 && !citesLocalAvailability) {
         reasons.push("the write-up makes injury/availability claims but evidenceRefsUsed is empty -- external claims must be traceable to cited evidence");
       }
       if ((analyticalText.match(/\d+(?:\.\d+)?/g) ?? []).length > MAX_NUMERALS_WARNING) warnings.push("the analytical paragraphs carry a lot of numbers; the goal is a handful of important facts, not a stat dump");

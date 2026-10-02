@@ -25,6 +25,15 @@ run-name: NFL AI Handicap v2 • ${{ github.event_name }} • ${{ github.ref_nam
 #      kicked off by then and are simply locked, so it is free on them.
 #   3. Manual dispatch. Defaults to a DRY RUN (plan only, no spend).
 #
+# RESEARCH MODE (default: site-only)
+#   site-only  JKB/local data -> Stage A -> Stage B -> presentation. NO provider research
+#              pass and no web search: a new game costs 2 model calls per provider.
+#   live       the original lifecycle, with paid provider research passes (opt-in).
+#   Manual dispatch chooses with the research_mode input (default site-only). Scheduled
+#   and chained runs are ALWAYS site-only unless the repository variable
+#   NFL_AI_V2_RESEARCH_MODE is explicitly set to "live". Every run passes
+#   --research-mode explicitly; nothing is left to a default.
+#
 # SAFETY
 #   Scheduled/chained runs only execute when the repository variable
 #   NFL_AI_V2_AUTOMATION_ENABLED is "true". Until the operator has reviewed a
@@ -95,6 +104,12 @@ on:
         description: "Execute at most this many paid provider/game jobs (blank = no limit)"
         type: string
         required: false
+      research_mode:
+        description: "site-only = JKB site data only, no provider research (default); live = also run paid provider research passes"
+        type: choice
+        required: false
+        default: site-only
+        options: [site-only, live]
       retry_failed:
         description: "Allow one new attempt for a provider/game whose last paid attempt failed on identical inputs (manual recovery; never set by scheduled runs)"
         type: boolean
@@ -162,6 +177,8 @@ jobs:
           INPUT_PROVIDER: ${{ inputs.provider }}
           INPUT_MAX_JOBS: ${{ inputs.max_jobs }}
           INPUT_RETRY_FAILED: ${{ inputs.retry_failed }}
+          INPUT_RESEARCH_MODE: ${{ inputs.research_mode }}
+          VAR_RESEARCH_MODE: ${{ vars.NFL_AI_V2_RESEARCH_MODE }}
           VAR_MAX_JOBS: ${{ vars.NFL_AI_V2_MAX_JOBS }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
@@ -174,6 +191,14 @@ jobs:
           if [ "${INPUT_PROVIDER:-both}" != "both" ] && [ -n "${INPUT_PROVIDER:-}" ]; then args+=("--provider=${INPUT_PROVIDER}"); fi
           max_jobs="${INPUT_MAX_JOBS:-${VAR_MAX_JOBS:-}}"
           if [ -n "$max_jobs" ]; then args+=("--max-jobs=${max_jobs}"); fi
+          # Research mode: site-only unless "live" is explicitly chosen (manual input) or explicitly configured (repository variable, scheduled/chained runs).
+          research_mode="site-only"
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ "${INPUT_RESEARCH_MODE:-}" = "live" ]; then research_mode="live"; fi
+          elif [ "${VAR_RESEARCH_MODE:-}" = "live" ]; then
+            research_mode="live"
+          fi
+          args+=("--research-mode=${research_mode}")
           # Manual recovery only: honoured for workflow_dispatch and nothing else.
           if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ "${INPUT_RETRY_FAILED:-}" = "true" ]; then args+=("--retry-failed"); fi
           # Capture the slate's exit status instead of letting `set -e` end the script: the report must reach the

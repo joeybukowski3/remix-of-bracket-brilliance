@@ -60,16 +60,16 @@ describe("record fingerprint", () => {
   const inputs = { stageAEvidenceHash: "ev1", availabilityHash: "av1", weatherHash: "w1", bookRange: null };
 
   it("is stored on a new record and readable by the planner", () => {
-    const built = buildHandicapV2Record({ stageA, stageB, market: market(), evidenceRecords: [], inputs });
+    const built = buildHandicapV2Record({ stageA, stageB, market: market(), evidenceRecords: [], inputs, researchMode: "live" });
     expect(recordFingerprint(built)).toEqual(inputs);
   });
 
   it("is absent on a record built without it (legacy records stay valid)", () => {
-    expect(recordFingerprint(buildHandicapV2Record({ stageA, stageB, market: market(), evidenceRecords: [] }))).toBeNull();
+    expect(recordFingerprint(buildHandicapV2Record({ stageA, stageB, market: market(), evidenceRecords: [], researchMode: "live" }))).toBeNull();
   });
 
   it("is never published to the public card", () => {
-    const built = buildHandicapV2Record({ stageA, stageB, market: market(), evidenceRecords: [], inputs });
+    const built = buildHandicapV2Record({ stageA, stageB, market: market(), evidenceRecords: [], inputs, researchMode: "live" });
     const card = buildHandicapV2PublicCard(built, "Grokowski");
     expect(JSON.stringify(card)).not.toMatch(/stageAEvidenceHash|availabilityHash|inputs/);
   });

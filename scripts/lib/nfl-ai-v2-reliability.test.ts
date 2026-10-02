@@ -14,8 +14,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { filterEvidenceRecordsForBlindStageA, filterEvidenceRecordsForStageBV2 } from "./nfl-ai-context-sanitizer";
 import { attemptLedgerPath, readAttemptLedger } from "./nfl-ai-v2-attempt-ledger";
 import { classifyProviderError, formatFailureMarker, parseHandicapFailure, providerCallFailure, validationFailure } from "./nfl-ai-v2-failure";
-import { executeGamePlanV2 } from "./nfl-ai-v2-slate-executor";
-import { handicapInputKey, planGameV2, planProviderV2 } from "./nfl-ai-v2-slate-plan";
+import { executeGamePlanV2 as executeGamePlanV2Mode } from "./nfl-ai-v2-slate-executor";
+import { handicapInputKey as handicapInputKeyMode, planGameV2 as planGameV2Mode, planProviderV2 as planProviderV2Mode } from "./nfl-ai-v2-slate-plan";
 import { parseSlateV2Args } from "../run-nfl-ai-handicap-v2-slate";
 import { GAME_ID, gameFacts, market, providerFacts } from "./nfl-ai-v2-slate.fixtures";
 import type { CommandOutcome, CommandRunner } from "./nfl-ai-slate-executor";
@@ -29,6 +29,13 @@ import { EVIDENCE_REF_RULES, buildStageAV2Prompt, buildStageBV2Prompt } from "./
 import { HANDICAP_V2_OUTPUT_TOKENS } from "./nfl-handicap-v2-types";
 import { validateStageAV2, validateStageBV2, type StageAV2ValidationContext, type StageBV2ValidationContext } from "./nfl-handicap-v2-validator";
 import { V2_CONTEXT_HASH, V2_EVIDENCE, V2_FACT_REFS, V2_GAME, V2_GAME_ID, V2_MARKET_MINUS_7, V2_PACKET, V2_STAGE_A_TIME, V2_STAGE_B_TIME, stageARaw, stageBRaw, trustedStageA } from "./__fixtures__/nfl-handicap-v2-fixtures";
+
+// These cases pin the LIVE-research lifecycle (research passes, cadence, backoff, evidence change). The planner/executor default is
+// now "site-only", so they request live explicitly -- which is also what proves live mode is preserved.
+const planGameV2: typeof planGameV2Mode = (game, providers, opts = {}) => planGameV2Mode(game, providers, { researchMode: "live", ...opts });
+const planProviderV2: typeof planProviderV2Mode = (game, facts, opts = {}) => planProviderV2Mode(game, facts, { researchMode: "live", ...opts });
+const handicapInputKey: typeof handicapInputKeyMode = (action, game, facts, mode = "live") => handicapInputKeyMode(action, game, facts, mode);
+const executeGamePlanV2: typeof executeGamePlanV2Mode = (game, providerFacts, plan, options) => executeGamePlanV2Mode(game, providerFacts, plan, { researchMode: "live", ...options });
 
 const PROVIDERS: EvidenceModel[] = ["grok", "chatgpt"];
 const RAW_CANARY = "RAW_MODEL_OUTPUT_CANARY_must_never_be_stored";
