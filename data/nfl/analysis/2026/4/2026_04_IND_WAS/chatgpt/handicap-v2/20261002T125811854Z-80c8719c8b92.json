@@ -1,0 +1,133 @@
+{
+  "schemaVersion": "nfl-handicap-v2",
+  "gameId": "2026_04_IND_WAS",
+  "provider": "chatgpt",
+  "generatedAt": "2026-10-02T12:58:11.854Z",
+  "stageAGeneratedAt": "2026-10-02T12:57:51.128Z",
+  "contextHash": "c2020bf674d4e9894f2961fdff092fcd327d50106960d10778cc11e8c653a6f2",
+  "promptVersion": "nfl-handicap-v2-prompts-1",
+  "marketSpread": {
+    "sportsbook": "draftkings",
+    "homeLine": 3.5,
+    "awayLine": -3.5,
+    "homePrice": -108,
+    "awayPrice": -112,
+    "asOf": "2026-10-01T16:55:57.542Z"
+  },
+  "marketTotal": 47.5,
+  "preferredSide": "home",
+  "preferredTeam": "wsh",
+  "preferredLine": 3.5,
+  "coverProbabilityPreferred": 60,
+  "coverProbabilityOther": 40,
+  "impliedPushProbability": 0,
+  "fairSpread": {
+    "team": "wsh",
+    "line": -1.5
+  },
+  "fairScoreAway": 25,
+  "fairScoreHome": 27,
+  "projectedTotal": 51.5,
+  "confidence": "LOW",
+  "uncertainty": "HIGH",
+  "verdict": "BET",
+  "keyNumberSensitivity": "Commanders +3.5 is meaningfully better than +3 because it protects the key number of 3. If this moved to +3, I would downgrade the play; +4 would make me more comfortable, although the supplied market note says moving Colts -3.5 to -4 does not change key-number outcomes.",
+  "keyNumberContext": {
+    "favoriteLine": 3.5,
+    "onKeyNumber": null,
+    "nearKeyNumber": 3,
+    "halfPointBetterForFavorite": {
+      "favoriteLine": 3,
+      "crossesKeyNumbers": [
+        3
+      ]
+    },
+    "halfPointWorseForFavorite": {
+      "favoriteLine": 4,
+      "crossesKeyNumbers": []
+    },
+    "bookRangeCrossesKeyNumber": false,
+    "material": true
+  },
+  "keyDrivers": [
+    {
+      "summary": "Both defenses have allowed more than 30 points per game, and each has surrendered more than 6.5 yards per play. The broad defensive results point toward a higher-scoring game despite modest offensive efficiency.",
+      "factRefs": [
+        "teamForm.away.seasonToDate.points.allowedPerGame",
+        "teamForm.home.seasonToDate.points.allowedPerGame",
+        "teamForm.away.seasonToDate.yardage.defense.yardsPerPlay",
+        "teamForm.home.seasonToDate.yardage.defense.yardsPerPlay"
+      ],
+      "evidenceRefs": []
+    },
+    {
+      "summary": "WSH has been more efficient offensively through three games, while IND's offense has posted negative overall and passing EPA per play. That gives WSH a small offensive edge, though the current sample is still limited.",
+      "factRefs": [
+        "teamForm.home.seasonToDate.efficiency.offense.epaPerPlay",
+        "teamForm.away.seasonToDate.efficiency.offense.epaPerPlay",
+        "teamForm.away.seasonToDate.efficiency.offense.epaPerPass"
+      ],
+      "evidenceRefs": []
+    },
+    {
+      "summary": "WSH's offensive line showed stronger prior-season pass- and run-blocking results than IND's, while IND's defensive pass-rush and run-stop win rates were weak. That trench advantage supports a narrow WSH margin.",
+      "factRefs": [
+        "matchup.trenches"
+      ],
+      "evidenceRefs": []
+    },
+    {
+      "summary": "IND has allowed 24 explosive passes and 873 passing yards already, while WSH has allowed 21 explosive passes and 875 passing yards. The vulnerable pass defenses create scoring upside for both offenses, particularly in a game where neither side has established a reliable defensive floor.",
+      "factRefs": [
+        "teamForm.away.seasonToDate.efficiency.defense.explosivePasses",
+        "teamForm.home.seasonToDate.efficiency.defense.explosivePasses",
+        "teamForm.away.seasonToDate.yardage.defense.passYards",
+        "teamForm.home.seasonToDate.yardage.defense.passYards"
+      ],
+      "evidenceRefs": []
+    }
+  ],
+  "mainRisk": "IND's minus-five turnover margin, against WSH's plus-two margin, could persist and give WSH short fields; another turnover-heavy IND performance would make WSH materially stronger than this narrow projection.",
+  "counterargument": "The Colts' minus-five turnover margin is the clearest threat to this handicap. If Indianapolis continues giving the ball away while Washington's positive turnover profile holds, the Commanders could get enough short fields to win by more than the number.",
+  "analysisMarkdown": "I prefer Commanders +3.5, and I would bet it, though it is not an automatic play because the projection carries high uncertainty. My locked football number makes Washington the better side, so getting more than a field goal is a meaningful cushion. At -108, the price is also reasonable; I do not need an unusually strong cover rate to justify the wager.\n\nThe market has Colts -3.5 at -112 and Commanders +3.5 at -108. Five books are showing Washington +3.5, while four have +4. The total is 47.5, below my projected scoring environment. The half-point matters here: +3.5 gives Washington protection on the most important margin, while a move down to +3 would remove that protection.\n\nThe strongest matchup point is that both defenses have allowed more than 30 points per game through three games, and both have given up more than 6.5 yards per play. That is a bad defensive foundation for laying points, especially with a total already implying a more modest game. Washington's offense has also been more efficient overall, while Indianapolis has been negative in overall and passing efficiency.\n\nWashington's prior-season trench profile gives it another small edge: its offensive line graded better as a pass-blocking unit, while Indianapolis had weak defensive pass-rush and run-stop results. I am not treating that background as definitive, but it supports Washington staying competitive and fits the narrow-margin projection. The matchup also has real scoring volatility because Indianapolis has already allowed 24 explosive passes and Washington has allowed 21.\n\nThe biggest hesitation is the turnover matchup. Indianapolis has committed six turnovers and has a minus-five margin, while Washington is plus two. If that is more than early-season noise, Washington's defensive vulnerabilities may not matter because the Colts could repeatedly start with short fields. That is the specific path to an Indianapolis cover.\n\n**Commanders +3.5: ~60% cover probability**\n**Colts -3.5: ~40%**\n**Fair-ish score: Colts 25, Commanders 27**\n**Projected total: ~51.5**\n\nSo at the exact line I would choose Commanders +3.5 and make it a bet, but with low overall confidence because the samples are only three games and the turnover signal is unstable. If it moved to +3, I would be noticeably less interested; at +4, I would be more comfortable backing Washington.",
+  "wordCount": 372,
+  "factRefsUsed": [
+    "teamForm.away.seasonToDate.points.allowedPerGame",
+    "teamForm.home.seasonToDate.points.allowedPerGame",
+    "teamForm.away.seasonToDate.yardage.defense.yardsPerPlay",
+    "teamForm.home.seasonToDate.yardage.defense.yardsPerPlay",
+    "teamForm.home.seasonToDate.efficiency.offense.epaPerPlay",
+    "teamForm.away.seasonToDate.efficiency.offense.epaPerPlay",
+    "matchup.trenches",
+    "teamForm.away.seasonToDate.efficiency.defense.explosivePasses",
+    "teamForm.home.seasonToDate.efficiency.defense.explosivePasses",
+    "teamForm.away.seasonToDate.turnovers.margin",
+    "teamForm.home.seasonToDate.turnovers.margin"
+  ],
+  "evidenceRefsUsed": [],
+  "sources": [
+    {
+      "label": "draftkings spread and total (JKB betting lines, as of 2026-10-01T16:55:57.542Z)",
+      "url": null,
+      "type": "market"
+    },
+    {
+      "label": "Team game data: nflverse play-by-play and official team stats (JKB)",
+      "url": null,
+      "type": "other"
+    }
+  ],
+  "warnings": [],
+  "inputs": {
+    "stageAEvidenceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "availabilityHash": "fa8d98ed1e1d89c525a4c0087a41dce1df77c54f2bfd840dd57a79bdeafcc20b",
+    "weatherHash": "674fb0aebb9b68e27295e49fedca8f249478d8fdb54331129da03ebb676aa532",
+    "bookRange": {
+      "bookCount": 9,
+      "homeLineMin": 3.5,
+      "homeLineMax": 4,
+      "totalMin": 47,
+      "totalMax": 48
+    }
+  }
+}

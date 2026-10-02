@@ -1,0 +1,132 @@
+{
+  "schemaVersion": "nfl-handicap-v2",
+  "gameId": "2026_04_IND_WAS",
+  "provider": "grok",
+  "generatedAt": "2026-10-02T12:56:49.783Z",
+  "stageAGeneratedAt": "2026-10-02T12:55:06.049Z",
+  "contextHash": "c2020bf674d4e9894f2961fdff092fcd327d50106960d10778cc11e8c653a6f2",
+  "promptVersion": "nfl-handicap-v2-prompts-1",
+  "marketSpread": {
+    "sportsbook": "draftkings",
+    "homeLine": 3.5,
+    "awayLine": -3.5,
+    "homePrice": -108,
+    "awayPrice": -112,
+    "asOf": "2026-10-01T16:55:57.542Z"
+  },
+  "marketTotal": 47.5,
+  "preferredSide": "home",
+  "preferredTeam": "wsh",
+  "preferredLine": 3.5,
+  "coverProbabilityPreferred": 55,
+  "coverProbabilityOther": 45,
+  "impliedPushProbability": 0,
+  "fairSpread": {
+    "team": "ind",
+    "line": -1.5
+  },
+  "fairScoreAway": 26,
+  "fairScoreHome": 25,
+  "projectedTotal": 50.5,
+  "confidence": "LOW",
+  "uncertainty": "HIGH",
+  "verdict": "LEAN",
+  "keyNumberSensitivity": "Commanders +3.5 is meaningfully better than +3 because a Colts win by exactly 3 covers instead of pushing. I would pass at Washington +3 and get more interested at +4, where the extra point starts to turn this into a play I would actually size up.",
+  "keyNumberContext": {
+    "favoriteLine": 3.5,
+    "onKeyNumber": null,
+    "nearKeyNumber": 3,
+    "halfPointBetterForFavorite": {
+      "favoriteLine": 3,
+      "crossesKeyNumbers": [
+        3
+      ]
+    },
+    "halfPointWorseForFavorite": {
+      "favoriteLine": 4,
+      "crossesKeyNumbers": []
+    },
+    "bookRangeCrossesKeyNumber": false,
+    "material": true
+  },
+  "keyDrivers": [
+    {
+      "summary": "Indianapolis was the stronger 2025 team at 8-9 with better offensive EPA and a near-average defense, while Washington went 5-12 and allowed 0.152 EPA per play. That 17-game gap still outweighs three noisy 2026 games and is why the visitor is a slight favorite.",
+      "factRefs": [
+        "teamMetrics.priorSeasonBaseline",
+        "teamMetrics.epa",
+        "teamMetrics.ypp"
+      ],
+      "evidenceRefs": []
+    },
+    {
+      "summary": "Both clubs have allowed more than 30 points per game and more than 6.5 yards per play through three weeks, with mediocre-to-negative current offenses. That pairing pushes the total into the low 50s rather than a mid-40s slog.",
+      "factRefs": [
+        "teamForm.away.seasonToDate.points",
+        "teamForm.home.seasonToDate.points",
+        "teamForm.away.seasonToDate.yardage.defense",
+        "teamForm.home.seasonToDate.yardage.defense",
+        "teamForm.away.seasonToDate.efficiency.offense.epaPerPlay",
+        "teamForm.home.seasonToDate.efficiency.offense.epaPerPlay"
+      ],
+      "evidenceRefs": []
+    },
+    {
+      "summary": "Washington has been efficient throwing the ball while Indianapolis has allowed 24 explosive passes and 0.2006 EPA per dropback. That mismatch is the main reason the Colts are not a larger favorite.",
+      "factRefs": [
+        "teamForm.home.seasonToDate.efficiency.offense.epaPerPass",
+        "teamForm.away.seasonToDate.efficiency.defense.epaPerPass",
+        "teamForm.away.seasonToDate.efficiency.defense.explosivePasses",
+        "teamForm.away.seasonToDate.efficiency.defense.explosivePassRate"
+      ],
+      "evidenceRefs": []
+    },
+    {
+      "summary": "Indianapolis is minus-5 in turnover margin and Washington is plus-2 after three games. That split is extreme in a tiny sample, so regression keeps the projected margin inside a field goal.",
+      "factRefs": [
+        "teamForm.away.seasonToDate.turnovers",
+        "teamForm.home.seasonToDate.turnovers"
+      ],
+      "evidenceRefs": []
+    }
+  ],
+  "mainRisk": "If IND's secondary keeps allowing explosive completions at the early-season rate, WSH's passing game can erase last year's talent gap and win outright as the designated home team.",
+  "counterargument": "If Indianapolis plays closer to last year's 8-9 club and Washington reverts toward the 5-12 version, the Colts can win by a touchdown and Commanders +3.5 does not get there.",
+  "analysisMarkdown": "I like Commanders +3.5, but only as a lean. I have Indianapolis as a slight favorite in a one-score game, so I do not want the Colts laying this many points on the road after a messy start. This is not an automatic play. Three weeks is a tiny sample and I would not press the wager.\n\nThe displayed line is Commanders +3.5 at -108 against Colts -3.5, with the total at 47.5. Five books are on Washington +3.5 and four have already gone to +4. The three matters: a Colts win by exactly three cashes +3.5 and would only push if this were a 3, so the extra half-point is real value on this side. I would rather sit here than at +3, and +4 is where it starts to look like something I would actually bet.\n\nIndianapolis was the stronger 2025 team at 8-9 while Washington went 5-12, and that longer body of work still outweighs three noisy weeks. Both clubs have allowed more than 30 points a game so far, and the Colts have already given up 24 explosive passes, which is the main reason I will not make them a bigger favorite. Washington has been efficient throwing the ball. Indianapolis is minus-5 in turnovers against a plus-2 Washington club, and that split is too extreme to treat as a true talent gap, so I keep the projected margin inside a field goal.\n\nWhat keeps me from calling it a bet is last year's gap actually showing up on the field. If Indianapolis plays closer to that 8-9 club and Washington looks more like the 5-12 version, the Colts can win by a touchdown and +3.5 does not get there.\n\n**Commanders +3.5: ~55% cover probability**\n**Colts -3.5: ~45%**\n**Fair-ish score: Colts 26, Commanders 25**\n**Projected total: ~50.5**\n\nSo at the exact line I would choose Commanders +3.5. If it moved to +3 I would pass, because you give back every three-point Colts win. At +4 I would be more interested and might treat it as a real play rather than a lean.",
+  "wordCount": 345,
+  "factRefsUsed": [
+    "teamMetrics.priorSeasonBaseline",
+    "teamForm.away.seasonToDate.points",
+    "teamForm.home.seasonToDate.points",
+    "teamForm.away.seasonToDate.efficiency.defense.explosivePasses",
+    "teamForm.home.seasonToDate.efficiency.offense.epaPerPass",
+    "teamForm.away.seasonToDate.turnovers",
+    "teamForm.home.seasonToDate.turnovers"
+  ],
+  "evidenceRefsUsed": [],
+  "sources": [
+    {
+      "label": "draftkings spread and total (JKB betting lines, as of 2026-10-01T16:55:57.542Z)",
+      "url": null,
+      "type": "market"
+    },
+    {
+      "label": "Team game data: nflverse play-by-play and official team stats (JKB)",
+      "url": null,
+      "type": "other"
+    }
+  ],
+  "warnings": [],
+  "inputs": {
+    "stageAEvidenceHash": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "availabilityHash": "fa8d98ed1e1d89c525a4c0087a41dce1df77c54f2bfd840dd57a79bdeafcc20b",
+    "weatherHash": "674fb0aebb9b68e27295e49fedca8f249478d8fdb54331129da03ebb676aa532",
+    "bookRange": {
+      "bookCount": 9,
+      "homeLineMin": 3.5,
+      "homeLineMax": 4,
+      "totalMin": 47,
+      "totalMax": 48
+    }
+  }
+}
