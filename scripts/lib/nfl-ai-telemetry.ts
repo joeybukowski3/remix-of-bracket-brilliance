@@ -118,6 +118,57 @@ export interface AggregatedProviderCost {
   totalCostUsd: number | null;
 }
 
+/** Token usage split the way providers bill it. `null` = the provider never reported that field (never a fabricated 0). */
+export interface TokenBreakdown {
+  input: number | null;
+  cached: number | null;
+  output: number | null;
+  reasoning: number | null;
+  total: number | null;
+}
+
+type UsageFields = { inputTokens: number | null; outputTokens: number | null; reasoningTokens: number | null; cachedTokens: number | null; totalTokens: number | null };
+
+const addNullable = (a: number | null, b: number | null): number | null => (a == null && b == null ? null : (a ?? 0) + (b ?? 0));
+
+function fromUsage(usage: UsageFields): TokenBreakdown {
+  return { input: usage.inputTokens, cached: usage.cachedTokens, output: usage.outputTokens, reasoning: usage.reasoningTokens, total: usage.totalTokens };
+}
+
+/**
+ * Billed tokens of ONE telemetry record. ChatGPT's `usage` describes only the FINAL attempt: when the one allowed
+ * truncation retry happened, the truncated first request was billed too and lives in `firstAttempt.usage`. Counting
+ * only the final attempt under-reported ChatGPT spend, so both attempts are summed here.
+ */
+export function recordTokenUsage(record: TelemetryMarkerRecord): TokenBreakdown {
+  const final = fromUsage(record.telemetry.usage);
+  const first = "firstAttempt" in record.telemetry && record.telemetry.firstAttempt ? fromUsage(record.telemetry.firstAttempt.usage) : null;
+  if (!first) return final;
+  return { input: addNullable(final.input, first.input), cached: addNullable(final.cached, first.cached), output: addNullable(final.output, first.output), reasoning: addNullable(final.reasoning, first.reasoning), total: addNullable(final.total, first.total) };
+}
+
+export interface AggregatedProviderUsage extends AggregatedProviderCost {
+  tokens: TokenBreakdown;
+}
+
+/** Per-provider token breakdown plus the USD cost the provider itself reported (xAI does; OpenAI's Responses API does not, so its cost stays null and only tokens are reported). */
+export function aggregateUsageByProvider(records: readonly TelemetryMarkerRecord[]): AggregatedProviderUsage[] {
+  return aggregateTelemetryByProvider(records).map((cost) => {
+    const own = records.filter((r) => r.provider === cost.provider).map(recordTokenUsage);
+    const sum = (pick: (t: TokenBreakdown) => number | null): number | null => own.map(pick).reduce<number | null>((acc, v) => addNullable(acc, v), null);
+    return { ...cost, tokens: { input: sum((t) => t.input), cached: sum((t) => t.cached), output: sum((t) => t.output), reasoning: sum((t) => t.reasoning), total: sum((t) => t.total) } };
+  });
+}
+
+const fmtTokens = (n: number | null): string => (n == null ? "n/a" : n.toLocaleString("en-US"));
+
+/** One human line: calls, tokens split by billing class, and the cost -- the provider's own figure, or an explicit "not reported" (no estimate is ever invented). */
+export function formatUsageLine(label: string, usage: AggregatedProviderUsage): string {
+  const t = usage.tokens;
+  const cost = usage.totalCostUsd != null ? `$${usage.totalCostUsd.toFixed(4)} (provider-reported)` : "cost not reported by the provider API -- tokens only, no dollar figure is estimated";
+  return `Usage ${usage.provider} (${label}): ${usage.callsWithTelemetry} call(s); tokens in ${fmtTokens(t.input)} (cached ${fmtTokens(t.cached)}), out ${fmtTokens(t.output)} (reasoning ${fmtTokens(t.reasoning)}), total ${fmtTokens(t.total)}; ${cost}`;
+}
+
 /** Not every telemetry shape has a costUsd field at all (ChatGptResearchTelemetry has none --
  * OpenAI's Responses API exposes no per-request research cost, unlike its analysis counterpart
  * which at least has the field, always null). Reading it structurally, rather than assuming every
@@ -146,7 +197,7 @@ export function aggregateTelemetryByProvider(records: readonly TelemetryMarkerRe
   }
 
   return Array.from(byProvider.entries()).map(([provider, providerRecords]) => {
-    const tokenValues = providerRecords.map((r) => r.telemetry.usage.totalTokens).filter((v): v is number => v != null);
+    const tokenValues = providerRecords.map((r) => recordTokenUsage(r).total).filter((v): v is number => v != null);
     const costValues = providerRecords.map((r) => readCostUsd(r.telemetry)).filter((v): v is number => v != null);
     return {
       provider,

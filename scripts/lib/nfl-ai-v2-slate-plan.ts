@@ -46,6 +46,7 @@ import { contentHash, type JsonValue } from "./nfl-production-prediction-archive
 import { readSnapshotHistory } from "./nfl-snapshot-store";
 import { loadScheduleGames, AI_SLATE_PROVIDERS, type ScheduleGame } from "./nfl-ai-slate-plan";
 import { readAttemptLedger, type V2AttemptLedger } from "./nfl-ai-v2-attempt-ledger";
+import { DEFAULT_RESEARCH_MODE, type ResearchMode } from "./nfl-ai-v2-research-mode";
 
 export { AI_SLATE_PROVIDERS };
 
@@ -134,6 +135,11 @@ export interface V2ProviderFacts {
 }
 
 export interface V2PlanOptions {
+  /**
+   * "site-only" (default): JKB/local data only -- research is NEVER planned, provider evidence is ignored (it need not
+   * exist), and a new game costs Stage A + Stage B. "live": the original lifecycle with paid provider research passes.
+   */
+  researchMode?: ResearchMode;
   policy?: V2LifecyclePolicy;
   forceResearch?: boolean;
   forceHandicap?: boolean;
@@ -180,11 +186,12 @@ export interface V2GamePlan {
 /* -------------------------------------------------------------------------- */
 
 /** Identifies the exact inputs of a paid handicap attempt (see nfl-ai-v2-attempt-ledger.ts). */
-export function handicapInputKey(action: string, game: V2GameFacts, facts: V2ProviderFacts): string {
+export function handicapInputKey(action: string, game: V2GameFacts, facts: V2ProviderFacts, researchMode: ResearchMode = DEFAULT_RESEARCH_MODE): string {
   return contentHash({
     action,
     football: game.footballContextHash,
-    evidence: facts.evidence.stageAEvidenceHash,
+    // site-only: provider evidence is not an input to the handicap, so it must not make two otherwise-identical attempts look different.
+    evidence: researchMode === "site-only" ? null : facts.evidence.stageAEvidenceHash,
     homeLine: game.market?.spread.homeLine ?? null,
     total: game.market?.total.line ?? null,
   } as JsonValue);
@@ -225,6 +232,38 @@ function researchDueReason(game: V2GameFacts, facts: V2ProviderFacts, record: Ha
   return null;
 }
 
+/** Blocks a paid handicap attempt whose inputs are identical to the last FAILED one, unless --retry-failed. The ledger is read, never cleared. */
+function failedAttemptGuard(provider: EvidenceModel, game: V2GameFacts, facts: V2ProviderFacts, opts: V2PlanOptions, action: string): V2ProviderPlan | null {
+  const failed = facts.ledger.handicap;
+  if (!failed || opts.retryFailed || failed.inputKey !== handicapInputKey(action, game, facts, opts.researchMode)) return null;
+  return plan(provider, { action: "blocked", blockedKind: "failed_attempt", reasons: [`previous ${action} attempt failed at ${failed.failedAt} on identical inputs and is not retried automatically (${failed.error}); pass --retry-failed or wait for an input change`] }, facts);
+}
+
+/**
+ * Site-only decision: what Stage A / Stage B must rerun for, with NO research and NO dependence on provider evidence.
+ * new game -> Stage A + B; football-context change -> Stage A + B; market-only change -> Stage B alone (locked Stage A);
+ * nothing changed -> zero calls.
+ */
+function planSiteOnly(game: V2GameFacts, facts: V2ProviderFacts, opts: V2PlanOptions, presentationOnly: (why: string) => V2ProviderPlan): V2ProviderPlan {
+  const provider = facts.provider;
+  const mode = "site-only mode: no provider research pass";
+  const record = facts.record;
+  if (!record) {
+    return failedAttemptGuard(provider, game, facts, opts, "handicap_initial") ?? plan(provider, { action: "handicap_initial", handicap: "initial", reasons: [mode, "no v2 handicap exists for this game yet: Stage A + Stage B from JKB site data"] }, facts);
+  }
+  const reasons: string[] = [];
+  if (game.footballContextHash != null && game.footballContextHash !== record.contextHash) reasons.push("football context changed since the stored record");
+  if (opts.forceHandicap) reasons.push("--force-handicap requested");
+  if (reasons.length > 0) {
+    return failedAttemptGuard(provider, game, facts, opts, "football_update") ?? plan(provider, { action: "football_update", handicap: "update", reasons: [mode, ...reasons, "Stage A + Stage B rerun"] }, facts);
+  }
+  const marketReasons = detectMarketChange(record, game.market as HandicapV2MarketContext);
+  if (marketReasons.length > 0) {
+    return failedAttemptGuard(provider, game, facts, opts, "market_reprice") ?? plan(provider, { action: "market_reprice", handicap: "repricing", reasons: [mode, ...marketReasons, "football context unchanged: the locked Stage A is reused, only Stage B reruns"] }, facts);
+  }
+  return presentationOnly("no material football or market change since the stored record");
+}
+
 export function planProviderV2(game: V2GameFacts, facts: V2ProviderFacts, opts: V2PlanOptions = {}): V2ProviderPlan {
   const provider = facts.provider;
   const presentationOnly = (why: string): V2ProviderPlan =>
@@ -239,6 +278,8 @@ export function planProviderV2(game: V2GameFacts, facts: V2ProviderFacts, opts: 
   if (game.contextBlockedReason) return plan(provider, { action: "blocked", blockedKind: "context", reasons: [`context cannot be built: ${game.contextBlockedReason}`] }, facts);
   if (!game.market) return plan(provider, { action: "blocked", blockedKind: "market", reasons: ["no usable current spread yet -- Stage B needs the exact displayed line"] }, facts);
 
+  if ((opts.researchMode ?? DEFAULT_RESEARCH_MODE) === "site-only") return planSiteOnly(game, facts, opts, presentationOnly);
+
   const researchFailure = facts.ledger.research;
   const policy = opts.policy ?? DEFAULT_V2_LIFECYCLE_POLICY;
   const researchCoolingDown = researchFailure != null && (game.now.getTime() - Date.parse(researchFailure.failedAt)) / MS_PER_HOUR < policy.researchRetryCooldownHours;
@@ -252,11 +293,7 @@ export function planProviderV2(game: V2GameFacts, facts: V2ProviderFacts, opts: 
   }
 
   const record = facts.record;
-  const guardFailed = (action: string): V2ProviderPlan | null => {
-    const failed = facts.ledger.handicap;
-    if (!failed || opts.retryFailed || failed.inputKey !== handicapInputKey(action, game, facts)) return null;
-    return plan(provider, { action: "blocked", blockedKind: "failed_attempt", reasons: [`previous ${action} attempt failed at ${failed.failedAt} on identical inputs and is not retried automatically (${failed.error}); pass --retry-failed or wait for an input change`] }, facts);
-  };
+  const guardFailed = (action: string): V2ProviderPlan | null => failedAttemptGuard(provider, game, facts, opts, action);
 
   // EVIDENCE BUT NO V2 RECORD: Stage A + B only (research is already paid for).
   if (!record) {

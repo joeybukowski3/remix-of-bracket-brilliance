@@ -22,6 +22,7 @@ import type { EvidenceModel } from "./nfl-evidence-types";
 import type { EvidenceAliasMap } from "./nfl-handicap-v2-evidence-aliases";
 import type { NflGameContextPacket } from "./nfl-full-game-context";
 import type { HandicapV2MarketContext } from "./nfl-handicap-v2-market";
+import { SITE_INJURY_RULE, siteAvailabilityLines, type SitePromptContext } from "./nfl-handicap-v2-site-context";
 import { formatSignedLine, renderHandicapV2MarketLines, teamNickname } from "./nfl-handicap-v2-market";
 import { WORD_TARGET_MAX, WORD_TARGET_MIN } from "./nfl-handicap-v2-text";
 import { CONFIDENCE_LEVELS, HANDICAP_V2_SCHEMA_VERSION, KEY_DRIVERS_MAX, KEY_DRIVERS_MIN, UNCERTAINTY_LEVELS, VERDICTS, type StageAV2 } from "./nfl-handicap-v2-types";
@@ -58,9 +59,9 @@ function splitEvidenceLine(line: string): { id: string; rest: string } | null {
  * line is not an evidence line or its record has no alias: a record the model can see but is not allowed
  * to cite is a guaranteed failed call.
  */
-function evidenceSection(header: string, evidenceLines: readonly string[], aliases: EvidenceAliasMap): string[] {
+function evidenceSection(header: string, evidenceLines: readonly string[], aliases: EvidenceAliasMap, site?: SitePromptContext): string[] {
   if (evidenceLines.length === 0) {
-    return [header, "(no citable evidence available -- make no claim about injuries, participation, quarterback status, personnel changes, weather or outside reporting; every evidenceRefs / evidenceRefsUsed array must be empty)"];
+    return [header, site ? SITE_ONLY_NO_EVIDENCE_LINE : "(no citable evidence available -- make no claim about injuries, participation, quarterback status, personnel changes, weather or outside reporting; every evidenceRefs / evidenceRefsUsed array must be empty)"];
   }
   const rows = evidenceLines.map((line) => {
     const parts = splitEvidenceLine(line);
@@ -82,6 +83,26 @@ const EVIDENCE_RULES: readonly string[] = [
   "External evidence (injuries, participation, quarterback status, meaningful personnel changes, weather, credible team/NFL reporting) is FACT INPUT. Weigh each record by its stated verification, freshness, citation and authority; treat superseded or conflicting records with caution.",
   "There is no internal injury or availability data in the football data above: every injury, availability, weather or reporting claim you make must come from a cited evidence record. Never use anyone's picks, predictions or betting opinions.",
 ];
+
+/**
+ * Site-only mode (research mode "site-only"): the model is run on JKB/local data alone. No evidence record exists, so
+ * the evidence arrays are empty by construction and the only availability information is the local availability line.
+ */
+const SITE_ONLY_NO_EVIDENCE_LINE = "(no external evidence is supplied in this run: the football data and the availability line above are everything you have; every evidenceRefs / evidenceRefsUsed array must be empty, []. Use factRefs for the deterministic football data.)";
+
+const SITE_ONLY_EVIDENCE_RULES: readonly string[] = [
+  "This run uses JKB site data only. No outside reporting, news, weather information or evidence records are supplied: make no claim about weather, coaching or personnel news, or anything that is not in the football data and the availability line above. Never use anyone's picks, predictions or betting opinions.",
+  `Availability comes only from the availability line in the football data. ${SITE_INJURY_RULE}`,
+];
+
+/** The football-data lines for a prompt. In site-only mode the weather line (which tells the model weather must be researched) is replaced by the availability block. */
+function dataLines(blind: ReturnType<typeof sanitizeGameContextPacketForBlindStageA>, game: HandicapV2GameFacts, site?: SitePromptContext): string[] {
+  const lines = buildBlindContextSummaryLines(blind);
+  if (!site) return lines;
+  const at = lines.findIndex((l) => l.startsWith("weather:"));
+  const block = siteAvailabilityLines(site.availability, { home: game.homeTeam, away: game.awayTeam });
+  return at === -1 ? [...lines, ...block] : [...lines.slice(0, at), ...block, ...lines.slice(at + 1)];
+}
 
 /** Shared by both stages: how evidence references may be used. Validation is strict and never repairs a bad reference, so these are the only guard against a near-miss. */
 export const EVIDENCE_REF_RULES: readonly string[] = [
@@ -106,6 +127,8 @@ export interface StageAV2PromptInput {
   evidenceLines: readonly string[];
   /** Short model-facing references for this run's evidence (buildEvidenceAliasMap); the SAME map must be used for Stage A and Stage B. */
   evidenceAliases: EvidenceAliasMap;
+  /** Present = site-only mode: local availability block, no weather line, no-external-evidence rules. Absent = live-research prompts, unchanged. */
+  site?: SitePromptContext;
 }
 
 export function buildStageAV2Prompt(input: StageAV2PromptInput): string {
@@ -130,9 +153,9 @@ export function buildStageAV2Prompt(input: StageAV2PromptInput): string {
     "YOUR JOB: decide what you think the fair point spread and game total are, and the few things that drive that view. Nothing else.",
     "",
     "=== FOOTBALL DATA (deterministic facts; no market pricing and no model opinion of any kind) ===",
-    ...buildBlindContextSummaryLines(blind),
+    ...dataLines(blind, game, input.site),
     "",
-    ...evidenceSection("=== CITABLE EVIDENCE (cite by the short reference at the start of each line) ===", input.evidenceLines, input.evidenceAliases),
+    ...evidenceSection("=== CITABLE EVIDENCE (cite by the short reference at the start of each line) ===", input.evidenceLines, input.evidenceAliases, input.site),
     "",
     "=== HOW TO HANDICAP ===",
     `- Choose ${KEY_DRIVERS_MIN} to ${KEY_DRIVERS_MAX} keyDrivers: only the things that actually move the projected margin or total. Do NOT cover every unit or category and do not pad; leave out anything that does not matter.`,
@@ -140,7 +163,7 @@ export function buildStageAV2Prompt(input: StageAV2PromptInput): string {
     "- Current-season samples may still be small. Weigh recent evidence against broader prior information appropriately and account for sample uncertainty; prior-season data is background, not automatically dominant.",
     "- mainRisk is the single most realistic reason your projection turns out wrong. It must be specific to this game (name the team, player, unit or number). Generic lines such as \"anything can happen\" are rejected.",
     "- uncertainty (LOW, MEDIUM or HIGH) is how confident you are in the projected margin given sample size and information quality.",
-    ...EVIDENCE_RULES.map((rule) => `- ${rule}`),
+    ...(input.site ? SITE_ONLY_EVIDENCE_RULES : EVIDENCE_RULES).map((rule) => `- ${rule}`),
     ...EVIDENCE_REF_RULES.map((rule) => `- ${rule}`),
     ...NO_INVENTION_RULES.map((rule) => `- ${rule}`),
     "",
@@ -166,6 +189,8 @@ export interface StageBV2PromptInput {
   evidenceLines: readonly string[];
   /** The same alias map Stage A used for this run. The locked Stage A's canonical evidence ids are shown through it. */
   evidenceAliases: EvidenceAliasMap;
+  /** Present = site-only mode (see StageAV2PromptInput.site). */
+  site?: SitePromptContext;
 }
 
 /** "~50" for a whole number, "~50.5" for a half. */
@@ -227,9 +252,9 @@ export function buildStageBV2Prompt(input: StageBV2PromptInput): string {
     ...lockedStageALines(game, lockedStageA, input.evidenceAliases),
     "",
     "=== FOOTBALL DATA (deterministic facts; the same data Stage 1 saw) ===",
-    ...buildBlindContextSummaryLines(blind),
+    ...dataLines(blind, game, input.site),
     "",
-    ...evidenceSection("=== CITABLE EVIDENCE (cite by the short reference at the start of each line) ===", input.evidenceLines, input.evidenceAliases),
+    ...evidenceSection("=== CITABLE EVIDENCE (cite by the short reference at the start of each line) ===", input.evidenceLines, input.evidenceAliases, input.site),
     "",
     "=== CURRENT MARKET (the exact line JKB displays for this game; do not search for or restate other numbers) ===",
     ...renderHandicapV2MarketLines(market),
@@ -242,7 +267,7 @@ export function buildStageBV2Prompt(input: StageBV2PromptInput): string {
     "- confidence (LOW, MEDIUM, MEDIUM_HIGH or HIGH) is how confident you are in this overall assessment, including the information quality.",
     "- keyNumberSensitivity is required when the market block marks key numbers MATERIAL: say where the number gets meaningfully better or worse (for example how -7 vs -7.5 changes the case). Otherwise use null. Do not force a key-number discussion.",
     "- counterargument is the strongest realistic reason the side you prefer fails to cover at this exact line. It must be specific (name the team, player, unit or number); \"anything can happen\" is rejected. Say it again in your write-up in your own words.",
-    ...EVIDENCE_RULES.map((rule) => `- ${rule}`),
+    ...(input.site ? SITE_ONLY_EVIDENCE_RULES : EVIDENCE_RULES).map((rule) => `- ${rule}`),
     ...EVIDENCE_REF_RULES.map((rule) => `- ${rule}`),
     ...NO_INVENTION_RULES.map((rule) => `- ${rule}`),
     "",
@@ -252,7 +277,9 @@ export function buildStageBV2Prompt(input: StageBV2PromptInput): string {
     `1. Your opinion on the EXACT displayed number: which side you prefer at it (name it with its line, e.g. ${preferredLabelExample}) and how strongly, and whether it is an automatic play.`,
     "2. The market: the displayed line, how the books compare, the total, and what the key numbers mean for THIS number (only if they are material).",
     "3. The strongest matchup evidence: two to four facts that actually decide the game, and why each matters. Prefer current-season facts and say how many games they cover.",
-    "4. Injuries, availability, weather or situational context -- ONLY if the cited evidence makes it material. Every such claim must come from a cited evidence record. Skip this paragraph if nothing is material. When you do use it, name the few players who actually move the handicap (for example the specific offensive linemen, receiver or quarterback involved) instead of vague phrases like \"skill-position uncertainty\" or \"several offensive-line absences\". Do not list every injured player; leave out anyone who does not matter.",
+    input.site
+      ? "4. Injuries or availability -- ONLY if the availability line in the football data is CURRENT and makes it material (then cite availability.injuries in factRefsUsed). If it is unavailable or stale, skip this paragraph and make no specific injury claims; do not discuss weather or outside reporting. When you do use it, name the few players who actually move the handicap instead of vague phrases, and leave out anyone who does not matter."
+      : "4. Injuries, availability, weather or situational context -- ONLY if the cited evidence makes it material. Every such claim must come from a cited evidence record. Skip this paragraph if nothing is material. When you do use it, name the few players who actually move the handicap (for example the specific offensive linemen, receiver or quarterback involved) instead of vague phrases like \"skill-position uncertainty\" or \"several offensive-line absences\". Do not list every injured player; leave out anyone who does not matter.",
     "5. Your strongest hesitation: the single most realistic reason the side you prefer fails to cover at this exact number. Be specific.",
     "That is 4 to 6 paragraphs before the final read. Then, with a blank line before it, this compact final read as four consecutive bold lines (no blank lines between them):",
     `**<preferred side label>: ~<X>% cover probability**`,

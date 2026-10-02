@@ -21,6 +21,31 @@ Code: `scripts/lib/nfl-handicap-v2-{types,market,text,prompts,validator,record}.
 provider transports `runGrokHandicapV2Stage` / `runChatGptHandicapV2Stage`. The prompts are ONE shared implementation; the only
 provider-specific input is the `model` name in the JSON example.
 
+## Research modes (site-only is the default)
+
+`--research-mode=site-only|live` (one-game CLI and slate CLI; workflow input `research_mode`).
+
+- **site-only (default)**: JKB/local deterministic data -> Stage A -> Stage B. No provider research pass, no web search, no
+  `evidence.live-test.json` needed (the evidence set is empty, so every `evidenceRefs` / `evidenceRefsUsed` array is `[]`;
+  `factRefs` carry the deterministic site facts). The football data, the market blindness of Stage A and the Stage B market block are
+  unchanged. Two things differ in the prompt: the weather line is omitted (no local weather provider), and an `availability` block
+  replaces it.
+- **Availability (injuries)** comes only from the local feed `public/data/nfl/matchup-injuries.json`
+  (`scripts/lib/nfl-handicap-v2-site-context.ts`). It is shown as CURRENT only when the packet does not flag it stale (not this
+  season's data / historical / a lineup row flags it), it has a readable `generatedAt`, and it is at most 48 hours old; the freshness
+  metadata is printed with it. Otherwise the block says UNAVAILABLE with the reason, and the model is told "If current injury data is
+  unavailable or stale, do not make specific injury claims." There is no web-research fallback. Injury language in the write-up is
+  then rejected by the unchanged validator rule; with a CURRENT feed it is accepted when the write-up cites an `availability.*`
+  factRef (`localAvailabilityCurrent`).
+- **live**: the original behavior -- a paid provider research pass collects normalized evidence that Stage A/B may cite (opt-in).
+- **Provenance**: every new record stores `researchMode` ("site-only" | "live") and `promptVersion` `nfl-handicap-v2-prompts-2` (the
+  information contract changed: short evidence aliases, site-only mode; the reasoning methodology did not). Both are internal --
+  never published, never used for planning. Records written earlier (no `researchMode`, `promptVersion` `...-1`) stay readable and
+  publishable; absence means "unknown", not either mode.
+- **Planning (site-only)**: new game -> Stage A + B (no research); football-context change -> Stage A + B; market-only change ->
+  Stage B alone against the locked Stage A; no change -> zero calls. Provider evidence is ignored (also in the failed-attempt input key).
+  Scheduled and chained workflow runs are site-only unless the repository variable `NFL_AI_V2_RESEARCH_MODE` is `live`.
+
 ## Who decides what
 
 The model decides the preferred side, both cover probabilities, the verdict (BET / LEAN / PASS), confidence, the counterargument
@@ -70,11 +95,11 @@ Dry run (free; builds and prints both prompts, runs the Stage A market-blindness
     npx tsx scripts/run-nfl-handicap-v2.ts --provider=grok --game=2026_03_LAC_BUF
     npx tsx scripts/run-nfl-handicap-v2.ts --provider=chatgpt --game=2026_03_LAC_BUF
 
-Live (two billed calls; needs the provider's real evidence at `.../<provider>/evidence.live-test.json` and GROK_API_KEY/XAI_API_KEY or
-OPENAI_API_KEY):
+Live (two billed calls; site-only needs no evidence file; `--research-mode=live` needs the provider's real evidence at
+`.../<provider>/evidence.live-test.json`; GROK_API_KEY/XAI_API_KEY or OPENAI_API_KEY):
 
     npx tsx scripts/run-nfl-handicap-v2.ts --provider=grok --game=2026_03_LAC_BUF --live
-    npx tsx scripts/run-nfl-handicap-v2.ts --provider=chatgpt --game=2026_03_LAC_BUF --live
+    npx tsx scripts/run-nfl-handicap-v2.ts --provider=chatgpt --game=2026_03_LAC_BUF --research-mode=live --live
 
 ## Publication and UI (presentation only)
 

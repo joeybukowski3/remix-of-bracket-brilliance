@@ -21,13 +21,23 @@
  * Existing (v1) snapshots and artifacts are untouched and remain readable;
  * v2 records live in their own store (nfl-handicap-v2-store.ts).
  */
+import type { ResearchMode } from "./nfl-ai-v2-research-mode";
 import type { EvidenceModel } from "./nfl-evidence-types";
 import type { HandicapV2MarketContext, KeyNumberContext } from "./nfl-handicap-v2-market";
 
 export const HANDICAP_V2_SCHEMA_VERSION = "nfl-handicap-v2" as const;
 
-/** Bump when either prompt's instructions or output contract changes; stored on every record. */
-export const HANDICAP_V2_PROMPT_VERSION = "nfl-handicap-v2-prompts-1" as const;
+/**
+ * Bump when either prompt's instructions, information contract or output contract changes; stored on every record.
+ *   -1  canonical evidence ids shown to the model; research evidence always supplied.
+ *   -2  short evidence aliases (E1..); site-only mode (no external evidence, local availability block, no weather line).
+ * The reasoning methodology (Stage A/B, verdicts, probabilities) is the same in both; what the model is TOLD is not.
+ */
+export const HANDICAP_V2_PROMPT_VERSION = "nfl-handicap-v2-prompts-2" as const;
+
+/** Versions of records already on disk. They stay readable and publishable; nothing keys a rerun on the version. */
+export const LEGACY_HANDICAP_V2_PROMPT_VERSIONS = ["nfl-handicap-v2-prompts-1"] as const;
+export type HandicapV2PromptVersion = typeof HANDICAP_V2_PROMPT_VERSION | (typeof LEGACY_HANDICAP_V2_PROMPT_VERSIONS)[number];
 
 export const UNCERTAINTY_LEVELS = ["LOW", "MEDIUM", "HIGH"] as const;
 export type Uncertainty = (typeof UNCERTAINTY_LEVELS)[number];
@@ -169,7 +179,13 @@ export interface HandicapV2Record {
   generatedAt: string;
   stageAGeneratedAt: string;
   contextHash: string;
-  promptVersion: typeof HANDICAP_V2_PROMPT_VERSION;
+  promptVersion: HandicapV2PromptVersion;
+  /**
+   * How the evidence the model saw was obtained: "site-only" (JKB/local data only, no external evidence) or "live" (provider research
+   * evidence). Internal provenance for debugging -- never published. ABSENT on records written before this field existed: treat
+   * absence as "unknown", never as either value.
+   */
+  researchMode?: ResearchMode;
 
   marketSpread: { sportsbook: string | null; homeLine: number; awayLine: number; homePrice: number | null; awayPrice: number | null; asOf: string | null };
   marketTotal: number | null;

@@ -235,6 +235,8 @@ export default defineConfig({
       "scripts/lib/nfl-ai-v2-slate-workflow.test.ts",
       "scripts/lib/nfl-ai-v2-reliability.test.ts",
       "scripts/lib/nfl-ai-v2-evidence-aliases.test.ts",
+      "scripts/lib/nfl-ai-v2-site-only.test.ts",
+      "scripts/lib/nfl-ai-v2-provenance.test.ts",
       // WU6.5 -- zero-cost replay of an archived provider research response
       // (ChatGPT only; see nfl-provider-research-replay.ts's header for the
       // Grok gap). Pure planning/safety-check tests plus the CLI integration

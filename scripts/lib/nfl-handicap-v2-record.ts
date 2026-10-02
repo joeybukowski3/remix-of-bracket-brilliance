@@ -15,6 +15,7 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import type { EvidenceCategory, EvidenceRecord } from "./nfl-evidence-types";
+import type { ResearchMode } from "./nfl-ai-v2-research-mode";
 import type { HandicapV2MarketContext } from "./nfl-handicap-v2-market";
 import type { HandicapV2InputFingerprint } from "./nfl-handicap-v2-inputs";
 import { contentHash, type JsonValue } from "./nfl-production-prediction-archive";
@@ -68,6 +69,8 @@ export interface BuildHandicapV2RecordInput {
   evidenceRecords: readonly EvidenceRecord[];
   /** Automation fingerprint of the inputs; stored on the record, never published. */
   inputs?: HandicapV2InputFingerprint;
+  /** The research mode the run used. Required, so a record can never be written without its provenance. */
+  researchMode: ResearchMode;
 }
 
 export function buildHandicapV2Record(input: BuildHandicapV2RecordInput): HandicapV2Record {
@@ -80,6 +83,7 @@ export function buildHandicapV2Record(input: BuildHandicapV2RecordInput): Handic
     stageAGeneratedAt: stageA.generatedAt,
     contextHash: stageA.contextHash,
     promptVersion: HANDICAP_V2_PROMPT_VERSION,
+    researchMode: input.researchMode,
 
     marketSpread: {
       sportsbook: market.spread.sportsbook,

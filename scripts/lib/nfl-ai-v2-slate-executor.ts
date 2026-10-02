@@ -21,6 +21,7 @@ import { executeResearchStage, runScript, spawnTsxCommandRunner, writePresentati
 import { parseTelemetryMarkers } from "./nfl-ai-telemetry";
 import { readAttemptLedger, truncateError, writeAttemptLedger } from "./nfl-ai-v2-attempt-ledger";
 import { parseHandicapFailure } from "./nfl-ai-v2-failure";
+import { DEFAULT_RESEARCH_MODE, type ResearchMode } from "./nfl-ai-v2-research-mode";
 import { gatherProviderFacts, handicapInputKey, isPresentationStale, planProviderV2, type V2GameFacts, type V2GamePlan, type V2HandicapStep, type V2PlanOptions, type V2ProviderFacts, type V2ProviderPlan } from "./nfl-ai-v2-slate-plan";
 import type { EvidenceModel } from "./nfl-evidence-types";
 
@@ -78,11 +79,12 @@ function runResearch(runCommand: CommandRunner, live: boolean, gameId: string, p
   return research;
 }
 
-function runHandicap(runCommand: CommandRunner, live: boolean, gameId: string, provider: EvidenceModel, step: V2HandicapStep): StageOutcome {
+function runHandicap(runCommand: CommandRunner, live: boolean, gameId: string, provider: EvidenceModel, step: V2HandicapStep, researchMode: ResearchMode): StageOutcome {
   if (step === "none") return skipped("handicap", provider, "no handicap action needed");
   const mode = step === "repricing" ? "repricing" : "full";
-  if (!live) return { stage: "handicap", provider, action: step, ran: false, ok: true, detail: `would run (dry-run): ${HANDICAP_SCRIPT} --provider=${provider} --game=${gameId} --mode=${mode} --live` };
-  const result = runScript(runCommand, HANDICAP_SCRIPT, [`--provider=${provider}`, `--game=${gameId}`, `--mode=${mode}`, "--live"]);
+  if (!live) return { stage: "handicap", provider, action: step, ran: false, ok: true, detail: `would run (dry-run): ${HANDICAP_SCRIPT} --provider=${provider} --game=${gameId} --mode=${mode} --research-mode=${researchMode} --live` };
+  // The child is told the mode explicitly (never left to its own default), so the planner's mode and the evidence the model sees cannot diverge.
+  const result = runScript(runCommand, HANDICAP_SCRIPT, [`--provider=${provider}`, `--game=${gameId}`, `--mode=${mode}`, `--research-mode=${researchMode}`, "--live"]);
   const telemetry = parseTelemetryMarkers(result.stdout);
   if (result.ok) return { stage: "handicap", provider, action: step, ran: true, ok: true, detail: "handicap pass completed", telemetry };
   // The child's stderr ends with the model's raw JSON on a validation failure. Only the classified, bounded diagnostic
@@ -137,8 +139,8 @@ function executeProvider(game: V2GameFacts, facts: V2ProviderFacts, plan: V2Prov
     handicapAction = step;
     // The planner names the action the same way, so its failure guard recognises this exact attempt next run.
     const attemptAction = step === "repricing" ? "market_reprice" : plan.action === "handicap_initial" || plan.action === "research_initial" ? "handicap_initial" : "football_update";
-    const attempt = { action: attemptAction, key: handicapInputKey(attemptAction, game, stepFacts) };
-    handicap = runHandicap(runCommand, options.live, game.gameId, provider, step);
+    const attempt = { action: attemptAction, key: handicapInputKey(attemptAction, game, stepFacts, options.researchMode) };
+    handicap = runHandicap(runCommand, options.live, game.gameId, provider, step, options.researchMode ?? DEFAULT_RESEARCH_MODE);
     recordFailures(options, game, provider, research, handicap, attempt);
   } catch (err) {
     handicap = { stage: "handicap", provider, action: plan.handicap, ran: true, ok: false, detail: errorText(err) };

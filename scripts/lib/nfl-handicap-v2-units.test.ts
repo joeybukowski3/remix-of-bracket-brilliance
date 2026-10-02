@@ -190,7 +190,7 @@ describe("the v2 record and its write-once store", () => {
       evidenceRefsUsed: [V2_EVIDENCE.grok.injury.evidenceId],
       warnings: [],
     } as unknown as StageBV2;
-    return buildHandicapV2Record({ stageA: trustedStageA("grok"), stageB, market: V2_MARKET_MINUS_7, evidenceRecords: V2_EVIDENCE.grok.all });
+    return buildHandicapV2Record({ stageA: trustedStageA("grok"), stageB, market: V2_MARKET_MINUS_7, evidenceRecords: V2_EVIDENCE.grok.all, researchMode: "live" });
   }
 
   it("attaches the mechanical fields (market, fair score, key-number metadata) alongside the model's judgments", () => {

@@ -64,7 +64,7 @@ describe("v2 presentation export", () => {
   it("does not publish internal provenance", () => {
     writeHandicapV2Record(root, 2026, 3, liveRecord("chatgpt"));
     const json = JSON.stringify(generatePresentationForGame(root, GAME_ID, 2026, 3).handicapV2!.chattyIce!);
-    for (const internal of ["contextHash", "promptVersion", "factRefs", "evidenceRefs", "evidenceId", "warnings", "stageAGeneratedAt"]) {
+    for (const internal of ["contextHash", "promptVersion", "researchMode", "factRefs", "evidenceRefs", "evidenceId", "warnings", "stageAGeneratedAt"]) {
       expect(json).not.toContain(internal);
     }
   });

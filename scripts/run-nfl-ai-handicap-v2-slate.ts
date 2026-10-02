@@ -10,6 +10,8 @@
  *
  * Flags: --season (default: current year) --week (default: the week of the next
  * game to kick off) --game --provider=grok|chatgpt (repeatable)
+ *        --research-mode=site-only|live   (default site-only: JKB site data -> Stage A -> Stage B, ZERO research calls;
+ *                      live: the original lifecycle with paid provider research passes, opt-in only)
  *        --force-research --force-handicap --retry-failed
  *        --max-jobs=N  execute at most N paid provider/game jobs (soonest kickoff first); the rest are
  *                      deferred and re-planned next run. Applied to the plan BEFORE any paid call.
@@ -20,7 +22,8 @@
  */
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { aggregateTelemetryByProvider, type TelemetryMarkerRecord } from "./lib/nfl-ai-telemetry";
+import { aggregateUsageByProvider, formatUsageLine, type TelemetryMarkerRecord } from "./lib/nfl-ai-telemetry";
+import { DEFAULT_RESEARCH_MODE, parseResearchMode, type ResearchMode } from "./lib/nfl-ai-v2-research-mode";
 import { executeGamePlanV2, type V2ExecuteOptions, type V2GameResult } from "./lib/nfl-ai-v2-slate-executor";
 import type { CommandRunner } from "./lib/nfl-ai-slate-executor";
 import { AI_SLATE_PROVIDERS, applyJobLimit, planSlateEntriesV2, type JobLimitSummary, type SlateEntryV2, type V2GamePlan, type V2PlanOptions } from "./lib/nfl-ai-v2-slate-plan";
@@ -39,6 +42,7 @@ export interface SlateV2CliArgs {
   retryFailed: boolean;
   /** null = no limit. */
   maxJobs: number | null;
+  researchMode: ResearchMode;
 }
 
 /** A non-negative integer, or null when absent. Throws on anything else so a typo can never silently mean "unlimited". */
@@ -68,6 +72,8 @@ export function parseSlateV2Args(argv: string[], defaultSeason: number = new Dat
     forceHandicap: bool.has("force-handicap"),
     retryFailed: bool.has("retry-failed"),
     maxJobs: parseMaxJobs(flags.get("max-jobs")?.[0]),
+    // Strict: a typo must never silently select the paid "live" mode.
+    researchMode: parseResearchMode(flags.get("research-mode")?.[0]),
   };
 }
 
@@ -106,7 +112,7 @@ export function estimateCalls(plans: readonly V2GamePlan[]): CallEstimate {
   return total;
 }
 
-export function formatDryRunReport(plans: readonly V2GamePlan[], limit?: { summary: JobLimitSummary; unlimitedPlans: readonly V2GamePlan[] }): string {
+export function formatDryRunReport(plans: readonly V2GamePlan[], limit?: { summary: JobLimitSummary; unlimitedPlans: readonly V2GamePlan[] }, researchMode: ResearchMode = DEFAULT_RESEARCH_MODE): string {
   const lines: string[] = [];
   const byAction: Record<string, number> = {};
   for (const plan of plans) for (const p of Object.values(plan.providers)) { const key = p.deferred ? "deferred" : p.action; byAction[key] = (byAction[key] ?? 0) + 1; }
@@ -115,6 +121,7 @@ export function formatDryRunReport(plans: readonly V2GamePlan[], limit?: { summa
   const est = estimateCalls(plans);
 
   lines.push("=== V2 SLATE DRY RUN (no provider calls, nothing written) ===");
+  lines.push(researchMode === "site-only" ? "Research mode: site-only -- JKB site data only; no provider research pass and no web search (research calls = 0 by construction)" : "Research mode: live -- paid provider research passes may run (opt-in)");
   lines.push(`Games considered: ${plans.length}   post-kickoff locks: ${locked.length}   provider states blocked (not locked): ${blocked.length}`);
   lines.push(`Actions: ${Object.entries(byAction).sort().map(([k, v]) => `${k}=${v}`).join("  ") || "(none)"}`);
   if (limit) {
@@ -148,6 +155,7 @@ export function formatDryRunReport(plans: readonly V2GamePlan[], limit?: { summa
 /* -------------------------------------------------------------------------- */
 
 export interface SlateV2RunOptions extends V2PlanOptions {
+  /** Inherited: `researchMode` (default site-only). */
   root: string;
   season: number;
   week?: number;
@@ -193,8 +201,9 @@ export function runSlateV2(options: SlateV2RunOptions): SlateV2Run {
   return { entries, limit, results };
 }
 
-export function formatLiveSummary(results: readonly V2GameResult[]): string {
+export function formatLiveSummary(results: readonly V2GameResult[], researchMode: ResearchMode = DEFAULT_RESEARCH_MODE): string {
   const lines: string[] = ["=== V2 SLATE LIVE SUMMARY ==="];
+  lines.push(`Research mode: ${researchMode}`);
   const tally = (pick: (r: V2GameResult["providers"][number]) => { ran: boolean; ok: boolean }) => {
     let attempted = 0;
     let succeeded = 0;
@@ -204,12 +213,14 @@ export function formatLiveSummary(results: readonly V2GameResult[]): string {
     }
     return `${succeeded}/${attempted} succeeded`;
   };
-  const telemetry: TelemetryMarkerRecord[] = results.flatMap((r) => r.providers.flatMap((p) => [...(p.research.telemetry ?? []), ...(p.handicap.telemetry ?? [])]));
+  const research: TelemetryMarkerRecord[] = results.flatMap((r) => r.providers.flatMap((p) => p.research.telemetry ?? []));
+  const handicap: TelemetryMarkerRecord[] = results.flatMap((r) => r.providers.flatMap((p) => p.handicap.telemetry ?? []));
   lines.push(`Games processed: ${results.length}   fully ok: ${results.filter((r) => r.ok).length}`);
   lines.push(`Research: ${tally((p) => p.research)}   Handicap: ${tally((p) => p.handicap)}   Presentations written: ${results.filter((r) => r.presentation.ran && r.presentation.ok).length}`);
-  for (const t of aggregateTelemetryByProvider(telemetry)) {
-    lines.push(`Usage ${t.provider}: ${t.callsWithTelemetry} call(s), ${t.totalTokens ?? "unavailable"} tokens, ${t.totalCostUsd != null ? `$${t.totalCostUsd.toFixed(4)}` : "cost unavailable"}`);
-  }
+  // Research and handicap spend are reported separately, so a site-only run visibly shows research = 0 calls.
+  if (research.length === 0) lines.push(`Usage (research): 0 call(s)`);
+  for (const t of aggregateUsageByProvider(research)) lines.push(formatUsageLine("research", t));
+  for (const t of aggregateUsageByProvider(handicap)) lines.push(formatUsageLine("Stage A/B handicap", t));
   const failures = results.flatMap((r) => r.failures.map((f) => `${r.gameId}: ${f}`));
   lines.push(`Failures (${failures.length}):`);
   for (const f of failures) lines.push(`  - ${f}`);
@@ -229,15 +240,16 @@ function main(): void {
     forceHandicap: args.forceHandicap,
     retryFailed: args.retryFailed,
     maxJobs: args.maxJobs,
+    researchMode: args.researchMode,
   });
   if (run.entries.length === 0) {
     console.log("No games found for the requested season/week/game (offseason, or the schedule is not loaded).");
     return;
   }
   const plans = run.entries.map((e) => e.plan);
-  console.log(formatDryRunReport(plans, run.limit).replace("=== V2 SLATE DRY RUN (no provider calls, nothing written) ===", args.live ? "=== V2 SLATE PLAN (executing live) ===" : "=== V2 SLATE DRY RUN (no provider calls, nothing written) ==="));
+  console.log(formatDryRunReport(plans, run.limit, args.researchMode).replace("=== V2 SLATE DRY RUN (no provider calls, nothing written) ===", args.live ? "=== V2 SLATE PLAN (executing live) ===" : "=== V2 SLATE DRY RUN (no provider calls, nothing written) ==="));
   if (!args.live) return;
-  console.log(`\n${formatLiveSummary(run.results)}`);
+  console.log(`\n${formatLiveSummary(run.results, args.researchMode)}`);
   if (run.results.some((r) => !r.ok)) process.exitCode = 1;
 }
 

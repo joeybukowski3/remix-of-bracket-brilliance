@@ -5,8 +5,14 @@
 import { describe, expect, it } from "vitest";
 import { estimateCalls } from "../run-nfl-ai-handicap-v2-slate";
 import { detectMarketChange } from "./nfl-handicap-v2-inputs";
-import { DEFAULT_V2_LIFECYCLE_POLICY, handicapInputKey, lifecyclePhase, planGameV2, planProviderV2, resolveUpcomingWeek } from "./nfl-ai-v2-slate-plan";
+import { DEFAULT_V2_LIFECYCLE_POLICY, handicapInputKey as handicapInputKeyMode, lifecyclePhase, planGameV2 as planGameV2Mode, planProviderV2 as planProviderV2Mode, resolveUpcomingWeek } from "./nfl-ai-v2-slate-plan";
 import { KICKOFF, gameFacts, market, providerFacts, record } from "./nfl-ai-v2-slate.fixtures";
+
+// These cases pin the LIVE-research lifecycle (research passes, cadence, backoff, evidence change). The planner/executor default is
+// now "site-only", so they request live explicitly -- which is also what proves live mode is preserved.
+const planGameV2: typeof planGameV2Mode = (game, providers, opts = {}) => planGameV2Mode(game, providers, { researchMode: "live", ...opts });
+const planProviderV2: typeof planProviderV2Mode = (game, facts, opts = {}) => planProviderV2Mode(game, facts, { researchMode: "live", ...opts });
+const handicapInputKey: typeof handicapInputKeyMode = (action, game, facts, mode = "live") => handicapInputKeyMode(action, game, facts, mode);
 
 const at = (iso: string) => new Date(iso);
 const noEvidence = { exists: false, generatedAt: null, stageAEvidenceHash: null, count: 0 };
