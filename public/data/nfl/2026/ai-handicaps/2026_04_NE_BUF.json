@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "nfl-ai-handicap-presentation-v1",
+  "gameId": "2026_04_NE_BUF",
+  "season": 2026,
+  "week": 4,
+  "kickoff": "2026-10-04T17:00:00.000Z",
+  "homeTeam": "buf",
+  "awayTeam": "ne",
+  "generatedAt": "2026-10-03T11:11:26.550Z",
+  "handicappers": {
+    "grokowski": {
+      "status": "analysis_unavailable",
+      "provider": "grok",
+      "displayName": "Grokowski",
+      "reason": "no_analysis_yet"
+    },
+    "chattyIce": {
+      "status": "analysis_unavailable",
+      "provider": "chatgpt",
+      "displayName": "Chatty Ice",
+      "reason": "no_analysis_yet"
+    }
+  },
+  "handicapV2": {
+    "grokowski": {
+      "schemaVersion": "nfl-handicap-v2",
+      "provider": "grok",
+      "displayName": "Grokowski",
+      "generatedAt": "2026-10-02T18:53:14.049Z",
+      "verdict": "LEAN",
+      "preferredSide": "home",
+      "preferredTeam": "buf",
+      "preferredLine": -7,
+      "marketSpread": {
+        "sportsbook": "draftkings",
+        "homeLine": -7,
+        "awayLine": 7,
+        "homePrice": -105,
+        "awayPrice": -115,
+        "asOf": "2026-10-02T16:08:49.298Z"
+      },
+      "marketTotal": 48.5,
+      "coverProbabilityPreferred": 53,
+      "coverProbabilityOther": 40,
+      "impliedPushProbability": 7,
+      "fairSpread": {
+        "team": "buf",
+        "line": -8.5
+      },
+      "fairScoreAway": 18,
+      "fairScoreHome": 27,
+      "projectedTotal": 45,
+      "confidence": "MEDIUM",
+      "uncertainty": "HIGH",
+      "keyNumberSensitivity": "Bills -7 is meaningfully better than -7.5 because a 7-point Buffalo win pushes instead of losing. At -6.5 that same 7-point win becomes a cover, which is a real upgrade; I would like the favorite more there and would back off if forced to lay -7.5.",
+      "analysisMarkdown": "I like Bills -7 here, as a lean I would take but not press. I have Buffalo a little bigger than seven at home, so laying this number with a push if they win by a touchdown is the side I want. Three games of form are still messy, so this is not an automatic play.\n\nThe market is Bills -7 at -105 and Patriots +7 at -115. Most books are at seven, a few at six and a half, and the total is 48.5, which is higher than I want. Seven is material: a Bills win by exactly a touchdown pushes at this number, covers at -6.5, and loses at -7.5. I would rather sit here than lay the extra half.\n\nNew England has scored 12 points a game through three weeks, including a 6-point loss at Jacksonville, after a much stronger offensive season a year ago. That collapse is why Buffalo is a real home favorite in a division game. Buffalo is unbeaten and should still land in the high 20s even after a quieter 24-point win over the Chargers, against a Patriots defense that has been respectable, not dominant. Buffalo's defense has allowed 26 a game, so if New England is merely mediocre, some Patriots points stay on the board.\n\nWhat keeps me from calling it a bet is New England's offense snapping back toward last year. Buffalo has already been giving up points, and a one-score AFC East game would leave Bills -7 as a push or a loss.\n\n**Bills -7: ~53% cover probability**\n**Patriots +7: ~40%**\n**Fair-ish score: Patriots 18, Bills 27**\n**Projected total: ~45**\n\nSo at the exact line I would choose Bills -7. You're laying -105, which only needs a little over 51 percent, and I have the cover rate only in the low 50s, so I would not press it. If it moved to -7.5, I would be noticeably less interested because a touchdown win becomes a loss instead of a push.",
+      "keyDrivers": [
+        {
+          "summary": "New England has scored 12 points per game with clearly negative offensive EPA through three games, including a 6-point outing at Jacksonville, after putting up 28.8 per game last season. That collapse is the main reason Buffalo is a solid home favorite and why the total is not a shootout."
+        },
+        {
+          "summary": "Buffalo is 3-0 and scoring 33.7 points per game with strongly positive offensive EPA and 6.8 yards per play. Even after a quieter 24-point win over the Chargers, that unit should still land in the high 20s against a Patriots defense that has been respectable but not dominant."
+        },
+        {
+          "summary": "Buffalo's defense has allowed 26 points per game and positive EPA per play, so this is not a shutdown spot. If New England's offense is even mediocre rather than broken, some Patriots points stay on the board and the total does not crash into the low 40s."
+        },
+        {
+          "summary": "Last season both teams were efficient, high-scoring clubs with nearly identical offensive EPA, and three unadjusted games are a noisy sample with ugly turnover rates. The current 21-point scoring gap should be regressed, which trims Buffalo's number off a blowout and keeps the projected total near the mid-40s."
+        }
+      ],
+      "mainRisk": "New England's offense is closer to last season's 28.8 points per game than to this year's 12, turning a Buffalo control game into a one-score AFC East matchup.",
+      "sources": [
+        {
+          "label": "draftkings spread and total (JKB betting lines, as of 2026-10-02T16:08:49.298Z)",
+          "url": null,
+          "type": "market"
+        },
+        {
+          "label": "Team game data: nflverse play-by-play and official team stats (JKB)",
+          "url": null,
+          "type": "other"
+        }
+      ]
+    },
+    "chattyIce": null
+  }
+}
