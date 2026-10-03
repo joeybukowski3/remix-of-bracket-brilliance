@@ -88,6 +88,15 @@ Records are write-once files under `data/nfl/analysis/<season>/<week>/<gameId>/<
 snapshot chain. NOT done in this work unit (later): writing v2 into the snapshot lifecycle, v2 update and market-only repricing modes,
 the presentation exporter and UI for v2 records, and scheduling. Stage A `update` and Stage B `repricing` keep using the v1 paths.
 
+### Game context is scratch state
+
+The presentation exporter reads team identity and kickoff from `data/nfl/game-context/<season>/<week>/<gameId>.json`. That artifact is
+reconstructable and is never committed (it is not in the persisted-state manifest), so a fresh CI checkout has none. The slate
+executor therefore calls `ensureGameContextArtifact` immediately before it writes a presentation (a valid persisted artifact is used
+as-is, otherwise it is rebuilt from the tracked upstream artifacts: free, no provider call, no research) and fails closed once kickoff
+has passed. A failure there never reruns Stage A/B: the v2 record is already persisted, and the next run plans a free
+`presentation_only` export.
+
 ## Running it
 
 Dry run (free; builds and prints both prompts, runs the Stage A market-blindness audit, writes nothing):

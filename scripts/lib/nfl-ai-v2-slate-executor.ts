@@ -16,7 +16,7 @@
  * stops the other provider or any other game. A failed paid attempt is written
  * to the attempt ledger so the next scheduled run does not simply repeat it.
  */
-import { rebuildAndPersistGameContext } from "./nfl-game-context-preflight";
+import { ensureGameContextArtifact, rebuildAndPersistGameContext } from "./nfl-game-context-preflight";
 import { executeResearchStage, runScript, spawnTsxCommandRunner, writePresentation, type CommandRunner, type StageOutcome } from "./nfl-ai-slate-executor";
 import { parseTelemetryMarkers } from "./nfl-ai-telemetry";
 import { readAttemptLedger, truncateError, writeAttemptLedger } from "./nfl-ai-v2-attempt-ledger";
@@ -38,6 +38,8 @@ export interface V2ExecuteOptions extends V2PlanOptions {
     regatherProviderFacts?: (provider: EvidenceModel) => V2ProviderFacts;
     presentationIsStale?: (provider: EvidenceModel) => boolean;
     writeGamePresentation?: () => string;
+    /** Makes the persisted game-context artifact the presentation exporter reads exist (free, deterministic). Default: ensureGameContextArtifact. */
+    ensureGameContext?: () => { ok: true } | { ok: false; reason: string };
   };
 }
 
@@ -187,6 +189,24 @@ export function executeGamePlanV2(game: V2GameFacts, providerFacts: readonly V2P
   return { gameId: game.gameId, ok, context, providers, presentation, failures };
 }
 
+/**
+ * The presentation exporter resolves team identity and kickoff from the persisted game-context artifact
+ * (data/nfl/game-context/**), which is reconstructable scratch state: it is never committed, so a fresh CI checkout
+ * has none. The handicap stages do not notice (the one-game CLI builds its packet in memory), and in site-only mode
+ * nothing else rebuilds it, so the export is where it must be made. ensureGameContextArtifact uses a valid persisted
+ * artifact as-is, otherwise rebuilds it from the tracked upstream artifacts (free, no provider call, no research),
+ * and fails closed once kickoff has passed -- exactly the pregame lock the rest of the pipeline has.
+ */
+function ensureContextForPresentation(game: V2GameFacts, options: V2ExecuteOptions): { ok: true } | { ok: false; reason: string } {
+  if (options.deps?.ensureGameContext) return options.deps.ensureGameContext();
+  try {
+    const ensured = ensureGameContextArtifact({ root: options.root, gameId: game.gameId, season: game.season, week: game.week, now: () => game.now });
+    return ensured.ok ? { ok: true } : { ok: false, reason: `${ensured.reason}${ensured.issues.length > 0 ? ` -- ${ensured.issues.join("; ")}` : ""}` };
+  } catch (err) {
+    return { ok: false, reason: errorText(err) };
+  }
+}
+
 /** Regenerates this ONE game's artifact iff the newest v2 record for some provider is not what the published artifact shows. */
 function executePresentation(game: V2GameFacts, plan: V2GamePlan, providers: readonly V2ProviderResult[], isStale: (provider: EvidenceModel) => boolean, options: V2ExecuteOptions): StageOutcome {
   if (plan.presentation === "skip") return { stage: "presentation", action: "skip", ran: false, ok: true, detail: "no provider record changed and the published artifact is current" };
@@ -194,7 +214,14 @@ function executePresentation(game: V2GameFacts, plan: V2GamePlan, providers: rea
   const providerNames = providers.map((p) => p.provider);
   if (!providerNames.some(isStale)) return { stage: "presentation", action: "skip", ran: false, ok: true, detail: "no new v2 record was written and the published artifact is current" };
   try {
-    const path = options.deps?.writeGamePresentation ? options.deps.writeGamePresentation() : writePresentation(options.root, game.gameId, game.season, game.week);
+    let path: string;
+    if (options.deps?.writeGamePresentation) path = options.deps.writeGamePresentation();
+    else {
+      // A failure here never reruns Stage A/B: the v2 record is already written, so the next run plans a free presentation_only export.
+      const context = ensureContextForPresentation(game, options);
+      if (!context.ok) return { stage: "presentation", action: "regenerate", ran: true, ok: false, detail: `cannot resolve the game identity the presentation needs (game context could not be reconstructed): ${context.reason}` };
+      path = writePresentation(options.root, game.gameId, game.season, game.week);
+    }
     return { stage: "presentation", action: "regenerate", ran: true, ok: true, detail: `wrote ${path}` };
   } catch (err) {
     return { stage: "presentation", action: "regenerate", ran: true, ok: false, detail: errorText(err) };
