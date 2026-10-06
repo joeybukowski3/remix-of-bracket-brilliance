@@ -381,10 +381,10 @@
       "filename": "epa_team_game_2026.csv",
       "sourceUrl": "https://github.com/nflverse/nflverse-data/releases/download/pbp/play_by_play_2026.csv.gz",
       "sourceType": "projection",
-      "retrievedDateUtc": "2026-09-29",
-      "byteSize": 9321,
-      "sha256": "d93c48077d22c4a11d4af2adc129355d992b3d4005b07950882fda60fc629988",
-      "rowCount": 96,
+      "retrievedDateUtc": "2026-10-06",
+      "byteSize": 12390,
+      "sha256": "7311e3f1245289383c94bc63e4a8195818d8e25c08e39b649da623c97fc96ecf",
+      "rowCount": 128,
       "headerColumns": [
         "game_id",
         "season",
@@ -399,9 +399,9 @@
         "rush_plays"
       ],
       "upstream": {
-        "byteSize": 3259749,
+        "byteSize": 4380228,
         "sha256": "n/a — raw play-by-play is streamed and discarded, never stored",
-        "rowCount": 8311,
+        "rowCount": 11155,
         "headerColumns": [
           "game_id",
           "season",
@@ -429,12 +429,12 @@
         "rush_plays"
       ],
       "projectionFilter": "(pass == 1 OR rush == 1) AND epa is present AND posteam is present AND two_point_attempt != 1",
-      "upstreamCompressedBytes": 3259749,
-      "upstreamSourceRows": 8311,
+      "upstreamCompressedBytes": 4380228,
+      "upstreamSourceRows": 11155,
       "upstreamColumnCount": 372,
-      "eligiblePlays": 6126,
-      "compactRowCount": 96,
-      "reductionRatio": 349.7
+      "eligiblePlays": 8205,
+      "compactRowCount": 128,
+      "reductionRatio": 353.5
     }
   ],
   "notPublished": [],
