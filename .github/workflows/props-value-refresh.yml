@@ -266,6 +266,10 @@ jobs:
         if: steps.gate.outputs.run == 'true' && steps.lines.outputs.has_lines == 'true'
         run: node scripts/inject-k-odds.mjs || true
 
+      - name: Generate Pitcher K +EV artifact
+        if: steps.gate.outputs.run == 'true' && steps.lines.outputs.has_lines == 'true'
+        run: npm run mlb:k-plus-ev
+
       - name: Remove timestamp-only changes
         if: steps.gate.outputs.run == 'true' && steps.lines.outputs.has_lines == 'true'
         shell: bash
@@ -327,7 +331,7 @@ jobs:
           for attempt in 1 2 3 4 5; do
             echo "Push attempt ${attempt}/5"
             git fetch origin main
-            if ! git rebase origin/main; then git rebase --abort || true;
+            if ! git rebase --autostash origin/main; then git rebase --abort || true;
             elif git push origin HEAD:main; then pushed=true; break; fi
             sleep $((attempt * 10))
           done
