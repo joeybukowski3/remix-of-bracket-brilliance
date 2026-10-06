@@ -1,10 +1,10 @@
 {
   "date": "2026-10-06",
-  "generatedAt": "2026-10-06T19:39:39.666Z",
+  "generatedAt": "2026-10-06T20:34:57.849Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Petco Park's 0.89 factor caps power for the SD-MIL slate, but Dustin May's 63.4 HR/9 rate against righties gives Tatis, Merrill, and Machado elevated upside despite the venue. Truist Park's 1.03 factor and Yamamoto's 28.2 HR/9 vs ATL create a neutral-to-slightly favorable environment for Olson and Baldwin, while Sale's lefty profile against LAD's pull-heavy bats (Ohtani 47.9 pull rate) adds a secondary angle.",
-    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and opposing pitcher HR vulnerability over park factors, which is why Tatis ranks first despite Petco's suppression and why Olson climbs to fourth despite Yamamoto's reputation."
+    "slateOverview": "Petco Park's 0.89 factor suppresses power across the board, yet Dustin May's 63.4 HR/100 FB rate and Nick Pivetta's 56.7 mark create exploitable matchups for the Padres and Brewers. Truist Park's 1.03 factor and Yamamoto's 28.2 HR/100 FB rate give Atlanta hitters a modest lift, while Sale's left-handed profile caps Ohtani's pull-side power. No weather angles stand out.",
+    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and opposing pitcher HR vulnerability over recent HR totals, elevating Tatis and Merrill despite their 0 last-7 HR counts."
   },
   "bestBets": [
     {
@@ -18,8 +18,8 @@
         "HH=53.9%"
       ],
       "bullets": [
-        "barrel=12.7%",
-        "HH=53.9%"
+        "hrScore=68",
+        "park=0.89"
       ],
       "hrOddsYes": "+470",
       "marketImpliedProbability": 0.17543859649122806,
@@ -37,8 +37,8 @@
         "HH=48.7%"
       ],
       "bullets": [
-        "barrel=12.4%",
-        "HH=48.7%"
+        "hrScore=61.3",
+        "park=0.89"
       ],
       "hrOddsYes": "+559",
       "marketImpliedProbability": 0.15174506828528073,
@@ -52,12 +52,12 @@
       "opposingPitcher": "Dustin May",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=9.7%",
-        "HH=43.6%"
+        "Pitcher HR VS=63.4",
+        "Hard Hit%=43.6"
       ],
       "bullets": [
-        "barrel=9.7%",
-        "HH=43.6%"
+        "HR score 53.6 (#3)",
+        "Pitcher HR VS 63.4 at park 0.89"
       ],
       "hrOddsYes": "+496",
       "marketImpliedProbability": 0.16778523489932887,
@@ -94,16 +94,35 @@
         "Hard Hit%=47.0"
       ],
       "bullets": [
-        "HR score 52.7 (#5)",
+        "HR score 52.6 (#5)",
         "Pitcher HR VS 56.7 at park 0.89"
       ],
-      "hrOddsYes": "+396",
-      "marketImpliedProbability": 0.20161290322580644,
+      "hrOddsYes": "+400",
+      "marketImpliedProbability": 0.2,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
+    {
+      "player": "Manny Machado",
+      "team": "SD",
+      "opponent": "MIL",
+      "opposingPitcher": "Dustin May",
+      "hrScoreRank": 3,
+      "topStats": [
+        "barrel=9.7%",
+        "HH=43.6%"
+      ],
+      "bullets": [
+        "hrScore=53.6",
+        "park=0.89"
+      ],
+      "hrOddsYes": "+496",
+      "marketImpliedProbability": 0.16778523489932887,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
     {
       "player": "Matt Olson",
       "team": "ATL",
@@ -115,8 +134,8 @@
         "HH=52%"
       ],
       "bullets": [
-        "barrel=14.2%",
-        "HH=52%"
+        "hrScore=53.1",
+        "park=1.03"
       ],
       "hrOddsYes": "+451",
       "marketImpliedProbability": 0.18148820326678766,
@@ -134,11 +153,11 @@
         "HH=47%"
       ],
       "bullets": [
-        "barrel=12.3%",
-        "HH=47%"
+        "hrScore=52.6",
+        "park=0.89"
       ],
-      "hrOddsYes": "+396",
-      "marketImpliedProbability": 0.20161290322580644,
+      "hrOddsYes": "+400",
+      "marketImpliedProbability": 0.2,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -149,12 +168,12 @@
       "opposingPitcher": "Yoshinobu Yamamoto",
       "hrScoreRank": 6,
       "topStats": [
-        "barrel=12.9%",
-        "HH=50.6%"
+        "Hard Hit%=50.6",
+        "Pitcher HR VS=28.2"
       ],
       "bullets": [
-        "barrel=12.9%",
-        "HH=50.6%"
+        "HR score 52.2 (#6)",
+        "Pitcher HR VS 28.2 at park 1.03"
       ],
       "hrOddsYes": "+551",
       "marketImpliedProbability": 0.15360983102918588,
@@ -172,11 +191,11 @@
         "Hard Hit%=51.9"
       ],
       "bullets": [
-        "HR score 52.0 (#7)",
+        "HR score 51.9 (#7)",
         "Pitcher HR VS 56.7 at park 0.89"
       ],
-      "hrOddsYes": "+477",
-      "marketImpliedProbability": 0.1733102253032929,
+      "hrOddsYes": "+475",
+      "marketImpliedProbability": 0.17391304347826086,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -194,8 +213,8 @@
         "HR score 49.9 (#8)",
         "Pitcher HR VS 25.4 at park 1.03"
       ],
-      "hrOddsYes": "+492",
-      "marketImpliedProbability": 0.16891891891891891,
+      "hrOddsYes": "+525",
+      "marketImpliedProbability": 0.16,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -212,11 +231,11 @@
         "HH=52.1%"
       ],
       "bullets": [
-        "barrel=16.4%",
-        "HH=52.1%"
+        "hrScore=49.9",
+        "park=1.03"
       ],
-      "hrOddsYes": "+492",
-      "marketImpliedProbability": 0.16891891891891891,
+      "hrOddsYes": "+525",
+      "marketImpliedProbability": 0.16,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -231,11 +250,11 @@
         "HH=38.2%"
       ],
       "bullets": [
-        "barrel=7.1%",
-        "HH=38.2%"
+        "hrScore=41.6",
+        "park=0.89"
       ],
-      "hrOddsYes": "+896",
-      "marketImpliedProbability": 0.10040160642570281,
+      "hrOddsYes": "+953",
+      "marketImpliedProbability": 0.0949667616334283,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -250,7 +269,7 @@
         "Pitcher HR VS=25.4"
       ],
       "bullets": [
-        "HR score 40.4 (#19)",
+        "HR score 40.6 (#19)",
         "Pitcher HR VS 25.4 at park 1.03"
       ],
       "hrOddsYes": "+818",
