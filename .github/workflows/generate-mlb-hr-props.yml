@@ -439,6 +439,11 @@ jobs:
           MLB_EXPECTED_SLATE_DATE: ${{ needs.slate-check.outputs.slate_date }}
         run: node scripts/inject-k-odds.mjs
 
+      - name: Generate Pitcher K +EV artifact
+        id: generate_k_plus_ev
+        continue-on-error: true
+        run: npm run mlb:k-plus-ev
+
       - name: Validate MLB prop odds enrichment
         id: validate_prop_odds
         continue-on-error: true
