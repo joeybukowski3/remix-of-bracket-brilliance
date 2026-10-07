@@ -2,20 +2,20 @@
   "coverage": {
     "evaluable_by_type": {
       "passing": 611,
-      "receiving": 5510,
+      "receiving": 5503,
       "rushing": 2458,
       "spread": 1426,
       "team_opportunity": 652,
       "team_total": 556
     },
     "ledger_by_status": {
-      "inactive": 766,
+      "inactive": 773,
       "not_applicable": 145,
-      "pending_game": 7072,
-      "resolved": 11213
+      "pending_game": 7772,
+      "resolved": 11206
     },
     "non_production_skipped": 0,
-    "predictions_loaded": 19196
+    "predictions_loaded": 19896
   },
   "evaluation_mode": "production",
   "filters": {
@@ -1294,35 +1294,35 @@
             }
           },
           "2": {
-            "bias": -0.001105561499687302,
+            "bias": -0.07642134714894551,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.6916732856798444,
-              "yards_mae": 16.51280658684402,
+              "targets_mae": 1.6895716458008045,
+              "yards_mae": 16.52223961720533,
               "ypr_error_mean": null,
               "ypt_error_mean": 0.20792646058542444
             },
-            "correlation": 0.5667175917398458,
+            "correlation": 0.5653792947210486,
             "correlation_insufficient_sample": false,
-            "mae": 16.51280658684402,
+            "mae": 16.52223961720533,
             "market_direction": {
-              "graded_n": 391,
+              "graded_n": 385,
               "insufficient_sample": false,
               "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
               "over": 199,
               "push": 0,
-              "under": 192
+              "under": 186
             },
-            "median_absolute_error": 11.932695464395993,
-            "n": 1371,
-            "rmse": 23.273554341240995,
+            "median_absolute_error": 11.932037142751732,
+            "n": 1364,
+            "rmse": 23.309483022366223,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 1169,
               "non_zero_volume_yards_mae": 17.105185835057014,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 202,
-              "zero_volume_yards_mae": 13.084631630601606
+              "zero_volume_n": 195,
+              "zero_volume_yards_mae": 13.027551777879147
             }
           },
           "3": {
@@ -1488,69 +1488,69 @@
         },
         "candidate__limited_history": {
           "false": {
-            "bias": -0.5642869403722394,
+            "bias": -0.5846833077293513,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.8123647440187294,
-              "yards_mae": 18.323066464223313,
+              "targets_mae": 1.8119781672335216,
+              "yards_mae": 18.327949537369484,
               "ypr_error_mean": null,
               "ypt_error_mean": -0.22213733790117163
             },
-            "correlation": 0.6066734161747425,
+            "correlation": 0.6064207441852169,
             "correlation_insufficient_sample": false,
-            "mae": 18.323066464223313,
+            "mae": 18.327949537369484,
             "market_direction": {
-              "graded_n": 1421,
+              "graded_n": 1415,
               "insufficient_sample": false,
               "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
               "over": 772,
               "push": 0,
-              "under": 649
+              "under": 643
             },
-            "median_absolute_error": 12.342328128644592,
-            "n": 5237,
-            "rmse": 26.078617448988,
+            "median_absolute_error": 12.327057634306833,
+            "n": 5230,
+            "rmse": 26.090536074987433,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 4064,
               "non_zero_volume_yards_mae": 20.47295267686077,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 1173,
-              "zero_volume_yards_mae": 10.874526337915885
+              "zero_volume_n": 1166,
+              "zero_volume_yards_mae": 10.85171217982868
             }
           }
         },
         "candidate__no_history": {
           "false": {
-            "bias": -0.9922634491910493,
+            "bias": -1.01725065284551,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.919935807666057,
-              "yards_mae": 19.401812823591836,
+              "targets_mae": 1.9196467215095059,
+              "yards_mae": 19.40935205737403,
               "ypr_error_mean": null,
               "ypt_error_mean": -0.1740047805604723
             },
-            "correlation": 0.5888499008834968,
+            "correlation": 0.5884370152446108,
             "correlation_insufficient_sample": false,
-            "mae": 19.401812823591836,
+            "mae": 19.40935205737403,
             "market_direction": {
-              "graded_n": 1354,
+              "graded_n": 1348,
               "insufficient_sample": false,
               "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
               "over": 727,
               "push": 0,
-              "under": 627
+              "under": 621
             },
-            "median_absolute_error": 13.388870903069765,
-            "n": 4396,
-            "rmse": 27.275870177233397,
+            "median_absolute_error": 13.348152674063122,
+            "n": 4389,
+            "rmse": 27.291315507682175,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 3624,
               "non_zero_volume_yards_mae": 20.970139354255878,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 772,
-              "zero_volume_yards_mae": 12.039616778091318
+              "zero_volume_n": 765,
+              "zero_volume_yards_mae": 12.015504784302493
             }
           },
           "true": {
@@ -1620,69 +1620,69 @@
             }
           },
           "true": {
-            "bias": -0.5664422669620253,
+            "bias": -0.5868454202540169,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.8125844469616181,
-              "yards_mae": 18.32451834798582,
+              "targets_mae": 1.8121980903607315,
+              "yards_mae": 18.32940429859603,
               "ypr_error_mean": null,
               "ypt_error_mean": -0.22346000052700865
             },
-            "correlation": 0.6066506689160758,
+            "correlation": 0.6063978900665877,
             "correlation_insufficient_sample": false,
-            "mae": 18.32451834798582,
+            "mae": 18.32940429859603,
             "market_direction": {
-              "graded_n": 1421,
+              "graded_n": 1415,
               "insufficient_sample": false,
               "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
               "over": 772,
               "push": 0,
-              "under": 649
+              "under": 643
             },
-            "median_absolute_error": 12.342328128644592,
-            "n": 5236,
-            "rmse": 26.08068680718093,
+            "median_absolute_error": 12.327057634306833,
+            "n": 5229,
+            "rmse": 26.092609535415356,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 4063,
               "non_zero_volume_yards_mae": 20.475352861353294,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 1173,
-              "zero_volume_yards_mae": 10.874526337915885
+              "zero_volume_n": 1166,
+              "zero_volume_yards_mae": 10.85171217982868
             }
           }
         },
         "candidate__starter_flag": {
           "false": {
-            "bias": 0.05537296363703379,
+            "bias": 0.026723640582825937,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.5200819739670342,
-              "yards_mae": 14.984795729412573,
+              "targets_mae": 1.518943178900685,
+              "yards_mae": 14.985403393861283,
               "ypr_error_mean": null,
               "ypt_error_mean": -0.23726498275963057
             },
-            "correlation": 0.5438044130760887,
+            "correlation": 0.5437299200331474,
             "correlation_insufficient_sample": false,
-            "mae": 14.984795729412573,
+            "mae": 14.985403393861283,
             "market_direction": {
-              "graded_n": 606,
+              "graded_n": 600,
               "insufficient_sample": false,
               "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
               "over": 343,
               "push": 0,
-              "under": 263
+              "under": 257
             },
-            "median_absolute_error": 10.251482083487685,
-            "n": 3579,
-            "rmse": 21.406091821968587,
+            "median_absolute_error": 10.233673329354048,
+            "n": 3572,
+            "rmse": 21.41719776969156,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 2464,
               "non_zero_volume_yards_mae": 17.321292211511125,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 1115,
-              "zero_volume_yards_mae": 9.821452830855698
+              "zero_volume_n": 1108,
+              "zero_volume_yards_mae": 9.790791438365536
             }
           },
           "true": {
@@ -1752,35 +1752,35 @@
             }
           },
           "true": {
-            "bias": 2.2626030634900824,
+            "bias": 2.1585494452258187,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.9397707457083062,
-              "yards_mae": 17.15410815035119,
+              "targets_mae": 1.9384175066965574,
+              "yards_mae": 17.17489349688696,
               "ypr_error_mean": null,
               "ypt_error_mean": 0.717555864621654
             },
-            "correlation": 0.49703327831422367,
+            "correlation": 0.49460527022276873,
             "correlation_insufficient_sample": false,
-            "mae": 17.15410815035119,
+            "mae": 17.17489349688696,
             "market_direction": {
-              "graded_n": 198,
+              "graded_n": 192,
               "insufficient_sample": false,
               "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
               "over": 90,
               "push": 0,
-              "under": 108
+              "under": 102
             },
-            "median_absolute_error": 12.386943064303495,
-            "n": 842,
-            "rmse": 22.382936886359563,
+            "median_absolute_error": 12.22176220316757,
+            "n": 835,
+            "rmse": 22.43633149635358,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 680,
               "non_zero_volume_yards_mae": 18.012100293171017,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 162,
-              "zero_volume_yards_mae": 13.55265964962595
+              "zero_volume_n": 155,
+              "zero_volume_yards_mae": 13.501986261576217
             }
           }
         },
@@ -1818,35 +1818,35 @@
             }
           },
           "true": {
-            "bias": 1.3625542051568744,
+            "bias": 1.3020836579414348,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.6839537259037298,
-              "yards_mae": 18.17269556886161,
+              "targets_mae": 1.682058415252567,
+              "yards_mae": 18.188585170605247,
               "ypr_error_mean": null,
               "ypt_error_mean": 0.4101818372698362
             },
-            "correlation": 0.6068306505854092,
+            "correlation": 0.6059307907792654,
             "correlation_insufficient_sample": false,
-            "mae": 18.17269556886161,
+            "mae": 18.188585170605247,
             "market_direction": {
-              "graded_n": 239,
+              "graded_n": 233,
               "insufficient_sample": false,
               "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
               "over": 148,
               "push": 0,
-              "under": 91
+              "under": 85
             },
-            "median_absolute_error": 12.327057634306833,
-            "n": 1548,
-            "rmse": 24.517954464025234,
+            "median_absolute_error": 12.29579632057871,
+            "n": 1541,
+            "rmse": 24.553648827529923,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 1212,
               "non_zero_volume_yards_mae": 19.900383191593324,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 336,
-              "zero_volume_yards_mae": 11.940679501150786
+              "zero_volume_n": 329,
+              "zero_volume_yards_mae": 11.882508570491105
             }
           }
         },
@@ -2012,35 +2012,35 @@
             }
           },
           "-5..0": {
-            "bias": -18.70998523074082,
+            "bias": -19.54307004957572,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.9809777658689578,
-              "yards_mae": 27.703029206633033,
+              "targets_mae": 1.9777084419063096,
+              "yards_mae": 28.02545512067881,
               "ypr_error_mean": null,
               "ypt_error_mean": -1.9955699478902489
             },
-            "correlation": 0.5404828630053699,
+            "correlation": 0.5158758135775058,
             "correlation_insufficient_sample": false,
-            "mae": 27.703029206633033,
+            "mae": 28.02545512067881,
             "market_direction": {
-              "graded_n": 247,
+              "graded_n": 241,
               "insufficient_sample": false,
               "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
               "over": 154,
               "push": 0,
-              "under": 93
+              "under": 87
             },
-            "median_absolute_error": 18.70948995691584,
-            "n": 247,
-            "rmse": 38.70108012827682,
+            "median_absolute_error": 18.932194080242695,
+            "n": 241,
+            "rmse": 39.110613558387,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 239,
               "non_zero_volume_yards_mae": 28.207209452579846,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 8,
-              "zero_volume_yards_mae": 12.640644358972045
+              "zero_volume_n": 2,
+              "zero_volume_yards_mae": 6.305812458504784
             }
           },
           "0..5": {
@@ -2302,35 +2302,35 @@
             }
           },
           "jkb_under": {
-            "bias": -18.802567324638513,
+            "bias": -19.13923778266961,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 2.7366695717110976,
-              "yards_mae": 33.33213516860494,
+              "targets_mae": 2.7429341933834293,
+              "yards_mae": 33.518555371041174,
               "ypr_error_mean": null,
               "ypt_error_mean": -1.5857955038498934
             },
-            "correlation": 0.43439036821369054,
+            "correlation": 0.4209111725423653,
             "correlation_insufficient_sample": false,
-            "mae": 33.33213516860494,
+            "mae": 33.518555371041174,
             "market_direction": {
-              "graded_n": 604,
+              "graded_n": 598,
               "insufficient_sample": false,
               "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
               "over": 343,
               "push": 0,
-              "under": 261
+              "under": 255
             },
-            "median_absolute_error": 22.33597521849663,
-            "n": 604,
-            "rmse": 45.37235968559535,
+            "median_absolute_error": 23.804053532172293,
+            "n": 598,
+            "rmse": 45.57544373028113,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 593,
               "non_zero_volume_yards_mae": 33.5214476790022,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 11,
-              "zero_volume_yards_mae": 23.12646983537075
+              "zero_volume_n": 5,
+              "zero_volume_yards_mae": 33.1755276468623
             }
           }
         },
@@ -2368,51 +2368,51 @@
             }
           },
           "home": {
-            "bias": 0.1400793280795483,
+            "bias": 0.10294705165672566,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.769071389410787,
-              "yards_mae": 17.293991884532804,
+              "targets_mae": 1.7682229039841837,
+              "yards_mae": 17.3006834723053,
               "ypr_error_mean": null,
               "ypt_error_mean": -0.040216476698214695
             },
-            "correlation": 0.6198587769750666,
+            "correlation": 0.6193662529180131,
             "correlation_insufficient_sample": false,
-            "mae": 17.293991884532804,
+            "mae": 17.3006834723053,
             "market_direction": {
-              "graded_n": 716,
+              "graded_n": 710,
               "insufficient_sample": false,
               "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
               "over": 381,
               "push": 0,
-              "under": 335
+              "under": 329
             },
-            "median_absolute_error": 12.159498869196845,
-            "n": 2747,
-            "rmse": 24.62361137922922,
+            "median_absolute_error": 12.140490087193148,
+            "n": 2740,
+            "rmse": 24.64387562250596,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 2146,
               "non_zero_volume_yards_mae": 18.980037921860514,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 601,
-              "zero_volume_yards_mae": 11.273601208816798
+              "zero_volume_n": 594,
+              "zero_volume_yards_mae": 11.233520763979472
             }
           }
         },
         "market_input_available": {
           "false": {
-            "bias": 1.479922809616061,
+            "bias": 1.4767695918972832,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.5667186617781164,
-              "yards_mae": 15.534868234485481,
+              "targets_mae": 1.5666027694167644,
+              "yards_mae": 15.535196548950223,
               "ypr_error_mean": null,
               "ypt_error_mean": 0.04674561367402494
             },
-            "correlation": 0.6122148912613913,
+            "correlation": 0.6121907543495244,
             "correlation_insufficient_sample": false,
-            "mae": 15.534868234485481,
+            "mae": 15.535196548950223,
             "market_direction": {
               "graded_n": 0,
               "insufficient_sample": true,
@@ -2422,81 +2422,81 @@
               "under": 0
             },
             "median_absolute_error": 10.692903956808408,
-            "n": 4038,
-            "rmse": 21.289544099356302,
+            "n": 4037,
+            "rmse": 21.291006224116618,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 2845,
               "non_zero_volume_yards_mae": 17.712225260517165,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 1193,
-              "zero_volume_yards_mae": 10.342428386153609
+              "zero_volume_n": 1192,
+              "zero_volume_yards_mae": 10.339184229816217
             }
           },
           "true": {
-            "bias": -5.947723270314217,
+            "bias": -6.032443508770322,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 2.461335109729163,
-              "yards_mae": 25.754458417166905,
+              "targets_mae": 2.46276364792027,
+              "yards_mae": 25.799487899123417,
               "ypr_error_mean": null,
               "ypt_error_mean": -0.7756455798165396
             },
-            "correlation": 0.4422862857033704,
+            "correlation": 0.4385607247925438,
             "correlation_insufficient_sample": false,
-            "mae": 25.754458417166905,
+            "mae": 25.799487899123417,
             "market_direction": {
-              "graded_n": 1472,
+              "graded_n": 1466,
               "insufficient_sample": false,
               "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
               "over": 802,
               "push": 0,
-              "under": 670
+              "under": 664
             },
-            "median_absolute_error": 20.056026253938718,
-            "n": 1472,
-            "rmse": 35.85902375606963,
+            "median_absolute_error": 20.0884392268602,
+            "n": 1466,
+            "rmse": 35.919923932389565,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 1430,
               "non_zero_volume_yards_mae": 25.75864915466099,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 42,
-              "zero_volume_yards_mae": 25.611773783439876
+              "zero_volume_n": 36,
+              "zero_volume_yards_mae": 27.421693581936335
             }
           }
         },
         "neutral_site": {
           "false": {
-            "bias": -0.8030411258431965,
+            "bias": -0.8238285933366719,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.824273886320163,
-              "yards_mae": 18.423990653830593,
+              "targets_mae": 1.823901969092511,
+              "yards_mae": 18.429026137691245,
               "ypr_error_mean": null,
               "ypt_error_mean": -0.2697672279808386
             },
-            "correlation": 0.6088801721712666,
+            "correlation": 0.6086267842478195,
             "correlation_insufficient_sample": false,
-            "mae": 18.423990653830593,
+            "mae": 18.429026137691245,
             "market_direction": {
-              "graded_n": 1432,
+              "graded_n": 1426,
               "insufficient_sample": false,
               "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
               "over": 790,
               "push": 0,
-              "under": 642
+              "under": 636
             },
-            "median_absolute_error": 12.427187877333672,
-            "n": 5219,
-            "rmse": 26.31091392061891,
+            "median_absolute_error": 12.403876299416016,
+            "n": 5212,
+            "rmse": 26.323078622891988,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 4042,
               "non_zero_volume_yards_mae": 20.652411975656875,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 1177,
-              "zero_volume_yards_mae": 10.771247252962493
+              "zero_volume_n": 1170,
+              "zero_volume_yards_mae": 10.747893182941679
             }
           },
           "true": {
@@ -2566,35 +2566,35 @@
             }
           },
           "TE": {
-            "bias": 1.4187400581972696,
+            "bias": 1.3744691553882482,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.422272667895212,
-              "yards_mae": 13.487503407595709,
+              "targets_mae": 1.4200052818649156,
+              "yards_mae": 13.483538489255102,
               "ypr_error_mean": null,
               "ypt_error_mean": 0.09392001509899593
             },
-            "correlation": 0.6204802155055122,
+            "correlation": 0.6204967666554624,
             "correlation_insufficient_sample": false,
-            "mae": 13.487503407595709,
+            "mae": 13.483538489255102,
             "market_direction": {
-              "graded_n": 358,
+              "graded_n": 352,
               "insufficient_sample": false,
               "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
               "over": 175,
               "push": 0,
-              "under": 183
+              "under": 177
             },
-            "median_absolute_error": 8.142118202337993,
-            "n": 2103,
-            "rmse": 19.303257268819525,
+            "median_absolute_error": 8.097773708785207,
+            "n": 2096,
+            "rmse": 19.31684114368763,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 1344,
               "non_zero_volume_yards_mae": 16.388446901981332,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 759,
-              "zero_volume_yards_mae": 8.35065484836743
+              "zero_volume_n": 752,
+              "zero_volume_yards_mae": 8.291787283531637
             }
           },
           "WR": {
@@ -2664,35 +2664,35 @@
             }
           },
           "2-4": {
-            "bias": -0.8846375164329756,
+            "bias": -0.9561982623660379,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.8736492919706562,
-              "yards_mae": 17.572505841949894,
+              "targets_mae": 1.8726027711093072,
+              "yards_mae": 17.585833403184164,
               "ypr_error_mean": null,
               "ypt_error_mean": -0.17280521481711422
             },
-            "correlation": 0.2452080195238451,
+            "correlation": 0.24124852128913563,
             "correlation_insufficient_sample": false,
-            "mae": 17.572505841949894,
+            "mae": 17.585833403184164,
             "market_direction": {
-              "graded_n": 377,
+              "graded_n": 371,
               "insufficient_sample": false,
               "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
               "over": 241,
               "push": 0,
-              "under": 136
+              "under": 130
             },
-            "median_absolute_error": 14.628541078464412,
-            "n": 1529,
-            "rmse": 23.315626589651764,
+            "median_absolute_error": 14.626859008386907,
+            "n": 1522,
+            "rmse": 23.347963094294037,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 1315,
               "non_zero_volume_yards_mae": 17.577230258329838,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 214,
-              "zero_volume_yards_mae": 17.543474965596534
+              "zero_volume_n": 207,
+              "zero_volume_yards_mae": 17.64048623160661
             }
           },
           "4-6": {
@@ -2826,69 +2826,69 @@
             }
           },
           "projected": {
-            "bias": -0.9148100767532603,
+            "bias": -0.9384305666303951,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.9126238330202503,
-              "yards_mae": 19.324727646582975,
+              "targets_mae": 1.9123381224220628,
+              "yards_mae": 19.33177312295332,
               "ypr_error_mean": null,
               "ypt_error_mean": -0.17082787975910071
             },
-            "correlation": 0.5895241897999777,
+            "correlation": 0.5891316513028486,
             "correlation_insufficient_sample": false,
-            "mae": 19.324727646582975,
+            "mae": 19.33177312295332,
             "market_direction": {
-              "graded_n": 1403,
+              "graded_n": 1397,
               "insufficient_sample": false,
               "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
               "over": 755,
               "push": 0,
-              "under": 648
+              "under": 642
             },
-            "median_absolute_error": 13.335095834573835,
-            "n": 4627,
-            "rmse": 27.180770623349225,
+            "median_absolute_error": 13.313537000293522,
+            "n": 4620,
+            "rmse": 27.195350941160687,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 3815,
               "non_zero_volume_yards_mae": 20.88493549973822,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 812,
-              "zero_volume_yards_mae": 11.994440750293291
+              "zero_volume_n": 805,
+              "zero_volume_yards_mae": 11.971134032972751
             }
           }
         },
         "week_band": {
           "1-4": {
-            "bias": -0.5043775587428138,
+            "bias": -0.523685869774304,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.805716014116393,
-              "yards_mae": 18.265038243361555,
+              "targets_mae": 1.8053401577297021,
+              "yards_mae": 18.269605256810298,
               "ypr_error_mean": null,
               "ypt_error_mean": -0.22834664520118458
             },
-            "correlation": 0.6070689524368443,
+            "correlation": 0.606828278459739,
             "correlation_insufficient_sample": false,
-            "mae": 18.265038243361555,
+            "mae": 18.269605256810298,
             "market_direction": {
-              "graded_n": 1472,
+              "graded_n": 1466,
               "insufficient_sample": false,
               "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
               "over": 802,
               "push": 0,
-              "under": 670
+              "under": 664
             },
-            "median_absolute_error": 12.327057634306833,
-            "n": 5510,
-            "rmse": 25.993863853297803,
+            "median_absolute_error": 12.31287342494064,
+            "n": 5503,
+            "rmse": 26.00512031210895,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 4275,
               "non_zero_volume_yards_mae": 20.40377758066348,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 1235,
-              "zero_volume_yards_mae": 10.861709768085603
+              "zero_volume_n": 1228,
+              "zero_volume_yards_mae": 10.83997440626273
             }
           }
         }
@@ -5853,35 +5853,35 @@
       {
         "fitted_model_hash": "8451d69f40e5f920b1f7c588f1a4a720e862834f5bcd6da8ce5a57cd98593413",
         "metrics": {
-          "bias": -0.5043775587428138,
+          "bias": -0.523685869774304,
           "component": {
             "receptions_mae": null,
-            "targets_mae": 1.805716014116393,
-            "yards_mae": 18.265038243361555,
+            "targets_mae": 1.8053401577297021,
+            "yards_mae": 18.269605256810298,
             "ypr_error_mean": null,
             "ypt_error_mean": -0.22834664520118458
           },
-          "correlation": 0.6070689524368443,
+          "correlation": 0.606828278459739,
           "correlation_insufficient_sample": false,
-          "mae": 18.265038243361555,
+          "mae": 18.269605256810298,
           "market_direction": {
-            "graded_n": 1472,
+            "graded_n": 1466,
             "insufficient_sample": false,
             "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
             "over": 802,
             "push": 0,
-            "under": 670
+            "under": 664
           },
-          "median_absolute_error": 12.327057634306833,
-          "n": 5510,
-          "rmse": 25.993863853297803,
+          "median_absolute_error": 12.31287342494064,
+          "n": 5503,
+          "rmse": 26.00512031210895,
           "small_sample": false,
           "volume_decomposition": {
             "non_zero_volume_n": 4275,
             "non_zero_volume_yards_mae": 20.40377758066348,
             "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-            "zero_volume_n": 1235,
-            "zero_volume_yards_mae": 10.861709768085603
+            "zero_volume_n": 1228,
+            "zero_volume_yards_mae": 10.83997440626273
           }
         },
         "model_name": "nfl-receiving-targets-x-shrunk-ypt",
@@ -6155,35 +6155,35 @@
       },
       {
         "metrics": {
-          "bias": -0.5043775587428138,
+          "bias": -0.523685869774304,
           "component": {
             "receptions_mae": null,
-            "targets_mae": 1.805716014116393,
-            "yards_mae": 18.265038243361555,
+            "targets_mae": 1.8053401577297021,
+            "yards_mae": 18.269605256810298,
             "ypr_error_mean": null,
             "ypt_error_mean": -0.22834664520118458
           },
-          "correlation": 0.6070689524368443,
+          "correlation": 0.606828278459739,
           "correlation_insufficient_sample": false,
-          "mae": 18.265038243361555,
+          "mae": 18.269605256810298,
           "market_direction": {
-            "graded_n": 1472,
+            "graded_n": 1466,
             "insufficient_sample": false,
             "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
             "over": 802,
             "push": 0,
-            "under": 670
+            "under": 664
           },
-          "median_absolute_error": 12.327057634306833,
-          "n": 5510,
-          "rmse": 25.993863853297803,
+          "median_absolute_error": 12.31287342494064,
+          "n": 5503,
+          "rmse": 26.00512031210895,
           "small_sample": false,
           "volume_decomposition": {
             "non_zero_volume_n": 4275,
             "non_zero_volume_yards_mae": 20.40377758066348,
             "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-            "zero_volume_n": 1235,
-            "zero_volume_yards_mae": 10.861709768085603
+            "zero_volume_n": 1228,
+            "zero_volume_yards_mae": 10.83997440626273
           }
         },
         "model_name": "nfl-receiving-targets-x-shrunk-ypt",
@@ -6418,35 +6418,35 @@
         }
       },
       "receiving": {
-        "bias": -0.5043775587428138,
+        "bias": -0.523685869774304,
         "component": {
           "receptions_mae": null,
-          "targets_mae": 1.805716014116393,
-          "yards_mae": 18.265038243361555,
+          "targets_mae": 1.8053401577297021,
+          "yards_mae": 18.269605256810298,
           "ypr_error_mean": null,
           "ypt_error_mean": -0.22834664520118458
         },
-        "correlation": 0.6070689524368443,
+        "correlation": 0.606828278459739,
         "correlation_insufficient_sample": false,
-        "mae": 18.265038243361555,
+        "mae": 18.269605256810298,
         "market_direction": {
-          "graded_n": 1472,
+          "graded_n": 1466,
           "insufficient_sample": false,
           "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
           "over": 802,
           "push": 0,
-          "under": 670
+          "under": 664
         },
-        "median_absolute_error": 12.327057634306833,
-        "n": 5510,
-        "rmse": 25.993863853297803,
+        "median_absolute_error": 12.31287342494064,
+        "n": 5503,
+        "rmse": 26.00512031210895,
         "small_sample": false,
         "volume_decomposition": {
           "non_zero_volume_n": 4275,
           "non_zero_volume_yards_mae": 20.40377758066348,
           "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-          "zero_volume_n": 1235,
-          "zero_volume_yards_mae": 10.861709768085603
+          "zero_volume_n": 1228,
+          "zero_volume_yards_mae": 10.83997440626273
         }
       },
       "rushing": {
@@ -6588,35 +6588,35 @@
       },
       {
         "metrics": {
-          "bias": -0.5043775587428138,
+          "bias": -0.523685869774304,
           "component": {
             "receptions_mae": null,
-            "targets_mae": 1.805716014116393,
-            "yards_mae": 18.265038243361555,
+            "targets_mae": 1.8053401577297021,
+            "yards_mae": 18.269605256810298,
             "ypr_error_mean": null,
             "ypt_error_mean": -0.22834664520118458
           },
-          "correlation": 0.6070689524368443,
+          "correlation": 0.606828278459739,
           "correlation_insufficient_sample": false,
-          "mae": 18.265038243361555,
+          "mae": 18.269605256810298,
           "market_direction": {
-            "graded_n": 1472,
+            "graded_n": 1466,
             "insufficient_sample": false,
             "note": "Directional counts only; price and break-even are on each row. Raw hit rate is not a promotion signal.",
             "over": 802,
             "push": 0,
-            "under": 670
+            "under": 664
           },
-          "median_absolute_error": 12.327057634306833,
-          "n": 5510,
-          "rmse": 25.993863853297803,
+          "median_absolute_error": 12.31287342494064,
+          "n": 5503,
+          "rmse": 26.00512031210895,
           "small_sample": false,
           "volume_decomposition": {
             "non_zero_volume_n": 4275,
             "non_zero_volume_yards_mae": 20.40377758066348,
             "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-            "zero_volume_n": 1235,
-            "zero_volume_yards_mae": 10.861709768085603
+            "zero_volume_n": 1228,
+            "zero_volume_yards_mae": 10.83997440626273
           }
         },
         "prediction_type": "receiving",
