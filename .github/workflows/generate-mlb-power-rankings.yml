@@ -11,6 +11,7 @@ on:
       - main
     paths:
       - .github/workflows/generate-mlb-power-rankings.yml
+  # Editing this workflow intentionally acts as a safe manual catch-up trigger.
 
 # Share one lock with the other automated workflows that commit generated data to main.
 concurrency:

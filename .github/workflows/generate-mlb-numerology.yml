@@ -22,6 +22,7 @@ on:
       timezone: "America/New_York" # 4:00 AM ET daily generation
 
   workflow_dispatch:
+    # Workflow edits on main also provide a safe catch-up trigger via the push block above.
     inputs:
       phase:
         description: "Numerology generation phase"
