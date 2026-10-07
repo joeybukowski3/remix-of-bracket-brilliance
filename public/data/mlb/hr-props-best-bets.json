@@ -1,10 +1,10 @@
 {
   "date": "2026-10-07",
-  "generatedAt": "2026-10-07T14:37:51.265Z",
+  "generatedAt": "2026-10-07T20:03:46.850Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Yankee Stadium (1.18) and Truist Park (1.03) are the primary HR-friendly venues today, with Nick Martinez and Tyler Mahle both allowing elevated HR rates to opposing lineups. The model is targeting power bats in these parks who combine strong barrel/hard-hit profiles with favorable platoon advantages against right-handed pitching.",
-    "modelNote": "The model is prioritizing park-adjusted hrScore and recent barrel trends over raw last-30 HR totals, elevating Ben Rice and Luis García Jr. despite their recent power droughts."
+    "slateOverview": "Yankee Stadium’s 1.18 park factor and righty Nick Martinez on the mound set up the top two HR scores for Ben Rice and Luis García Jr., while Truist Park’s neutral 1.03 factor and Tyler Mahle’s softer profile give Will Smith and Shohei Ohtani strong secondary spots. Rate Field’s slight boost and Daniel Espino’s strike-throwing tendencies elevate Munetaka Murakami despite his elevated K-rate.",
+    "modelNote": "The model is prioritizing barrel rate, park factor, and opposing pitcher HR vulnerability over recent HR drought, which is why Rice and García rank 1-2 despite zero homers in their last seven games."
   },
   "bestBets": [
     {
@@ -19,7 +19,7 @@
       ],
       "bullets": [
         "park=1.18",
-        "hrScore=66"
+        "hrScore=65.4"
       ],
       "hrOddsYes": "+313",
       "marketImpliedProbability": 0.24213075060532688,
@@ -38,7 +38,7 @@
       ],
       "bullets": [
         "park=1.18",
-        "hrScore=58.8"
+        "hrScore=58.3"
       ],
       "hrOddsYes": "+447",
       "marketImpliedProbability": 0.18281535648994515,
@@ -57,7 +57,7 @@
       ],
       "bullets": [
         "park=1.03",
-        "hrScore=57.4"
+        "hrScore=57.8"
       ],
       "hrOddsYes": "+521",
       "marketImpliedProbability": 0.1610305958132045,
@@ -76,13 +76,34 @@
       ],
       "bullets": [
         "park=1.03",
-        "hrScore=56.8"
+        "hrScore=57.1"
       ],
-      "hrOddsYes": "+296",
-      "marketImpliedProbability": 0.25252525252525254,
+      "hrOddsYes": "+302",
+      "marketImpliedProbability": 0.24875621890547264,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
+    {
+      "player": "Munetaka Murakami",
+      "team": "CWS",
+      "opponent": "CLE",
+      "opposingPitcher": "Daniel Espino",
+      "hrScoreRank": 5,
+      "topStats": [
+        "Hard Hit%=56.8",
+        "Pitcher HR VS=44.0"
+      ],
+      "bullets": [
+        "HR score 56.9 (#5)",
+        "Pitcher HR VS 44.0 at park 1.07"
+      ],
+      "hrOddsYes": "+390",
+      "marketImpliedProbability": 0.20408163265306123,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
     {
       "player": "Munetaka Murakami",
       "team": "CWS",
@@ -95,50 +116,10 @@
       ],
       "bullets": [
         "park=1.07",
-        "hrScore=55.5"
+        "hrScore=56.9"
       ],
       "hrOddsYes": "+390",
       "marketImpliedProbability": 0.20408163265306123,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Chase DeLauter",
-      "team": "CLE",
-      "opponent": "CWS",
-      "opposingPitcher": "Sean Newcomb",
-      "hrScoreRank": 12,
-      "topStats": [
-        "barrel=6.3%",
-        "HH=46.3%"
-      ],
-      "bullets": [
-        "park=1.07",
-        "hrScore=50.7"
-      ],
-      "hrOddsYes": "+981",
-      "marketImpliedProbability": 0.09250693802035152,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Spencer Jones",
-      "team": "NYY",
-      "opponent": "TB",
-      "opposingPitcher": "Nick Martinez",
-      "hrScoreRank": 6,
-      "topStats": [
-        "Hard Hit%=55.1",
-        "Pitcher HR VS=46.0"
-      ],
-      "bullets": [
-        "HR score 54.3 (#6)",
-        "Pitcher HR VS 46.0 at park 1.18"
-      ],
-      "hrOddsYes": "+473",
-      "marketImpliedProbability": 0.17452006980802792,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -147,17 +128,55 @@
       "team": "ATL",
       "opponent": "LAD",
       "opposingPitcher": "Tyler Glasnow",
+      "hrScoreRank": 6,
+      "topStats": [
+        "barrel=14.2%",
+        "HH=52%"
+      ],
+      "bullets": [
+        "park=1.03",
+        "hrScore=54"
+      ],
+      "hrOddsYes": "+363",
+      "marketImpliedProbability": 0.2159827213822894,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Spencer Jones",
+      "team": "NYY",
+      "opponent": "TB",
+      "opposingPitcher": "Nick Martinez",
       "hrScoreRank": 7,
       "topStats": [
-        "Hard Hit%=52.0",
+        "barrel=15.9%",
+        "HH=55.1%"
+      ],
+      "bullets": [
+        "park=1.18",
+        "hrScore=53.7"
+      ],
+      "hrOddsYes": "+500",
+      "marketImpliedProbability": 0.16666666666666666,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Drake Baldwin",
+      "team": "ATL",
+      "opponent": "LAD",
+      "opposingPitcher": "Tyler Glasnow",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Hard Hit%=50.6",
         "Pitcher HR VS=49.8"
       ],
       "bullets": [
-        "HR score 53.9 (#7)",
+        "HR score 52.9 (#8)",
         "Pitcher HR VS 49.8 at park 1.03"
       ],
-      "hrOddsYes": "+335",
-      "marketImpliedProbability": 0.22988505747126436,
+      "hrOddsYes": "+501",
+      "marketImpliedProbability": 0.16638935108153077,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
@@ -168,14 +187,14 @@
       "team": "CLE",
       "opponent": "CWS",
       "opposingPitcher": "Sean Newcomb",
-      "hrScoreRank": 23,
+      "hrScoreRank": 22,
       "topStats": [
         "barrel=8.4%",
         "HH=41.4%"
       ],
       "bullets": [
         "park=1.07",
-        "hrScore=45.4"
+        "hrScore=45"
       ],
       "hrOddsYes": "+1040",
       "marketImpliedProbability": 0.08771929824561403,
@@ -187,17 +206,17 @@
       "team": "CLE",
       "opponent": "CWS",
       "opposingPitcher": "Sean Newcomb",
-      "hrScoreRank": 12,
+      "hrScoreRank": 14,
       "topStats": [
-        "Hard Hit%=46.3",
-        "Pitcher HR VS=39.9"
+        "barrel=6.3%",
+        "HH=46.3%"
       ],
       "bullets": [
-        "HR score 50.7 (#12)",
-        "Pitcher HR VS 39.9 at park 1.07"
+        "park=1.07",
+        "hrScore=50"
       ],
-      "hrOddsYes": "+981",
-      "marketImpliedProbability": 0.09250693802035152,
+      "hrOddsYes": "+957",
+      "marketImpliedProbability": 0.0946073793755913,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
