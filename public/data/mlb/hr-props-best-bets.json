@@ -1,10 +1,10 @@
 {
   "date": "2026-10-08",
-  "generatedAt": "2026-10-08T20:03:39.028Z",
+  "generatedAt": "2026-10-08T20:51:03.751Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Rate Field's 1.07 park factor and lefty-lefty matchups with Parker Messick and Hagen Smith create a favorable home-run environment. Messick's 41.9 HR/PA rate against righties gives the top three CWS bats a clear edge, while Smith’s 23.3 mark limits Cleveland’s upside despite the same park boost.",
-    "modelNote": "The model is heavily weighting barrel rate, exit velocity, and opposing pitcher HR vulnerability, which is why Murakami, Grichuk, and Vargas occupy the top three spots despite modest recent power numbers."
+    "slateOverview": "Rate Field's 1.07 park factor and a pair of left-handed starters (Messick vs CWS, Smith vs CLE) set up a righty-heavy power environment. Messick's 41.9 HR/600 rate against righties dwarfs Smith's 23.3, so the top three model scores all land on CWS bats. Barrel and hard-hit rates remain elevated across the slate, pointing to elevated fly-ball carry in the humid Chicago air.",
+    "modelNote": "The model is prioritizing barrel rate, opposing-pitcher HR vulnerability, and recent 30-day HR volume, which is why Murakami, Grichuk, and Vargas occupy the top three ranks despite zero homers in their last seven games."
   },
   "bestBets": [
     {
@@ -19,7 +19,7 @@
       ],
       "bullets": [
         "hrScore=57.1",
-        "park=1.07"
+        "barrel=20.5%"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -33,12 +33,12 @@
       "opposingPitcher": "Parker Messick",
       "hrScoreRank": 2,
       "topStats": [
-        "hrScore=55.5",
+        "hrScore=55.9",
         "barrel=11.2%"
       ],
       "bullets": [
-        "hrScore=55.5",
-        "park=1.07"
+        "hrScore=55.9",
+        "barrel=11.2%"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -52,12 +52,12 @@
       "opposingPitcher": "Parker Messick",
       "hrScoreRank": 3,
       "topStats": [
-        "hrScore=54.5",
+        "hrScore=54.9",
         "barrel=13%"
       ],
       "bullets": [
-        "hrScore=54.5",
-        "park=1.07"
+        "hrScore=54.9",
+        "barrel=13%"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -71,12 +71,12 @@
       "opposingPitcher": "Parker Messick",
       "hrScoreRank": 4,
       "topStats": [
-        "hrScore=40.2",
-        "barrel=11.4%"
+        "Hard Hit%=47.1",
+        "Pitcher HR VS=41.9"
       ],
       "bullets": [
-        "hrScore=40.2",
-        "park=1.07"
+        "HR score 40.5 (#4)",
+        "Pitcher HR VS 41.9 at park 1.07"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -86,56 +86,18 @@
   ],
   "valueBets": [
     {
-      "player": "Munetaka Murakami",
+      "player": "Kyle Teel",
       "team": "CWS",
       "opponent": "CLE",
       "opposingPitcher": "Parker Messick",
-      "hrScoreRank": 1,
+      "hrScoreRank": 4,
       "topStats": [
-        "hrScore=57.1",
-        "barrel=20.5%"
+        "hrScore=40.5",
+        "barrel=11.4%"
       ],
       "bullets": [
-        "hrScore=57.1",
-        "park=1.07"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Randal Grichuk",
-      "team": "CWS",
-      "opponent": "CLE",
-      "opposingPitcher": "Parker Messick",
-      "hrScoreRank": 2,
-      "topStats": [
-        "hrScore=55.5",
-        "barrel=11.2%"
-      ],
-      "bullets": [
-        "hrScore=55.5",
-        "park=1.07"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Miguel Vargas",
-      "team": "CWS",
-      "opponent": "CLE",
-      "opposingPitcher": "Parker Messick",
-      "hrScoreRank": 3,
-      "topStats": [
-        "hrScore=54.5",
-        "barrel=13%"
-      ],
-      "bullets": [
-        "hrScore=54.5",
-        "park=1.07"
+        "hrScore=40.5",
+        "barrel=11.4%"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -143,44 +105,5 @@
       "hrValueEdge": null
     }
   ],
-  "longshots": [
-    {
-      "player": "Munetaka Murakami",
-      "team": "CWS",
-      "opponent": "CLE",
-      "opposingPitcher": "Parker Messick",
-      "hrScoreRank": 1,
-      "topStats": [
-        "hrScore=57.1",
-        "barrel=20.5%"
-      ],
-      "bullets": [
-        "hrScore=57.1",
-        "park=1.07"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Randal Grichuk",
-      "team": "CWS",
-      "opponent": "CLE",
-      "opposingPitcher": "Parker Messick",
-      "hrScoreRank": 2,
-      "topStats": [
-        "hrScore=55.5",
-        "barrel=11.2%"
-      ],
-      "bullets": [
-        "hrScore=55.5",
-        "park=1.07"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    }
-  ]
+  "longshots": []
 }
