@@ -1,10 +1,10 @@
 {
   "date": "2026-10-08",
-  "generatedAt": "2026-10-08T14:41:18.292Z",
+  "generatedAt": "2026-10-08T20:03:39.028Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Rate Field's 1.07 park factor and lefty-on-lefty matchups (Messick vs CWS, Smith vs CLE) set up a power-friendly environment. Murakami, Grichuk, and Vargas top the model with elite barrel/hard-hit rates against Messick, who has surrendered 41.9 HR per 100 FB. Weather is neutral, so the edge is pure park-plus-pitcher.",
-    "modelNote": "The model is overweighting barrel rate, exit velo, and opposing pitcher HR/FB while discounting recent HR droughts; Murakami's 20.5 barrel rate and 93.9 EV vault him to the top despite zero homers in his last seven games."
+    "slateOverview": "Rate Field's 1.07 park factor and lefty-lefty matchups with Parker Messick and Hagen Smith create a favorable home-run environment. Messick's 41.9 HR/PA rate against righties gives the top three CWS bats a clear edge, while Smith’s 23.3 mark limits Cleveland’s upside despite the same park boost.",
+    "modelNote": "The model is heavily weighting barrel rate, exit velocity, and opposing pitcher HR vulnerability, which is why Murakami, Grichuk, and Vargas occupy the top three spots despite modest recent power numbers."
   },
   "bestBets": [
     {
@@ -14,16 +14,16 @@
       "opposingPitcher": "Parker Messick",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=20.5%",
-        "HH=56.8%"
+        "hrScore=57.1",
+        "barrel=20.5%"
       ],
       "bullets": [
-        "hrScore=57.2",
+        "hrScore=57.1",
         "park=1.07"
       ],
-      "hrOddsYes": "+296",
-      "marketImpliedProbability": 0.25252525252525254,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -33,16 +33,16 @@
       "opposingPitcher": "Parker Messick",
       "hrScoreRank": 2,
       "topStats": [
-        "barrel=11.2%",
-        "HH=49.8%"
+        "hrScore=55.5",
+        "barrel=11.2%"
       ],
       "bullets": [
-        "hrScore=55.7",
+        "hrScore=55.5",
         "park=1.07"
       ],
-      "hrOddsYes": "+409",
-      "marketImpliedProbability": 0.19646365422396855,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -52,35 +52,16 @@
       "opposingPitcher": "Parker Messick",
       "hrScoreRank": 3,
       "topStats": [
-        "Hard Hit%=43.8",
-        "Pitcher HR VS=41.9"
+        "hrScore=54.5",
+        "barrel=13%"
       ],
       "bullets": [
-        "HR score 54.9 (#3)",
-        "Pitcher HR VS 41.9 at park 1.07"
+        "hrScore=54.5",
+        "park=1.07"
       ],
-      "hrOddsYes": "+349",
-      "marketImpliedProbability": 0.22271714922049,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Chase DeLauter",
-      "team": "CLE",
-      "opponent": "CWS",
-      "opposingPitcher": "Hagen Smith",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Hard Hit%=46.3",
-        "Pitcher HR VS=23.3"
-      ],
-      "bullets": [
-        "HR score 40.6 (#4)",
-        "Pitcher HR VS 23.3 at park 1.07"
-      ],
-      "hrOddsYes": "+546",
-      "marketImpliedProbability": 0.15479876160990713,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -88,79 +69,117 @@
       "team": "CWS",
       "opponent": "CLE",
       "opposingPitcher": "Parker Messick",
-      "hrScoreRank": 5,
+      "hrScoreRank": 4,
       "topStats": [
-        "Hard Hit%=47.1",
-        "Pitcher HR VS=41.9"
+        "hrScore=40.2",
+        "barrel=11.4%"
       ],
       "bullets": [
-        "HR score 40.6 (#5)",
-        "Pitcher HR VS 41.9 at park 1.07"
+        "hrScore=40.2",
+        "park=1.07"
       ],
-      "hrOddsYes": "+602",
-      "marketImpliedProbability": 0.14245014245014245,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
+      "player": "Munetaka Murakami",
+      "team": "CWS",
+      "opponent": "CLE",
+      "opposingPitcher": "Parker Messick",
+      "hrScoreRank": 1,
+      "topStats": [
+        "hrScore=57.1",
+        "barrel=20.5%"
+      ],
+      "bullets": [
+        "hrScore=57.1",
+        "park=1.07"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Randal Grichuk",
+      "team": "CWS",
+      "opponent": "CLE",
+      "opposingPitcher": "Parker Messick",
+      "hrScoreRank": 2,
+      "topStats": [
+        "hrScore=55.5",
+        "barrel=11.2%"
+      ],
+      "bullets": [
+        "hrScore=55.5",
+        "park=1.07"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
       "player": "Miguel Vargas",
       "team": "CWS",
       "opponent": "CLE",
       "opposingPitcher": "Parker Messick",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=13%",
-        "HH=43.8%"
+        "hrScore=54.5",
+        "barrel=13%"
       ],
       "bullets": [
-        "hrScore=54.9",
+        "hrScore=54.5",
         "park=1.07"
       ],
-      "hrOddsYes": "+349",
-      "marketImpliedProbability": 0.22271714922049,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Chase DeLauter",
-      "team": "CLE",
-      "opponent": "CWS",
-      "opposingPitcher": "Hagen Smith",
-      "hrScoreRank": 4,
-      "topStats": [
-        "barrel=6.3%",
-        "HH=46.3%"
-      ],
-      "bullets": [
-        "hrScore=40.6",
-        "park=1.07"
-      ],
-      "hrOddsYes": "+546",
-      "marketImpliedProbability": 0.15479876160990713,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Kyle Teel",
+      "player": "Munetaka Murakami",
       "team": "CWS",
       "opponent": "CLE",
       "opposingPitcher": "Parker Messick",
-      "hrScoreRank": 5,
+      "hrScoreRank": 1,
       "topStats": [
-        "barrel=11.4%",
-        "HH=47.1%"
+        "hrScore=57.1",
+        "barrel=20.5%"
       ],
       "bullets": [
-        "hrScore=40.6",
+        "hrScore=57.1",
         "park=1.07"
       ],
-      "hrOddsYes": "+602",
-      "marketImpliedProbability": 0.14245014245014245,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Randal Grichuk",
+      "team": "CWS",
+      "opponent": "CLE",
+      "opposingPitcher": "Parker Messick",
+      "hrScoreRank": 2,
+      "topStats": [
+        "hrScore=55.5",
+        "barrel=11.2%"
+      ],
+      "bullets": [
+        "hrScore=55.5",
+        "park=1.07"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ]
