@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-08T17:56:37.281Z",
+  "generatedAt": "2026-10-09T17:28:22.950Z",
   "note": "Score-band results are empirical outcome rates from graded historical predictions. HR Quality Score is a ranking score, not a calibrated probability — these rates describe what happened, not a validated forecast.",
-  "totalGradedRecords": 15565,
+  "totalGradedRecords": 15587,
   "byScoreBand": {
     "80+": {
       "predictions": 43,
@@ -37,26 +37,26 @@
       "sampleSize": 851
     },
     "50-59.9": {
-      "predictions": 2276,
-      "eligibleGraded": 2276,
-      "hrHits": 342,
-      "actualHrRate": 15,
+      "predictions": 2279,
+      "eligibleGraded": 2279,
+      "hrHits": 343,
+      "actualHrRate": 15.1,
       "avgMarketImpliedProbability": 18.9,
       "avgOdds": 501,
       "flatBetRoi": -11.5,
       "calibrationDifference": null,
-      "sampleSize": 2276
+      "sampleSize": 2279
     },
     "Below 50": {
-      "predictions": 12204,
-      "eligibleGraded": 12204,
-      "hrHits": 1183,
+      "predictions": 12223,
+      "eligibleGraded": 12223,
+      "hrHits": 1184,
       "actualHrRate": 9.7,
       "avgMarketImpliedProbability": 14.3,
       "avgOdds": 785,
       "flatBetRoi": -17.6,
       "calibrationDifference": null,
-      "sampleSize": 12204
+      "sampleSize": 12223
     }
   },
   "byConfidenceLevel": {
@@ -72,15 +72,15 @@
       "sampleSize": 3459
     },
     "medium": {
-      "predictions": 11982,
-      "eligibleGraded": 11982,
-      "hrHits": 1343,
+      "predictions": 12004,
+      "eligibleGraded": 12004,
+      "hrHits": 1345,
       "actualHrRate": 11.2,
       "avgMarketImpliedProbability": 15.9,
       "avgOdds": 711,
       "flatBetRoi": -13.1,
       "calibrationDifference": null,
-      "sampleSize": 11982
+      "sampleSize": 12004
     },
     "low": {
       "predictions": 124,
@@ -107,46 +107,46 @@
   },
   "byLineupStatus": {
     "confirmed": {
-      "predictions": 6051,
-      "eligibleGraded": 6051,
-      "hrHits": 639,
+      "predictions": 6069,
+      "eligibleGraded": 6069,
+      "hrHits": 641,
       "actualHrRate": 10.6,
       "avgMarketImpliedProbability": 14.9,
       "avgOdds": 736,
       "flatBetRoi": -21.2,
       "calibrationDifference": null,
-      "sampleSize": 6051
+      "sampleSize": 6069
     },
     "unconfirmed": {
-      "predictions": 9514,
-      "eligibleGraded": 9514,
+      "predictions": 9518,
+      "eligibleGraded": 9518,
       "hrHits": 1069,
       "actualHrRate": 11.2,
       "avgMarketImpliedProbability": 16.1,
       "avgOdds": 697,
       "flatBetRoi": -13.8,
       "calibrationDifference": null,
-      "sampleSize": 9514
+      "sampleSize": 9518
     }
   },
   "byModelVersion": {
     "mlb-hr-quality-v1.1": {
-      "predictions": 15565,
-      "eligibleGraded": 15565,
-      "hrHits": 1708,
+      "predictions": 15587,
+      "eligibleGraded": 15587,
+      "hrHits": 1710,
       "actualHrRate": 11,
       "avgMarketImpliedProbability": 15.6,
       "avgOdds": 713,
       "flatBetRoi": -16.9,
       "calibrationDifference": null,
-      "sampleSize": 15565
+      "sampleSize": 15587
     }
   },
   "sampleSizeWarning": null,
   "calibrationReadiness": {
-    "sampleCount": 15565,
-    "hrOutcomeCount": 1708,
-    "calendarDayCount": 79,
+    "sampleCount": 15587,
+    "hrOutcomeCount": 1710,
+    "calendarDayCount": 80,
     "meetsMinimumThreshold": true,
     "warnings": [
       "Sample meets minimum thresholds, but out-of-sample (train/test split by date) validation is still required before publishing any probability."
