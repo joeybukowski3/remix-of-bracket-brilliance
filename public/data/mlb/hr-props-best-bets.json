@@ -1,44 +1,44 @@
 {
-  "date": "2026-10-08",
-  "generatedAt": "2026-10-08T20:51:03.751Z",
+  "date": "2026-10-10",
+  "generatedAt": "2026-10-10T13:52:33.805Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Rate Field's 1.07 park factor and a pair of left-handed starters (Messick vs CWS, Smith vs CLE) set up a righty-heavy power environment. Messick's 41.9 HR/600 rate against righties dwarfs Smith's 23.3, so the top three model scores all land on CWS bats. Barrel and hard-hit rates remain elevated across the slate, pointing to elevated fly-ball carry in the humid Chicago air.",
-    "modelNote": "The model is prioritizing barrel rate, opposing-pitcher HR vulnerability, and recent 30-day HR volume, which is why Murakami, Grichuk, and Vargas occupy the top three ranks despite zero homers in their last seven games."
+    "slateOverview": "Progressive Field's 0.91 park factor suppresses power, but the slate's two right-handed starters—Gavin Williams and Sean Burke—both carry elevated HR-allowed rates (63.2 and 42) that offset the venue. The CWS-CLE matchup therefore becomes the clearest HR window, with Murakami, Grichuk, and Vargas all seeing Williams in a park that still allows enough carry for their elevated barrel and exit-velo profiles.",
+    "modelNote": "The model is prioritizing barrel rate, exit velocity, and opposing-pitcher HR vulnerability over park factor, which is why the top three ranks all belong to CWS bats facing Williams despite the 0.91 multiplier."
   },
   "bestBets": [
     {
       "player": "Munetaka Murakami",
       "team": "CWS",
       "opponent": "CLE",
-      "opposingPitcher": "Parker Messick",
+      "opposingPitcher": "Gavin Williams",
       "hrScoreRank": 1,
       "topStats": [
-        "hrScore=57.1",
-        "barrel=20.5%"
+        "barrel=20.5%",
+        "HH=56.8%"
       ],
       "bullets": [
-        "hrScore=57.1",
-        "barrel=20.5%"
+        "barrel=20.5%",
+        "HH=56.8%"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+368",
+      "marketImpliedProbability": 0.21367521367521367,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
       "player": "Randal Grichuk",
       "team": "CWS",
       "opponent": "CLE",
-      "opposingPitcher": "Parker Messick",
+      "opposingPitcher": "Gavin Williams",
       "hrScoreRank": 2,
       "topStats": [
-        "hrScore=55.9",
-        "barrel=11.2%"
+        "barrel=11.2%",
+        "HH=49.8%"
       ],
       "bullets": [
-        "hrScore=55.9",
-        "barrel=11.2%"
+        "barrel=11.2%",
+        "HH=49.8%"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -49,61 +49,233 @@
       "player": "Miguel Vargas",
       "team": "CWS",
       "opponent": "CLE",
-      "opposingPitcher": "Parker Messick",
+      "opposingPitcher": "Gavin Williams",
       "hrScoreRank": 3,
       "topStats": [
-        "hrScore=54.9",
-        "barrel=13%"
+        "barrel=13%",
+        "HH=43.8%"
       ],
       "bullets": [
-        "hrScore=54.9",
-        "barrel=13%"
+        "barrel=13%",
+        "HH=43.8%"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+601",
+      "marketImpliedProbability": 0.14265335235378032,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Kyle Teel",
-      "team": "CWS",
-      "opponent": "CLE",
-      "opposingPitcher": "Parker Messick",
+      "player": "Chase DeLauter",
+      "team": "CLE",
+      "opponent": "CWS",
+      "opposingPitcher": "Sean Burke",
       "hrScoreRank": 4,
       "topStats": [
-        "Hard Hit%=47.1",
-        "Pitcher HR VS=41.9"
+        "Hard Hit%=46.3",
+        "Pitcher HR VS=42.0"
       ],
       "bullets": [
-        "HR score 40.5 (#4)",
-        "Pitcher HR VS 41.9 at park 1.07"
+        "HR score 52.0 (#4)",
+        "Pitcher HR VS 42.0 at park 0.91"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+676",
+      "marketImpliedProbability": 0.12886597938144329,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jo Adell",
+      "team": "CLE",
+      "opponent": "CWS",
+      "opposingPitcher": "Sean Burke",
+      "hrScoreRank": 5,
+      "topStats": [
+        "Hard Hit%=44.9",
+        "Pitcher HR VS=42.0"
+      ],
+      "bullets": [
+        "HR score 48.3 (#5)",
+        "Pitcher HR VS 42.0 at park 0.91"
+      ],
+      "hrOddsYes": "+656",
+      "marketImpliedProbability": 0.13227513227513227,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
     {
-      "player": "Kyle Teel",
-      "team": "CWS",
-      "opponent": "CLE",
-      "opposingPitcher": "Parker Messick",
+      "player": "Chase DeLauter",
+      "team": "CLE",
+      "opponent": "CWS",
+      "opposingPitcher": "Sean Burke",
       "hrScoreRank": 4,
       "topStats": [
-        "hrScore=40.5",
-        "barrel=11.4%"
+        "barrel=6.3%",
+        "HH=46.3%"
       ],
       "bullets": [
-        "hrScore=40.5",
-        "barrel=11.4%"
+        "barrel=6.3%",
+        "HH=46.3%"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+676",
+      "marketImpliedProbability": 0.12886597938144329,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jo Adell",
+      "team": "CLE",
+      "opponent": "CWS",
+      "opposingPitcher": "Sean Burke",
+      "hrScoreRank": 5,
+      "topStats": [
+        "barrel=8.9%",
+        "HH=44.9%"
+      ],
+      "bullets": [
+        "barrel=8.9%",
+        "HH=44.9%"
+      ],
+      "hrOddsYes": "+656",
+      "marketImpliedProbability": 0.13227513227513227,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Angel Martínez",
+      "team": "CLE",
+      "opponent": "CWS",
+      "opposingPitcher": "Sean Burke",
+      "hrScoreRank": 6,
+      "topStats": [
+        "barrel=7.2%",
+        "HH=35.5%"
+      ],
+      "bullets": [
+        "barrel=7.2%",
+        "HH=35.5%"
+      ],
+      "hrOddsYes": "+1011",
+      "marketImpliedProbability": 0.09000900090009001,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Andrew Benintendi",
+      "team": "CWS",
+      "opponent": "CLE",
+      "opposingPitcher": "Gavin Williams",
+      "hrScoreRank": 7,
+      "topStats": [
+        "Pitcher HR VS=63.2",
+        "Hard Hit%=45.1"
+      ],
+      "bullets": [
+        "HR score 46.8 (#7)",
+        "Pitcher HR VS 63.2 at park 0.91"
+      ],
+      "hrOddsYes": "+1059",
+      "marketImpliedProbability": 0.08628127696289906,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Nathaniel Lowe",
+      "team": "CLE",
+      "opponent": "CWS",
+      "opposingPitcher": "Sean Burke",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Pitcher HR VS=42.0",
+        "Hard Hit%=41.4"
+      ],
+      "bullets": [
+        "HR score 45.2 (#8)",
+        "Pitcher HR VS 42.0 at park 0.91"
+      ],
+      "hrOddsYes": "+656",
+      "marketImpliedProbability": 0.13227513227513227,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
-  "longshots": []
+  "longshots": [
+    {
+      "player": "Andrew Benintendi",
+      "team": "CWS",
+      "opponent": "CLE",
+      "opposingPitcher": "Gavin Williams",
+      "hrScoreRank": 7,
+      "topStats": [
+        "barrel=8.6%",
+        "HH=45.1%"
+      ],
+      "bullets": [
+        "barrel=8.6%",
+        "HH=45.1%"
+      ],
+      "hrOddsYes": "+1059",
+      "marketImpliedProbability": 0.08628127696289906,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Nathaniel Lowe",
+      "team": "CLE",
+      "opponent": "CWS",
+      "opposingPitcher": "Sean Burke",
+      "hrScoreRank": 8,
+      "topStats": [
+        "barrel=8.4%",
+        "HH=41.4%"
+      ],
+      "bullets": [
+        "barrel=8.4%",
+        "HH=41.4%"
+      ],
+      "hrOddsYes": "+656",
+      "marketImpliedProbability": 0.13227513227513227,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Chase Meidroth",
+      "team": "CWS",
+      "opponent": "CLE",
+      "opposingPitcher": "Gavin Williams",
+      "hrScoreRank": 11,
+      "topStats": [
+        "Pitcher HR VS=63.2",
+        "Hard Hit%=34.6"
+      ],
+      "bullets": [
+        "HR score 40.6 (#11)",
+        "Pitcher HR VS 63.2 at park 0.91"
+      ],
+      "hrOddsYes": "+1329",
+      "marketImpliedProbability": 0.06997900629811056,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Travis Bazzana",
+      "team": "CLE",
+      "opponent": "CWS",
+      "opposingPitcher": "Sean Burke",
+      "hrScoreRank": 10,
+      "topStats": [
+        "Pitcher HR VS=42.0",
+        "Hard Hit%=36.2"
+      ],
+      "bullets": [
+        "HR score 41.1 (#10)",
+        "Pitcher HR VS 42.0 at park 0.91"
+      ],
+      "hrOddsYes": "+1021",
+      "marketImpliedProbability": 0.08920606601248884,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ]
 }
