@@ -1,10 +1,10 @@
 {
   "date": "2026-10-11",
-  "generatedAt": "2026-10-11T16:49:06.586Z",
+  "generatedAt": "2026-10-11T19:04:51.854Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "American Family Field's 1.1 park factor sets the stage for elevated HR odds, but the pitching matchup is a tale of two extremes: Tarik Skubal (L) on the mound for LAD vs MIL and Jacob Misiorowski (R) for MIL vs LAD. Skubal's 41.7 HR/9 allowed against righties inflates the ceiling for Chourio, Bauers, and Mitchell, while Misiorowski's 22.9 HR/9 keeps Ohtani, Smith, and De Paula in play despite the park boost.",
-    "modelNote": "The model is overweighting barrel rate, hard-hit rate, and opposing-pitcher HR vulnerability, which is why Chourio (48.1) and Bauers (47.1) sit atop the slate despite Skubal's reputation."
+    "slateOverview": "American Family Field's 1.1 park factor sets the stage for power, but the real story is the platoon edge: lefty Tarik Skubal faces a Brewers lineup loaded with right-handed bats, while rookie righty Jacob Misiorowski draws the Dodgers. The combination of elevated barrel rates and favorable handedness creates a clear HR-friendly environment.",
+    "modelNote": "The model is prioritizing barrel rate and hard-hit rate over recent HR totals, elevating Chourio and Bauers despite their cold streaks because their underlying contact quality against lefties is elite."
   },
   "bestBets": [
     {
@@ -21,8 +21,8 @@
         "hrScore=48.1",
         "park=1.1"
       ],
-      "hrOddsYes": "+480",
-      "marketImpliedProbability": 0.1724137931034483,
+      "hrOddsYes": "+475",
+      "marketImpliedProbability": 0.17391304347826086,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -40,8 +40,8 @@
         "hrScore=47.1",
         "park=1.1"
       ],
-      "hrOddsYes": "+697",
-      "marketImpliedProbability": 0.12547051442910917,
+      "hrOddsYes": "+733",
+      "marketImpliedProbability": 0.12004801920768307,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -52,15 +52,15 @@
       "opposingPitcher": "Jacob Misiorowski",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=16.4%",
-        "HH=52.1%"
+        "Hard Hit%=52.1",
+        "Pitcher HR VS=22.9"
       ],
       "bullets": [
-        "hrScore=44.8",
-        "park=1.1"
+        "HR score 44.8 (#3)",
+        "Pitcher HR VS 22.9 at park 1.10"
       ],
-      "hrOddsYes": "+483",
-      "marketImpliedProbability": 0.17152658662092624,
+      "hrOddsYes": "+525",
+      "marketImpliedProbability": 0.16,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -104,6 +104,25 @@
     }
   ],
   "valueBets": [
+    {
+      "player": "Shohei Ohtani",
+      "team": "LAD",
+      "opponent": "MIL",
+      "opposingPitcher": "Jacob Misiorowski",
+      "hrScoreRank": 3,
+      "topStats": [
+        "barrel=16.4%",
+        "HH=52.1%"
+      ],
+      "bullets": [
+        "hrScore=44.8",
+        "park=1.1"
+      ],
+      "hrOddsYes": "+525",
+      "marketImpliedProbability": 0.16,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
     {
       "player": "Will Smith",
       "team": "LAD",
@@ -149,12 +168,12 @@
       "opposingPitcher": "Tarik Skubal",
       "hrScoreRank": 6,
       "topStats": [
-        "barrel=11.7%",
-        "HH=52.7%"
+        "Hard Hit%=52.7",
+        "Pitcher HR VS=41.7"
       ],
       "bullets": [
-        "hrScore=42.7",
-        "park=1.1"
+        "HR score 42.7 (#6)",
+        "Pitcher HR VS 41.7 at park 1.10"
       ],
       "hrOddsYes": "+100",
       "marketImpliedProbability": 0.5,
@@ -175,8 +194,8 @@
         "HR score 41.0 (#7)",
         "Pitcher HR VS 41.7 at park 1.10"
       ],
-      "hrOddsYes": "+655",
-      "marketImpliedProbability": 0.13245033112582782,
+      "hrOddsYes": "+535",
+      "marketImpliedProbability": 0.15748031496062992,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -194,13 +213,32 @@
         "HR score 40.3 (#8)",
         "Pitcher HR VS 22.9 at park 1.10"
       ],
-      "hrOddsYes": "+500",
-      "marketImpliedProbability": 0.16666666666666666,
+      "hrOddsYes": "+590",
+      "marketImpliedProbability": 0.14492753623188406,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
+    {
+      "player": "Garrett Mitchell",
+      "team": "MIL",
+      "opponent": "LAD",
+      "opposingPitcher": "Tarik Skubal",
+      "hrScoreRank": 6,
+      "topStats": [
+        "barrel=11.7%",
+        "HH=52.7%"
+      ],
+      "bullets": [
+        "hrScore=42.7",
+        "park=1.1"
+      ],
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
     {
       "player": "William Contreras",
       "team": "MIL",
@@ -215,27 +253,8 @@
         "hrScore=41",
         "park=1.1"
       ],
-      "hrOddsYes": "+655",
-      "marketImpliedProbability": 0.13245033112582782,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Max Muncy",
-      "team": "LAD",
-      "opponent": "MIL",
-      "opposingPitcher": "Jacob Misiorowski",
-      "hrScoreRank": 8,
-      "topStats": [
-        "barrel=12.9%",
-        "HH=45.8%"
-      ],
-      "bullets": [
-        "hrScore=40.3",
-        "park=1.1"
-      ],
-      "hrOddsYes": "+500",
-      "marketImpliedProbability": 0.16666666666666666,
+      "hrOddsYes": "+535",
+      "marketImpliedProbability": 0.15748031496062992,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
