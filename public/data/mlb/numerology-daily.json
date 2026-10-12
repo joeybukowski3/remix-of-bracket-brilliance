@@ -1,78 +1,78 @@
 {
-  "date": "2026-10-11",
+  "date": "2026-10-12",
   "timezone": "America/New_York",
   "methodologyVersion": "3.0.0",
   "scheduledFor": "04:44 America/New_York (morning) / lineup-confirmed before first game",
-  "generationStartedAt": "2026-10-11T14:52:44.462Z",
-  "generationCompletedAt": "2026-10-11T14:52:47.432Z",
-  "generatedAt": "2026-10-11T14:52:47.432Z",
-  "lineupDataAsOf": "2026-10-11T14:52:44.646Z",
+  "generationStartedAt": "2026-10-12T17:42:53.646Z",
+  "generationCompletedAt": "2026-10-12T17:42:58.210Z",
+  "generatedAt": "2026-10-12T17:42:58.210Z",
+  "lineupDataAsOf": "2026-10-12T17:42:53.771Z",
   "generationMode": "live",
   "updatePhase": "morning",
-  "morningGeneratedAt": "2026-10-11T14:52:44.462Z",
+  "morningGeneratedAt": "2026-10-12T17:42:53.646Z",
   "lineupConfirmedGeneratedAt": null,
   "narrativeSource": "grok",
   "rankingBasis": "numerology_only",
   "baseballContextOnly": true,
-  "dataStatus": "unavailable",
+  "dataStatus": "morning_projected",
   "candidatePool": {
     "candidatePoolType": "daily_jkb_hr_model_selectable_recent_at_bats",
     "description": "Players from the daily HR model with at least one at-bat across their previous five completed games. The page defaults to at least three at-bats across the previous two games.",
     "eligiblePlayerCount": 0,
-    "evaluatedPlayerCount": 7,
-    "excludedPlayerCount": 7,
+    "evaluatedPlayerCount": 16,
+    "excludedPlayerCount": 16,
     "exclusionReasons": [
       {
         "reason": "no_at_bat_previous_five_games",
-        "count": 7
+        "count": 16
       }
     ],
-    "preHrModelFilterCount": 13,
+    "preHrModelFilterCount": 38,
     "activityLookbackDays": 10,
     "activityRules": {
       "default": "atBatsPrevious2 >= 3",
       "broad": "atBatsPrevious5 >= 1"
     },
-    "activityFilterCheckedAt": "2026-10-11T14:52:47.489Z"
+    "activityFilterCheckedAt": "2026-10-12T17:42:58.269Z"
   },
   "dailyProfile": {
-    "universalDayRawSum": 13,
-    "universalDayCompound": 13,
+    "universalDayRawSum": 14,
+    "universalDayCompound": 14,
     "universalDayMaster": null,
-    "universalDayRoot": 4,
+    "universalDayRoot": 5,
     "universalDayTrace": [
-      "2 + 0 + 2 + 6 + 1 + 0 + 1 + 1 = 13"
+      "2 + 0 + 2 + 6 + 1 + 0 + 1 + 2 = 14"
     ],
-    "calendarDayCompound": 11,
-    "calendarDayRoot": 2,
+    "calendarDayCompound": 12,
+    "calendarDayRoot": 3,
     "universalYear": 1,
     "universalMonth": 2,
-    "structuralEcho": "4/4",
+    "structuralEcho": "5/5",
     "primaryFamily": [
-      1,
-      4,
-      7
-    ],
-    "secondaryFamily": [
       2,
       5,
       8
     ],
-    "balancingComplement": 6,
-    "countercurrent": 5,
+    "secondaryFamily": [
+      3,
+      6,
+      9
+    ],
+    "balancingComplement": 5,
+    "countercurrent": 4,
     "repeatedDigits": [
       {
-        "digit": 1,
+        "digit": 2,
         "count": 3,
         "reinforces": "primary"
       },
       {
-        "digit": 2,
+        "digit": 1,
         "count": 2,
-        "reinforces": "secondary"
+        "reinforces": "neither"
       }
     ],
-    "interpretation": "Universal Day 13/4 sets a primary pattern for players whose personal day and life path reduce to 4. Secondary calendar day 11/2 suggests attention to plate discipline and contact-oriented profiles."
+    "interpretation": "Universal Day 14/5 with Calendar Day 12/3 places emphasis on root-5 alignment and structural patterns. Primary families 2-5-8 highlight players whose profiles reduce to 5 or carry 8-family support, making these the most relevant characteristics for today's slate."
   },
   "exactNumberMatches": [],
   "rootNumberMatches": [],
@@ -134,19 +134,21 @@
     "grok": "used"
   },
   "narrative": {
-    "closingObservation": "Today's pattern centers on exact 13/4 matches with limited counter signals across the slate."
+    "closingObservation": "Today's patterns show concentrated resonance around root-5 and exact personal-day matches, with limited countercurrents across the provided candidates."
   },
   "activityFilter": {
     "rule": "selectable_previous_game_at_bat_thresholds",
     "defaultMode": "three_at_bats_previous_two_games",
     "alternateMode": "one_at_bat_previous_five_games",
-    "scheduleDate": "2026-10-11",
+    "scheduleDate": "2026-10-12",
     "scheduledTeams": [
+      "CLE",
       "LAD",
-      "MIL"
+      "MIL",
+      "TB"
     ],
-    "hrModelGeneratedAt": "2026-10-11T14:11:11.717Z",
-    "checkedAt": "2026-10-11T14:52:47.489Z",
+    "hrModelGeneratedAt": "2026-10-12T16:50:23.562Z",
+    "checkedAt": "2026-10-12T17:42:58.269Z",
     "lookbackDays": 10,
     "source": "mlb_stats_api_boxscore",
     "completedGamesChecked": 0,
