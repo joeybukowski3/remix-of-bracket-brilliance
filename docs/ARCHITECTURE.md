@@ -57,6 +57,7 @@ The repository contains both data inputs and generated outputs.
 - `data/nfl/{research,benchmark}/` hold NFL research datasets and offline benchmark inputs used only by tests.
 - `data/fantasy/` holds fantasy inputs and research outputs: the workbook-sourced draft list, FantasyPros ADP, PAR consensus, points-allowed, Rest-of-Season research (`data/fantasy/ros-research/`), and the Sleeper draft-board source and draft-preview corrections (`data/fantasy/draft-preview/`, `data/fantasy/source/`).
 - `data/cfb/research/` is the (gitignored) CFB Model V2 research corpus; `data/cfb/cfbd/raw/` is the CFBD raw cache; `data/cfb/v2-support/` holds V2 support inputs.
+- `data/nba/` (entirely gitignored: NBA.com ToU, public repo) holds immutable stats.nba.com raw snapshots, canonical player/team-game tables, and baseline backtest runs; see `docs/nba-player-props-phase-1.md`.
 - MLB has no top-level `data/` subtree; its caches live under `public/data/mlb/` alongside the browser artifacts, plus a gitignored `artifacts/` directory for diagnostics.
 
 ### Browser-served generated artifacts (`public/data/`)

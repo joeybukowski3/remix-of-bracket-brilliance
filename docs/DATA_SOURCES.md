@@ -326,6 +326,23 @@ publication contract.
 
 ---
 
+## NBA — stats.nba.com (player-props research, Phase 1)
+
+| Field | Value |
+|---|---|
+| Provider | stats.nba.com `playergamelogs` and `teamgamelogs` (the unofficial endpoints the `nba_api` project wraps; called directly from Node, no Python) |
+| Purpose | Historical player-game and team-game box scores for the NBA player-props baseline and backtest |
+| Access | Public, unauthenticated; requires nba.com browser headers. The edge blocks plain `curl`/`cdn.nba.com` (Akamai 403 / hang) but accepts Node `fetch`. Cloud CI IPs are reported to be blocked; untested here. |
+| Producers | Retrieval: local-only retrieval tooling (not in the repository; Phase 2B review decision); ≤ 8 requests per season. Build: `scripts/nba-build-dataset.ts` (`nba:build-dataset`, offline) |
+| Cache | `data/nba/raw/stats-nba/<endpoint>/<season>/<seasonType>/<stamp>.{body,meta}.json` — exact response text plus URL, params, retrieval time, attempts, byte size, sha256, row count. Canonical tables in `data/nba/canonical/`. **All of `data/nba/` is gitignored.** |
+| Consumers | `scripts/nba-backtest-baseline.ts` (`nba:backtest-baseline`) only. No browser artifact, workflow, or UI. |
+| Refresh | Manual only. No scheduled workflow. |
+| Fallback | Retries timeouts/429/5xx with backoff, fails fast on other 4xx; raw snapshots are append-only and never overwritten. |
+| Licensing | NBA.com Terms of Use §9 limit NBA Statistics to news reporting or private, non-commercial use, require prominent NBA.com attribution, and bar use with fantasy games or other commercial products. Because this repository is public, raw and canonical NBA data are not committed and tests use synthetic fixtures. Publishing NBA-derived output requires a licensing decision first. |
+| Pointers | `docs/nba-player-props-phase-1.md` |
+
+---
+
 ## PGA
 
 | Field | Value |

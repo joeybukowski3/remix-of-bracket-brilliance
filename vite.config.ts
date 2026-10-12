@@ -16,6 +16,12 @@ export default defineConfig(({ mode }) => {
     hmr: {
       overlay: false,
     },
+    fs: {
+      // Vite's defaults plus local NBA.com research data, which NBA.com Terms
+      // of Use restrict and which must not be served (the dev server binds
+      // every interface). See docs/nba-player-props-phase-2a.md.
+      deny: [".env", ".env.*", "*.{crt,pem}", "**/.git/**", "**/data/nba/**"],
+    },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
