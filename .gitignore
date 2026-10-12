@@ -110,3 +110,17 @@ public/data/mlb/numerology/email-preview.txt
 data/nfl/props/role-allocation-*.json
 
 openai-wu4-capability-probe.json
+
+# NBA player-props research data. stats.nba.com data is limited by NBA.com
+# Terms of Use (Section 9: private, non-commercial use) and this repository is
+# public, so raw responses, canonical tables and backtest rows stay local and
+# are reacquirable only with the local retrieval tooling below. See
+# docs/nba-player-props-phase-1.md.
+data/nba/
+
+# NBA.com retrieval tooling is local-only (Phase 2B review decision): the
+# fetch CLI, the stats.nba.com client (browser-mimicking headers) and its tests.
+# Committed code parses preserved payloads via ingest/statsNbaPayload.ts.
+scripts/nba-fetch-game-logs.ts
+src/lib/nba/props/ingest/statsNbaClient.ts
+src/lib/nba/props/ingest/statsNbaClient.test.ts
