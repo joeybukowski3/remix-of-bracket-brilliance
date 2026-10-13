@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-12T20:19:04.673Z",
+  "generatedAt": "2026-10-13T18:19:58.990Z",
   "note": "Score-band results are empirical outcome rates from graded historical predictions. HR Quality Score is a ranking score, not a calibrated probability — these rates describe what happened, not a validated forecast.",
-  "totalGradedRecords": 15617,
+  "totalGradedRecords": 15655,
   "byScoreBand": {
     "80+": {
       "predictions": 43,
@@ -26,37 +26,37 @@
       "sampleSize": 191
     },
     "60-69.9": {
-      "predictions": 854,
-      "eligibleGraded": 854,
+      "predictions": 855,
+      "eligibleGraded": 855,
       "hrHits": 138,
-      "actualHrRate": 16.2,
+      "actualHrRate": 16.1,
       "avgMarketImpliedProbability": 21.8,
       "avgOdds": 397,
-      "flatBetRoi": -23.5,
+      "flatBetRoi": -23.6,
       "calibrationDifference": null,
-      "sampleSize": 854
+      "sampleSize": 855
     },
     "50-59.9": {
-      "predictions": 2280,
-      "eligibleGraded": 2280,
+      "predictions": 2284,
+      "eligibleGraded": 2284,
       "hrHits": 343,
       "actualHrRate": 15,
       "avgMarketImpliedProbability": 18.9,
       "avgOdds": 501,
-      "flatBetRoi": -11.6,
+      "flatBetRoi": -11.7,
       "calibrationDifference": null,
-      "sampleSize": 2280
+      "sampleSize": 2284
     },
     "Below 50": {
-      "predictions": 12249,
-      "eligibleGraded": 12249,
-      "hrHits": 1186,
+      "predictions": 12282,
+      "eligibleGraded": 12282,
+      "hrHits": 1190,
       "actualHrRate": 9.7,
       "avgMarketImpliedProbability": 14.3,
       "avgOdds": 786,
       "flatBetRoi": -17.6,
       "calibrationDifference": null,
-      "sampleSize": 12249
+      "sampleSize": 12282
     }
   },
   "byConfidenceLevel": {
@@ -72,15 +72,15 @@
       "sampleSize": 3459
     },
     "medium": {
-      "predictions": 12034,
-      "eligibleGraded": 12034,
-      "hrHits": 1347,
+      "predictions": 12072,
+      "eligibleGraded": 12072,
+      "hrHits": 1351,
       "actualHrRate": 11.2,
-      "avgMarketImpliedProbability": 15.9,
-      "avgOdds": 711,
+      "avgMarketImpliedProbability": 15.8,
+      "avgOdds": 712,
       "flatBetRoi": -13.2,
       "calibrationDifference": null,
-      "sampleSize": 12034
+      "sampleSize": 12072
     },
     "low": {
       "predictions": 124,
@@ -107,46 +107,46 @@
   },
   "byLineupStatus": {
     "confirmed": {
-      "predictions": 6069,
-      "eligibleGraded": 6069,
-      "hrHits": 641,
+      "predictions": 6091,
+      "eligibleGraded": 6091,
+      "hrHits": 643,
       "actualHrRate": 10.6,
       "avgMarketImpliedProbability": 14.9,
-      "avgOdds": 736,
-      "flatBetRoi": -21.2,
+      "avgOdds": 737,
+      "flatBetRoi": -21.1,
       "calibrationDifference": null,
-      "sampleSize": 6069
+      "sampleSize": 6091
     },
     "unconfirmed": {
-      "predictions": 9548,
-      "eligibleGraded": 9548,
-      "hrHits": 1071,
+      "predictions": 9564,
+      "eligibleGraded": 9564,
+      "hrHits": 1073,
       "actualHrRate": 11.2,
       "avgMarketImpliedProbability": 16,
       "avgOdds": 697,
       "flatBetRoi": -13.9,
       "calibrationDifference": null,
-      "sampleSize": 9548
+      "sampleSize": 9564
     }
   },
   "byModelVersion": {
     "mlb-hr-quality-v1.1": {
-      "predictions": 15617,
-      "eligibleGraded": 15617,
-      "hrHits": 1712,
+      "predictions": 15655,
+      "eligibleGraded": 15655,
+      "hrHits": 1716,
       "actualHrRate": 11,
       "avgMarketImpliedProbability": 15.6,
-      "avgOdds": 713,
+      "avgOdds": 714,
       "flatBetRoi": -16.9,
       "calibrationDifference": null,
-      "sampleSize": 15617
+      "sampleSize": 15655
     }
   },
   "sampleSizeWarning": null,
   "calibrationReadiness": {
-    "sampleCount": 15617,
-    "hrOutcomeCount": 1712,
-    "calendarDayCount": 82,
+    "sampleCount": 15655,
+    "hrOutcomeCount": 1716,
+    "calendarDayCount": 83,
     "meetsMinimumThreshold": true,
     "warnings": [
       "Sample meets minimum thresholds, but out-of-sample (train/test split by date) validation is still required before publishing any probability."
