@@ -1,28 +1,163 @@
 {
-  "date": "2026-10-12",
-  "generatedAt": "2026-10-12T22:37:43.090Z",
+  "date": "2026-10-13",
+  "generatedAt": "2026-10-13T15:09:32.903Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Tropicana Field's 0.98 park factor and American Family Field's 1.1 factor create a split slate where the Rays-Cleveland game offers the best HR environment despite the slight suppression. Foster Griffin's 58.6 HR/9 rate against lefties gives Tampa Bay lefties a massive edge, while Logan Henderson's 49.9 HR/9 rate and Yoshinobu Yamamoto's elite 28.2 HR/9 rate create a clear hierarchy of pitching matchups.",
-    "modelNote": "The model heavily weights opposing pitcher HR vulnerability and barrel rates, pushing Caminero to the top despite his 0 HR in the last 7 days, while discounting recent power trends in favor of underlying exit velocity and hard-hit metrics."
+    "slateOverview": "Tropicana Field plays as a neutral HR environment (0.98 factor) with righty Freddy Peralta on the mound against Cleveland and lefty Parker Messick facing Tampa Bay. Peralta's 57.9 HR/FB rate allowed to opposing hitters creates the day's clearest edge, while Messick's 21.9 HR/FB rate keeps Tampa Bay bats in check.",
+    "modelNote": "The model heavily weights opposing pitcher HR vulnerability and barrel rates, pushing Chase DeLauter to the top despite modest recent power because Peralta's fly-ball tendencies align with DeLauter's 46.3 hard-hit rate."
   },
   "bestBets": [
+    {
+      "player": "Chase DeLauter",
+      "team": "CLE",
+      "opponent": "TB",
+      "opposingPitcher": "Freddy Peralta",
+      "hrScoreRank": 1,
+      "topStats": [
+        "barrel=6.3%",
+        "HH=46.3%"
+      ],
+      "bullets": [
+        "hrScore=56",
+        "park=0.98"
+      ],
+      "hrOddsYes": "+628",
+      "marketImpliedProbability": 0.13736263736263737,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
     {
       "player": "Junior Caminero",
       "team": "TB",
       "opponent": "CLE",
-      "opposingPitcher": "Foster Griffin",
-      "hrScoreRank": 1,
+      "opposingPitcher": "Parker Messick",
+      "hrScoreRank": 2,
       "topStats": [
         "barrel=13.1%",
         "HH=49.7%"
       ],
       "bullets": [
-        "barrel=13.1%",
-        "HH=49.7%"
+        "hrScore=55",
+        "park=0.98"
       ],
-      "hrOddsYes": "+345",
-      "marketImpliedProbability": 0.2247191011235955,
+      "hrOddsYes": "+353",
+      "marketImpliedProbability": 0.22075055187637968,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jo Adell",
+      "team": "CLE",
+      "opponent": "TB",
+      "opposingPitcher": "Freddy Peralta",
+      "hrScoreRank": 3,
+      "topStats": [
+        "barrel=8.9%",
+        "HH=44.9%"
+      ],
+      "bullets": [
+        "hrScore=49.4",
+        "park=0.98"
+      ],
+      "hrOddsYes": "+447",
+      "marketImpliedProbability": 0.18281535648994515,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Nathaniel Lowe",
+      "team": "CLE",
+      "opponent": "TB",
+      "opposingPitcher": "Freddy Peralta",
+      "hrScoreRank": 4,
+      "topStats": [
+        "Pitcher HR VS=57.9",
+        "Hard Hit%=41.4"
+      ],
+      "bullets": [
+        "HR score 47.8 (#4)",
+        "Pitcher HR VS 57.9 at park 0.98"
+      ],
+      "hrOddsYes": "+740",
+      "marketImpliedProbability": 0.11904761904761904,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Patrick Bailey",
+      "team": "CLE",
+      "opponent": "TB",
+      "opposingPitcher": "Freddy Peralta",
+      "hrScoreRank": 5,
+      "topStats": [
+        "Pitcher HR VS=57.9",
+        "Hard Hit%=42.4"
+      ],
+      "bullets": [
+        "HR score 46.9 (#5)",
+        "Pitcher HR VS 57.9 at park 0.98"
+      ],
+      "hrOddsYes": "+943",
+      "marketImpliedProbability": 0.09587727708533078,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Nathaniel Lowe",
+      "team": "CLE",
+      "opponent": "TB",
+      "opposingPitcher": "Freddy Peralta",
+      "hrScoreRank": 4,
+      "topStats": [
+        "barrel=8.4%",
+        "HH=41.4%"
+      ],
+      "bullets": [
+        "hrScore=47.8",
+        "park=0.98"
+      ],
+      "hrOddsYes": "+740",
+      "marketImpliedProbability": 0.11904761904761904,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Patrick Bailey",
+      "team": "CLE",
+      "opponent": "TB",
+      "opposingPitcher": "Freddy Peralta",
+      "hrScoreRank": 5,
+      "topStats": [
+        "barrel=7.7%",
+        "HH=42.4%"
+      ],
+      "bullets": [
+        "hrScore=46.9",
+        "park=0.98"
+      ],
+      "hrOddsYes": "+943",
+      "marketImpliedProbability": 0.09587727708533078,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Yandy Díaz",
+      "team": "TB",
+      "opponent": "CLE",
+      "opposingPitcher": "Parker Messick",
+      "hrScoreRank": 6,
+      "topStats": [
+        "barrel=7.1%",
+        "HH=48.1%"
+      ],
+      "bullets": [
+        "hrScore=45.9",
+        "park=0.98"
+      ],
+      "hrOddsYes": "+497",
+      "marketImpliedProbability": 0.16750418760469013,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -30,115 +165,77 @@
       "player": "Jonathan Aranda",
       "team": "TB",
       "opponent": "CLE",
-      "opposingPitcher": "Foster Griffin",
-      "hrScoreRank": 2,
+      "opposingPitcher": "Parker Messick",
+      "hrScoreRank": 7,
       "topStats": [
-        "barrel=9.9%",
-        "HH=46%"
+        "Hard Hit%=46.0",
+        "Pitcher HR VS=21.9"
       ],
       "bullets": [
-        "barrel=9.9%",
-        "HH=46%"
+        "HR score 43.5 (#7)",
+        "Pitcher HR VS 21.9 at park 0.98"
       ],
-      "hrOddsYes": "+555",
-      "marketImpliedProbability": 0.15267175572519084,
+      "hrOddsYes": "+882",
+      "marketImpliedProbability": 0.10183299389002037,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Will Smith",
-      "team": "LAD",
-      "opponent": "MIL",
-      "opposingPitcher": "Logan Henderson",
-      "hrScoreRank": 3,
+      "player": "Travis Bazzana",
+      "team": "CLE",
+      "opponent": "TB",
+      "opposingPitcher": "Freddy Peralta",
+      "hrScoreRank": 8,
       "topStats": [
-        "barrel=12.4%",
-        "HH=41.2%"
+        "Pitcher HR VS=57.9",
+        "Hard Hit%=36.2"
       ],
       "bullets": [
-        "barrel=12.4%",
-        "HH=41.2%"
+        "HR score 43.5 (#8)",
+        "Pitcher HR VS 57.9 at park 0.98"
       ],
-      "hrOddsYes": "+915",
-      "marketImpliedProbability": 0.09852216748768473,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Shohei Ohtani",
-      "team": "LAD",
-      "opponent": "MIL",
-      "opposingPitcher": "Logan Henderson",
-      "hrScoreRank": 4,
-      "topStats": [
-        "Hard Hit%=52.1",
-        "Pitcher HR VS=49.9"
-      ],
-      "bullets": [
-        "HR score 52.4 (#4)",
-        "Pitcher HR VS 49.9 at park 1.10"
-      ],
-      "hrOddsYes": "+515",
-      "marketImpliedProbability": 0.16260162601626016,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Yandy Díaz",
-      "team": "TB",
-      "opponent": "CLE",
-      "opposingPitcher": "Foster Griffin",
-      "hrScoreRank": 5,
-      "topStats": [
-        "Pitcher HR VS=58.6",
-        "Hard Hit%=48.1"
-      ],
-      "bullets": [
-        "HR score 51.9 (#5)",
-        "Pitcher HR VS 58.6 at park 0.98"
-      ],
-      "hrOddsYes": "+809",
-      "marketImpliedProbability": 0.11001100110011001,
+      "hrOddsYes": "+811",
+      "marketImpliedProbability": 0.10976948408342481,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
-  "valueBets": [
+  "longshots": [
     {
-      "player": "Shohei Ohtani",
-      "team": "LAD",
-      "opponent": "MIL",
-      "opposingPitcher": "Logan Henderson",
-      "hrScoreRank": 4,
+      "player": "Jonathan Aranda",
+      "team": "TB",
+      "opponent": "CLE",
+      "opposingPitcher": "Parker Messick",
+      "hrScoreRank": 7,
       "topStats": [
-        "barrel=16.4%",
-        "HH=52.1%"
+        "barrel=9.9%",
+        "HH=46%"
       ],
       "bullets": [
-        "barrel=16.4%",
-        "HH=52.1%"
+        "hrScore=43.5",
+        "park=0.98"
       ],
-      "hrOddsYes": "+515",
-      "marketImpliedProbability": 0.16260162601626016,
+      "hrOddsYes": "+882",
+      "marketImpliedProbability": 0.10183299389002037,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Yandy Díaz",
-      "team": "TB",
-      "opponent": "CLE",
-      "opposingPitcher": "Foster Griffin",
-      "hrScoreRank": 5,
+      "player": "Travis Bazzana",
+      "team": "CLE",
+      "opponent": "TB",
+      "opposingPitcher": "Freddy Peralta",
+      "hrScoreRank": 8,
       "topStats": [
-        "barrel=7.1%",
-        "HH=48.1%"
+        "barrel=5.2%",
+        "HH=36.2%"
       ],
       "bullets": [
-        "barrel=7.1%",
-        "HH=48.1%"
+        "hrScore=43.5",
+        "park=0.98"
       ],
-      "hrOddsYes": "+809",
-      "marketImpliedProbability": 0.11001100110011001,
+      "hrOddsYes": "+811",
+      "marketImpliedProbability": 0.10976948408342481,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -146,134 +243,37 @@
       "player": "Victor Mesa Jr.",
       "team": "TB",
       "opponent": "CLE",
-      "opposingPitcher": "Foster Griffin",
-      "hrScoreRank": 6,
+      "opposingPitcher": "Parker Messick",
+      "hrScoreRank": 9,
       "topStats": [
-        "barrel=10.8%",
-        "HH=42.2%"
+        "Hard Hit%=42.2",
+        "Pitcher HR VS=21.9"
       ],
       "bullets": [
-        "barrel=10.8%",
-        "HH=42.2%"
+        "HR score 41.9 (#9)",
+        "Pitcher HR VS 21.9 at park 0.98"
       ],
-      "hrOddsYes": "+900",
-      "marketImpliedProbability": 0.1,
+      "hrOddsYes": "+639",
+      "marketImpliedProbability": 0.13531799729364005,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Mookie Betts",
-      "team": "LAD",
-      "opponent": "MIL",
-      "opposingPitcher": "Logan Henderson",
-      "hrScoreRank": 7,
+      "player": "José Ramírez",
+      "team": "CLE",
+      "opponent": "TB",
+      "opposingPitcher": "Freddy Peralta",
+      "hrScoreRank": 11,
       "topStats": [
-        "Pitcher HR VS=49.9",
-        "Hard Hit%=38.0"
+        "Pitcher HR VS=57.9",
+        "Hard Hit%=38.8"
       ],
       "bullets": [
-        "HR score 47.2 (#7)",
-        "Pitcher HR VS 49.9 at park 1.10"
+        "HR score 41.4 (#11)",
+        "Pitcher HR VS 57.9 at park 0.98"
       ],
-      "hrOddsYes": "+850",
-      "marketImpliedProbability": 0.10526315789473684,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jackson Chourio",
-      "team": "MIL",
-      "opponent": "LAD",
-      "opposingPitcher": "Yoshinobu Yamamoto",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Hard Hit%=47.0",
-        "Pitcher HR VS=28.2"
-      ],
-      "bullets": [
-        "HR score 46.6 (#8)",
-        "Pitcher HR VS 28.2 at park 1.10"
-      ],
-      "hrOddsYes": "+715",
-      "marketImpliedProbability": 0.12269938650306748,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "longshots": [
-    {
-      "player": "Mookie Betts",
-      "team": "LAD",
-      "opponent": "MIL",
-      "opposingPitcher": "Logan Henderson",
-      "hrScoreRank": 7,
-      "topStats": [
-        "barrel=7.8%",
-        "HH=38%"
-      ],
-      "bullets": [
-        "barrel=7.8%",
-        "HH=38%"
-      ],
-      "hrOddsYes": "+850",
-      "marketImpliedProbability": 0.10526315789473684,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jackson Chourio",
-      "team": "MIL",
-      "opponent": "LAD",
-      "opposingPitcher": "Yoshinobu Yamamoto",
-      "hrScoreRank": 8,
-      "topStats": [
-        "barrel=12.3%",
-        "HH=47%"
-      ],
-      "bullets": [
-        "barrel=12.3%",
-        "HH=47%"
-      ],
-      "hrOddsYes": "+715",
-      "marketImpliedProbability": 0.12269938650306748,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Garrett Mitchell",
-      "team": "MIL",
-      "opponent": "LAD",
-      "opposingPitcher": "Yoshinobu Yamamoto",
-      "hrScoreRank": 15,
-      "topStats": [
-        "Hard Hit%=52.7",
-        "Pitcher HR VS=28.2"
-      ],
-      "bullets": [
-        "HR score 41.6 (#15)",
-        "Pitcher HR VS 28.2 at park 1.10"
-      ],
-      "hrOddsYes": "+1455",
-      "marketImpliedProbability": 0.06430868167202572,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Andy Pages",
-      "team": "LAD",
-      "opponent": "MIL",
-      "opposingPitcher": "Logan Henderson",
-      "hrScoreRank": 13,
-      "topStats": [
-        "Pitcher HR VS=49.9",
-        "Hard Hit%=42.3"
-      ],
-      "bullets": [
-        "HR score 44.5 (#13)",
-        "Pitcher HR VS 49.9 at park 1.10"
-      ],
-      "hrOddsYes": "+1265",
-      "marketImpliedProbability": 0.07326007326007326,
+      "hrOddsYes": "+548",
+      "marketImpliedProbability": 0.15432098765432098,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
