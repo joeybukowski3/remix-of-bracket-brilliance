@@ -1,10 +1,10 @@
 {
   "date": "2026-10-14",
-  "generatedAt": "2026-10-14T12:58:14.470Z",
+  "generatedAt": "2026-10-14T18:47:09.874Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Dodger Stadium's 1.1 park factor and lefty-on-lefty matchups with Robert Gasser and Blake Snell set up a favorable HR environment. Gasser's 62 HRs allowed to opposing hitters creates a clear edge for the Dodgers' top barrel and hard-hit rates, while Snell's strikeout-heavy profile limits Milwaukee's upside outside of Chourio.",
-    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and opposing pitcher HR vulnerability, elevating Will Smith and Ohtani despite their recent HR droughts due to elite underlying contact metrics against a vulnerable lefty."
+    "slateOverview": "Dodger Stadium's 1.1 park factor and lefty Robert Gasser on the mound create a favorable environment for power, especially against a pitcher allowing 62 HR to opposing lineups. The top of the Dodgers order faces a lefty with elevated HR vulnerability, while Brewers bats must contend with Blake Snell's strikeout-heavy profile.",
+    "modelNote": "The model heavily weights opposing pitcher HR vulnerability and park factor, elevating Will Smith and Ohtani to the top despite recent HR droughts, while discounting players with lower barrel and hard-hit rates against the same lefty."
   },
   "bestBets": [
     {
@@ -21,8 +21,8 @@
         "barrel=12.4%",
         "HH=41.2%"
       ],
-      "hrOddsYes": "+509",
-      "marketImpliedProbability": 0.16420361247947454,
+      "hrOddsYes": "+518",
+      "marketImpliedProbability": 0.16181229773462782,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -40,8 +40,8 @@
         "barrel=16.4%",
         "HH=52.1%"
       ],
-      "hrOddsYes": "+489",
-      "marketImpliedProbability": 0.1697792869269949,
+      "hrOddsYes": "+492",
+      "marketImpliedProbability": 0.16891891891891891,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -59,11 +59,51 @@
         "barrel=7.8%",
         "HH=38%"
       ],
-      "hrOddsYes": "+478",
-      "marketImpliedProbability": 0.17301038062283736,
+      "hrOddsYes": "+483",
+      "marketImpliedProbability": 0.17152658662092624,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
+    {
+      "player": "Max Muncy",
+      "team": "LAD",
+      "opponent": "MIL",
+      "opposingPitcher": "Robert Gasser",
+      "hrScoreRank": 4,
+      "topStats": [
+        "Pitcher HR VS=62.0",
+        "Hard Hit%=45.8"
+      ],
+      "bullets": [
+        "HR score 54.4 (#4)",
+        "Pitcher HR VS 62.0 at park 1.10"
+      ],
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Andy Pages",
+      "team": "LAD",
+      "opponent": "MIL",
+      "opposingPitcher": "Robert Gasser",
+      "hrScoreRank": 5,
+      "topStats": [
+        "Pitcher HR VS=62.0",
+        "Hard Hit%=42.3"
+      ],
+      "bullets": [
+        "HR score 53.7 (#5)",
+        "Pitcher HR VS 62.0 at park 1.10"
+      ],
+      "hrOddsYes": "+540",
+      "marketImpliedProbability": 0.15625,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
     {
       "player": "Max Muncy",
       "team": "LAD",
@@ -97,67 +137,8 @@
         "barrel=7.9%",
         "HH=42.3%"
       ],
-      "hrOddsYes": "+535",
-      "marketImpliedProbability": 0.15748031496062992,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Will Smith",
-      "team": "LAD",
-      "opponent": "MIL",
-      "opposingPitcher": "Robert Gasser",
-      "hrScoreRank": 1,
-      "topStats": [
-        "barrel=12.4%",
-        "HH=41.2%"
-      ],
-      "bullets": [
-        "barrel=12.4%",
-        "HH=41.2%"
-      ],
-      "hrOddsYes": "+509",
-      "marketImpliedProbability": 0.16420361247947454,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Shohei Ohtani",
-      "team": "LAD",
-      "opponent": "MIL",
-      "opposingPitcher": "Robert Gasser",
-      "hrScoreRank": 2,
-      "topStats": [
-        "barrel=16.4%",
-        "HH=52.1%"
-      ],
-      "bullets": [
-        "barrel=16.4%",
-        "HH=52.1%"
-      ],
-      "hrOddsYes": "+489",
-      "marketImpliedProbability": 0.1697792869269949,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Mookie Betts",
-      "team": "LAD",
-      "opponent": "MIL",
-      "opposingPitcher": "Robert Gasser",
-      "hrScoreRank": 3,
-      "topStats": [
-        "barrel=7.8%",
-        "HH=38%"
-      ],
-      "bullets": [
-        "barrel=7.8%",
-        "HH=38%"
-      ],
-      "hrOddsYes": "+478",
-      "marketImpliedProbability": 0.17301038062283736,
+      "hrOddsYes": "+540",
+      "marketImpliedProbability": 0.15625,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -168,15 +149,15 @@
       "opposingPitcher": "Robert Gasser",
       "hrScoreRank": 6,
       "topStats": [
-        "Pitcher HR VS=62.0",
-        "Hard Hit%=44.8"
+        "barrel=10.7%",
+        "HH=44.8%"
       ],
       "bullets": [
-        "HR score 53.8 (#6)",
-        "Pitcher HR VS 62.0 at park 1.10"
+        "barrel=10.7%",
+        "HH=44.8%"
       ],
-      "hrOddsYes": "+466",
-      "marketImpliedProbability": 0.17667844522968199,
+      "hrOddsYes": "+471",
+      "marketImpliedProbability": 0.17513134851138354,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -191,11 +172,11 @@
         "Hard Hit%=41.3"
       ],
       "bullets": [
-        "HR score 46.0 (#7)",
+        "HR score 45.8 (#7)",
         "Pitcher HR VS 62.0 at park 1.10"
       ],
-      "hrOddsYes": "+659",
-      "marketImpliedProbability": 0.13175230566534915,
+      "hrOddsYes": "+665",
+      "marketImpliedProbability": 0.13071895424836602,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -210,51 +191,51 @@
         "Hard Hit%=36.3"
       ],
       "bullets": [
-        "HR score 45.1 (#8)",
+        "HR score 44.9 (#8)",
         "Pitcher HR VS 62.0 at park 1.10"
       ],
-      "hrOddsYes": "+771",
-      "marketImpliedProbability": 0.1148105625717566,
+      "hrOddsYes": "+746",
+      "marketImpliedProbability": 0.1182033096926714,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Will Smith",
+      "player": "Freddie Freeman",
       "team": "LAD",
       "opponent": "MIL",
       "opposingPitcher": "Robert Gasser",
-      "hrScoreRank": 1,
+      "hrScoreRank": 7,
       "topStats": [
-        "barrel=12.4%",
-        "HH=41.2%"
+        "barrel=8.1%",
+        "HH=41.3%"
       ],
       "bullets": [
-        "barrel=12.4%",
-        "HH=41.2%"
+        "barrel=8.1%",
+        "HH=41.3%"
       ],
-      "hrOddsYes": "+509",
-      "marketImpliedProbability": 0.16420361247947454,
+      "hrOddsYes": "+665",
+      "marketImpliedProbability": 0.13071895424836602,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Shohei Ohtani",
+      "player": "Kyle Tucker",
       "team": "LAD",
       "opponent": "MIL",
       "opposingPitcher": "Robert Gasser",
-      "hrScoreRank": 2,
+      "hrScoreRank": 8,
       "topStats": [
-        "barrel=16.4%",
-        "HH=52.1%"
+        "barrel=6.4%",
+        "HH=36.3%"
       ],
       "bullets": [
-        "barrel=16.4%",
-        "HH=52.1%"
+        "barrel=6.4%",
+        "HH=36.3%"
       ],
-      "hrOddsYes": "+489",
-      "marketImpliedProbability": 0.1697792869269949,
+      "hrOddsYes": "+746",
+      "marketImpliedProbability": 0.1182033096926714,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -263,13 +244,13 @@
       "team": "LAD",
       "opponent": "MIL",
       "opposingPitcher": "Robert Gasser",
-      "hrScoreRank": 10,
+      "hrScoreRank": 9,
       "topStats": [
         "Pitcher HR VS=62.0",
         "Hard Hit%=36.2"
       ],
       "bullets": [
-        "HR score 43.4 (#10)",
+        "HR score 43.1 (#9)",
         "Pitcher HR VS 62.0 at park 1.10"
       ],
       "hrOddsYes": "+735",
@@ -282,17 +263,17 @@
       "team": "MIL",
       "opponent": "LAD",
       "opposingPitcher": "Blake Snell",
-      "hrScoreRank": 9,
+      "hrScoreRank": 10,
       "topStats": [
         "Hard Hit%=47.0",
         "Barrel%=12.3"
       ],
       "bullets": [
-        "HR score 43.4 (#9)",
+        "HR score 42.9 (#10)",
         "Pitcher HR VS 12.0 at park 1.10"
       ],
-      "hrOddsYes": "+595",
-      "marketImpliedProbability": 0.14388489208633093,
+      "hrOddsYes": "+549",
+      "marketImpliedProbability": 0.15408320493066255,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
