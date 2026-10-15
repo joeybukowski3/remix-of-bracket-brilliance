@@ -4,30 +4,30 @@
   "teamKAdjustmentModelVersion": "team-k-adjustment-v1",
   "mode": "shadow",
   "date": "2026-10-15",
-  "generatedAt": "2026-10-15T15:48:23.838Z",
+  "generatedAt": "2026-10-15T18:27:15.137Z",
   "summary": {
     "gameCount": 2,
-    "pitcherCount": 3,
-    "successfulWorkloadFetches": 3,
-    "workloadOnlyKsAvailable": 3,
-    "teamAdjustedKsAvailable": 3,
-    "averageSignedKsChange": -0.284,
-    "averageAbsoluteKsChange": 0.284,
-    "generatedAt": "2026-10-15T15:48:23.838Z"
+    "pitcherCount": 4,
+    "successfulWorkloadFetches": 4,
+    "workloadOnlyKsAvailable": 4,
+    "teamAdjustedKsAvailable": 4,
+    "averageSignedKsChange": -0.228,
+    "averageAbsoluteKsChange": 0.228,
+    "generatedAt": "2026-10-15T18:27:15.137Z"
   },
   "leagueContext": {
     "pitchesPerPA": 3.903,
     "kRate": 0.2048,
-    "whiffRate": 0.1967,
+    "whiffRate": 0.2014,
     "bbRate": 0.0964,
-    "contactRate": 0.8033
+    "contactRate": 0.7986
   },
   "pitchers": [
     {
       "gamePk": 849818,
       "gameKey": "TB@CLE",
       "gameDate": "2026-10-15T17:00:00Z",
-      "gameStatus": "Pre-Game",
+      "gameStatus": "In Progress",
       "venue": "Progressive Field",
       "pitcherId": 643377,
       "pitcher": "Griffin Jax",
@@ -74,11 +74,11 @@
         "expectedPitchLimit": 70.57,
         "expectedBF": 17.143,
         "expectedInnings": 4.179,
-        "temporaryKRate": 0.2464,
-        "workloadOnlyProjectedKs": 4.224,
+        "temporaryKRate": 0.246,
+        "workloadOnlyProjectedKs": 4.217,
         "teamAdjustedKRate": 0.2443,
         "fullShadowProjectedKs": 4.188,
-        "teamAdjustmentKsDelta": -0.036
+        "teamAdjustmentKsDelta": -0.029
       },
       "confidence": {
         "score": 1,
@@ -142,7 +142,7 @@
       "gamePk": 849818,
       "gameKey": "TB@CLE",
       "gameDate": "2026-10-15T17:00:00Z",
-      "gameStatus": "Pre-Game",
+      "gameStatus": "In Progress",
       "venue": "Progressive Field",
       "pitcherId": 668909,
       "pitcher": "Gavin Williams",
@@ -189,11 +189,11 @@
         "expectedPitchLimit": 89.02,
         "expectedBF": 22.903,
         "expectedInnings": 5.26,
-        "temporaryKRate": 0.3198,
-        "workloadOnlyProjectedKs": 7.325,
+        "temporaryKRate": 0.3194,
+        "workloadOnlyProjectedKs": 7.316,
         "teamAdjustedKRate": 0.3136,
         "fullShadowProjectedKs": 7.182,
-        "teamAdjustmentKsDelta": -0.143
+        "teamAdjustmentKsDelta": -0.134
       },
       "confidence": {
         "score": 1,
@@ -251,6 +251,124 @@
       "teamKFlags": [
         "OPPONENT_RECENT_K_RATE_MISSING",
         "HAND_SPLIT_UNAVAILABLE"
+      ]
+    },
+    {
+      "gamePk": 849810,
+      "gameKey": "MIL@LAD",
+      "gameDate": "2026-10-16T00:00:00Z",
+      "gameStatus": "Scheduled",
+      "venue": "UNIQLO Field at Dodger Stadium",
+      "pitcherId": 675660,
+      "pitcher": "Shane Drohan",
+      "teamId": 158,
+      "team": "MIL",
+      "opponentId": 119,
+      "opponent": "LAD",
+      "isHome": false,
+      "workloadFetchOk": true,
+      "workloadFetchError": null,
+      "pitcherContext": {
+        "seasonKRate": 0.231,
+        "seasonBattersFaced": 407,
+        "recentKRate": 0.2348,
+        "recentBattersFaced": 115,
+        "bbRate": 0.0909,
+        "whiffRate": null,
+        "xera": null,
+        "hand": null,
+        "source": "starter-game-log-derived"
+      },
+      "opponentContext": {
+        "seasonPitchesPerPA": 3.929,
+        "recent14PitchesPerPA": null,
+        "seasonPlateAppearances": 6214,
+        "recent14PlateAppearances": null,
+        "seasonKRate": 0.2039,
+        "recent14KRate": null,
+        "warnings": []
+      },
+      "modelVersion": "mlb-k-workload-v2",
+      "role": "starter",
+      "inputs": {
+        "role": "starter",
+        "recentSamples": 6,
+        "recentStarts": 6,
+        "recentAppearances": 8,
+        "recentPitchAverage": 68.67,
+        "recentBfAverage": 17.57,
+        "recentIpAverage": 3.84,
+        "opponentPitchesPerPA": 3.929
+      },
+      "projection": {
+        "expectedPitchLimit": 73.52,
+        "expectedBF": 18.312,
+        "expectedInnings": 4.007,
+        "temporaryKRate": 0.2288,
+        "workloadOnlyProjectedKs": 4.189,
+        "teamAdjustedKRate": 0.2245,
+        "fullShadowProjectedKs": 4.111,
+        "teamAdjustmentKsDelta": -0.078
+      },
+      "confidence": {
+        "score": 1,
+        "grade": "A",
+        "publicEligible": true
+      },
+      "flags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "OPPONENT_RECENT_K_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
+      ],
+      "teamKAdjustment": {
+        "modelVersion": "team-k-adjustment-v1",
+        "adjustedKRate": 0.2245,
+        "components": {
+          "leagueKRate": 0.2048,
+          "pitcher": {
+            "observedSeasonKRate": 0.231,
+            "regressedSeasonKRate": 0.2223,
+            "recentAdjustment": 0.0025,
+            "whiffAdjustment": 0,
+            "baselineKRate": 0.2248
+          },
+          "opponent": {
+            "observedSeasonKRate": 0.2039,
+            "regressedSeasonKRate": 0.204,
+            "seasonAdjustment": -0.0003,
+            "recentAdjustment": 0,
+            "observedHandednessKRate": null,
+            "regressedHandednessKRate": 0.204,
+            "handednessAdjustment": 0
+          },
+          "totals": {
+            "opponentAdjustment": -0.0003,
+            "movementFromPitcherBaseline": -0.0003
+          }
+        },
+        "diagnostics": {
+          "pitcherHand": null,
+          "opponentKEnvironment": "neutral",
+          "hardBounds": [
+            0.12,
+            0.38
+          ]
+        },
+        "confidence": {
+          "score": 0.9,
+          "grade": "A"
+        },
+        "flags": [
+          "PITCHER_WHIFF_RATE_MISSING",
+          "OPPONENT_RECENT_K_RATE_MISSING",
+          "PITCHER_HAND_MISSING"
+        ]
+      },
+      "workloadFlags": [],
+      "teamKFlags": [
+        "PITCHER_WHIFF_RATE_MISSING",
+        "OPPONENT_RECENT_K_RATE_MISSING",
+        "PITCHER_HAND_MISSING"
       ]
     },
     {
