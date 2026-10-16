@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "lastUpdatedAt": "2026-10-16T15:34:40.102Z",
-  "recordCount": 884,
+  "lastUpdatedAt": "2026-10-16T15:37:49.400Z",
+  "recordCount": 885,
   "records": [
     {
       "date": "2026-07-02",
@@ -72562,6 +72562,85 @@
       "runHistory": [
         "2026-10-15T18:27:32.606Z",
         "2026-10-15T19:24:50.730Z"
+      ]
+    },
+    {
+      "date": "2026-10-16",
+      "generatedAt": "2026-10-16T15:37:48.789Z",
+      "modelVersion": "mlb-ml-edge-v1.0",
+      "gameId": 849817,
+      "gameKey": "TB@CLE",
+      "pick": "away",
+      "pickAbbr": "TB",
+      "confidence": 55,
+      "differential": 3,
+      "topFactor": "Pitcher Quality",
+      "factors": [
+        {
+          "label": "Pitcher Quality",
+          "awayScore": 57,
+          "homeScore": 42,
+          "weight": 0.3,
+          "weightedDifference": 4.598948714391416,
+          "description": "ERA, K/9, BB%, HR/9"
+        },
+        {
+          "label": "Matchup Edge",
+          "awayScore": 60,
+          "homeScore": 51,
+          "weight": 0.25,
+          "weightedDifference": 2.2627444477499417,
+          "description": "Lineup OPS vs pitcher hand · lineup K%"
+        },
+        {
+          "label": "Lineup Offense",
+          "awayScore": 57,
+          "homeScore": 47,
+          "weight": 0.2,
+          "weightedDifference": 1.936721566096881,
+          "description": "OPS, SLG, OBP"
+        },
+        {
+          "label": "Recent Form",
+          "awayScore": 54,
+          "homeScore": 67,
+          "weight": 0.15,
+          "weightedDifference": -1.9874999999999998,
+          "description": "Last 5 games · home/away split"
+        },
+        {
+          "label": "Season Quality",
+          "awayScore": 33,
+          "homeScore": 67,
+          "weight": 0.1,
+          "weightedDifference": -3.333333333333333,
+          "description": "Season win %"
+        }
+      ],
+      "priceAtPick": {
+        "american": "-112",
+        "implied": 0.5283018867924528,
+        "capturedAt": "2026-10-16T15:37:21.354Z"
+      },
+      "polymarketAtPick": null,
+      "latestPriceSeen": {
+        "american": "-112",
+        "implied": 0.5283018867924528,
+        "capturedAt": "2026-10-16T15:37:21.354Z"
+      },
+      "latestPolymarketSeen": null,
+      "result": {
+        "status": "pending",
+        "actualWinnerAbbr": null,
+        "finalScore": null,
+        "gameFinalStatus": null,
+        "closingLine": null,
+        "clv": null,
+        "gradedAt": null
+      },
+      "firstGeneratedAt": "2026-10-16T15:37:48.789Z",
+      "runHistory": [
+        "2026-10-16T15:37:48.789Z"
       ]
     }
   ]
