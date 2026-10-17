@@ -1,10 +1,10 @@
 {
   "date": "2026-10-17",
-  "generatedAt": "2026-10-17T11:43:02.587Z",
+  "generatedAt": "2026-10-17T17:24:30.521Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Progressive Field plays as a slight pitcher’s park (0.91 factor) with a right-handed starter on the mound for both sides, but the Rays-Cleveland slate still offers a few elevated HR angles: Shawn Armstrong’s 41.6 HR/600 mark against Tampa’s pull-heavy bats and Nick Martinez’s 38 HR/600 against Cleveland’s middle order. No weather or park boosts are in play, so the edge is purely matchup-driven.",
-    "modelNote": "The model is prioritizing barrel rate, exit velocity, and opposing-pitcher HR vulnerability, which is why Caminero (13.1 barrel, 92.7 EV) leads the slate and DeLauter (46.3 hard-hit) sits second despite the neutral park."
+    "slateOverview": "Progressive Field's 0.91 park factor and Shawn Armstrong's 41.6 HR/9 rate against righties create a favorable environment for Tampa Bay's power bats, while Nick Martinez faces Cleveland's lower barrel rates. The right-on-right matchups and moderate exit velocities suggest a slate where selective power profiles can exploit pitcher vulnerabilities despite the pitcher-friendly park.",
+    "modelNote": "The model prioritizes barrel rate, hard-hit rate, and opposing pitcher HR vulnerability, elevating Caminero's 13.1 barrel rate and 49.7 hard-hit rate as the top HR opportunity despite the park suppression."
   },
   "bestBets": [
     {
@@ -19,10 +19,10 @@
       ],
       "bullets": [
         "barrel=13.1%",
-        "park=0.91"
+        "HH=49.7%"
       ],
-      "hrOddsYes": "+520",
-      "marketImpliedProbability": 0.16129032258064516,
+      "hrOddsYes": "+543",
+      "marketImpliedProbability": 0.15552099533437014,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -38,10 +38,10 @@
       ],
       "bullets": [
         "barrel=6.3%",
-        "park=0.91"
+        "HH=46.3%"
       ],
-      "hrOddsYes": "+820",
-      "marketImpliedProbability": 0.10869565217391304,
+      "hrOddsYes": "+839",
+      "marketImpliedProbability": 0.10649627263045794,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -57,13 +57,53 @@
       ],
       "bullets": [
         "barrel=9.9%",
-        "park=0.91"
+        "HH=46%"
       ],
-      "hrOddsYes": "+490",
-      "marketImpliedProbability": 0.1694915254237288,
+      "hrOddsYes": "+521",
+      "marketImpliedProbability": 0.1610305958132045,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
+    {
+      "player": "Victor Mesa Jr.",
+      "team": "TB",
+      "opponent": "CLE",
+      "opposingPitcher": "Shawn Armstrong",
+      "hrScoreRank": 4,
+      "topStats": [
+        "Hard Hit%=42.2",
+        "Pitcher HR VS=41.6"
+      ],
+      "bullets": [
+        "HR score 52.0 (#4)",
+        "Pitcher HR VS 41.6 at park 0.91"
+      ],
+      "hrOddsYes": "+645",
+      "marketImpliedProbability": 0.1342281879194631,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Yandy Díaz",
+      "team": "TB",
+      "opponent": "CLE",
+      "opposingPitcher": "Shawn Armstrong",
+      "hrScoreRank": 5,
+      "topStats": [
+        "Hard Hit%=48.1",
+        "Pitcher HR VS=41.6"
+      ],
+      "bullets": [
+        "HR score 50.8 (#5)",
+        "Pitcher HR VS 41.6 at park 0.91"
+      ],
+      "hrOddsYes": "+1002",
+      "marketImpliedProbability": 0.09074410163339383,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
     {
       "player": "Victor Mesa Jr.",
       "team": "TB",
@@ -76,10 +116,10 @@
       ],
       "bullets": [
         "barrel=10.8%",
-        "park=0.91"
+        "HH=42.2%"
       ],
-      "hrOddsYes": "+630",
-      "marketImpliedProbability": 0.136986301369863,
+      "hrOddsYes": "+645",
+      "marketImpliedProbability": 0.1342281879194631,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -95,69 +135,10 @@
       ],
       "bullets": [
         "barrel=7.1%",
-        "park=0.91"
+        "HH=48.1%"
       ],
-      "hrOddsYes": "+980",
-      "marketImpliedProbability": 0.09259259259259259,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "valueBets": [
-    {
-      "player": "Junior Caminero",
-      "team": "TB",
-      "opponent": "CLE",
-      "opposingPitcher": "Shawn Armstrong",
-      "hrScoreRank": 1,
-      "topStats": [
-        "barrel=13.1%",
-        "HH=49.7%"
-      ],
-      "bullets": [
-        "barrel=13.1%",
-        "park=0.91"
-      ],
-      "hrOddsYes": "+520",
-      "marketImpliedProbability": 0.16129032258064516,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Chase DeLauter",
-      "team": "CLE",
-      "opponent": "TB",
-      "opposingPitcher": "Nick Martinez",
-      "hrScoreRank": 2,
-      "topStats": [
-        "barrel=6.3%",
-        "HH=46.3%"
-      ],
-      "bullets": [
-        "barrel=6.3%",
-        "park=0.91"
-      ],
-      "hrOddsYes": "+820",
-      "marketImpliedProbability": 0.10869565217391304,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jonathan Aranda",
-      "team": "TB",
-      "opponent": "CLE",
-      "opposingPitcher": "Shawn Armstrong",
-      "hrScoreRank": 3,
-      "topStats": [
-        "barrel=9.9%",
-        "HH=46%"
-      ],
-      "bullets": [
-        "barrel=9.9%",
-        "park=0.91"
-      ],
-      "hrOddsYes": "+490",
-      "marketImpliedProbability": 0.1694915254237288,
+      "hrOddsYes": "+1002",
+      "marketImpliedProbability": 0.09074410163339383,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -168,15 +149,15 @@
       "opposingPitcher": "Nick Martinez",
       "hrScoreRank": 6,
       "topStats": [
-        "Hard Hit%=42.4",
-        "Pitcher HR VS=38.0"
+        "barrel=7.7%",
+        "HH=42.4%"
       ],
       "bullets": [
-        "HR score 45.9 (#6)",
-        "Pitcher HR VS 38.0 at park 0.91"
+        "barrel=7.7%",
+        "HH=42.4%"
       ],
-      "hrOddsYes": "+710",
-      "marketImpliedProbability": 0.12345679012345678,
+      "hrOddsYes": "+727",
+      "marketImpliedProbability": 0.12091898428053205,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -194,8 +175,8 @@
         "HR score 44.3 (#7)",
         "Pitcher HR VS 38.0 at park 0.91"
       ],
-      "hrOddsYes": "+630",
-      "marketImpliedProbability": 0.136986301369863,
+      "hrOddsYes": "+659",
+      "marketImpliedProbability": 0.13175230566534915,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
@@ -213,48 +194,48 @@
         "HR score 44.3 (#8)",
         "Pitcher HR VS 38.0 at park 0.91"
       ],
-      "hrOddsYes": "+570",
-      "marketImpliedProbability": 0.14925373134328357,
+      "hrOddsYes": "+618",
+      "marketImpliedProbability": 0.1392757660167131,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
   "longshots": [
     {
-      "player": "Junior Caminero",
-      "team": "TB",
-      "opponent": "CLE",
-      "opposingPitcher": "Shawn Armstrong",
-      "hrScoreRank": 1,
+      "player": "Jo Adell",
+      "team": "CLE",
+      "opponent": "TB",
+      "opposingPitcher": "Nick Martinez",
+      "hrScoreRank": 7,
       "topStats": [
-        "barrel=13.1%",
-        "HH=49.7%"
+        "barrel=8.9%",
+        "HH=44.9%"
       ],
       "bullets": [
-        "barrel=13.1%",
-        "park=0.91"
+        "barrel=8.9%",
+        "HH=44.9%"
       ],
-      "hrOddsYes": "+520",
-      "marketImpliedProbability": 0.16129032258064516,
+      "hrOddsYes": "+659",
+      "marketImpliedProbability": 0.13175230566534915,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Chase DeLauter",
+      "player": "Nathaniel Lowe",
       "team": "CLE",
       "opponent": "TB",
       "opposingPitcher": "Nick Martinez",
-      "hrScoreRank": 2,
+      "hrScoreRank": 8,
       "topStats": [
-        "barrel=6.3%",
-        "HH=46.3%"
+        "barrel=8.4%",
+        "HH=41.4%"
       ],
       "bullets": [
-        "barrel=6.3%",
-        "park=0.91"
+        "barrel=8.4%",
+        "HH=41.4%"
       ],
-      "hrOddsYes": "+820",
-      "marketImpliedProbability": 0.10869565217391304,
+      "hrOddsYes": "+618",
+      "marketImpliedProbability": 0.1392757660167131,
       "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
