@@ -1,15 +1,15 @@
 {
-  "date": "2026-10-15",
+  "date": "2026-10-17",
   "timezone": "America/New_York",
   "methodologyVersion": "3.0.0",
   "scheduledFor": "04:44 America/New_York (morning) / lineup-confirmed before first game",
-  "generationStartedAt": "2026-10-15T13:19:11.408Z",
-  "generationCompletedAt": "2026-10-15T13:19:15.141Z",
-  "generatedAt": "2026-10-15T13:19:15.141Z",
-  "lineupDataAsOf": "2026-10-15T13:19:11.597Z",
+  "generationStartedAt": "2026-10-17T12:07:51.002Z",
+  "generationCompletedAt": "2026-10-17T12:07:54.232Z",
+  "generatedAt": "2026-10-17T12:07:54.232Z",
+  "lineupDataAsOf": "2026-10-17T12:07:51.145Z",
   "generationMode": "live",
   "updatePhase": "morning",
-  "morningGeneratedAt": "2026-10-15T13:19:11.408Z",
+  "morningGeneratedAt": "2026-10-17T12:07:51.002Z",
   "lineupConfirmedGeneratedAt": null,
   "narrativeSource": "grok",
   "rankingBasis": "numerology_only",
@@ -19,60 +19,61 @@
     "candidatePoolType": "daily_jkb_hr_model_selectable_recent_at_bats",
     "description": "Players from the daily HR model with at least one at-bat across their previous five completed games. The page defaults to at least three at-bats across the previous two games.",
     "eligiblePlayerCount": 0,
-    "evaluatedPlayerCount": 12,
-    "excludedPlayerCount": 12,
+    "evaluatedPlayerCount": 9,
+    "excludedPlayerCount": 9,
     "exclusionReasons": [
       {
         "reason": "no_at_bat_previous_five_games",
-        "count": 12
+        "count": 9
       }
     ],
-    "preHrModelFilterCount": 38,
+    "preHrModelFilterCount": 20,
     "activityLookbackDays": 10,
     "activityRules": {
       "default": "atBatsPrevious2 >= 3",
       "broad": "atBatsPrevious5 >= 1"
     },
-    "activityFilterCheckedAt": "2026-10-15T13:19:15.200Z"
+    "activityFilterCheckedAt": "2026-10-17T12:07:54.288Z"
   },
   "dailyProfile": {
-    "universalDayRawSum": 17,
-    "universalDayCompound": 17,
+    "universalDayRawSum": 19,
+    "universalDayCompound": 19,
     "universalDayMaster": null,
-    "universalDayRoot": 8,
+    "universalDayRoot": 1,
     "universalDayTrace": [
-      "2 + 0 + 2 + 6 + 1 + 0 + 1 + 5 = 17"
+      "2 + 0 + 2 + 6 + 1 + 0 + 1 + 7 = 19",
+      "1 + 0 = 1"
     ],
-    "calendarDayCompound": 15,
-    "calendarDayRoot": 6,
+    "calendarDayCompound": 17,
+    "calendarDayRoot": 8,
     "universalYear": 1,
     "universalMonth": 2,
-    "structuralEcho": "8/8",
+    "structuralEcho": "10/1",
     "primaryFamily": [
+      1,
+      4,
+      7
+    ],
+    "secondaryFamily": [
       2,
       5,
       8
     ],
-    "secondaryFamily": [
-      3,
-      6,
-      9
-    ],
-    "balancingComplement": 2,
-    "countercurrent": 1,
+    "balancingComplement": 9,
+    "countercurrent": 8,
     "repeatedDigits": [
       {
         "digit": 2,
         "count": 2,
-        "reinforces": "primary"
+        "reinforces": "secondary"
       },
       {
         "digit": 1,
         "count": 2,
-        "reinforces": "neither"
+        "reinforces": "primary"
       }
     ],
-    "interpretation": "October 15, 2026 registers Universal Day 17/8 with Calendar Day 15/6. Primary family 2-5-8 and secondary 3-6-9 are active. Profiles aligned to root-8 or exact-17 values receive the strongest structural resonance."
+    "interpretation": "Universal Day 19/1 creates a target root of 1. Primary family (1,4,7) governs the slate; secondary family (2,5,8) supplies complementary energy."
   },
   "exactNumberMatches": [],
   "rootNumberMatches": [],
@@ -134,19 +135,19 @@
     "grok": "used"
   },
   "narrative": {
-    "closingObservation": "All four candidates share the Personal Day 17 signal; lineup confirmation remains pending for every player."
+    "closingObservation": "Today's pattern favors root-1 alignment across multiple fields."
   },
   "activityFilter": {
     "rule": "selectable_previous_game_at_bat_thresholds",
     "defaultMode": "three_at_bats_previous_two_games",
     "alternateMode": "one_at_bat_previous_five_games",
-    "scheduleDate": "2026-10-15",
+    "scheduleDate": "2026-10-17",
     "scheduledTeams": [
       "CLE",
       "TB"
     ],
-    "hrModelGeneratedAt": "2026-10-15T12:45:19.318Z",
-    "checkedAt": "2026-10-15T13:19:15.200Z",
+    "hrModelGeneratedAt": "2026-10-17T11:42:48.532Z",
+    "checkedAt": "2026-10-17T12:07:54.288Z",
     "lookbackDays": 10,
     "source": "mlb_stats_api_boxscore",
     "completedGamesChecked": 0,
