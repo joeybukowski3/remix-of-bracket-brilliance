@@ -1,9 +1,9 @@
 {
   "schemaVersion": "nfl-dk-betting-splits-v1",
   "_meta": {
-    "generatedAt": "2026-10-18T18:52:28.922Z",
-    "sourceCapturedAt": "2026-10-18T18:52:28.435Z",
-    "captureEndAt": "2026-10-18T18:52:28.840Z",
+    "generatedAt": "2026-10-18T23:37:10.027Z",
+    "sourceCapturedAt": "2026-10-18T23:37:09.374Z",
+    "captureEndAt": "2026-10-18T23:37:09.934Z",
     "season": 2026,
     "week": 6,
     "source": "DraftKings Network / DraftKings Sportsbook",
@@ -14,233 +14,49 @@
     },
     "diagnostics": {
       "pagesFetched": 3,
-      "rowsSeen": 15,
-      "sidesSeen": 30,
-      "matchedGames": 5,
-      "adjacentWeekGames": 0,
-      "selectedWeekGamesSeen": 5,
+      "rowsSeen": 9,
+      "sidesSeen": 18,
+      "matchedGames": 2,
+      "adjacentWeekGames": 1,
+      "selectedWeekGamesSeen": 4,
       "unmatchedRows": 0,
       "duplicateRows": 0,
       "missingMarkets": 0,
-      "adjacentWeekRows": 0,
+      "adjacentWeekRows": 1,
       "malformedRows": 0,
-      "issues": [],
+      "issues": [
+        {
+          "code": "adjacent_week",
+          "market": "spread",
+          "page": 1,
+          "sourceText": "NE Patriots @ CHI Bears",
+          "gameId": "2026_07_NE_CHI",
+          "week": 7
+        },
+        {
+          "code": "already_started",
+          "market": "moneyline",
+          "page": 1,
+          "sourceText": "BUF Bills @ LV Raiders",
+          "gameId": "2026_06_BUF_LV"
+        },
+        {
+          "code": "already_started",
+          "market": "moneyline",
+          "page": 1,
+          "sourceText": "LA Chargers @ KC Chiefs",
+          "gameId": "2026_06_LAC_KC"
+        }
+      ],
       "canonicalWeekGames": 14,
-      "alreadyStartedGames": 9,
-      "eligiblePregameGames": 5,
-      "matchedEligibleGames": 5,
+      "alreadyStartedGames": 12,
+      "eligiblePregameGames": 2,
+      "matchedEligibleGames": 2,
       "missingEligibleGameIds": [],
       "missingEligibleGames": 0
     }
   },
   "games": [
-    {
-      "gameId": "2026_06_ARI_LA",
-      "season": 2026,
-      "seasonType": "REG",
-      "week": 6,
-      "kickoffUtc": "2026-10-18T20:05:00.000Z",
-      "away": "ari",
-      "home": "lar",
-      "markets": {
-        "spread": [
-          {
-            "side": "home",
-            "team": "lar",
-            "line": -12.5,
-            "odds": -112,
-            "handlePct": 75,
-            "betsPct": 81,
-            "capturedAt": "2026-10-18T18:52:28.435Z"
-          },
-          {
-            "side": "away",
-            "team": "ari",
-            "line": 12.5,
-            "odds": -108,
-            "handlePct": 25,
-            "betsPct": 19,
-            "capturedAt": "2026-10-18T18:52:28.435Z"
-          }
-        ],
-        "moneyline": [
-          {
-            "side": "home",
-            "team": "lar",
-            "line": null,
-            "odds": -800,
-            "handlePct": 73,
-            "betsPct": 95,
-            "capturedAt": "2026-10-18T18:52:28.717Z"
-          },
-          {
-            "side": "away",
-            "team": "ari",
-            "line": null,
-            "odds": 550,
-            "handlePct": 27,
-            "betsPct": 5,
-            "capturedAt": "2026-10-18T18:52:28.717Z"
-          }
-        ],
-        "total": [
-          {
-            "side": "over",
-            "line": 51.5,
-            "odds": -115,
-            "handlePct": 74,
-            "betsPct": 62,
-            "capturedAt": "2026-10-18T18:52:28.840Z"
-          },
-          {
-            "side": "under",
-            "line": 51.5,
-            "odds": -105,
-            "handlePct": 26,
-            "betsPct": 38,
-            "capturedAt": "2026-10-18T18:52:28.840Z"
-          }
-        ]
-      }
-    },
-    {
-      "gameId": "2026_06_BUF_LV",
-      "season": 2026,
-      "seasonType": "REG",
-      "week": 6,
-      "kickoffUtc": "2026-10-18T20:25:00.000Z",
-      "away": "buf",
-      "home": "lv",
-      "markets": {
-        "spread": [
-          {
-            "side": "away",
-            "team": "buf",
-            "line": -5.5,
-            "odds": -108,
-            "handlePct": 76,
-            "betsPct": 72,
-            "capturedAt": "2026-10-18T18:52:28.435Z"
-          },
-          {
-            "side": "home",
-            "team": "lv",
-            "line": 5.5,
-            "odds": -112,
-            "handlePct": 24,
-            "betsPct": 28,
-            "capturedAt": "2026-10-18T18:52:28.435Z"
-          }
-        ],
-        "moneyline": [
-          {
-            "side": "home",
-            "team": "lv",
-            "line": null,
-            "odds": 200,
-            "handlePct": 20,
-            "betsPct": 9,
-            "capturedAt": "2026-10-18T18:52:28.717Z"
-          },
-          {
-            "side": "away",
-            "team": "buf",
-            "line": null,
-            "odds": -245,
-            "handlePct": 80,
-            "betsPct": 91,
-            "capturedAt": "2026-10-18T18:52:28.717Z"
-          }
-        ],
-        "total": [
-          {
-            "side": "over",
-            "line": 53.5,
-            "odds": -112,
-            "handlePct": 87,
-            "betsPct": 73,
-            "capturedAt": "2026-10-18T18:52:28.840Z"
-          },
-          {
-            "side": "under",
-            "line": 53.5,
-            "odds": -108,
-            "handlePct": 13,
-            "betsPct": 27,
-            "capturedAt": "2026-10-18T18:52:28.840Z"
-          }
-        ]
-      }
-    },
-    {
-      "gameId": "2026_06_LAC_KC",
-      "season": 2026,
-      "seasonType": "REG",
-      "week": 6,
-      "kickoffUtc": "2026-10-18T20:25:00.000Z",
-      "away": "lac",
-      "home": "kc",
-      "markets": {
-        "spread": [
-          {
-            "side": "home",
-            "team": "kc",
-            "line": -7.5,
-            "odds": -105,
-            "handlePct": 67,
-            "betsPct": 60,
-            "capturedAt": "2026-10-18T18:52:28.435Z"
-          },
-          {
-            "side": "away",
-            "team": "lac",
-            "line": 7.5,
-            "odds": -115,
-            "handlePct": 33,
-            "betsPct": 40,
-            "capturedAt": "2026-10-18T18:52:28.435Z"
-          }
-        ],
-        "moneyline": [
-          {
-            "side": "home",
-            "team": "kc",
-            "line": null,
-            "odds": -425,
-            "handlePct": 66,
-            "betsPct": 92,
-            "capturedAt": "2026-10-18T18:52:28.717Z"
-          },
-          {
-            "side": "away",
-            "team": "lac",
-            "line": null,
-            "odds": 330,
-            "handlePct": 34,
-            "betsPct": 8,
-            "capturedAt": "2026-10-18T18:52:28.717Z"
-          }
-        ],
-        "total": [
-          {
-            "side": "over",
-            "line": 41.5,
-            "odds": -112,
-            "handlePct": 42,
-            "betsPct": 71,
-            "capturedAt": "2026-10-18T18:52:28.840Z"
-          },
-          {
-            "side": "under",
-            "line": 41.5,
-            "odds": -108,
-            "handlePct": 58,
-            "betsPct": 29,
-            "capturedAt": "2026-10-18T18:52:28.840Z"
-          }
-        ]
-      }
-    },
     {
       "gameId": "2026_06_DAL_GB",
       "season": 2026,
@@ -252,22 +68,22 @@
       "markets": {
         "spread": [
           {
-            "side": "home",
-            "team": "gb",
-            "line": -1.5,
-            "odds": -102,
-            "handlePct": 48,
-            "betsPct": 51,
-            "capturedAt": "2026-10-18T18:52:28.435Z"
-          },
-          {
             "side": "away",
             "team": "dal",
+            "line": -1.5,
+            "odds": 102,
+            "handlePct": 53,
+            "betsPct": 48,
+            "capturedAt": "2026-10-18T23:37:09.374Z"
+          },
+          {
+            "side": "home",
+            "team": "gb",
             "line": 1.5,
-            "odds": -118,
-            "handlePct": 52,
-            "betsPct": 49,
-            "capturedAt": "2026-10-18T18:52:28.435Z"
+            "odds": -122,
+            "handlePct": 47,
+            "betsPct": 52,
+            "capturedAt": "2026-10-18T23:37:09.374Z"
           }
         ],
         "moneyline": [
@@ -275,19 +91,19 @@
             "side": "home",
             "team": "gb",
             "line": null,
-            "odds": -115,
-            "handlePct": 45,
+            "odds": -112,
+            "handlePct": 48,
             "betsPct": 55,
-            "capturedAt": "2026-10-18T18:52:28.717Z"
+            "capturedAt": "2026-10-18T23:37:09.756Z"
           },
           {
             "side": "away",
             "team": "dal",
             "line": null,
-            "odds": -105,
-            "handlePct": 55,
+            "odds": -108,
+            "handlePct": 52,
             "betsPct": 45,
-            "capturedAt": "2026-10-18T18:52:28.717Z"
+            "capturedAt": "2026-10-18T23:37:09.756Z"
           }
         ],
         "total": [
@@ -295,17 +111,17 @@
             "side": "over",
             "line": 53.5,
             "odds": -112,
-            "handlePct": 92,
-            "betsPct": 80,
-            "capturedAt": "2026-10-18T18:52:28.840Z"
+            "handlePct": 84,
+            "betsPct": 76,
+            "capturedAt": "2026-10-18T23:37:09.934Z"
           },
           {
             "side": "under",
             "line": 53.5,
             "odds": -108,
-            "handlePct": 8,
-            "betsPct": 20,
-            "capturedAt": "2026-10-18T18:52:28.840Z"
+            "handlePct": 16,
+            "betsPct": 24,
+            "capturedAt": "2026-10-18T23:37:09.934Z"
           }
         ]
       }
@@ -325,18 +141,18 @@
             "team": "sf",
             "line": -7.5,
             "odds": -110,
-            "handlePct": 67,
-            "betsPct": 71,
-            "capturedAt": "2026-10-18T18:52:28.435Z"
+            "handlePct": 70,
+            "betsPct": 72,
+            "capturedAt": "2026-10-18T23:37:09.374Z"
           },
           {
             "side": "away",
             "team": "wsh",
             "line": 7.5,
             "odds": -110,
-            "handlePct": 33,
-            "betsPct": 29,
-            "capturedAt": "2026-10-18T18:52:28.435Z"
+            "handlePct": 30,
+            "betsPct": 28,
+            "capturedAt": "2026-10-18T23:37:09.374Z"
           }
         ],
         "moneyline": [
@@ -345,18 +161,18 @@
             "team": "sf",
             "line": null,
             "odds": -455,
-            "handlePct": 79,
+            "handlePct": 77,
             "betsPct": 95,
-            "capturedAt": "2026-10-18T18:52:28.717Z"
+            "capturedAt": "2026-10-18T23:37:09.756Z"
           },
           {
             "side": "away",
             "team": "wsh",
             "line": null,
             "odds": 350,
-            "handlePct": 21,
+            "handlePct": 23,
             "betsPct": 5,
-            "capturedAt": "2026-10-18T18:52:28.717Z"
+            "capturedAt": "2026-10-18T23:37:09.756Z"
           }
         ],
         "total": [
@@ -364,17 +180,17 @@
             "side": "over",
             "line": 52.5,
             "odds": -105,
-            "handlePct": 54,
-            "betsPct": 45,
-            "capturedAt": "2026-10-18T18:52:28.840Z"
+            "handlePct": 60,
+            "betsPct": 47,
+            "capturedAt": "2026-10-18T23:37:09.934Z"
           },
           {
             "side": "under",
             "line": 52.5,
             "odds": -115,
-            "handlePct": 46,
-            "betsPct": 55,
-            "capturedAt": "2026-10-18T18:52:28.840Z"
+            "handlePct": 40,
+            "betsPct": 53,
+            "capturedAt": "2026-10-18T23:37:09.934Z"
           }
         ]
       }
