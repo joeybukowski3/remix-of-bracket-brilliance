@@ -1,10 +1,10 @@
 {
   "date": "2026-10-18",
-  "generatedAt": "2026-10-18T12:08:55.120Z",
+  "generatedAt": "2026-10-18T17:28:38.946Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Progressive Field plays as a slight pitcher’s park (0.91 factor) with a lefty-on-lefty advantage for Tampa Bay’s top bats against rookie Parker Messick, while Cleveland’s right-handed hitters face Drew Rasmussen in a neutral matchup. Low barrel rates and modest exit velos across the slate point to a controlled environment where only the highest-quality contact profiles project meaningful power.",
-    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and park-adjusted hrFBRatio over recent home-run volume, elevating Caminero and DeLauter despite their cold streaks because their underlying contact metrics remain elite against today’s opposing pitchers."
+    "slateOverview": "Progressive Field's 0.91 park factor and lefty Parker Messick vs. righty Drew Rasmussen create a neutral-to-slightly-suppressed home-run environment. The model still surfaces two Rays (Caminero, Díaz) and two Guardians (DeLauter, Bailey) in the top five, indicating the edge is coming from individual batted-ball profiles rather than park or weather boosts.",
+    "modelNote": "HR Score is prioritizing barrel rate, hard-hit rate, and opposing-pitcher HR vulnerability, which is why Caminero's 13.1 barrel rate and Messick's 31.9 HR/PA allowed vault him to the top despite the pitcher-friendly venue."
   },
   "bestBets": [
     {
@@ -14,16 +14,16 @@
       "opposingPitcher": "Parker Messick",
       "hrScoreRank": 1,
       "topStats": [
-        "barrel=13.1%",
-        "HH=49.7%"
+        "hrScore=54.8",
+        "barrel=13.1%"
       ],
       "bullets": [
-        "barrel=13.1%",
-        "park=0.91"
+        "hrScore=54.8",
+        "barrel=13.1%"
       ],
-      "hrOddsYes": "+490",
-      "marketImpliedProbability": 0.1694915254237288,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -33,16 +33,16 @@
       "opposingPitcher": "Drew Rasmussen",
       "hrScoreRank": 2,
       "topStats": [
-        "barrel=6.3%",
+        "hrScore=53.8",
         "HH=46.3%"
       ],
       "bullets": [
-        "HH=46.3%",
-        "park=0.91"
+        "hrScore=53.8",
+        "HH=46.3%"
       ],
-      "hrOddsYes": "+730",
-      "marketImpliedProbability": 0.12048192771084337,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -52,16 +52,16 @@
       "opposingPitcher": "Parker Messick",
       "hrScoreRank": 3,
       "topStats": [
-        "barrel=7.1%",
-        "HH=48.1%"
+        "Hard Hit%=48.1",
+        "Pitcher HR VS=31.9"
       ],
       "bullets": [
-        "HH=48.1%",
-        "park=0.91"
+        "HR score 46.9 (#3)",
+        "Pitcher HR VS 31.9 at park 0.91"
       ],
-      "hrOddsYes": "+542",
-      "marketImpliedProbability": 0.1557632398753894,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -75,12 +75,12 @@
         "Pitcher HR VS=31.9"
       ],
       "bullets": [
-        "HR score 45.9 (#4)",
+        "HR score 45.4 (#4)",
         "Pitcher HR VS 31.9 at park 0.91"
       ],
-      "hrOddsYes": "+790",
-      "marketImpliedProbability": 0.11235955056179775,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     },
     {
@@ -94,16 +94,35 @@
         "Pitcher HR VS=40.3"
       ],
       "bullets": [
-        "HR score 45.3 (#5)",
+        "HR score 44.6 (#5)",
         "Pitcher HR VS 40.3 at park 0.91"
       ],
-      "hrOddsYes": "+920",
-      "marketImpliedProbability": 0.09803921568627451,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ],
   "valueBets": [
+    {
+      "player": "Yandy Díaz",
+      "team": "TB",
+      "opponent": "CLE",
+      "opposingPitcher": "Parker Messick",
+      "hrScoreRank": 3,
+      "topStats": [
+        "hrScore=46.9",
+        "HH=48.1%"
+      ],
+      "bullets": [
+        "hrScore=46.9",
+        "HH=48.1%"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
     {
       "player": "Jonathan Aranda",
       "team": "TB",
@@ -111,18 +130,20 @@
       "opposingPitcher": "Parker Messick",
       "hrScoreRank": 4,
       "topStats": [
-        "barrel=9.9%",
-        "HH=46%"
+        "hrScore=45.4",
+        "barrel=9.9%"
       ],
       "bullets": [
-        "barrel=9.9%",
-        "park=0.91"
+        "hrScore=45.4",
+        "barrel=9.9%"
       ],
-      "hrOddsYes": "+790",
-      "marketImpliedProbability": 0.11235955056179775,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
-    },
+    }
+  ],
+  "longshots": [
     {
       "player": "Patrick Bailey",
       "team": "CLE",
@@ -130,113 +151,16 @@
       "opposingPitcher": "Drew Rasmussen",
       "hrScoreRank": 5,
       "topStats": [
-        "barrel=7.7%",
-        "HH=42.4%"
+        "hrScore=44.6",
+        "barrel=7.7%"
       ],
       "bullets": [
-        "HH=42.4%",
-        "park=0.91"
+        "hrScore=44.6",
+        "barrel=7.7%"
       ],
-      "hrOddsYes": "+920",
-      "marketImpliedProbability": 0.09803921568627451,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Victor Mesa Jr.",
-      "team": "TB",
-      "opponent": "CLE",
-      "opposingPitcher": "Parker Messick",
-      "hrScoreRank": 6,
-      "topStats": [
-        "barrel=10.8%",
-        "HH=42.2%"
-      ],
-      "bullets": [
-        "barrel=10.8%",
-        "park=0.91"
-      ],
-      "hrOddsYes": "+730",
-      "marketImpliedProbability": 0.12048192771084337,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jo Adell",
-      "team": "CLE",
-      "opponent": "TB",
-      "opposingPitcher": "Drew Rasmussen",
-      "hrScoreRank": 7,
-      "topStats": [
-        "Hard Hit%=44.9",
-        "Pitcher HR VS=40.3"
-      ],
-      "bullets": [
-        "HR score 43.3 (#7)",
-        "Pitcher HR VS 40.3 at park 0.91"
-      ],
-      "hrOddsYes": "+680",
-      "marketImpliedProbability": 0.1282051282051282,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Nathaniel Lowe",
-      "team": "CLE",
-      "opponent": "TB",
-      "opposingPitcher": "Drew Rasmussen",
-      "hrScoreRank": 8,
-      "topStats": [
-        "Hard Hit%=41.4",
-        "Pitcher HR VS=40.3"
-      ],
-      "bullets": [
-        "HR score 43.3 (#8)",
-        "Pitcher HR VS 40.3 at park 0.91"
-      ],
-      "hrOddsYes": "+630",
-      "marketImpliedProbability": 0.136986301369863,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    }
-  ],
-  "longshots": [
-    {
-      "player": "Jo Adell",
-      "team": "CLE",
-      "opponent": "TB",
-      "opposingPitcher": "Drew Rasmussen",
-      "hrScoreRank": 7,
-      "topStats": [
-        "barrel=8.9%",
-        "HH=44.9%"
-      ],
-      "bullets": [
-        "HH=44.9%",
-        "park=0.91"
-      ],
-      "hrOddsYes": "+680",
-      "marketImpliedProbability": 0.1282051282051282,
-      "valueStatus": "uncalibrated",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Nathaniel Lowe",
-      "team": "CLE",
-      "opponent": "TB",
-      "opposingPitcher": "Drew Rasmussen",
-      "hrScoreRank": 8,
-      "topStats": [
-        "barrel=8.4%",
-        "HH=41.4%"
-      ],
-      "bullets": [
-        "barrel=8.4%",
-        "park=0.91"
-      ],
-      "hrOddsYes": "+630",
-      "marketImpliedProbability": 0.136986301369863,
-      "valueStatus": "uncalibrated",
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
       "hrValueEdge": null
     }
   ]
