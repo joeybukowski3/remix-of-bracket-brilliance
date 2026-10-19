@@ -1,373 +1,53 @@
 {
-  "fetchedAt": "2026-10-19T20:04:08.921Z",
-  "source": "the-odds-api",
-  "fallbackUsed": false,
-  "providerErrors": [],
-  "generatedAt": "2026-10-19T20:04:03.716Z",
+  "fetchedAt": "2026-10-19T20:26:31.859Z",
+  "source": "espn",
+  "fallbackUsed": true,
+  "providerErrors": [
+    "the-odds-api: ODDS_API_KEY missing",
+    "sportsgameodds: SPORTSGAMEODDS_API_KEY missing",
+    "odds-api-io: ODDS_API_IO_KEY missing",
+    "therundown: THERUNDOWNAPI missing"
+  ],
+  "generatedAt": "2026-10-19T20:26:31.859Z",
   "fetchStatus": {
-    "moneylines": "the-odds-api:1",
-    "hrProps": "ok:23",
-    "kProps": "ok:1",
-    "propsSource": "parlayapi",
-    "propsRows": 142,
+    "moneylines": "espn:1",
+    "hrProps": "skipped:no-PARLAYAPI-key",
+    "kProps": "skipped:no-PARLAYAPI-key",
+    "propsSource": null,
+    "propsRows": 0,
     "requestedMarkets": [
       "player_home_runs",
       "player_strikeouts"
     ],
-    "detectedMarkets": [
-      "player_home_runs",
-      "player_pitcher_strikeouts",
-      "player_strikeouts"
+    "detectedMarkets": [],
+    "error": "the-odds-api: ODDS_API_KEY missing",
+    "source": "espn",
+    "fallbackUsed": true,
+    "providerErrors": [
+      "the-odds-api: ODDS_API_KEY missing",
+      "sportsgameodds: SPORTSGAMEODDS_API_KEY missing",
+      "odds-api-io: ODDS_API_IO_KEY missing",
+      "therundown: THERUNDOWNAPI missing"
     ],
-    "error": null,
-    "source": "the-odds-api",
-    "fallbackUsed": false,
-    "providerErrors": [],
-    "generatedAt": "2026-10-19T20:04:03.716Z",
-    "lineSelection": {
-      "quotes": 118,
-      "unusableRows": 24,
-      "hr": {
-        "selected": 23,
-        "rejected": 0
-      },
-      "k": {
-        "selected": 1,
-        "rejected": 0
-      }
-    }
+    "generatedAt": "2026-10-19T20:26:31.859Z"
   },
   "sport": "baseball_mlb",
   "moneylines": {
     "CLE@TB": {
       "away": {
-        "team": "Cleveland Guardians",
+        "team": "CLE",
         "price": 130,
         "american": "+130",
         "implied": 0.43478260869565216
       },
       "home": {
-        "team": "Tampa Bay Rays",
+        "team": "TB",
         "price": -158,
         "american": "-158",
         "implied": 0.6124031007751938
       }
     }
   },
-  "hrOdds": {
-    "brayan rocchio": {
-      "yes": "+1567",
-      "no": "-1900",
-      "line": 0.5,
-      "impliedYes": 0.059988002399520096,
-      "bookmaker": "novig",
-      "providerPlayerName": "Brayan Rocchio",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": true,
-      "booksAtLine": 5,
-      "selectionReason": "two_sided_consensus"
-    },
-    "chase delauter": {
-      "yes": "+900",
-      "no": "-1076",
-      "line": 0.5,
-      "impliedYes": 0.1,
-      "bookmaker": "novig",
-      "providerPlayerName": "Chase DeLauter",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": true,
-      "booksAtLine": 5,
-      "selectionReason": "two_sided_consensus"
-    },
-    "jo adell": {
-      "yes": "+733",
-      "no": "-809",
-      "line": 0.5,
-      "impliedYes": 0.12004801920768307,
-      "bookmaker": "novig",
-      "providerPlayerName": "Jo Adell",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": true,
-      "booksAtLine": 5,
-      "selectionReason": "two_sided_consensus"
-    },
-    "jonathan aranda": {
-      "yes": "+669",
-      "no": "-770",
-      "line": 0.5,
-      "impliedYes": 0.13003901170351106,
-      "bookmaker": "novig",
-      "providerPlayerName": "Jonathan Aranda",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": true,
-      "booksAtLine": 5,
-      "selectionReason": "two_sided_consensus"
-    },
-    "jonny deluca": {
-      "yes": "+100",
-      "no": "-100",
-      "line": 0.5,
-      "impliedYes": 0.5,
-      "bookmaker": "prizepicks",
-      "providerPlayerName": "Jonny DeLuca",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": true,
-      "booksAtLine": 4,
-      "selectionReason": "two_sided_consensus"
-    },
-    "jose ramirez": {
-      "yes": "+733",
-      "no": "-900",
-      "line": 0.5,
-      "impliedYes": 0.12004801920768307,
-      "bookmaker": "novig",
-      "providerPlayerName": "Jose Ramirez",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": true,
-      "booksAtLine": 5,
-      "selectionReason": "two_sided_consensus"
-    },
-    "junior caminero": {
-      "yes": "+441",
-      "no": "-471",
-      "line": 0.5,
-      "impliedYes": 0.18484288354898337,
-      "bookmaker": "novig",
-      "providerPlayerName": "Junior Caminero",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": true,
-      "booksAtLine": 5,
-      "selectionReason": "two_sided_consensus"
-    },
-    "liam hicks": {
-      "yes": "+1076",
-      "no": "-1567",
-      "line": 0.5,
-      "impliedYes": 0.08503401360544217,
-      "bookmaker": "novig",
-      "providerPlayerName": "Liam Hicks",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": true,
-      "booksAtLine": 5,
-      "selectionReason": "two_sided_consensus"
-    },
-    "nathaniel lowe": {
-      "yes": "+100",
-      "no": "-100",
-      "line": 0.5,
-      "impliedYes": 0.5,
-      "bookmaker": "prizepicks",
-      "providerPlayerName": "Nathaniel Lowe",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": true,
-      "booksAtLine": 4,
-      "selectionReason": "two_sided_consensus"
-    },
-    "patrick bailey": {
-      "yes": "+1076",
-      "no": "-1438",
-      "line": 0.5,
-      "impliedYes": 0.08503401360544217,
-      "bookmaker": "novig",
-      "providerPlayerName": "Patrick Bailey",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": true,
-      "booksAtLine": 5,
-      "selectionReason": "two_sided_consensus"
-    },
-    "petey halpin": {
-      "yes": "+1150",
-      "no": "-1567",
-      "line": 0.5,
-      "impliedYes": 0.08,
-      "bookmaker": "novig",
-      "providerPlayerName": "Petey Halpin",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": true,
-      "booksAtLine": 5,
-      "selectionReason": "two_sided_consensus"
-    },
-    "richie palacios": {
-      "yes": "+1329",
-      "no": "-1900",
-      "line": 0.5,
-      "impliedYes": 0.06997900629811056,
-      "bookmaker": "novig",
-      "providerPlayerName": "Richie Palacios",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": true,
-      "booksAtLine": 5,
-      "selectionReason": "two_sided_consensus"
-    },
-    "steven kwan": {
-      "yes": "+1900",
-      "no": "-4900",
-      "line": 0.5,
-      "impliedYes": 0.05,
-      "bookmaker": "novig",
-      "providerPlayerName": "Steven Kwan",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": true,
-      "booksAtLine": 5,
-      "selectionReason": "two_sided_consensus"
-    },
-    "taylor walls": {
-      "yes": "+1900",
-      "no": "-2400",
-      "line": 0.5,
-      "impliedYes": 0.05,
-      "bookmaker": "novig",
-      "providerPlayerName": "Taylor Walls",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": true,
-      "booksAtLine": 5,
-      "selectionReason": "two_sided_consensus"
-    },
-    "travis bazzana": {
-      "yes": "+852",
-      "no": "-953",
-      "line": 0.5,
-      "impliedYes": 0.10504201680672269,
-      "bookmaker": "novig",
-      "providerPlayerName": "Travis Bazzana",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": true,
-      "booksAtLine": 5,
-      "selectionReason": "two_sided_consensus"
-    },
-    "victor mesa": {
-      "yes": "+641",
-      "no": "-809",
-      "line": 0.5,
-      "impliedYes": 0.1349527665317139,
-      "bookmaker": "novig",
-      "providerPlayerName": "Victor Mesa Jr.",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": true,
-      "booksAtLine": 5,
-      "selectionReason": "two_sided_consensus"
-    },
-    "yandy diaz": {
-      "yes": "+809",
-      "no": "-852",
-      "line": 0.5,
-      "impliedYes": 0.11001100110011001,
-      "bookmaker": "novig",
-      "providerPlayerName": "Yandy Diaz",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": true,
-      "booksAtLine": 5,
-      "selectionReason": "two_sided_consensus"
-    },
-    "chandler simpson": {
-      "yes": "+4248",
-      "no": "-5782",
-      "line": 0.5,
-      "impliedYes": 0.022999080036798528,
-      "bookmaker": "novig",
-      "providerPlayerName": "Chandler Simpson",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": true,
-      "booksAtLine": 2,
-      "selectionReason": "two_sided_consensus"
-    },
-    "chase delauter cle": {
-      "yes": "+750",
-      "no": null,
-      "line": 0.5,
-      "impliedYes": 0.11764705882352941,
-      "bookmaker": "bovada",
-      "providerPlayerName": "Chase DeLauter (CLE)",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": false,
-      "booksAtLine": 1,
-      "selectionReason": "one_sided_consensus"
-    },
-    "junior caminero tb": {
-      "yes": "+430",
-      "no": null,
-      "line": 0.5,
-      "impliedYes": 0.18867924528301888,
-      "bookmaker": "bovada",
-      "providerPlayerName": "Junior Caminero (TB)",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": false,
-      "booksAtLine": 1,
-      "selectionReason": "one_sided_consensus"
-    },
-    "nathaniel lowe cle": {
-      "yes": "+725",
-      "no": null,
-      "line": 0.5,
-      "impliedYes": 0.12121212121212122,
-      "bookmaker": "bovada",
-      "providerPlayerName": "Nathaniel Lowe (CLE)",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": false,
-      "booksAtLine": 1,
-      "selectionReason": "one_sided_consensus"
-    },
-    "patrick bailey cle": {
-      "yes": "+1100",
-      "no": null,
-      "line": 0.5,
-      "impliedYes": 0.08333333333333333,
-      "bookmaker": "bovada",
-      "providerPlayerName": "Patrick Bailey (CLE)",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": false,
-      "booksAtLine": 1,
-      "selectionReason": "one_sided_consensus"
-    },
-    "victor mesa tb": {
-      "yes": "+625",
-      "no": null,
-      "line": 0.5,
-      "impliedYes": 0.13793103448275862,
-      "bookmaker": "bovada",
-      "providerPlayerName": "Victor Mesa Jr. (TB)",
-      "providerMarket": "player_home_runs",
-      "isAlternate": false,
-      "twoSided": false,
-      "booksAtLine": 1,
-      "selectionReason": "one_sided_consensus"
-    }
-  },
-  "kOdds": {
-    "freddy peralta": {
-      "line": 3.5,
-      "over": "-144",
-      "under": "+141",
-      "impliedOver": 0.5901639344262295,
-      "bookmaker": "novig",
-      "providerPlayerName": "Freddy Peralta",
-      "providerMarket": "player_strikeouts",
-      "isAlternate": false,
-      "twoSided": true,
-      "booksAtLine": 2,
-      "selectionReason": "two_sided_consensus"
-    }
-  }
+  "hrOdds": {},
+  "kOdds": {}
 }
