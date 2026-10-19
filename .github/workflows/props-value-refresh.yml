@@ -212,11 +212,15 @@ jobs:
       - name: Fetch MLB odds (ParlayAPI + moneylines)
         if: steps.gate.outputs.run == 'true'
         run: node scripts/fetch-mlb-odds.mjs || true
-        env:
-          ODDS_API_KEY:        ${{ secrets.ODDS_API_KEY }}
-          ODDS_API_KEY_BACKUP: ${{ secrets.ODDS_API_KEY_BACKUP }}
-          PARLAYAPI:           ${{ secrets.PARLAYAPI }}
-          THERUNDOWNAPI:       ${{ secrets.THERUNDOWNAPI }}
+        # Paused 2026-10-19 for the rest of the 2026 season. MLB odds are not needed, and these keys share one
+        # 500-credit monthly pool (The Odds API) with NFL and NBA, or a separate ParlayAPI pool also used by NFL.
+        # With no keys this step makes no request to The Odds API, TheRundown or ParlayAPI; moneylines come from
+        # ESPN's free feed and the HR/K prop odds stay empty. To resume MLB odds, uncomment this whole block.
+        # env:
+        #   ODDS_API_KEY:        ${{ secrets.ODDS_API_KEY }}
+        #   ODDS_API_KEY_BACKUP: ${{ secrets.ODDS_API_KEY_BACKUP }}
+        #   PARLAYAPI:           ${{ secrets.PARLAYAPI }}
+        #   THERUNDOWNAPI:       ${{ secrets.THERUNDOWNAPI }}
 
       - name: Check if ParlayAPI returned lines
         id: lines

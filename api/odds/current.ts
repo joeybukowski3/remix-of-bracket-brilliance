@@ -122,6 +122,12 @@ function normalizeEvent(event: OddsApiEvent): NormalizedOddsEvent | null {
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 export async function GET() {
+  // Paused 2026-10-19: NCAAB odds are not needed for now, and every uncached call here costs 2 credits
+  // from the Odds API pool NFL and NBA share. Set NCAAB_ODDS_ENABLED=true (and redeploy) to resume.
+  if (process.env.NCAAB_ODDS_ENABLED !== "true") {
+    return Response.json({ success: true, odds: [], count: 0, paused: true }, { status: 200 });
+  }
+
   const apiKey  = process.env.ODDS_API_KEY ?? "";
   const hasKey  = apiKey.length > 0;
 
