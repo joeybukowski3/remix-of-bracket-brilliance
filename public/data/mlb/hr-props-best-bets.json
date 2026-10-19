@@ -1,105 +1,105 @@
 {
-  "date": "2026-10-18",
-  "generatedAt": "2026-10-18T18:19:00.510Z",
+  "date": "2026-10-19",
+  "generatedAt": "2026-10-19T17:50:20.064Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "Progressive Field plays as a 0.91 HR park today, but the lefty-lefty matchup between Parker Messick and the Rays top three (Caminero, Díaz, Aranda) plus the righty-righty Drew Rasmussen vs. DeLauter and Bailey creates the clearest power edges. Rasmussen’s 40.3 HR/600 rate against righties is the highest opposing-pitcher figure on the slate, while Messick’s 31.9 mark is still above league average, so the model is leaning into the Rays-CLE game as the primary HR source.",
-    "modelNote": "The model is weighting barrel rate, hard-hit rate, and opposing-pitcher HR rate most heavily, which is why Caminero (13.1 barrel, 49.7 hard-hit) and DeLauter (40.3 opp HR rate) sit at the top of the board despite modest recent home-run volume."
+    "slateOverview": "Tropicana Field's 0.98 park factor keeps the air neutral, but the Rays-Cle matchup features two right-handers (Armstrong vs. Peralta) who are both allowing elevated HR/FB rates (31.6 and 47.9 respectively). The model is zeroing in on the top three Rays bats—Caminero, Mesa, and Díaz—who post the highest barrel and hard-hit rates against the weaker of the two arms.",
+    "modelNote": "The algorithm is overweighting barrel rate and opposing-pitcher HR/FB while discounting recent HR drought, which is why Caminero (13.1 barrel, 62.3 hrScore) leads the board despite zero homers in his last seven games."
   },
   "bestBets": [
     {
       "player": "Junior Caminero",
       "team": "TB",
       "opponent": "CLE",
-      "opposingPitcher": "Parker Messick",
+      "opposingPitcher": "Shawn Armstrong",
       "hrScoreRank": 1,
       "topStats": [
-        "hrScore=54.6",
-        "barrel=13.1%"
+        "barrel=13.1%",
+        "HH=49.7%"
       ],
       "bullets": [
-        "hrScore=54.6",
-        "barrel=13.1%"
+        "barrel=13.1%",
+        "park=0.98"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
       "player": "Chase DeLauter",
       "team": "CLE",
       "opponent": "TB",
-      "opposingPitcher": "Drew Rasmussen",
+      "opposingPitcher": "Freddy Peralta",
       "hrScoreRank": 2,
       "topStats": [
-        "hrScore=53.8",
-        "barrel=6.3%"
+        "barrel=6.3%",
+        "HH=46.3%"
       ],
       "bullets": [
-        "hrScore=53.8",
-        "barrel=6.3%"
+        "barrel=6.3%",
+        "park=0.98"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Victor Mesa Jr.",
+      "team": "TB",
+      "opponent": "CLE",
+      "opposingPitcher": "Shawn Armstrong",
+      "hrScoreRank": 3,
+      "topStats": [
+        "barrel=10.8%",
+        "HH=42.2%"
+      ],
+      "bullets": [
+        "barrel=10.8%",
+        "park=0.98"
+      ],
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
       "player": "Yandy Díaz",
       "team": "TB",
       "opponent": "CLE",
-      "opposingPitcher": "Parker Messick",
-      "hrScoreRank": 3,
+      "opposingPitcher": "Shawn Armstrong",
+      "hrScoreRank": 4,
       "topStats": [
-        "hrScore=47.3",
-        "barrel=7.1%"
+        "barrel=7.1%",
+        "HH=48.1%"
       ],
       "bullets": [
-        "hrScore=47.3",
-        "barrel=7.1%"
+        "barrel=7.1%",
+        "park=0.98"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
       "player": "Jonathan Aranda",
       "team": "TB",
       "opponent": "CLE",
-      "opposingPitcher": "Parker Messick",
-      "hrScoreRank": 4,
-      "topStats": [
-        "hrScore=45.9",
-        "barrel=9.9%"
-      ],
-      "bullets": [
-        "hrScore=45.9",
-        "barrel=9.9%"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Patrick Bailey",
-      "team": "CLE",
-      "opponent": "TB",
-      "opposingPitcher": "Drew Rasmussen",
+      "opposingPitcher": "Shawn Armstrong",
       "hrScoreRank": 5,
       "topStats": [
-        "hrScore=45.1",
-        "barrel=7.7%"
+        "barrel=9.9%",
+        "HH=46%"
       ],
       "bullets": [
-        "hrScore=45.1",
-        "barrel=7.7%"
+        "barrel=9.9%",
+        "park=0.98"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
@@ -108,57 +108,114 @@
       "player": "Junior Caminero",
       "team": "TB",
       "opponent": "CLE",
-      "opposingPitcher": "Parker Messick",
+      "opposingPitcher": "Shawn Armstrong",
       "hrScoreRank": 1,
       "topStats": [
-        "hrScore=54.6",
-        "barrel=13.1%"
+        "barrel=13.1%",
+        "HH=49.7%"
       ],
       "bullets": [
-        "hrScore=54.6",
-        "barrel=13.1%"
+        "barrel=13.1%",
+        "park=0.98"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
       "player": "Chase DeLauter",
       "team": "CLE",
       "opponent": "TB",
-      "opposingPitcher": "Drew Rasmussen",
+      "opposingPitcher": "Freddy Peralta",
       "hrScoreRank": 2,
       "topStats": [
-        "hrScore=53.8",
-        "barrel=6.3%"
+        "barrel=6.3%",
+        "HH=46.3%"
       ],
       "bullets": [
-        "hrScore=53.8",
-        "barrel=6.3%"
+        "barrel=6.3%",
+        "park=0.98"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
-      "player": "Yandy Díaz",
+      "player": "Victor Mesa Jr.",
       "team": "TB",
       "opponent": "CLE",
-      "opposingPitcher": "Parker Messick",
+      "opposingPitcher": "Shawn Armstrong",
       "hrScoreRank": 3,
       "topStats": [
-        "hrScore=47.3",
-        "barrel=7.1%"
+        "barrel=10.8%",
+        "HH=42.2%"
       ],
       "bullets": [
-        "hrScore=47.3",
-        "barrel=7.1%"
+        "barrel=10.8%",
+        "park=0.98"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Patrick Bailey",
+      "team": "CLE",
+      "opponent": "TB",
+      "opposingPitcher": "Freddy Peralta",
+      "hrScoreRank": 6,
+      "topStats": [
+        "Pitcher HR VS=47.9",
+        "Hard Hit%=42.4"
+      ],
+      "bullets": [
+        "HR score 48.1 (#6)",
+        "Pitcher HR VS 47.9 at park 0.98"
+      ],
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jo Adell",
+      "team": "CLE",
+      "opponent": "TB",
+      "opposingPitcher": "Freddy Peralta",
+      "hrScoreRank": 7,
+      "topStats": [
+        "Pitcher HR VS=47.9",
+        "Hard Hit%=44.9"
+      ],
+      "bullets": [
+        "HR score 46.9 (#7)",
+        "Pitcher HR VS 47.9 at park 0.98"
+      ],
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
+      "valueStatus": "uncalibrated",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Nathaniel Lowe",
+      "team": "CLE",
+      "opponent": "TB",
+      "opposingPitcher": "Freddy Peralta",
+      "hrScoreRank": 8,
+      "topStats": [
+        "Pitcher HR VS=47.9",
+        "Hard Hit%=41.4"
+      ],
+      "bullets": [
+        "HR score 46.7 (#8)",
+        "Pitcher HR VS 47.9 at park 0.98"
+      ],
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ],
@@ -167,38 +224,38 @@
       "player": "Junior Caminero",
       "team": "TB",
       "opponent": "CLE",
-      "opposingPitcher": "Parker Messick",
+      "opposingPitcher": "Shawn Armstrong",
       "hrScoreRank": 1,
       "topStats": [
-        "hrScore=54.6",
-        "barrel=13.1%"
+        "barrel=13.1%",
+        "HH=49.7%"
       ],
       "bullets": [
-        "hrScore=54.6",
-        "barrel=13.1%"
+        "barrel=13.1%",
+        "park=0.98"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     },
     {
       "player": "Chase DeLauter",
       "team": "CLE",
       "opponent": "TB",
-      "opposingPitcher": "Drew Rasmussen",
+      "opposingPitcher": "Freddy Peralta",
       "hrScoreRank": 2,
       "topStats": [
-        "hrScore=53.8",
-        "barrel=6.3%"
+        "barrel=6.3%",
+        "HH=46.3%"
       ],
       "bullets": [
-        "hrScore=53.8",
-        "barrel=6.3%"
+        "barrel=6.3%",
+        "park=0.98"
       ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
+      "hrOddsYes": "+100",
+      "marketImpliedProbability": 0.5,
+      "valueStatus": "uncalibrated",
       "hrValueEdge": null
     }
   ]
