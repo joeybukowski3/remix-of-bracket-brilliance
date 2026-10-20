@@ -10,11 +10,17 @@
   "sourceUrl": "https://www.pgatour.com/tournaments/2026/butterfield-bermuda-championship/R2026528",
   "validated": true,
   "validationNote": "Tournament ID, tournament name, dates, and player list were matched to the official PGA TOUR schedule and field endpoints.",
-  "fetchedAt": "2026-10-19T17:50:35.527Z",
+  "fetchedAt": "2026-10-20T15:54:07.435Z",
   "fieldCount": 120,
   "alternatesExcluded": true,
   "alternatePolicy": "Only field.players is imported. Alternate lists are intentionally not queried or merged.",
-  "crossCheck": null,
+  "crossCheck": {
+    "source": "espn-scoreboard",
+    "playerCount": 120,
+    "overlap": 120,
+    "union": 120,
+    "agreementPercent": 100
+  },
   "players": [
     "A.J. Ewart",
     "Aaron Baddeley",
