@@ -32,9 +32,10 @@ describe("guardedRequest", () => {
   });
 
   it("charges a 2xx call, records provider usage, and unblocks UNKNOWN usage", async () => {
-    const { manager, id } = setup();
+    const { manager, id, time } = setup();
     const fetchImpl = vi.fn<FetchLike>(async () => apiSportsResponse({ errors: [], response: {} }, 200, 90));
-    const result = await guardedRequest({ manager, accountId: id, consumer: NBA_PROBE, estimate: statusEstimate, url: URL_WITH_KEY, fetchImpl });
+    // Same clock as the manager: the header snapshot must land in the manager's current day window.
+    const result = await guardedRequest({ manager, accountId: id, consumer: NBA_PROBE, estimate: statusEstimate, url: URL_WITH_KEY, fetchImpl, now: time.now });
     expect(result).toMatchObject({ kind: "response", outcome: "ok", unitsCharged: 1 });
     const state = await manager.state(id);
     expect(state.snapshots).toEqual([expect.objectContaining({ window: "day", remaining: 90, limit: 100 })]);

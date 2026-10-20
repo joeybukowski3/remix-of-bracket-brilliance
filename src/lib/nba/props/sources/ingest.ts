@@ -4,6 +4,8 @@
  */
 import { createHash } from "node:crypto";
 import { buildDataset, type NbaDataset } from "../dataset";
+import { SOURCE_LICENSES } from "./licenses";
+import { effectivePermittedUses } from "./registry";
 import type { NbaPlayerGame } from "../types";
 import type {
   DataUse,
@@ -19,14 +21,22 @@ import type {
 } from "./types";
 
 export class SourceUseNotPermittedError extends Error {
-  constructor(readonly sourceId: NbaSourceId, readonly use: DataUse, license: SourceLicense) {
-    super(`${sourceId} is not licensed for "${use}" (status: ${license.status}; basis: ${license.basis})`);
+  constructor(readonly sourceId: NbaSourceId, readonly use: DataUse, license: SourceLicense, chain: readonly NbaSourceId[] = [sourceId]) {
+    super(`${sourceId} is not licensed for "${use}" (status: ${license.status}; basis: ${license.basis}; license chain: ${chain.join(" -> ")})`);
     this.name = "SourceUseNotPermittedError";
   }
 }
 
-export function assertUsePermitted(sourceId: NbaSourceId, license: SourceLicense, use: DataUse): void {
-  if (!license.permittedUses.includes(use)) throw new SourceUseNotPermittedError(sourceId, use, license);
+/**
+ * The adapter's license, the registry's record for the source, AND every
+ * origin's record must all permit the use. An adapter cannot widen the
+ * registry, the registry cannot widen a stale adapter copy, and a
+ * redistributor cannot grant more than the data's owner.
+ */
+export function assertUsePermitted(sourceId: NbaSourceId, license: SourceLicense, use: DataUse, registry: Readonly<Record<NbaSourceId, SourceLicense>> = SOURCE_LICENSES): void {
+  const own: SourceLicense = { ...license, permittedUses: license.permittedUses.filter((u) => registry[sourceId].permittedUses.includes(u)) };
+  const { permittedUses, chain } = effectivePermittedUses(sourceId, { ...registry, [sourceId]: own });
+  if (!permittedUses.includes(use)) throw new SourceUseNotPermittedError(sourceId, use, license, chain);
 }
 
 export const sha256 = (text: string): string => createHash("sha256").update(text, "utf8").digest("hex");
@@ -61,8 +71,13 @@ export function createPayload(
   };
 }
 
-export function normalizePayloads(adapter: NbaSourceAdapter, payloads: readonly SourcePayload[], use: DataUse): NormalizedSourceSnapshot[] {
-  assertUsePermitted(adapter.sourceId, adapter.license, use);
+export function normalizePayloads(
+  adapter: NbaSourceAdapter,
+  payloads: readonly SourcePayload[],
+  use: DataUse,
+  registry: Readonly<Record<NbaSourceId, SourceLicense>> = SOURCE_LICENSES,
+): NormalizedSourceSnapshot[] {
+  assertUsePermitted(adapter.sourceId, adapter.license, use, registry);
   return payloads.map((payload) => {
     if (payload.meta.sourceId !== adapter.sourceId) {
       throw new Error(`Payload ${payload.meta.snapshotId} is from ${payload.meta.sourceId}, not ${adapter.sourceId}`);

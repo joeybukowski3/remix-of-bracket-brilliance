@@ -109,3 +109,34 @@ describe("windowUsage", () => {
     expect(windowUsage(day, state, Date.parse("2026-10-14T00:00:01Z")).effectiveUsed).toBe(0);
   });
 });
+
+describe("windowUsage counterDecreases", () => {
+  const day = { kind: "day", limit: 100, source: "provider-docs", resetHourUtc: 0 } as const;
+  const now = Date.parse("2026-10-13T12:00:00Z");
+  const snap = (observedAt: string, remaining: number) => ({ window: "day" as const, observedAt: iso(observedAt), used: null, remaining, limit: 100 });
+
+  it("flags a provider counter that drops within one window while keeping the highest reading", () => {
+    const state = { ...emptyUsageState(), snapshots: [snap("2026-10-13T08:00:00Z", 94), snap("2026-10-13T08:00:08Z", 99)] };
+    const usage = windowUsage(day, state, now);
+    expect(usage.counterDecreases).toEqual([
+      { fromUsed: 6, toUsed: 1, drop: 5, fromObservedAt: iso("2026-10-13T08:00:00Z"), toObservedAt: iso("2026-10-13T08:00:08Z") },
+    ]);
+    expect(usage.providerUsed).toBe(6);
+    expect(usage.effectiveUsed).toBe(6);
+  });
+
+  it("orders snapshots by observation time, not insertion order", () => {
+    const state = { ...emptyUsageState(), snapshots: [snap("2026-10-13T08:00:08Z", 97), snap("2026-10-13T08:00:00Z", 98)] };
+    expect(windowUsage(day, state, now).counterDecreases).toEqual([]);
+  });
+
+  it("does not flag equal or rising counters", () => {
+    const state = { ...emptyUsageState(), snapshots: [snap("2026-10-13T08:00:00Z", 98), snap("2026-10-13T08:00:01Z", 98), snap("2026-10-13T08:00:02Z", 90)] };
+    expect(windowUsage(day, state, now).counterDecreases).toEqual([]);
+  });
+
+  it("does not flag the drop across a genuine window reset", () => {
+    const state = { ...emptyUsageState(), snapshots: [snap("2026-10-12T23:59:00Z", 10), snap("2026-10-13T00:00:30Z", 99)] };
+    expect(windowUsage(day, state, now).counterDecreases).toEqual([]);
+  });
+});

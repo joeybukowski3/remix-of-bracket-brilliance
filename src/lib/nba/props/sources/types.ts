@@ -14,9 +14,30 @@
 import type { NormalizedSnapshot } from "../dataset";
 import type { NbaSeasonType } from "../seasonType";
 
-export type NbaSourceId = "stats.nba.com" | "sportsdataio" | "balldontlie" | "synthetic";
+/**
+ * `espn`, and the stats.nba.com data inside `llimllib-nba-data`, are ORIGINS:
+ * we never retrieve from them directly. `hoopr-espn` and `llimllib-nba-data`
+ * are redistributors whose code license says nothing about the data (see
+ * registry.ts `origin` and `effectivePermittedUses`).
+ */
+export type NbaSourceId =
+  | "stats.nba.com"
+  | "espn"
+  | "hoopr-espn"
+  | "llimllib-nba-data"
+  | "thesportsdb"
+  | "sportsdataio"
+  | "balldontlie"
+  | "api-sports-nba"
+  | "synthetic";
 
-export const DATA_USES = ["private-research", "model-development", "public-display"] as const;
+/**
+ * private-research: evaluation by the owner only. model-development: training
+ * and tuning. public-display: publishing DERIVED outputs (projections,
+ * predictions). raw-redistribution: republishing or serving source rows; a
+ * grant for the other uses never implies this one.
+ */
+export const DATA_USES = ["private-research", "model-development", "public-display", "raw-redistribution"] as const;
 export type DataUse = (typeof DATA_USES)[number];
 
 export type LicenseStatus = "synthetic" | "restricted" | "unlicensed" | "commercial-licensed";

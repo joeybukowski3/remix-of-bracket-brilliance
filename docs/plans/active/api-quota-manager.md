@@ -97,6 +97,19 @@ grant execute on function public.api_quota_cas(text, bigint, jsonb) to service_r
    - Requests 2–10 go through `guardedRequest` with `maxAttempts: 1` and `inspectBody: inspectApiSportsBody`, at least 7 s apart.
    - Raw bodies plus `nba-source-snapshot-meta-v2` sidecars go to `data/nba/sources/api-nba/probe/<stamp>/`.
    - Stop on any denial, non-2xx, provider error, plan or season message, or usage rising faster than calls made.
+
+   **Status (2026-10-13): runner built, not run.** `scripts/nba-api-nba-probe.ts` (readiness check by default; `--execute` for live) over `src/lib/nba/props/sources/apiNbaProbe.ts`, tested with mocked transports only. Differences from the outline above:
+   - Order: status, seasons, games 2023, games 2024, game player stats, game team stats, team-season player stats, games 2025, games 2026, final status. The seasons most likely to be plan-restricted come last, so a plan-restriction abort cannot cost the box-score checks.
+   - Approval is a local file, never committed source. `liveApproval` stays `null` in `accounts.ts`; the CLI reads `data/nba/approvals/api-nba-probe-approval.json` (gitignored and vercelignored), validates it strictly with `apiNbaProbeApproval.ts`, and injects it into an in-memory registry copy for `api-sports:nba` only. A missing, malformed, expired, over-budget or out-of-scope file blocks the run. Create one with `npx tsx scripts/nba-api-nba-probe-approval.ts --approved-by="<name>" [--days=7]`, which uses exclusive create and never overwrites, renews or extends.
+   - Cap enforced four ways:
+     - an in-run counter;
+     - a single-use claim marker (`data/nba/approvals/claims/<approvalId>.json`, exclusive create) taken before the first request;
+     - refusal of any approval that has already funded a request;
+     - the manager's approval budget.
+
+     The approval must have scope `"API-NBA 10-request evaluation probe"` and `maxUnits` of at most 10, and it must expire within 14 days of `approvedAt`.
+   - No S3 wait-and-retry: HTTP 429 aborts. `/status` bodies are saved without `response.account`.
+   - `SOURCE_LICENSES["api-sports-nba"]` is `unlicensed` with no permitted use, following readiness Q7 rather than step 1 above. The run's analysis is structural only (coverage, minutes format, DNP rows, box sums, paging, quota delta). Canonical normalization (`apiNba.ts`) is exercised with synthetic payloads only until a license decision.
 4. **Report actual quota usage.** `npx tsx scripts/api-quota-report.ts` compares ledger units with provider-reported usage from the final `/status`, shows the unattributed gap (which answers "does `/status` count?"), and lists any open or orphaned reservations.
 5. **Observe-only tracking for existing NFL/MLB services.**
    - Add header capture (`HEADER_PARSERS` → `recordProviderUsage`) beside each existing odds fetch: The Odds API and ParlayAPI scripts, and the Vercel odds routes.

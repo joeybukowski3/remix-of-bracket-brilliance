@@ -1,0 +1,11 @@
+# Phase 5D: NBA Odds API adapter and offline validation
+
+Status: adapter and one-credit probe prepared offline. No provider request, approval, license change, secret, subscription, migration, workflow, commit or deployment was made.
+
+`pipeline/theOddsApiNba.ts` parses The Odds API v4 `basketball_nba` event-odds body. The initial request is one event, `regions=us`, `player_points`, American prices. Its parser also accepts `player_rebounds` and `player_assists` when a later plan explicitly funds those markets. Each completed Over/Under pair must have the same player description, point, book and market. Missing markets, unidentified players, malformed prices, incomplete sides and duplicate sides produce unmatched diagnostics; they do not become lines. The returned line includes the provider timestamp and stable event, bookmaker, market and outcome-index references. The pregame job stores those references in the snapshot source, stamps capture time, and classifies stale lines using its existing capture policy.
+
+The adapter needs a one-use authorization from the pregame job after its `RequestGate.reserve` call. The job already checks the recorded license, source account, NBA allowance and capture window. The gate checks the 206-credit monthly and 15-credit daily NBA allowance, the shared NFL reserve, fresh provider-usage evidence, quota-manager admission and live approval. There is no retry in the adapter. The provider URL and key are never returned or logged.
+
+The separate `scripts/nba-odds-one-credit-probe.ts` is inert without `--execute-one-credit`. Even when explicitly invoked, it requires a recorded approval scoped exactly to `NBA one-event player_points one-credit probe` with `maxUnits=1`, a verified account, open license record, fresh provider evidence and the same quota gate. It issues at most one request in a process and cannot request any other market or region. **Do not execute it during Phase 5D.**
+
+Current blockers: the Odds API license record still grants no uses; the account identity/plan are unverified and blocked for new NBA spend; `liveApproval` is null; current credit headroom and fresh provider usage evidence are unknown. The last recorded counter (232/500 on October 19) is historical evidence only. A later one-credit probe needs separate review and approval after those blockers are resolved.
