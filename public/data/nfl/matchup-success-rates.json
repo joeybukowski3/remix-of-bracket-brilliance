@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schemaVersion": "nfl-matchup-success-rates-v1",
-    "generatedAt": "2026-10-13T19:54:04.256Z",
+    "generatedAt": "2026-10-20T18:00:57.169Z",
     "source": "RBSDM (rbsdm.com/stats)",
     "attribution": "Ben Baldwin / RBSDM",
     "endpoint": "https://rbsdm.com/api/team-tiers",
@@ -60,42 +60,42 @@
         "min": 17
       },
       "2026": {
-        "phi": 5,
-        "dal": 5,
-        "lac": 5,
-        "kc": 4,
-        "no": 5,
-        "ari": 5,
-        "jax": 5,
-        "car": 4,
-        "cle": 5,
+        "phi": 6,
+        "dal": 6,
+        "lac": 6,
+        "kc": 5,
+        "no": 6,
+        "ari": 6,
+        "jax": 6,
+        "car": 5,
+        "cle": 6,
         "cin": 5,
-        "ne": 5,
-        "lv": 5,
-        "ind": 5,
+        "ne": 6,
+        "lv": 6,
+        "ind": 6,
         "mia": 5,
-        "wsh": 5,
-        "nyg": 5,
-        "nyj": 5,
-        "pit": 5,
-        "atl": 5,
-        "tb": 5,
-        "sea": 5,
-        "sf": 5,
-        "den": 5,
-        "ten": 5,
-        "gb": 5,
+        "wsh": 6,
+        "nyg": 6,
+        "nyj": 6,
+        "pit": 6,
+        "atl": 6,
+        "tb": 6,
+        "sea": 6,
+        "sf": 6,
+        "den": 6,
+        "ten": 6,
+        "gb": 6,
         "det": 5,
-        "lar": 5,
-        "hou": 5,
-        "buf": 5,
-        "bal": 5,
-        "chi": 5,
+        "lar": 6,
+        "hou": 6,
+        "buf": 6,
+        "bal": 6,
+        "chi": 6,
         "min": 5
       }
     },
-    "currentSeasonRequestedThroughWeek": 5,
-    "currentSeasonIncludedGames": 79,
+    "currentSeasonRequestedThroughWeek": 6,
+    "currentSeasonIncludedGames": 93,
     "requests": [
       {
         "periodKey": "2025-last8",
@@ -363,7 +363,7 @@
           "season_min": 2026,
           "season_max": 2026,
           "week_min": 1,
-          "week_max": 5,
+          "week_max": 6,
           "weeks_post_start": "None",
           "weeks_post_end": "None",
           "downs": [
@@ -383,7 +383,7 @@
           "exclude_turnovers": false
         },
         "weekMin": 1,
-        "weekMax": 5,
+        "weekMax": 6,
         "teamsSelected": [
           "ari",
           "atl",
@@ -482,10 +482,17 @@
         "weekMin": 1,
         "weekMax": 5,
         "teamsSelected": [
+          "cin",
+          "det",
+          "mia",
+          "min"
+        ],
+        "teamsReturned": [
           "ari",
           "atl",
           "bal",
           "buf",
+          "car",
           "chi",
           "cin",
           "cle",
@@ -496,11 +503,136 @@
           "hou",
           "ind",
           "jax",
+          "kc",
           "lac",
           "lar",
           "lv",
           "mia",
           "min",
+          "ne",
+          "no",
+          "nyg",
+          "nyj",
+          "phi",
+          "pit",
+          "sea",
+          "sf",
+          "tb",
+          "ten",
+          "wsh"
+        ]
+      },
+      {
+        "periodKey": "2026-last5",
+        "endpoint": "https://rbsdm.com/api/team-tiers",
+        "payload": {
+          "season_min": 2026,
+          "season_max": 2026,
+          "week_min": 1,
+          "week_max": 6,
+          "weeks_post_start": "None",
+          "weeks_post_end": "None",
+          "downs": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "quarters": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "wp_filter": 0,
+          "exclude_turnovers": false
+        },
+        "weekMin": 1,
+        "weekMax": 6,
+        "teamsSelected": [
+          "car",
+          "kc"
+        ],
+        "teamsReturned": [
+          "ari",
+          "atl",
+          "bal",
+          "buf",
+          "car",
+          "chi",
+          "cin",
+          "cle",
+          "dal",
+          "den",
+          "det",
+          "gb",
+          "hou",
+          "ind",
+          "jax",
+          "kc",
+          "lac",
+          "lar",
+          "lv",
+          "mia",
+          "min",
+          "ne",
+          "no",
+          "nyg",
+          "nyj",
+          "phi",
+          "pit",
+          "sea",
+          "sf",
+          "tb",
+          "ten",
+          "wsh"
+        ]
+      },
+      {
+        "periodKey": "2026-last5",
+        "endpoint": "https://rbsdm.com/api/team-tiers",
+        "payload": {
+          "season_min": 2026,
+          "season_max": 2026,
+          "week_min": 2,
+          "week_max": 6,
+          "weeks_post_start": "None",
+          "weeks_post_end": "None",
+          "downs": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "quarters": [
+            1,
+            2,
+            3,
+            4,
+            5
+          ],
+          "wp_filter": 0,
+          "exclude_turnovers": false
+        },
+        "weekMin": 2,
+        "weekMax": 6,
+        "teamsSelected": [
+          "ari",
+          "atl",
+          "bal",
+          "buf",
+          "chi",
+          "cle",
+          "dal",
+          "den",
+          "gb",
+          "hou",
+          "ind",
+          "jax",
+          "lac",
+          "lar",
+          "lv",
           "ne",
           "no",
           "nyg",
@@ -3733,222 +3865,100 @@
     },
     "2026-season": {
       "ari": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_ARI_LAC",
           "2026_02_SEA_ARI",
           "2026_03_ARI_SF",
           "2026_04_ARI_NYG",
-          "2026_05_DET_ARI"
+          "2026_05_DET_ARI",
+          "2026_06_ARI_LA"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 45.8,
-            "raw": 0.4579710144927536,
-            "rank": 10
+            "pct": 46.3,
+            "raw": 0.4628297362110312,
+            "rank": 11
           },
           "off.passSuccessRate": {
-            "pct": 48,
-            "raw": 0.4801762114537445,
+            "pct": 48.7,
+            "raw": 0.4866920152091255,
             "rank": 14
           },
           "off.rushSuccessRate": {
-            "pct": 41.5,
-            "raw": 0.4152542372881356,
+            "pct": 42.2,
+            "raw": 0.42207792207792205,
             "rank": 12
           },
           "def.successRateAllowed": {
-            "pct": 45,
-            "raw": 0.44983818770226536,
-            "rank": 25
+            "pct": 45.6,
+            "raw": 0.4562841530054645,
+            "rank": 26
           },
           "def.passSuccessRateAllowed": {
             "pct": 48.5,
-            "raw": 0.48520710059171596,
+            "raw": 0.4854368932038835,
             "rank": 25
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 40.7,
-            "raw": 0.40714285714285714,
-            "rank": 20
+            "pct": 41.9,
+            "raw": 0.41875,
+            "rank": 24
           }
         }
       },
       "atl": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_ATL_PIT",
           "2026_02_CAR_ATL",
           "2026_03_ATL_GB",
           "2026_04_ATL_NO",
-          "2026_05_BAL_ATL"
+          "2026_05_BAL_ATL",
+          "2026_06_CHI_ATL"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 45.6,
-            "raw": 0.45569620253164556,
-            "rank": 12
+            "pct": 43.6,
+            "raw": 0.4363143631436314,
+            "rank": 17
           },
           "off.passSuccessRate": {
-            "pct": 44,
-            "raw": 0.44025157232704404,
-            "rank": 21
+            "pct": 41.3,
+            "raw": 0.4129353233830846,
+            "rank": 25
           },
           "off.rushSuccessRate": {
-            "pct": 47.1,
-            "raw": 0.4713375796178344,
-            "rank": 3
+            "pct": 46.4,
+            "raw": 0.4642857142857143,
+            "rank": 4
           },
           "def.successRateAllowed": {
-            "pct": 39.7,
-            "raw": 0.3965014577259475,
-            "rank": 3
+            "pct": 41.3,
+            "raw": 0.4128878281622912,
+            "rank": 6
           },
           "def.passSuccessRateAllowed": {
-            "pct": 41.7,
-            "raw": 0.4166666666666667,
-            "rank": 5
+            "pct": 43.5,
+            "raw": 0.43508771929824563,
+            "rank": 9
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 35,
-            "raw": 0.34951456310679613,
-            "rank": 6
+            "pct": 36.6,
+            "raw": 0.3656716417910448,
+            "rank": 8
           }
         }
       },
       "bal": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_BAL_IND",
           "2026_02_NO_BAL",
           "2026_03_BAL_DAL",
           "2026_04_TEN_BAL",
-          "2026_05_BAL_ATL"
-        ],
-        "metrics": {
-          "off.successRate": {
-            "pct": 49.4,
-            "raw": 0.49375,
-            "rank": 3
-          },
-          "off.passSuccessRate": {
-            "pct": 53.2,
-            "raw": 0.5317919075144508,
-            "rank": 2
-          },
-          "off.rushSuccessRate": {
-            "pct": 44.9,
-            "raw": 0.4489795918367347,
-            "rank": 6
-          },
-          "def.successRateAllowed": {
-            "pct": 41.5,
-            "raw": 0.41509433962264153,
-            "rank": 7
-          },
-          "def.passSuccessRateAllowed": {
-            "pct": 44.8,
-            "raw": 0.4482758620689655,
-            "rank": 12
-          },
-          "def.rushSuccessRateAllowed": {
-            "pct": 35.7,
-            "raw": 0.3565217391304348,
-            "rank": 8
-          }
-        }
-      },
-      "buf": {
-        "gamesIncluded": 5,
-        "gameIds": [
-          "2026_01_BUF_HOU",
-          "2026_02_DET_BUF",
-          "2026_03_LAC_BUF",
-          "2026_04_NE_BUF",
-          "2026_05_BUF_LA"
-        ],
-        "metrics": {
-          "off.successRate": {
-            "pct": 49.5,
-            "raw": 0.49517684887459806,
-            "rank": 2
-          },
-          "off.passSuccessRate": {
-            "pct": 48.1,
-            "raw": 0.48066298342541436,
-            "rank": 13
-          },
-          "off.rushSuccessRate": {
-            "pct": 51.5,
-            "raw": 0.5153846153846153,
-            "rank": 1
-          },
-          "def.successRateAllowed": {
-            "pct": 49.3,
-            "raw": 0.49318801089918257,
-            "rank": 30
-          },
-          "def.passSuccessRateAllowed": {
-            "pct": 52.5,
-            "raw": 0.5252100840336135,
-            "rank": 29
-          },
-          "def.rushSuccessRateAllowed": {
-            "pct": 43.4,
-            "raw": 0.43410852713178294,
-            "rank": 29
-          }
-        }
-      },
-      "car": {
-        "gamesIncluded": 4,
-        "gameIds": [
-          "2026_01_CHI_CAR",
-          "2026_02_CAR_ATL",
-          "2026_03_CAR_CLE",
-          "2026_04_DET_CAR"
-        ],
-        "metrics": {
-          "off.successRate": {
-            "pct": 43.4,
-            "raw": 0.43416370106761565,
-            "rank": 16
-          },
-          "off.passSuccessRate": {
-            "pct": 46.2,
-            "raw": 0.46236559139784944,
-            "rank": 18
-          },
-          "off.rushSuccessRate": {
-            "pct": 37.9,
-            "raw": 0.37894736842105264,
-            "rank": 16
-          },
-          "def.successRateAllowed": {
-            "pct": 42.9,
-            "raw": 0.42907801418439717,
-            "rank": 16
-          },
-          "def.passSuccessRateAllowed": {
-            "pct": 47.8,
-            "raw": 0.47752808988764045,
-            "rank": 21
-          },
-          "def.rushSuccessRateAllowed": {
-            "pct": 34.6,
-            "raw": 0.34615384615384615,
-            "rank": 5
-          }
-        }
-      },
-      "chi": {
-        "gamesIncluded": 5,
-        "gameIds": [
-          "2026_01_CHI_CAR",
-          "2026_02_MIN_CHI",
-          "2026_03_PHI_CHI",
-          "2026_04_NYJ_CHI",
-          "2026_05_CHI_GB"
+          "2026_05_BAL_ATL",
+          "2026_06_BAL_CLE"
         ],
         "metrics": {
           "off.successRate": {
@@ -3957,28 +3967,156 @@
             "rank": 9
           },
           "off.passSuccessRate": {
-            "pct": 50.5,
-            "raw": 0.5047619047619047,
-            "rank": 7
+            "pct": 50.2,
+            "raw": 0.5023696682464455,
+            "rank": 6
           },
           "off.rushSuccessRate": {
-            "pct": 42.5,
-            "raw": 0.4251497005988024,
+            "pct": 42.8,
+            "raw": 0.42771084337349397,
             "rank": 10
           },
           "def.successRateAllowed": {
-            "pct": 41.8,
-            "raw": 0.41762452107279696,
-            "rank": 9
+            "pct": 41.7,
+            "raw": 0.41732283464566927,
+            "rank": 8
           },
           "def.passSuccessRateAllowed": {
-            "pct": 41.8,
-            "raw": 0.4177215189873418,
-            "rank": 6
+            "pct": 44,
+            "raw": 0.43983402489626555,
+            "rank": 10
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 41.7,
-            "raw": 0.4174757281553398,
+            "pct": 37.9,
+            "raw": 0.37857142857142856,
+            "rank": 10
+          }
+        }
+      },
+      "buf": {
+        "gamesIncluded": 6,
+        "gameIds": [
+          "2026_01_BUF_HOU",
+          "2026_02_DET_BUF",
+          "2026_03_LAC_BUF",
+          "2026_04_NE_BUF",
+          "2026_05_BUF_LA",
+          "2026_06_BUF_LV"
+        ],
+        "metrics": {
+          "off.successRate": {
+            "pct": 49.2,
+            "raw": 0.4920212765957447,
+            "rank": 2
+          },
+          "off.passSuccessRate": {
+            "pct": 48.6,
+            "raw": 0.4863636363636364,
+            "rank": 15
+          },
+          "off.rushSuccessRate": {
+            "pct": 50,
+            "raw": 0.5,
+            "rank": 1
+          },
+          "def.successRateAllowed": {
+            "pct": 48.7,
+            "raw": 0.48729792147806006,
+            "rank": 31
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 52.5,
+            "raw": 0.5246478873239436,
+            "rank": 29
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 41.6,
+            "raw": 0.4161073825503356,
+            "rank": 23
+          }
+        }
+      },
+      "car": {
+        "gamesIncluded": 5,
+        "gameIds": [
+          "2026_01_CHI_CAR",
+          "2026_02_CAR_ATL",
+          "2026_03_CAR_CLE",
+          "2026_04_DET_CAR",
+          "2026_06_CAR_PHI"
+        ],
+        "metrics": {
+          "off.successRate": {
+            "pct": 43.7,
+            "raw": 0.4369747899159664,
+            "rank": 15
+          },
+          "off.passSuccessRate": {
+            "pct": 45.5,
+            "raw": 0.45454545454545453,
+            "rank": 19
+          },
+          "off.rushSuccessRate": {
+            "pct": 40.5,
+            "raw": 0.40476190476190477,
+            "rank": 15
+          },
+          "def.successRateAllowed": {
+            "pct": 42.2,
+            "raw": 0.42196531791907516,
+            "rank": 11
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 45.9,
+            "raw": 0.4585152838427948,
+            "rank": 17
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 35,
+            "raw": 0.3504273504273504,
+            "rank": 5
+          }
+        }
+      },
+      "chi": {
+        "gamesIncluded": 6,
+        "gameIds": [
+          "2026_01_CHI_CAR",
+          "2026_02_MIN_CHI",
+          "2026_03_PHI_CHI",
+          "2026_04_NYJ_CHI",
+          "2026_05_CHI_GB",
+          "2026_06_CHI_ATL"
+        ],
+        "metrics": {
+          "off.successRate": {
+            "pct": 47.2,
+            "raw": 0.47240618101545256,
+            "rank": 7
+          },
+          "off.passSuccessRate": {
+            "pct": 51,
+            "raw": 0.5098039215686274,
+            "rank": 4
+          },
+          "off.rushSuccessRate": {
+            "pct": 42.4,
+            "raw": 0.42424242424242425,
+            "rank": 11
+          },
+          "def.successRateAllowed": {
+            "pct": 40.1,
+            "raw": 0.4012738853503185,
+            "rank": 4
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 39.5,
+            "raw": 0.395,
+            "rank": 3
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 41.2,
+            "raw": 0.41228070175438597,
             "rank": 22
           }
         }
@@ -4001,153 +4139,156 @@
           "off.passSuccessRate": {
             "pct": 50,
             "raw": 0.5,
-            "rank": 8
+            "rank": 7
           },
           "off.rushSuccessRate": {
             "pct": 41,
             "raw": 0.4095238095238095,
-            "rank": 15
+            "rank": 13
           },
           "def.successRateAllowed": {
             "pct": 44,
             "raw": 0.439873417721519,
-            "rank": 19
+            "rank": 21
           },
           "def.passSuccessRateAllowed": {
             "pct": 46.9,
             "raw": 0.46859903381642515,
-            "rank": 18
+            "rank": 23
           },
           "def.rushSuccessRateAllowed": {
             "pct": 38.5,
             "raw": 0.3853211009174312,
-            "rank": 13
+            "rank": 14
           }
         }
       },
       "cle": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_CLE_JAX",
           "2026_02_CLE_TB",
           "2026_03_CAR_CLE",
           "2026_04_PIT_CLE",
-          "2026_05_CLE_NYJ"
+          "2026_05_CLE_NYJ",
+          "2026_06_BAL_CLE"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 39.7,
-            "raw": 0.39672131147540984,
-            "rank": 28
+            "pct": 40.2,
+            "raw": 0.40217391304347827,
+            "rank": 25
           },
           "off.passSuccessRate": {
-            "pct": 44.4,
-            "raw": 0.4444444444444444,
+            "pct": 43.6,
+            "raw": 0.4364406779661017,
             "rank": 20
           },
           "off.rushSuccessRate": {
-            "pct": 30.8,
-            "raw": 0.308411214953271,
-            "rank": 32
+            "pct": 34.1,
+            "raw": 0.3409090909090909,
+            "rank": 28
           },
           "def.successRateAllowed": {
-            "pct": 43.8,
-            "raw": 0.4380664652567976,
-            "rank": 18
+            "pct": 42.3,
+            "raw": 0.422680412371134,
+            "rank": 12
           },
           "def.passSuccessRateAllowed": {
-            "pct": 44.2,
-            "raw": 0.441747572815534,
-            "rank": 11
+            "pct": 43,
+            "raw": 0.430327868852459,
+            "rank": 8
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 43.2,
-            "raw": 0.432,
-            "rank": 28
+            "pct": 41,
+            "raw": 0.4097222222222222,
+            "rank": 20
           }
         }
       },
       "dal": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_DAL_NYG",
           "2026_02_WAS_DAL",
           "2026_03_BAL_DAL",
           "2026_04_DAL_HOU",
-          "2026_05_TB_DAL"
+          "2026_05_TB_DAL",
+          "2026_06_DAL_GB"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 49.2,
-            "raw": 0.49226006191950467,
-            "rank": 4
+            "pct": 48,
+            "raw": 0.48,
+            "rank": 5
           },
           "off.passSuccessRate": {
-            "pct": 51.8,
-            "raw": 0.5180180180180181,
-            "rank": 4
+            "pct": 49.6,
+            "raw": 0.4964788732394366,
+            "rank": 10
           },
           "off.rushSuccessRate": {
-            "pct": 43.6,
-            "raw": 0.43564356435643564,
-            "rank": 8
+            "pct": 44,
+            "raw": 0.4396551724137931,
+            "rank": 6
           },
           "def.successRateAllowed": {
-            "pct": 50.9,
-            "raw": 0.5092592592592593,
-            "rank": 32
+            "pct": 48.6,
+            "raw": 0.48614609571788414,
+            "rank": 29
           },
           "def.passSuccessRateAllowed": {
-            "pct": 57.3,
-            "raw": 0.5730337078651685,
+            "pct": 54.2,
+            "raw": 0.5418502202643172,
             "rank": 32
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 43.2,
-            "raw": 0.4315068493150685,
-            "rank": 27
+            "pct": 41.2,
+            "raw": 0.4117647058823529,
+            "rank": 21
           }
         }
       },
       "den": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_DEN_KC",
           "2026_02_JAX_DEN",
           "2026_03_LA_DEN",
           "2026_04_DEN_SF",
-          "2026_05_DEN_LAC"
+          "2026_05_DEN_LAC",
+          "2026_06_SEA_DEN"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 39.7,
-            "raw": 0.3973509933774834,
-            "rank": 27
+            "pct": 38,
+            "raw": 0.37950138504155123,
+            "rank": 28
           },
           "off.passSuccessRate": {
-            "pct": 41.1,
-            "raw": 0.41081081081081083,
-            "rank": 27
+            "pct": 39,
+            "raw": 0.38990825688073394,
+            "rank": 29
           },
           "off.rushSuccessRate": {
-            "pct": 37.6,
-            "raw": 0.37606837606837606,
-            "rank": 19
+            "pct": 36.4,
+            "raw": 0.36363636363636365,
+            "rank": 20
           },
           "def.successRateAllowed": {
-            "pct": 40.7,
-            "raw": 0.40707964601769914,
+            "pct": 40.4,
+            "raw": 0.40380047505938244,
             "rank": 5
           },
           "def.passSuccessRateAllowed": {
-            "pct": 44.2,
-            "raw": 0.4416243654822335,
-            "rank": 10
+            "pct": 42.9,
+            "raw": 0.42913385826771655,
+            "rank": 7
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 35.9,
-            "raw": 0.3591549295774648,
-            "rank": 9
+            "pct": 36.5,
+            "raw": 0.3652694610778443,
+            "rank": 7
           }
         }
       },
@@ -4164,17 +4305,17 @@
           "off.successRate": {
             "pct": 49.1,
             "raw": 0.49122807017543857,
-            "rank": 5
+            "rank": 3
           },
           "off.passSuccessRate": {
             "pct": 50.9,
             "raw": 0.5094339622641509,
-            "rank": 6
+            "rank": 5
           },
           "off.rushSuccessRate": {
             "pct": 46.2,
             "raw": 0.46153846153846156,
-            "rank": 4
+            "rank": 5
           },
           "def.successRateAllowed": {
             "pct": 48.4,
@@ -4194,337 +4335,345 @@
         }
       },
       "gb": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_GB_MIN",
           "2026_02_GB_NYJ",
           "2026_03_ATL_GB",
           "2026_04_GB_TB",
-          "2026_05_CHI_GB"
+          "2026_05_CHI_GB",
+          "2026_06_DAL_GB"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 39.8,
-            "raw": 0.39805825242718446,
+            "pct": 39.5,
+            "raw": 0.39528795811518325,
             "rank": 26
           },
           "off.passSuccessRate": {
             "pct": 42.9,
             "raw": 0.42857142857142855,
-            "rank": 23
+            "rank": 21
           },
           "off.rushSuccessRate": {
-            "pct": 33.3,
-            "raw": 0.3333333333333333,
-            "rank": 28
+            "pct": 32.5,
+            "raw": 0.3252032520325203,
+            "rank": 31
           },
           "def.successRateAllowed": {
-            "pct": 44.7,
-            "raw": 0.44744744744744747,
-            "rank": 24
+            "pct": 44.4,
+            "raw": 0.44390243902439025,
+            "rank": 22
           },
           "def.passSuccessRateAllowed": {
-            "pct": 46.7,
-            "raw": 0.4666666666666667,
-            "rank": 17
+            "pct": 45.5,
+            "raw": 0.45525291828793774,
+            "rank": 14
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 42,
-            "raw": 0.42028985507246375,
-            "rank": 23
+            "pct": 42.5,
+            "raw": 0.42483660130718953,
+            "rank": 25
           }
         }
       },
       "hou": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_BUF_HOU",
           "2026_02_CIN_HOU",
           "2026_03_HOU_IND",
           "2026_04_DAL_HOU",
-          "2026_05_HOU_TEN"
+          "2026_05_HOU_TEN",
+          "2026_06_HOU_JAX"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 43.2,
-            "raw": 0.4316109422492401,
-            "rank": 17
+            "pct": 44.1,
+            "raw": 0.4413265306122449,
+            "rank": 13
           },
           "off.passSuccessRate": {
-            "pct": 49.3,
-            "raw": 0.4931506849315068,
-            "rank": 10
+            "pct": 50,
+            "raw": 0.5,
+            "rank": 7
           },
           "off.rushSuccessRate": {
-            "pct": 30.9,
-            "raw": 0.3090909090909091,
-            "rank": 31
+            "pct": 32.8,
+            "raw": 0.3283582089552239,
+            "rank": 30
           },
           "def.successRateAllowed": {
-            "pct": 39.9,
-            "raw": 0.3987730061349693,
-            "rank": 4
+            "pct": 42,
+            "raw": 0.42025316455696204,
+            "rank": 10
           },
           "def.passSuccessRateAllowed": {
-            "pct": 40.6,
-            "raw": 0.4056603773584906,
-            "rank": 2
+            "pct": 42.7,
+            "raw": 0.42745098039215684,
+            "rank": 6
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 38.6,
-            "raw": 0.38596491228070173,
-            "rank": 15
+            "pct": 40.7,
+            "raw": 0.40714285714285714,
+            "rank": 19
           }
         }
       },
       "ind": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_BAL_IND",
           "2026_02_IND_KC",
           "2026_03_HOU_IND",
           "2026_04_IND_WAS",
-          "2026_05_IND_PIT"
+          "2026_05_IND_PIT",
+          "2026_06_TEN_IND"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 42.8,
-            "raw": 0.4276923076923077,
-            "rank": 18
+            "pct": 42.5,
+            "raw": 0.4250614250614251,
+            "rank": 19
           },
           "off.passSuccessRate": {
-            "pct": 41.8,
-            "raw": 0.4175257731958763,
+            "pct": 42.3,
+            "raw": 0.42276422764227645,
             "rank": 24
           },
           "off.rushSuccessRate": {
-            "pct": 44.3,
-            "raw": 0.44274809160305345,
-            "rank": 7
+            "pct": 42.9,
+            "raw": 0.42857142857142855,
+            "rank": 9
           },
           "def.successRateAllowed": {
-            "pct": 43.4,
-            "raw": 0.434375,
-            "rank": 17
+            "pct": 43,
+            "raw": 0.4301369863013699,
+            "rank": 16
           },
           "def.passSuccessRateAllowed": {
-            "pct": 42.9,
-            "raw": 0.4292929292929293,
-            "rank": 7
+            "pct": 42.3,
+            "raw": 0.42342342342342343,
+            "rank": 4
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 44.3,
-            "raw": 0.4426229508196721,
-            "rank": 31
+            "pct": 44.1,
+            "raw": 0.4405594405594406,
+            "rank": 30
           }
         }
       },
       "jax": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_CLE_JAX",
           "2026_02_JAX_DEN",
           "2026_03_NE_JAX",
           "2026_04_JAX_CIN",
-          "2026_05_PHI_JAX"
+          "2026_05_PHI_JAX",
+          "2026_06_HOU_JAX"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 45.6,
-            "raw": 0.4557377049180328,
-            "rank": 11
+            "pct": 46.8,
+            "raw": 0.4679144385026738,
+            "rank": 10
           },
           "off.passSuccessRate": {
-            "pct": 48,
-            "raw": 0.47953216374269003,
-            "rank": 15
+            "pct": 49.1,
+            "raw": 0.49065420560747663,
+            "rank": 12
           },
           "off.rushSuccessRate": {
-            "pct": 42.5,
-            "raw": 0.4253731343283582,
-            "rank": 9
+            "pct": 43.8,
+            "raw": 0.4375,
+            "rank": 7
           },
           "def.successRateAllowed": {
-            "pct": 41.5,
-            "raw": 0.41479099678456594,
-            "rank": 6
+            "pct": 42.8,
+            "raw": 0.42780748663101603,
+            "rank": 15
           },
           "def.passSuccessRateAllowed": {
-            "pct": 45.5,
-            "raw": 0.45539906103286387,
-            "rank": 14
+            "pct": 46.8,
+            "raw": 0.46825396825396826,
+            "rank": 22
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 32.7,
-            "raw": 0.32653061224489793,
-            "rank": 2
+            "pct": 34.4,
+            "raw": 0.3442622950819672,
+            "rank": 4
           }
         }
       },
       "kc": {
-        "gamesIncluded": 4,
+        "gamesIncluded": 5,
         "gameIds": [
           "2026_01_DEN_KC",
           "2026_02_IND_KC",
           "2026_03_KC_MIA",
-          "2026_04_KC_LV"
+          "2026_04_KC_LV",
+          "2026_06_LAC_KC"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 48.2,
-            "raw": 0.48249027237354086,
-            "rank": 6
+            "pct": 48.7,
+            "raw": 0.4873417721518987,
+            "rank": 4
           },
           "off.passSuccessRate": {
-            "pct": 49,
-            "raw": 0.4899328859060403,
-            "rank": 11
+            "pct": 49.7,
+            "raw": 0.4972972972972973,
+            "rank": 9
           },
           "off.rushSuccessRate": {
-            "pct": 47.2,
-            "raw": 0.4722222222222222,
-            "rank": 2
+            "pct": 47.3,
+            "raw": 0.4732824427480916,
+            "rank": 3
           },
           "def.successRateAllowed": {
-            "pct": 42.2,
-            "raw": 0.4216417910447761,
-            "rank": 12
+            "pct": 39.6,
+            "raw": 0.3958333333333333,
+            "rank": 3
           },
           "def.passSuccessRateAllowed": {
-            "pct": 47.1,
-            "raw": 0.47058823529411764,
-            "rank": 20
+            "pct": 44,
+            "raw": 0.44036697247706424,
+            "rank": 11
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 33.7,
-            "raw": 0.336734693877551,
-            "rank": 3
+            "pct": 31.4,
+            "raw": 0.3135593220338983,
+            "rank": 2
           }
         }
       },
       "lac": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_ARI_LAC",
           "2026_02_LV_LAC",
           "2026_03_LAC_BUF",
           "2026_04_LAC_SEA",
-          "2026_05_DEN_LAC"
+          "2026_05_DEN_LAC",
+          "2026_06_LAC_KC"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 38.4,
-            "raw": 0.38414634146341464,
-            "rank": 29
+            "pct": 36.9,
+            "raw": 0.3686868686868687,
+            "rank": 30
           },
           "off.passSuccessRate": {
-            "pct": 39.3,
-            "raw": 0.39267015706806285,
-            "rank": 29
+            "pct": 38.1,
+            "raw": 0.3807531380753138,
+            "rank": 31
           },
           "off.rushSuccessRate": {
-            "pct": 37.2,
-            "raw": 0.3722627737226277,
-            "rank": 21
+            "pct": 35,
+            "raw": 0.3503184713375796,
+            "rank": 23
           },
           "def.successRateAllowed": {
-            "pct": 42,
-            "raw": 0.4195583596214511,
-            "rank": 11
+            "pct": 43.4,
+            "raw": 0.43351063829787234,
+            "rank": 18
           },
           "def.passSuccessRateAllowed": {
-            "pct": 44,
-            "raw": 0.44047619047619047,
-            "rank": 9
+            "pct": 45.6,
+            "raw": 0.45588235294117646,
+            "rank": 15
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 39.6,
-            "raw": 0.3959731543624161,
+            "pct": 40.7,
+            "raw": 0.4069767441860465,
             "rank": 18
           }
         }
       },
       "lar": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_SF_LA",
           "2026_02_NYG_LA",
           "2026_03_LA_DEN",
           "2026_04_LA_PHI",
-          "2026_05_BUF_LA"
+          "2026_05_BUF_LA",
+          "2026_06_ARI_LA"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 47.3,
-            "raw": 0.4726775956284153,
-            "rank": 7
+            "pct": 47.5,
+            "raw": 0.475177304964539,
+            "rank": 6
           },
           "off.passSuccessRate": {
-            "pct": 49.8,
-            "raw": 0.49794238683127573,
-            "rank": 9
-          },
-          "off.rushSuccessRate": {
-            "pct": 42.3,
-            "raw": 0.42276422764227645,
+            "pct": 49.6,
+            "raw": 0.49642857142857144,
             "rank": 11
           },
+          "off.rushSuccessRate": {
+            "pct": 43.4,
+            "raw": 0.43356643356643354,
+            "rank": 8
+          },
           "def.successRateAllowed": {
-            "pct": 42.8,
-            "raw": 0.42765273311897106,
-            "rank": 14
+            "pct": 43.9,
+            "raw": 0.4386422976501306,
+            "rank": 19
           },
           "def.passSuccessRateAllowed": {
-            "pct": 45.2,
-            "raw": 0.4519774011299435,
-            "rank": 13
+            "pct": 46.5,
+            "raw": 0.4647887323943662,
+            "rank": 21
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 39.6,
-            "raw": 0.39552238805970147,
+            "pct": 40.6,
+            "raw": 0.40588235294117647,
             "rank": 17
           }
         }
       },
       "lv": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_MIA_LV",
           "2026_02_LV_LAC",
           "2026_03_LV_NO",
           "2026_04_KC_LV",
-          "2026_05_LV_NE"
+          "2026_05_LV_NE",
+          "2026_06_BUF_LV"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 43.8,
-            "raw": 0.4380664652567976,
+            "pct": 44.1,
+            "raw": 0.44080604534005036,
             "rank": 14
           },
           "off.passSuccessRate": {
-            "pct": 51.7,
-            "raw": 0.5174129353233831,
-            "rank": 5
+            "pct": 51.8,
+            "raw": 0.5182186234817814,
+            "rank": 2
           },
           "off.rushSuccessRate": {
-            "pct": 31.5,
-            "raw": 0.3153846153846154,
-            "rank": 30
+            "pct": 31.3,
+            "raw": 0.31333333333333335,
+            "rank": 32
           },
           "def.successRateAllowed": {
-            "pct": 44.6,
-            "raw": 0.44648318042813456,
-            "rank": 21
+            "pct": 45.2,
+            "raw": 0.45153061224489793,
+            "rank": 25
           },
           "def.passSuccessRateAllowed": {
-            "pct": 48.8,
-            "raw": 0.48756218905472637,
-            "rank": 26
+            "pct": 49.2,
+            "raw": 0.49166666666666664,
+            "rank": 27
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 38.1,
-            "raw": 0.38095238095238093,
-            "rank": 11
+            "pct": 38.8,
+            "raw": 0.3881578947368421,
+            "rank": 15
           }
         }
       },
@@ -4541,22 +4690,22 @@
           "off.successRate": {
             "pct": 37.5,
             "raw": 0.3745704467353952,
-            "rank": 30
+            "rank": 29
           },
           "off.passSuccessRate": {
             "pct": 39.2,
             "raw": 0.391812865497076,
-            "rank": 30
+            "rank": 27
           },
           "off.rushSuccessRate": {
             "pct": 35,
             "raw": 0.35,
-            "rank": 23
+            "rank": 24
           },
           "def.successRateAllowed": {
             "pct": 48.7,
             "raw": 0.4868421052631579,
-            "rank": 29
+            "rank": 30
           },
           "def.passSuccessRateAllowed": {
             "pct": 53.6,
@@ -4566,7 +4715,7 @@
           "def.rushSuccessRateAllowed": {
             "pct": 42.6,
             "raw": 0.4264705882352941,
-            "rank": 25
+            "rank": 27
           }
         }
       },
@@ -4583,7 +4732,7 @@
           "off.successRate": {
             "pct": 36.3,
             "raw": 0.3630573248407643,
-            "rank": 31
+            "rank": 32
           },
           "off.passSuccessRate": {
             "pct": 37.7,
@@ -4593,7 +4742,7 @@
           "off.rushSuccessRate": {
             "pct": 34.4,
             "raw": 0.3435114503816794,
-            "rank": 26
+            "rank": 27
           },
           "def.successRateAllowed": {
             "pct": 32,
@@ -4613,679 +4762,480 @@
         }
       },
       "ne": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_NE_SEA",
           "2026_02_PIT_NE",
           "2026_03_NE_JAX",
           "2026_04_NE_BUF",
-          "2026_05_LV_NE"
+          "2026_05_LV_NE",
+          "2026_06_NYJ_NE"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 45.2,
-            "raw": 0.45180722891566266,
-            "rank": 13
+            "pct": 44.9,
+            "raw": 0.44862155388471175,
+            "rank": 12
           },
           "off.passSuccessRate": {
-            "pct": 52.5,
-            "raw": 0.5247524752475248,
+            "pct": 51.5,
+            "raw": 0.5147679324894515,
             "rank": 3
           },
           "off.rushSuccessRate": {
-            "pct": 33.8,
-            "raw": 0.3384615384615385,
-            "rank": 27
+            "pct": 35.2,
+            "raw": 0.35185185185185186,
+            "rank": 22
           },
           "def.successRateAllowed": {
-            "pct": 41.9,
-            "raw": 0.41946308724832215,
-            "rank": 10
+            "pct": 43.2,
+            "raw": 0.43175487465181056,
+            "rank": 17
           },
           "def.passSuccessRateAllowed": {
-            "pct": 43.9,
-            "raw": 0.43915343915343913,
-            "rank": 8
+            "pct": 46,
+            "raw": 0.45982142857142855,
+            "rank": 18
           },
           "def.rushSuccessRateAllowed": {
             "pct": 38.5,
-            "raw": 0.3853211009174312,
+            "raw": 0.3851851851851852,
             "rank": 13
           }
         }
       },
       "no": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_NO_DET",
           "2026_02_NO_BAL",
           "2026_03_LV_NO",
           "2026_04_ATL_NO",
-          "2026_05_MIN_NO"
+          "2026_05_MIN_NO",
+          "2026_06_NO_NYG"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 43.6,
-            "raw": 0.43641618497109824,
-            "rank": 15
+            "pct": 42,
+            "raw": 0.4196642685851319,
+            "rank": 20
           },
           "off.passSuccessRate": {
-            "pct": 47,
-            "raw": 0.4703389830508475,
+            "pct": 45.8,
+            "raw": 0.4575645756457565,
             "rank": 17
           },
           "off.rushSuccessRate": {
-            "pct": 36.4,
-            "raw": 0.36363636363636365,
-            "rank": 22
+            "pct": 34.9,
+            "raw": 0.3493150684931507,
+            "rank": 25
           },
           "def.successRateAllowed": {
-            "pct": 50.6,
-            "raw": 0.5062111801242236,
-            "rank": 31
+            "pct": 49.7,
+            "raw": 0.49744897959183676,
+            "rank": 32
           },
           "def.passSuccessRateAllowed": {
-            "pct": 51.1,
-            "raw": 0.5108695652173914,
+            "pct": 50.8,
+            "raw": 0.5084745762711864,
             "rank": 28
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 50,
-            "raw": 0.5,
+            "pct": 48.1,
+            "raw": 0.4807692307692308,
             "rank": 32
           }
         }
       },
       "nyg": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_DAL_NYG",
           "2026_02_NYG_LA",
           "2026_03_TEN_NYG",
           "2026_04_ARI_NYG",
-          "2026_05_NYG_WAS"
+          "2026_05_NYG_WAS",
+          "2026_06_NO_NYG"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 42.6,
-            "raw": 0.4264705882352941,
-            "rank": 20
+            "pct": 43.2,
+            "raw": 0.4317073170731707,
+            "rank": 18
           },
           "off.passSuccessRate": {
-            "pct": 48.5,
-            "raw": 0.4846938775510204,
-            "rank": 12
+            "pct": 48.8,
+            "raw": 0.4879032258064516,
+            "rank": 13
           },
           "off.rushSuccessRate": {
-            "pct": 34.7,
-            "raw": 0.3472222222222222,
-            "rank": 25
-          },
-          "def.successRateAllowed": {
-            "pct": 46.4,
-            "raw": 0.46357615894039733,
+            "pct": 34.6,
+            "raw": 0.345679012345679,
             "rank": 26
           },
+          "def.successRateAllowed": {
+            "pct": 44,
+            "raw": 0.43967828418230565,
+            "rank": 20
+          },
           "def.passSuccessRateAllowed": {
-            "pct": 47.9,
-            "raw": 0.4791666666666667,
-            "rank": 23
+            "pct": 46.3,
+            "raw": 0.46255506607929514,
+            "rank": 20
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 43.6,
-            "raw": 0.43636363636363634,
-            "rank": 30
+            "pct": 40.4,
+            "raw": 0.4041095890410959,
+            "rank": 16
           }
         }
       },
       "nyj": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_NYJ_TEN",
           "2026_02_GB_NYJ",
           "2026_03_NYJ_DET",
           "2026_04_NYJ_CHI",
-          "2026_05_CLE_NYJ"
+          "2026_05_CLE_NYJ",
+          "2026_06_NYJ_NE"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 42.5,
-            "raw": 0.42524916943521596,
-            "rank": 21
+            "pct": 43.6,
+            "raw": 0.43646408839779005,
+            "rank": 16
           },
           "off.passSuccessRate": {
-            "pct": 45.8,
-            "raw": 0.4581005586592179,
-            "rank": 19
+            "pct": 47.7,
+            "raw": 0.4766355140186916,
+            "rank": 16
           },
           "off.rushSuccessRate": {
-            "pct": 37.7,
-            "raw": 0.3770491803278688,
-            "rank": 18
+            "pct": 37.8,
+            "raw": 0.3783783783783784,
+            "rank": 19
           },
           "def.successRateAllowed": {
-            "pct": 44.7,
-            "raw": 0.4471299093655589,
+            "pct": 44.5,
+            "raw": 0.44472361809045224,
             "rank": 23
           },
           "def.passSuccessRateAllowed": {
             "pct": 45.8,
-            "raw": 0.458128078817734,
-            "rank": 15
+            "raw": 0.4579831932773109,
+            "rank": 16
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 43,
-            "raw": 0.4296875,
+            "pct": 42.5,
+            "raw": 0.425,
             "rank": 26
           }
         }
       },
       "phi": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_WAS_PHI",
           "2026_02_PHI_TEN",
           "2026_03_PHI_CHI",
           "2026_04_LA_PHI",
-          "2026_05_PHI_JAX"
+          "2026_05_PHI_JAX",
+          "2026_06_CAR_PHI"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 36.1,
-            "raw": 0.3609271523178808,
-            "rank": 32
-          },
-          "off.passSuccessRate": {
-            "pct": 38.1,
-            "raw": 0.38095238095238093,
+            "pct": 36.6,
+            "raw": 0.366120218579235,
             "rank": 31
           },
+          "off.passSuccessRate": {
+            "pct": 38.3,
+            "raw": 0.38333333333333336,
+            "rank": 30
+          },
           "off.rushSuccessRate": {
-            "pct": 32.7,
-            "raw": 0.3274336283185841,
+            "pct": 33.3,
+            "raw": 0.3333333333333333,
             "rank": 29
           },
           "def.successRateAllowed": {
             "pct": 44.7,
-            "raw": 0.44668587896253603,
-            "rank": 22
+            "raw": 0.44680851063829785,
+            "rank": 24
           },
           "def.passSuccessRateAllowed": {
-            "pct": 46.9,
-            "raw": 0.46859903381642515,
-            "rank": 18
+            "pct": 46,
+            "raw": 0.4603174603174603,
+            "rank": 19
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 41.4,
-            "raw": 0.4142857142857143,
-            "rank": 21
+            "pct": 42.7,
+            "raw": 0.4269005847953216,
+            "rank": 28
           }
         }
       },
       "pit": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_ATL_PIT",
           "2026_02_PIT_NE",
           "2026_03_CIN_PIT",
           "2026_04_PIT_CLE",
-          "2026_05_IND_PIT"
+          "2026_05_IND_PIT",
+          "2026_06_PIT_TB"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 42.7,
-            "raw": 0.42679127725856697,
-            "rank": 19
+            "pct": 41.8,
+            "raw": 0.4181360201511335,
+            "rank": 21
           },
           "off.passSuccessRate": {
-            "pct": 43.4,
-            "raw": 0.4343891402714932,
-            "rank": 22
+            "pct": 42.4,
+            "raw": 0.42391304347826086,
+            "rank": 23
           },
           "off.rushSuccessRate": {
-            "pct": 41,
-            "raw": 0.41,
+            "pct": 40.5,
+            "raw": 0.4049586776859504,
             "rank": 14
           },
           "def.successRateAllowed": {
-            "pct": 44.6,
-            "raw": 0.44554455445544555,
-            "rank": 20
+            "pct": 41.9,
+            "raw": 0.41909814323607425,
+            "rank": 9
           },
           "def.passSuccessRateAllowed": {
-            "pct": 47.8,
-            "raw": 0.4782608695652174,
-            "rank": 22
+            "pct": 44.3,
+            "raw": 0.4430379746835443,
+            "rank": 12
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 39.5,
-            "raw": 0.3949579831932773,
-            "rank": 16
+            "pct": 37.9,
+            "raw": 0.37857142857142856,
+            "rank": 10
           }
         }
       },
       "sea": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_NE_SEA",
           "2026_02_SEA_ARI",
           "2026_03_SEA_WAS",
           "2026_04_LAC_SEA",
-          "2026_05_SF_SEA"
+          "2026_05_SF_SEA",
+          "2026_06_SEA_DEN"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 42,
-            "raw": 0.4201954397394137,
+            "pct": 41.4,
+            "raw": 0.4138817480719794,
             "rank": 22
           },
           "off.passSuccessRate": {
-            "pct": 47.9,
-            "raw": 0.47928994082840237,
-            "rank": 16
+            "pct": 45.6,
+            "raw": 0.4557522123893805,
+            "rank": 18
           },
           "off.rushSuccessRate": {
-            "pct": 34.8,
-            "raw": 0.34782608695652173,
-            "rank": 24
+            "pct": 35.6,
+            "raw": 0.3558282208588957,
+            "rank": 21
           },
           "def.successRateAllowed": {
-            "pct": 38.4,
-            "raw": 0.38412698412698415,
+            "pct": 36.9,
+            "raw": 0.3689839572192513,
             "rank": 2
           },
           "def.passSuccessRateAllowed": {
-            "pct": 41.2,
-            "raw": 0.41237113402061853,
-            "rank": 4
+            "pct": 39.2,
+            "raw": 0.3920704845814978,
+            "rank": 2
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 33.9,
-            "raw": 0.33884297520661155,
-            "rank": 4
+            "pct": 33.3,
+            "raw": 0.3333333333333333,
+            "rank": 3
           }
         }
       },
       "sf": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_SF_LA",
           "2026_02_MIA_SF",
           "2026_03_ARI_SF",
           "2026_04_DEN_SF",
-          "2026_05_SF_SEA"
+          "2026_05_SF_SEA",
+          "2026_06_WAS_SF"
         ],
         "metrics": {
           "off.successRate": {
             "pct": 51.9,
-            "raw": 0.519163763066202,
+            "raw": 0.5186246418338109,
             "rank": 1
           },
           "off.passSuccessRate": {
-            "pct": 56.4,
-            "raw": 0.5644171779141104,
+            "pct": 53.5,
+            "raw": 0.5353535353535354,
             "rank": 1
           },
           "off.rushSuccessRate": {
-            "pct": 46,
-            "raw": 0.4596774193548387,
-            "rank": 5
+            "pct": 49.7,
+            "raw": 0.4966887417218543,
+            "rank": 2
           },
           "def.successRateAllowed": {
-            "pct": 41.6,
-            "raw": 0.4161676646706587,
-            "rank": 8
+            "pct": 42.7,
+            "raw": 0.4271356783919598,
+            "rank": 14
           },
           "def.passSuccessRateAllowed": {
-            "pct": 41,
-            "raw": 0.41,
-            "rank": 3
+            "pct": 42.6,
+            "raw": 0.42570281124497994,
+            "rank": 5
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 42.5,
-            "raw": 0.4253731343283582,
-            "rank": 24
+            "pct": 43,
+            "raw": 0.42953020134228187,
+            "rank": 29
           }
         }
       },
       "tb": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_TB_CIN",
           "2026_02_CLE_TB",
           "2026_03_MIN_TB",
           "2026_04_GB_TB",
-          "2026_05_TB_DAL"
+          "2026_05_TB_DAL",
+          "2026_06_PIT_TB"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 41,
-            "raw": 0.40993788819875776,
-            "rank": 23
+            "pct": 39.1,
+            "raw": 0.39141414141414144,
+            "rank": 27
           },
           "off.passSuccessRate": {
-            "pct": 41,
-            "raw": 0.4097560975609756,
+            "pct": 39.1,
+            "raw": 0.39147286821705424,
             "rank": 28
           },
           "off.rushSuccessRate": {
-            "pct": 41,
-            "raw": 0.41025641025641024,
-            "rank": 13
-          },
-          "def.successRateAllowed": {
-            "pct": 42.5,
-            "raw": 0.42517006802721086,
-            "rank": 13
-          },
-          "def.passSuccessRateAllowed": {
-            "pct": 46.6,
-            "raw": 0.4656084656084656,
+            "pct": 39.1,
+            "raw": 0.391304347826087,
             "rank": 16
           },
-          "def.rushSuccessRateAllowed": {
-            "pct": 35.2,
-            "raw": 0.3523809523809524,
+          "def.successRateAllowed": {
+            "pct": 41.6,
+            "raw": 0.41621621621621624,
             "rank": 7
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 44.7,
+            "raw": 0.44672131147540983,
+            "rank": 13
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 35.7,
+            "raw": 0.35714285714285715,
+            "rank": 6
           }
         }
       },
       "ten": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_NYJ_TEN",
           "2026_02_PHI_TEN",
           "2026_03_TEN_NYG",
           "2026_04_TEN_BAL",
-          "2026_05_HOU_TEN"
+          "2026_05_HOU_TEN",
+          "2026_06_TEN_IND"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 40.3,
-            "raw": 0.4027777777777778,
+            "pct": 40.2,
+            "raw": 0.4024024024024024,
             "rank": 24
           },
           "off.passSuccessRate": {
-            "pct": 41.6,
-            "raw": 0.41578947368421054,
-            "rank": 25
+            "pct": 41.1,
+            "raw": 0.411214953271028,
+            "rank": 26
           },
           "off.rushSuccessRate": {
-            "pct": 37.8,
-            "raw": 0.37755102040816324,
+            "pct": 38.7,
+            "raw": 0.3865546218487395,
             "rank": 17
           },
           "def.successRateAllowed": {
-            "pct": 42.9,
-            "raw": 0.42857142857142855,
-            "rank": 15
+            "pct": 42.6,
+            "raw": 0.4257907542579075,
+            "rank": 13
           },
           "def.passSuccessRateAllowed": {
-            "pct": 48.2,
-            "raw": 0.4823529411764706,
+            "pct": 47.3,
+            "raw": 0.47297297297297297,
             "rank": 24
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 37.1,
-            "raw": 0.3710691823899371,
-            "rank": 10
+            "pct": 37,
+            "raw": 0.37037037037037035,
+            "rank": 9
           }
         }
       },
       "wsh": {
-        "gamesIncluded": 5,
+        "gamesIncluded": 6,
         "gameIds": [
           "2026_01_WAS_PHI",
           "2026_02_WAS_DAL",
           "2026_03_SEA_WAS",
           "2026_04_IND_WAS",
-          "2026_05_NYG_WAS"
+          "2026_05_NYG_WAS",
+          "2026_06_WAS_SF"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 39.9,
-            "raw": 0.3987915407854985,
-            "rank": 25
+            "pct": 41.3,
+            "raw": 0.41265822784810124,
+            "rank": 23
           },
           "off.passSuccessRate": {
-            "pct": 41.3,
-            "raw": 0.41262135922330095,
-            "rank": 26
+            "pct": 42.7,
+            "raw": 0.42745098039215684,
+            "rank": 22
           },
           "off.rushSuccessRate": {
-            "pct": 37.6,
-            "raw": 0.376,
-            "rank": 20
+            "pct": 38.6,
+            "raw": 0.38571428571428573,
+            "rank": 18
           },
           "def.successRateAllowed": {
-            "pct": 46.8,
-            "raw": 0.46788990825688076,
+            "pct": 47.6,
+            "raw": 0.4755784061696658,
             "rank": 27
           },
           "def.passSuccessRateAllowed": {
-            "pct": 50,
-            "raw": 0.5,
-            "rank": 27
+            "pct": 48.6,
+            "raw": 0.48638132295719844,
+            "rank": 26
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 40,
-            "raw": 0.4,
-            "rank": 19
+            "pct": 45.5,
+            "raw": 0.45454545454545453,
+            "rank": 31
           }
         }
       }
     },
     "2026-last5": {
-      "ari": {
-        "gamesIncluded": 5,
-        "gameIds": [
-          "2026_01_ARI_LAC",
-          "2026_02_SEA_ARI",
-          "2026_03_ARI_SF",
-          "2026_04_ARI_NYG",
-          "2026_05_DET_ARI"
-        ],
-        "metrics": {
-          "off.successRate": {
-            "pct": 45.8,
-            "raw": 0.4579710144927536,
-            "rank": 9
-          },
-          "off.passSuccessRate": {
-            "pct": 48,
-            "raw": 0.4801762114537445,
-            "rank": 13
-          },
-          "off.rushSuccessRate": {
-            "pct": 41.5,
-            "raw": 0.4152542372881356,
-            "rank": 11
-          },
-          "def.successRateAllowed": {
-            "pct": 45,
-            "raw": 0.44983818770226536,
-            "rank": 23
-          },
-          "def.passSuccessRateAllowed": {
-            "pct": 48.5,
-            "raw": 0.48520710059171596,
-            "rank": 23
-          },
-          "def.rushSuccessRateAllowed": {
-            "pct": 40.7,
-            "raw": 0.40714285714285714,
-            "rank": 18
-          }
-        }
-      },
-      "atl": {
-        "gamesIncluded": 5,
-        "gameIds": [
-          "2026_01_ATL_PIT",
-          "2026_02_CAR_ATL",
-          "2026_03_ATL_GB",
-          "2026_04_ATL_NO",
-          "2026_05_BAL_ATL"
-        ],
-        "metrics": {
-          "off.successRate": {
-            "pct": 45.6,
-            "raw": 0.45569620253164556,
-            "rank": 11
-          },
-          "off.passSuccessRate": {
-            "pct": 44,
-            "raw": 0.44025157232704404,
-            "rank": 19
-          },
-          "off.rushSuccessRate": {
-            "pct": 47.1,
-            "raw": 0.4713375796178344,
-            "rank": 2
-          },
-          "def.successRateAllowed": {
-            "pct": 39.7,
-            "raw": 0.3965014577259475,
-            "rank": 3
-          },
-          "def.passSuccessRateAllowed": {
-            "pct": 41.7,
-            "raw": 0.4166666666666667,
-            "rank": 5
-          },
-          "def.rushSuccessRateAllowed": {
-            "pct": 35,
-            "raw": 0.34951456310679613,
-            "rank": 4
-          }
-        }
-      },
-      "bal": {
-        "gamesIncluded": 5,
-        "gameIds": [
-          "2026_01_BAL_IND",
-          "2026_02_NO_BAL",
-          "2026_03_BAL_DAL",
-          "2026_04_TEN_BAL",
-          "2026_05_BAL_ATL"
-        ],
-        "metrics": {
-          "off.successRate": {
-            "pct": 49.4,
-            "raw": 0.49375,
-            "rank": 3
-          },
-          "off.passSuccessRate": {
-            "pct": 53.2,
-            "raw": 0.5317919075144508,
-            "rank": 2
-          },
-          "off.rushSuccessRate": {
-            "pct": 44.9,
-            "raw": 0.4489795918367347,
-            "rank": 5
-          },
-          "def.successRateAllowed": {
-            "pct": 41.5,
-            "raw": 0.41509433962264153,
-            "rank": 7
-          },
-          "def.passSuccessRateAllowed": {
-            "pct": 44.8,
-            "raw": 0.4482758620689655,
-            "rank": 12
-          },
-          "def.rushSuccessRateAllowed": {
-            "pct": 35.7,
-            "raw": 0.3565217391304348,
-            "rank": 6
-          }
-        }
-      },
-      "buf": {
-        "gamesIncluded": 5,
-        "gameIds": [
-          "2026_01_BUF_HOU",
-          "2026_02_DET_BUF",
-          "2026_03_LAC_BUF",
-          "2026_04_NE_BUF",
-          "2026_05_BUF_LA"
-        ],
-        "metrics": {
-          "off.successRate": {
-            "pct": 49.5,
-            "raw": 0.49517684887459806,
-            "rank": 2
-          },
-          "off.passSuccessRate": {
-            "pct": 48.1,
-            "raw": 0.48066298342541436,
-            "rank": 12
-          },
-          "off.rushSuccessRate": {
-            "pct": 51.5,
-            "raw": 0.5153846153846153,
-            "rank": 1
-          },
-          "def.successRateAllowed": {
-            "pct": 49.3,
-            "raw": 0.49318801089918257,
-            "rank": 28
-          },
-          "def.passSuccessRateAllowed": {
-            "pct": 52.5,
-            "raw": 0.5252100840336135,
-            "rank": 27
-          },
-          "def.rushSuccessRateAllowed": {
-            "pct": 43.4,
-            "raw": 0.43410852713178294,
-            "rank": 27
-          }
-        }
-      },
-      "chi": {
-        "gamesIncluded": 5,
-        "gameIds": [
-          "2026_01_CHI_CAR",
-          "2026_02_MIN_CHI",
-          "2026_03_PHI_CHI",
-          "2026_04_NYJ_CHI",
-          "2026_05_CHI_GB"
-        ],
-        "metrics": {
-          "off.successRate": {
-            "pct": 46.9,
-            "raw": 0.46949602122015915,
-            "rank": 8
-          },
-          "off.passSuccessRate": {
-            "pct": 50.5,
-            "raw": 0.5047619047619047,
-            "rank": 7
-          },
-          "off.rushSuccessRate": {
-            "pct": 42.5,
-            "raw": 0.4251497005988024,
-            "rank": 9
-          },
-          "def.successRateAllowed": {
-            "pct": 41.8,
-            "raw": 0.41762452107279696,
-            "rank": 9
-          },
-          "def.passSuccessRateAllowed": {
-            "pct": 41.8,
-            "raw": 0.4177215189873418,
-            "rank": 6
-          },
-          "def.rushSuccessRateAllowed": {
-            "pct": 41.7,
-            "raw": 0.4174757281553398,
-            "rank": 20
-          }
-        }
-      },
       "cin": {
         "gamesIncluded": 5,
         "gameIds": [
@@ -5304,7 +5254,7 @@
           "off.passSuccessRate": {
             "pct": 50,
             "raw": 0.5,
-            "rank": 8
+            "rank": 7
           },
           "off.rushSuccessRate": {
             "pct": 41,
@@ -5314,143 +5264,17 @@
           "def.successRateAllowed": {
             "pct": 44,
             "raw": 0.439873417721519,
-            "rank": 17
+            "rank": 21
           },
           "def.passSuccessRateAllowed": {
             "pct": 46.9,
             "raw": 0.46859903381642515,
-            "rank": 18
+            "rank": 21
           },
           "def.rushSuccessRateAllowed": {
             "pct": 38.5,
             "raw": 0.3853211009174312,
-            "rank": 11
-          }
-        }
-      },
-      "cle": {
-        "gamesIncluded": 5,
-        "gameIds": [
-          "2026_01_CLE_JAX",
-          "2026_02_CLE_TB",
-          "2026_03_CAR_CLE",
-          "2026_04_PIT_CLE",
-          "2026_05_CLE_NYJ"
-        ],
-        "metrics": {
-          "off.successRate": {
-            "pct": 39.7,
-            "raw": 0.39672131147540984,
-            "rank": 26
-          },
-          "off.passSuccessRate": {
-            "pct": 44.4,
-            "raw": 0.4444444444444444,
-            "rank": 18
-          },
-          "off.rushSuccessRate": {
-            "pct": 30.8,
-            "raw": 0.308411214953271,
-            "rank": 30
-          },
-          "def.successRateAllowed": {
-            "pct": 43.8,
-            "raw": 0.4380664652567976,
-            "rank": 16
-          },
-          "def.passSuccessRateAllowed": {
-            "pct": 44.2,
-            "raw": 0.441747572815534,
-            "rank": 11
-          },
-          "def.rushSuccessRateAllowed": {
-            "pct": 43.2,
-            "raw": 0.432,
-            "rank": 26
-          }
-        }
-      },
-      "dal": {
-        "gamesIncluded": 5,
-        "gameIds": [
-          "2026_01_DAL_NYG",
-          "2026_02_WAS_DAL",
-          "2026_03_BAL_DAL",
-          "2026_04_DAL_HOU",
-          "2026_05_TB_DAL"
-        ],
-        "metrics": {
-          "off.successRate": {
-            "pct": 49.2,
-            "raw": 0.49226006191950467,
-            "rank": 4
-          },
-          "off.passSuccessRate": {
-            "pct": 51.8,
-            "raw": 0.5180180180180181,
-            "rank": 4
-          },
-          "off.rushSuccessRate": {
-            "pct": 43.6,
-            "raw": 0.43564356435643564,
-            "rank": 7
-          },
-          "def.successRateAllowed": {
-            "pct": 50.9,
-            "raw": 0.5092592592592593,
-            "rank": 30
-          },
-          "def.passSuccessRateAllowed": {
-            "pct": 57.3,
-            "raw": 0.5730337078651685,
-            "rank": 30
-          },
-          "def.rushSuccessRateAllowed": {
-            "pct": 43.2,
-            "raw": 0.4315068493150685,
-            "rank": 25
-          }
-        }
-      },
-      "den": {
-        "gamesIncluded": 5,
-        "gameIds": [
-          "2026_01_DEN_KC",
-          "2026_02_JAX_DEN",
-          "2026_03_LA_DEN",
-          "2026_04_DEN_SF",
-          "2026_05_DEN_LAC"
-        ],
-        "metrics": {
-          "off.successRate": {
-            "pct": 39.7,
-            "raw": 0.3973509933774834,
-            "rank": 25
-          },
-          "off.passSuccessRate": {
-            "pct": 41.1,
-            "raw": 0.41081081081081083,
-            "rank": 25
-          },
-          "off.rushSuccessRate": {
-            "pct": 37.6,
-            "raw": 0.37606837606837606,
-            "rank": 17
-          },
-          "def.successRateAllowed": {
-            "pct": 40.7,
-            "raw": 0.40707964601769914,
-            "rank": 5
-          },
-          "def.passSuccessRateAllowed": {
-            "pct": 44.2,
-            "raw": 0.4416243654822335,
-            "rank": 10
-          },
-          "def.rushSuccessRateAllowed": {
-            "pct": 35.9,
-            "raw": 0.3591549295774648,
-            "rank": 7
+            "rank": 15
           }
         }
       },
@@ -5467,326 +5291,32 @@
           "off.successRate": {
             "pct": 49.1,
             "raw": 0.49122807017543857,
-            "rank": 5
+            "rank": 3
           },
           "off.passSuccessRate": {
             "pct": 50.9,
             "raw": 0.5094339622641509,
-            "rank": 6
+            "rank": 5
           },
           "off.rushSuccessRate": {
             "pct": 46.2,
             "raw": 0.46153846153846156,
-            "rank": 3
+            "rank": 5
           },
           "def.successRateAllowed": {
             "pct": 48.4,
             "raw": 0.483695652173913,
-            "rank": 26
+            "rank": 28
           },
           "def.passSuccessRateAllowed": {
             "pct": 52.7,
             "raw": 0.52734375,
-            "rank": 28
+            "rank": 30
           },
           "def.rushSuccessRateAllowed": {
             "pct": 38.4,
             "raw": 0.38392857142857145,
-            "rank": 10
-          }
-        }
-      },
-      "gb": {
-        "gamesIncluded": 5,
-        "gameIds": [
-          "2026_01_GB_MIN",
-          "2026_02_GB_NYJ",
-          "2026_03_ATL_GB",
-          "2026_04_GB_TB",
-          "2026_05_CHI_GB"
-        ],
-        "metrics": {
-          "off.successRate": {
-            "pct": 39.8,
-            "raw": 0.39805825242718446,
-            "rank": 24
-          },
-          "off.passSuccessRate": {
-            "pct": 42.9,
-            "raw": 0.42857142857142855,
-            "rank": 21
-          },
-          "off.rushSuccessRate": {
-            "pct": 33.3,
-            "raw": 0.3333333333333333,
-            "rank": 26
-          },
-          "def.successRateAllowed": {
-            "pct": 44.7,
-            "raw": 0.44744744744744747,
-            "rank": 22
-          },
-          "def.passSuccessRateAllowed": {
-            "pct": 46.7,
-            "raw": 0.4666666666666667,
-            "rank": 17
-          },
-          "def.rushSuccessRateAllowed": {
-            "pct": 42,
-            "raw": 0.42028985507246375,
-            "rank": 21
-          }
-        }
-      },
-      "hou": {
-        "gamesIncluded": 5,
-        "gameIds": [
-          "2026_01_BUF_HOU",
-          "2026_02_CIN_HOU",
-          "2026_03_HOU_IND",
-          "2026_04_DAL_HOU",
-          "2026_05_HOU_TEN"
-        ],
-        "metrics": {
-          "off.successRate": {
-            "pct": 43.2,
-            "raw": 0.4316109422492401,
-            "rank": 15
-          },
-          "off.passSuccessRate": {
-            "pct": 49.3,
-            "raw": 0.4931506849315068,
-            "rank": 10
-          },
-          "off.rushSuccessRate": {
-            "pct": 30.9,
-            "raw": 0.3090909090909091,
-            "rank": 29
-          },
-          "def.successRateAllowed": {
-            "pct": 39.9,
-            "raw": 0.3987730061349693,
-            "rank": 4
-          },
-          "def.passSuccessRateAllowed": {
-            "pct": 40.6,
-            "raw": 0.4056603773584906,
-            "rank": 2
-          },
-          "def.rushSuccessRateAllowed": {
-            "pct": 38.6,
-            "raw": 0.38596491228070173,
-            "rank": 13
-          }
-        }
-      },
-      "ind": {
-        "gamesIncluded": 5,
-        "gameIds": [
-          "2026_01_BAL_IND",
-          "2026_02_IND_KC",
-          "2026_03_HOU_IND",
-          "2026_04_IND_WAS",
-          "2026_05_IND_PIT"
-        ],
-        "metrics": {
-          "off.successRate": {
-            "pct": 42.8,
-            "raw": 0.4276923076923077,
-            "rank": 16
-          },
-          "off.passSuccessRate": {
-            "pct": 41.8,
-            "raw": 0.4175257731958763,
-            "rank": 22
-          },
-          "off.rushSuccessRate": {
-            "pct": 44.3,
-            "raw": 0.44274809160305345,
-            "rank": 6
-          },
-          "def.successRateAllowed": {
-            "pct": 43.4,
-            "raw": 0.434375,
-            "rank": 15
-          },
-          "def.passSuccessRateAllowed": {
-            "pct": 42.9,
-            "raw": 0.4292929292929293,
-            "rank": 7
-          },
-          "def.rushSuccessRateAllowed": {
-            "pct": 44.3,
-            "raw": 0.4426229508196721,
-            "rank": 29
-          }
-        }
-      },
-      "jax": {
-        "gamesIncluded": 5,
-        "gameIds": [
-          "2026_01_CLE_JAX",
-          "2026_02_JAX_DEN",
-          "2026_03_NE_JAX",
-          "2026_04_JAX_CIN",
-          "2026_05_PHI_JAX"
-        ],
-        "metrics": {
-          "off.successRate": {
-            "pct": 45.6,
-            "raw": 0.4557377049180328,
-            "rank": 10
-          },
-          "off.passSuccessRate": {
-            "pct": 48,
-            "raw": 0.47953216374269003,
             "rank": 14
-          },
-          "off.rushSuccessRate": {
-            "pct": 42.5,
-            "raw": 0.4253731343283582,
-            "rank": 8
-          },
-          "def.successRateAllowed": {
-            "pct": 41.5,
-            "raw": 0.41479099678456594,
-            "rank": 6
-          },
-          "def.passSuccessRateAllowed": {
-            "pct": 45.5,
-            "raw": 0.45539906103286387,
-            "rank": 14
-          },
-          "def.rushSuccessRateAllowed": {
-            "pct": 32.7,
-            "raw": 0.32653061224489793,
-            "rank": 2
-          }
-        }
-      },
-      "lac": {
-        "gamesIncluded": 5,
-        "gameIds": [
-          "2026_01_ARI_LAC",
-          "2026_02_LV_LAC",
-          "2026_03_LAC_BUF",
-          "2026_04_LAC_SEA",
-          "2026_05_DEN_LAC"
-        ],
-        "metrics": {
-          "off.successRate": {
-            "pct": 38.4,
-            "raw": 0.38414634146341464,
-            "rank": 27
-          },
-          "off.passSuccessRate": {
-            "pct": 39.3,
-            "raw": 0.39267015706806285,
-            "rank": 27
-          },
-          "off.rushSuccessRate": {
-            "pct": 37.2,
-            "raw": 0.3722627737226277,
-            "rank": 19
-          },
-          "def.successRateAllowed": {
-            "pct": 42,
-            "raw": 0.4195583596214511,
-            "rank": 11
-          },
-          "def.passSuccessRateAllowed": {
-            "pct": 44,
-            "raw": 0.44047619047619047,
-            "rank": 9
-          },
-          "def.rushSuccessRateAllowed": {
-            "pct": 39.6,
-            "raw": 0.3959731543624161,
-            "rank": 16
-          }
-        }
-      },
-      "lar": {
-        "gamesIncluded": 5,
-        "gameIds": [
-          "2026_01_SF_LA",
-          "2026_02_NYG_LA",
-          "2026_03_LA_DEN",
-          "2026_04_LA_PHI",
-          "2026_05_BUF_LA"
-        ],
-        "metrics": {
-          "off.successRate": {
-            "pct": 47.3,
-            "raw": 0.4726775956284153,
-            "rank": 6
-          },
-          "off.passSuccessRate": {
-            "pct": 49.8,
-            "raw": 0.49794238683127573,
-            "rank": 9
-          },
-          "off.rushSuccessRate": {
-            "pct": 42.3,
-            "raw": 0.42276422764227645,
-            "rank": 10
-          },
-          "def.successRateAllowed": {
-            "pct": 42.8,
-            "raw": 0.42765273311897106,
-            "rank": 13
-          },
-          "def.passSuccessRateAllowed": {
-            "pct": 45.2,
-            "raw": 0.4519774011299435,
-            "rank": 13
-          },
-          "def.rushSuccessRateAllowed": {
-            "pct": 39.6,
-            "raw": 0.39552238805970147,
-            "rank": 15
-          }
-        }
-      },
-      "lv": {
-        "gamesIncluded": 5,
-        "gameIds": [
-          "2026_01_MIA_LV",
-          "2026_02_LV_LAC",
-          "2026_03_LV_NO",
-          "2026_04_KC_LV",
-          "2026_05_LV_NE"
-        ],
-        "metrics": {
-          "off.successRate": {
-            "pct": 43.8,
-            "raw": 0.4380664652567976,
-            "rank": 13
-          },
-          "off.passSuccessRate": {
-            "pct": 51.7,
-            "raw": 0.5174129353233831,
-            "rank": 5
-          },
-          "off.rushSuccessRate": {
-            "pct": 31.5,
-            "raw": 0.3153846153846154,
-            "rank": 28
-          },
-          "def.successRateAllowed": {
-            "pct": 44.6,
-            "raw": 0.44648318042813456,
-            "rank": 19
-          },
-          "def.passSuccessRateAllowed": {
-            "pct": 48.8,
-            "raw": 0.48756218905472637,
-            "rank": 24
-          },
-          "def.rushSuccessRateAllowed": {
-            "pct": 38.1,
-            "raw": 0.38095238095238093,
-            "rank": 9
           }
         }
       },
@@ -5808,27 +5338,27 @@
           "off.passSuccessRate": {
             "pct": 39.2,
             "raw": 0.391812865497076,
-            "rank": 28
+            "rank": 27
           },
           "off.rushSuccessRate": {
             "pct": 35,
             "raw": 0.35,
-            "rank": 21
+            "rank": 23
           },
           "def.successRateAllowed": {
             "pct": 48.7,
             "raw": 0.4868421052631579,
-            "rank": 27
+            "rank": 29
           },
           "def.passSuccessRateAllowed": {
             "pct": 53.6,
             "raw": 0.5357142857142857,
-            "rank": 29
+            "rank": 32
           },
           "def.rushSuccessRateAllowed": {
             "pct": 42.6,
             "raw": 0.4264705882352941,
-            "rank": 23
+            "rank": 27
           }
         }
       },
@@ -5845,7 +5375,7 @@
           "off.successRate": {
             "pct": 36.3,
             "raw": 0.3630573248407643,
-            "rank": 29
+            "rank": 32
           },
           "off.passSuccessRate": {
             "pct": 37.7,
@@ -5855,7 +5385,7 @@
           "off.rushSuccessRate": {
             "pct": 34.4,
             "raw": 0.3435114503816794,
-            "rank": 24
+            "rank": 27
           },
           "def.successRateAllowed": {
             "pct": 32,
@@ -5874,380 +5404,1094 @@
           }
         }
       },
-      "ne": {
+      "car": {
         "gamesIncluded": 5,
         "gameIds": [
-          "2026_01_NE_SEA",
-          "2026_02_PIT_NE",
-          "2026_03_NE_JAX",
-          "2026_04_NE_BUF",
-          "2026_05_LV_NE"
+          "2026_01_CHI_CAR",
+          "2026_02_CAR_ATL",
+          "2026_03_CAR_CLE",
+          "2026_04_DET_CAR",
+          "2026_06_CAR_PHI"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 45.2,
-            "raw": 0.45180722891566266,
+            "pct": 43.7,
+            "raw": 0.4369747899159664,
+            "rank": 15
+          },
+          "off.passSuccessRate": {
+            "pct": 45.5,
+            "raw": 0.45454545454545453,
+            "rank": 17
+          },
+          "off.rushSuccessRate": {
+            "pct": 40.5,
+            "raw": 0.40476190476190477,
+            "rank": 15
+          },
+          "def.successRateAllowed": {
+            "pct": 42.2,
+            "raw": 0.42196531791907516,
+            "rank": 14
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 45.9,
+            "raw": 0.4585152838427948,
+            "rank": 16
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 35,
+            "raw": 0.3504273504273504,
+            "rank": 6
+          }
+        }
+      },
+      "kc": {
+        "gamesIncluded": 5,
+        "gameIds": [
+          "2026_01_DEN_KC",
+          "2026_02_IND_KC",
+          "2026_03_KC_MIA",
+          "2026_04_KC_LV",
+          "2026_06_LAC_KC"
+        ],
+        "metrics": {
+          "off.successRate": {
+            "pct": 48.7,
+            "raw": 0.4873417721518987,
+            "rank": 4
+          },
+          "off.passSuccessRate": {
+            "pct": 49.7,
+            "raw": 0.4972972972972973,
+            "rank": 8
+          },
+          "off.rushSuccessRate": {
+            "pct": 47.3,
+            "raw": 0.4732824427480916,
+            "rank": 3
+          },
+          "def.successRateAllowed": {
+            "pct": 39.6,
+            "raw": 0.3958333333333333,
+            "rank": 5
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 44,
+            "raw": 0.44036697247706424,
+            "rank": 12
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 31.4,
+            "raw": 0.3135593220338983,
+            "rank": 2
+          }
+        }
+      },
+      "ari": {
+        "gamesIncluded": 5,
+        "gameIds": [
+          "2026_02_SEA_ARI",
+          "2026_03_ARI_SF",
+          "2026_04_ARI_NYG",
+          "2026_05_DET_ARI",
+          "2026_06_ARI_LA"
+        ],
+        "metrics": {
+          "off.successRate": {
+            "pct": 45.8,
+            "raw": 0.4579710144927536,
+            "rank": 10
+          },
+          "off.passSuccessRate": {
+            "pct": 47.5,
+            "raw": 0.4751131221719457,
+            "rank": 13
+          },
+          "off.rushSuccessRate": {
+            "pct": 42.7,
+            "raw": 0.4274193548387097,
+            "rank": 8
+          },
+          "def.successRateAllowed": {
+            "pct": 46.6,
+            "raw": 0.4662379421221865,
+            "rank": 26
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 50.3,
+            "raw": 0.5029940119760479,
+            "rank": 26
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 42.4,
+            "raw": 0.4236111111111111,
+            "rank": 26
+          }
+        }
+      },
+      "atl": {
+        "gamesIncluded": 5,
+        "gameIds": [
+          "2026_02_CAR_ATL",
+          "2026_03_ATL_GB",
+          "2026_04_ATL_NO",
+          "2026_05_BAL_ATL",
+          "2026_06_CHI_ATL"
+        ],
+        "metrics": {
+          "off.successRate": {
+            "pct": 45,
+            "raw": 0.44983818770226536,
             "rank": 12
           },
           "off.passSuccessRate": {
-            "pct": 52.5,
-            "raw": 0.5247524752475248,
-            "rank": 3
+            "pct": 43.4,
+            "raw": 0.43352601156069365,
+            "rank": 22
           },
           "off.rushSuccessRate": {
-            "pct": 33.8,
-            "raw": 0.3384615384615385,
-            "rank": 25
+            "pct": 47.1,
+            "raw": 0.47058823529411764,
+            "rank": 4
           },
           "def.successRateAllowed": {
-            "pct": 41.9,
-            "raw": 0.41946308724832215,
+            "pct": 42.7,
+            "raw": 0.4265536723163842,
+            "rank": 16
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 45,
+            "raw": 0.4495798319327731,
+            "rank": 14
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 37.9,
+            "raw": 0.3793103448275862,
+            "rank": 11
+          }
+        }
+      },
+      "bal": {
+        "gamesIncluded": 5,
+        "gameIds": [
+          "2026_02_NO_BAL",
+          "2026_03_BAL_DAL",
+          "2026_04_TEN_BAL",
+          "2026_05_BAL_ATL",
+          "2026_06_BAL_CLE"
+        ],
+        "metrics": {
+          "off.successRate": {
+            "pct": 47,
+            "raw": 0.4696485623003195,
+            "rank": 8
+          },
+          "off.passSuccessRate": {
+            "pct": 50.3,
+            "raw": 0.5027932960893855,
+            "rank": 6
+          },
+          "off.rushSuccessRate": {
+            "pct": 42.5,
+            "raw": 0.4253731343283582,
+            "rank": 10
+          },
+          "def.successRateAllowed": {
+            "pct": 41.6,
+            "raw": 0.41590214067278286,
             "rank": 10
           },
           "def.passSuccessRateAllowed": {
-            "pct": 43.9,
-            "raw": 0.43915343915343913,
+            "pct": 44.7,
+            "raw": 0.44660194174757284,
+            "rank": 13
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 36.4,
+            "raw": 0.36363636363636365,
+            "rank": 10
+          }
+        }
+      },
+      "buf": {
+        "gamesIncluded": 5,
+        "gameIds": [
+          "2026_02_DET_BUF",
+          "2026_03_LAC_BUF",
+          "2026_04_NE_BUF",
+          "2026_05_BUF_LA",
+          "2026_06_BUF_LV"
+        ],
+        "metrics": {
+          "off.successRate": {
+            "pct": 50.5,
+            "raw": 0.5046728971962616,
+            "rank": 2
+          },
+          "off.passSuccessRate": {
+            "pct": 48.9,
+            "raw": 0.4891304347826087,
+            "rank": 11
+          },
+          "off.rushSuccessRate": {
+            "pct": 52.6,
+            "raw": 0.5255474452554745,
+            "rank": 1
+          },
+          "def.successRateAllowed": {
+            "pct": 48.9,
+            "raw": 0.4887005649717514,
+            "rank": 30
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 52.5,
+            "raw": 0.5254237288135594,
+            "rank": 29
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 41.5,
+            "raw": 0.4152542372881356,
+            "rank": 22
+          }
+        }
+      },
+      "chi": {
+        "gamesIncluded": 5,
+        "gameIds": [
+          "2026_02_MIN_CHI",
+          "2026_03_PHI_CHI",
+          "2026_04_NYJ_CHI",
+          "2026_05_CHI_GB",
+          "2026_06_CHI_ATL"
+        ],
+        "metrics": {
+          "off.successRate": {
+            "pct": 46,
+            "raw": 0.4603174603174603,
+            "rank": 9
+          },
+          "off.passSuccessRate": {
+            "pct": 48.4,
+            "raw": 0.48372093023255813,
+            "rank": 12
+          },
+          "off.rushSuccessRate": {
+            "pct": 42.9,
+            "raw": 0.4294478527607362,
+            "rank": 7
+          },
+          "def.successRateAllowed": {
+            "pct": 38.2,
+            "raw": 0.3821138211382114,
+            "rank": 3
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 37,
+            "raw": 0.37012987012987014,
+            "rank": 3
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 40.2,
+            "raw": 0.40217391304347827,
+            "rank": 17
+          }
+        }
+      },
+      "cle": {
+        "gamesIncluded": 5,
+        "gameIds": [
+          "2026_02_CLE_TB",
+          "2026_03_CAR_CLE",
+          "2026_04_PIT_CLE",
+          "2026_05_CLE_NYJ",
+          "2026_06_BAL_CLE"
+        ],
+        "metrics": {
+          "off.successRate": {
+            "pct": 39.7,
+            "raw": 0.39747634069400634,
+            "rank": 25
+          },
+          "off.passSuccessRate": {
+            "pct": 43.6,
+            "raw": 0.4362745098039216,
+            "rank": 21
+          },
+          "off.rushSuccessRate": {
+            "pct": 32.7,
+            "raw": 0.3274336283185841,
+            "rank": 28
+          },
+          "def.successRateAllowed": {
+            "pct": 39.5,
+            "raw": 0.39520958083832336,
+            "rank": 4
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 40.2,
+            "raw": 0.4018264840182648,
+            "rank": 4
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 38.3,
+            "raw": 0.3826086956521739,
+            "rank": 13
+          }
+        }
+      },
+      "dal": {
+        "gamesIncluded": 5,
+        "gameIds": [
+          "2026_02_WAS_DAL",
+          "2026_03_BAL_DAL",
+          "2026_04_DAL_HOU",
+          "2026_05_TB_DAL",
+          "2026_06_DAL_GB"
+        ],
+        "metrics": {
+          "off.successRate": {
+            "pct": 48,
+            "raw": 0.47953216374269003,
+            "rank": 6
+          },
+          "off.passSuccessRate": {
+            "pct": 49.4,
+            "raw": 0.49382716049382713,
+            "rank": 10
+          },
+          "off.rushSuccessRate": {
+            "pct": 44.4,
+            "raw": 0.4444444444444444,
+            "rank": 6
+          },
+          "def.successRateAllowed": {
+            "pct": 46.5,
+            "raw": 0.4652567975830816,
+            "rank": 25
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 51.5,
+            "raw": 0.5154639175257731,
+            "rank": 28
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 39.4,
+            "raw": 0.39416058394160586,
+            "rank": 16
+          }
+        }
+      },
+      "den": {
+        "gamesIncluded": 5,
+        "gameIds": [
+          "2026_02_JAX_DEN",
+          "2026_03_LA_DEN",
+          "2026_04_DEN_SF",
+          "2026_05_DEN_LAC",
+          "2026_06_SEA_DEN"
+        ],
+        "metrics": {
+          "off.successRate": {
+            "pct": 38.3,
+            "raw": 0.38263665594855306,
+            "rank": 27
+          },
+          "off.passSuccessRate": {
+            "pct": 38.8,
+            "raw": 0.3879781420765027,
+            "rank": 28
+          },
+          "off.rushSuccessRate": {
+            "pct": 37.5,
+            "raw": 0.375,
+            "rank": 19
+          },
+          "def.successRateAllowed": {
+            "pct": 40.3,
+            "raw": 0.4028169014084507,
+            "rank": 6
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 43.2,
+            "raw": 0.4318181818181818,
             "rank": 8
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 38.5,
-            "raw": 0.3853211009174312,
+            "pct": 35.6,
+            "raw": 0.35555555555555557,
+            "rank": 7
+          }
+        }
+      },
+      "gb": {
+        "gamesIncluded": 5,
+        "gameIds": [
+          "2026_02_GB_NYJ",
+          "2026_03_ATL_GB",
+          "2026_04_GB_TB",
+          "2026_05_CHI_GB",
+          "2026_06_DAL_GB"
+        ],
+        "metrics": {
+          "off.successRate": {
+            "pct": 39.8,
+            "raw": 0.3980891719745223,
+            "rank": 24
+          },
+          "off.passSuccessRate": {
+            "pct": 43.2,
+            "raw": 0.431924882629108,
+            "rank": 24
+          },
+          "off.rushSuccessRate": {
+            "pct": 32.7,
+            "raw": 0.32673267326732675,
+            "rank": 29
+          },
+          "def.successRateAllowed": {
+            "pct": 45.6,
+            "raw": 0.45558739255014324,
+            "rank": 24
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 46,
+            "raw": 0.45982142857142855,
+            "rank": 19
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 44.8,
+            "raw": 0.448,
+            "rank": 30
+          }
+        }
+      },
+      "hou": {
+        "gamesIncluded": 5,
+        "gameIds": [
+          "2026_02_CIN_HOU",
+          "2026_03_HOU_IND",
+          "2026_04_DAL_HOU",
+          "2026_05_HOU_TEN",
+          "2026_06_HOU_JAX"
+        ],
+        "metrics": {
+          "off.successRate": {
+            "pct": 43.1,
+            "raw": 0.43130990415335463,
+            "rank": 17
+          },
+          "off.passSuccessRate": {
+            "pct": 49.5,
+            "raw": 0.49523809523809526,
+            "rank": 9
+          },
+          "off.rushSuccessRate": {
+            "pct": 30.1,
+            "raw": 0.30097087378640774,
+            "rank": 31
+          },
+          "def.successRateAllowed": {
+            "pct": 42.1,
+            "raw": 0.42058823529411765,
             "rank": 11
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 42,
+            "raw": 0.4200913242009132,
+            "rank": 6
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 42.1,
+            "raw": 0.4214876033057851,
+            "rank": 25
+          }
+        }
+      },
+      "ind": {
+        "gamesIncluded": 5,
+        "gameIds": [
+          "2026_02_IND_KC",
+          "2026_03_HOU_IND",
+          "2026_04_IND_WAS",
+          "2026_05_IND_PIT",
+          "2026_06_TEN_IND"
+        ],
+        "metrics": {
+          "off.successRate": {
+            "pct": 42.5,
+            "raw": 0.42492917847025496,
+            "rank": 19
+          },
+          "off.passSuccessRate": {
+            "pct": 42.7,
+            "raw": 0.4265402843601896,
+            "rank": 25
+          },
+          "off.rushSuccessRate": {
+            "pct": 42.3,
+            "raw": 0.4225352112676056,
+            "rank": 11
+          },
+          "def.successRateAllowed": {
+            "pct": 42.2,
+            "raw": 0.4219269102990033,
+            "rank": 13
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 41.1,
+            "raw": 0.4105263157894737,
+            "rank": 5
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 44.1,
+            "raw": 0.44144144144144143,
+            "rank": 29
+          }
+        }
+      },
+      "jax": {
+        "gamesIncluded": 5,
+        "gameIds": [
+          "2026_02_JAX_DEN",
+          "2026_03_NE_JAX",
+          "2026_04_JAX_CIN",
+          "2026_05_PHI_JAX",
+          "2026_06_HOU_JAX"
+        ],
+        "metrics": {
+          "off.successRate": {
+            "pct": 44.7,
+            "raw": 0.446875,
+            "rank": 13
+          },
+          "off.passSuccessRate": {
+            "pct": 46.6,
+            "raw": 0.4656084656084656,
+            "rank": 15
+          },
+          "off.rushSuccessRate": {
+            "pct": 42,
+            "raw": 0.4198473282442748,
+            "rank": 13
+          },
+          "def.successRateAllowed": {
+            "pct": 42.7,
+            "raw": 0.42724458204334365,
+            "rank": 17
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 47.3,
+            "raw": 0.4727272727272727,
+            "rank": 24
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 33,
+            "raw": 0.3300970873786408,
+            "rank": 3
+          }
+        }
+      },
+      "lac": {
+        "gamesIncluded": 5,
+        "gameIds": [
+          "2026_02_LV_LAC",
+          "2026_03_LAC_BUF",
+          "2026_04_LAC_SEA",
+          "2026_05_DEN_LAC",
+          "2026_06_LAC_KC"
+        ],
+        "metrics": {
+          "off.successRate": {
+            "pct": 36.4,
+            "raw": 0.36363636363636365,
+            "rank": 31
+          },
+          "off.passSuccessRate": {
+            "pct": 37.5,
+            "raw": 0.375,
+            "rank": 31
+          },
+          "off.rushSuccessRate": {
+            "pct": 34.8,
+            "raw": 0.3475177304964539,
+            "rank": 25
+          },
+          "def.successRateAllowed": {
+            "pct": 42.1,
+            "raw": 0.42105263157894735,
+            "rank": 12
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 43.2,
+            "raw": 0.43209876543209874,
+            "rank": 10
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 40.8,
+            "raw": 0.4084507042253521,
+            "rank": 20
+          }
+        }
+      },
+      "lar": {
+        "gamesIncluded": 5,
+        "gameIds": [
+          "2026_02_NYG_LA",
+          "2026_03_LA_DEN",
+          "2026_04_LA_PHI",
+          "2026_05_BUF_LA",
+          "2026_06_ARI_LA"
+        ],
+        "metrics": {
+          "off.successRate": {
+            "pct": 48.2,
+            "raw": 0.4820936639118457,
+            "rank": 5
+          },
+          "off.passSuccessRate": {
+            "pct": 51,
+            "raw": 0.5101214574898786,
+            "rank": 4
+          },
+          "off.rushSuccessRate": {
+            "pct": 42.2,
+            "raw": 0.4224137931034483,
+            "rank": 12
+          },
+          "def.successRateAllowed": {
+            "pct": 41.2,
+            "raw": 0.4119496855345912,
+            "rank": 8
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 43.8,
+            "raw": 0.4375,
+            "rank": 11
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 38,
+            "raw": 0.38028169014084506,
+            "rank": 12
+          }
+        }
+      },
+      "lv": {
+        "gamesIncluded": 5,
+        "gameIds": [
+          "2026_02_LV_LAC",
+          "2026_03_LV_NO",
+          "2026_04_KC_LV",
+          "2026_05_LV_NE",
+          "2026_06_BUF_LV"
+        ],
+        "metrics": {
+          "off.successRate": {
+            "pct": 44.3,
+            "raw": 0.4427710843373494,
+            "rank": 14
+          },
+          "off.passSuccessRate": {
+            "pct": 53,
+            "raw": 0.5302325581395348,
+            "rank": 1
+          },
+          "off.rushSuccessRate": {
+            "pct": 28.2,
+            "raw": 0.28205128205128205,
+            "rank": 32
+          },
+          "def.successRateAllowed": {
+            "pct": 46.9,
+            "raw": 0.4688427299703264,
+            "rank": 27
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 51,
+            "raw": 0.51,
+            "rank": 27
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 40.9,
+            "raw": 0.40875912408759124,
+            "rank": 21
+          }
+        }
+      },
+      "ne": {
+        "gamesIncluded": 5,
+        "gameIds": [
+          "2026_02_PIT_NE",
+          "2026_03_NE_JAX",
+          "2026_04_NE_BUF",
+          "2026_05_LV_NE",
+          "2026_06_NYJ_NE"
+        ],
+        "metrics": {
+          "off.successRate": {
+            "pct": 45.7,
+            "raw": 0.4573170731707317,
+            "rank": 11
+          },
+          "off.passSuccessRate": {
+            "pct": 51.3,
+            "raw": 0.5129533678756477,
+            "rank": 3
+          },
+          "off.rushSuccessRate": {
+            "pct": 37.8,
+            "raw": 0.37777777777777777,
+            "rank": 18
+          },
+          "def.successRateAllowed": {
+            "pct": 43.9,
+            "raw": 0.43870967741935485,
+            "rank": 20
+          },
+          "def.passSuccessRateAllowed": {
+            "pct": 45.9,
+            "raw": 0.45918367346938777,
+            "rank": 17
+          },
+          "def.rushSuccessRateAllowed": {
+            "pct": 40.4,
+            "raw": 0.40350877192982454,
+            "rank": 19
           }
         }
       },
       "no": {
         "gamesIncluded": 5,
         "gameIds": [
-          "2026_01_NO_DET",
           "2026_02_NO_BAL",
           "2026_03_LV_NO",
           "2026_04_ATL_NO",
-          "2026_05_MIN_NO"
+          "2026_05_MIN_NO",
+          "2026_06_NO_NYG"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 43.6,
-            "raw": 0.43641618497109824,
-            "rank": 14
+            "pct": 41.3,
+            "raw": 0.4133738601823708,
+            "rank": 21
           },
           "off.passSuccessRate": {
-            "pct": 47,
-            "raw": 0.4703389830508475,
-            "rank": 16
+            "pct": 44.7,
+            "raw": 0.44660194174757284,
+            "rank": 19
           },
           "off.rushSuccessRate": {
-            "pct": 36.4,
-            "raw": 0.36363636363636365,
-            "rank": 20
+            "pct": 35.8,
+            "raw": 0.35772357723577236,
+            "rank": 22
           },
           "def.successRateAllowed": {
-            "pct": 50.6,
-            "raw": 0.5062111801242236,
-            "rank": 29
+            "pct": 50.8,
+            "raw": 0.5079365079365079,
+            "rank": 32
           },
           "def.passSuccessRateAllowed": {
-            "pct": 51.1,
-            "raw": 0.5108695652173914,
-            "rank": 26
+            "pct": 52.8,
+            "raw": 0.5282051282051282,
+            "rank": 31
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 50,
-            "raw": 0.5,
-            "rank": 30
+            "pct": 47.5,
+            "raw": 0.475,
+            "rank": 31
           }
         }
       },
       "nyg": {
         "gamesIncluded": 5,
         "gameIds": [
-          "2026_01_DAL_NYG",
           "2026_02_NYG_LA",
           "2026_03_TEN_NYG",
           "2026_04_ARI_NYG",
-          "2026_05_NYG_WAS"
+          "2026_05_NYG_WAS",
+          "2026_06_NO_NYG"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 42.6,
-            "raw": 0.4264705882352941,
-            "rank": 18
-          },
-          "off.passSuccessRate": {
-            "pct": 48.5,
-            "raw": 0.4846938775510204,
-            "rank": 11
-          },
-          "off.rushSuccessRate": {
-            "pct": 34.7,
-            "raw": 0.3472222222222222,
+            "pct": 40.1,
+            "raw": 0.4011627906976744,
             "rank": 23
           },
+          "off.passSuccessRate": {
+            "pct": 45.6,
+            "raw": 0.4558139534883721,
+            "rank": 16
+          },
+          "off.rushSuccessRate": {
+            "pct": 31,
+            "raw": 0.31007751937984496,
+            "rank": 30
+          },
           "def.successRateAllowed": {
-            "pct": 46.4,
-            "raw": 0.46357615894039733,
-            "rank": 24
+            "pct": 43.2,
+            "raw": 0.43174603174603177,
+            "rank": 19
           },
           "def.passSuccessRateAllowed": {
-            "pct": 47.9,
-            "raw": 0.4791666666666667,
-            "rank": 21
+            "pct": 45.2,
+            "raw": 0.45161290322580644,
+            "rank": 15
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 43.6,
-            "raw": 0.43636363636363634,
-            "rank": 28
+            "pct": 40.3,
+            "raw": 0.40310077519379844,
+            "rank": 18
           }
         }
       },
       "nyj": {
         "gamesIncluded": 5,
         "gameIds": [
-          "2026_01_NYJ_TEN",
           "2026_02_GB_NYJ",
           "2026_03_NYJ_DET",
           "2026_04_NYJ_CHI",
-          "2026_05_CLE_NYJ"
+          "2026_05_CLE_NYJ",
+          "2026_06_NYJ_NE"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 42.5,
-            "raw": 0.42524916943521596,
-            "rank": 19
+            "pct": 42.6,
+            "raw": 0.4261744966442953,
+            "rank": 18
           },
           "off.passSuccessRate": {
-            "pct": 45.8,
-            "raw": 0.4581005586592179,
-            "rank": 17
+            "pct": 47.3,
+            "raw": 0.4731182795698925,
+            "rank": 14
           },
           "off.rushSuccessRate": {
-            "pct": 37.7,
-            "raw": 0.3770491803278688,
-            "rank": 16
+            "pct": 34.8,
+            "raw": 0.3482142857142857,
+            "rank": 24
           },
           "def.successRateAllowed": {
-            "pct": 44.7,
-            "raw": 0.4471299093655589,
-            "rank": 21
+            "pct": 44.5,
+            "raw": 0.4454022988505747,
+            "rank": 22
           },
           "def.passSuccessRateAllowed": {
-            "pct": 45.8,
-            "raw": 0.458128078817734,
-            "rank": 15
+            "pct": 46,
+            "raw": 0.4595959595959596,
+            "rank": 18
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 43,
-            "raw": 0.4296875,
-            "rank": 24
+            "pct": 42.7,
+            "raw": 0.4266666666666667,
+            "rank": 28
           }
         }
       },
       "phi": {
         "gamesIncluded": 5,
         "gameIds": [
-          "2026_01_WAS_PHI",
           "2026_02_PHI_TEN",
           "2026_03_PHI_CHI",
           "2026_04_LA_PHI",
-          "2026_05_PHI_JAX"
+          "2026_05_PHI_JAX",
+          "2026_06_CAR_PHI"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 36.1,
-            "raw": 0.3609271523178808,
-            "rank": 30
+            "pct": 37.1,
+            "raw": 0.3706070287539936,
+            "rank": 29
           },
           "off.passSuccessRate": {
-            "pct": 38.1,
-            "raw": 0.38095238095238093,
+            "pct": 38.3,
+            "raw": 0.38349514563106796,
             "rank": 29
           },
           "off.rushSuccessRate": {
-            "pct": 32.7,
-            "raw": 0.3274336283185841,
-            "rank": 27
+            "pct": 34.6,
+            "raw": 0.34579439252336447,
+            "rank": 26
           },
           "def.successRateAllowed": {
-            "pct": 44.7,
-            "raw": 0.44668587896253603,
-            "rank": 20
+            "pct": 44.9,
+            "raw": 0.4491525423728814,
+            "rank": 23
           },
           "def.passSuccessRateAllowed": {
-            "pct": 46.9,
-            "raw": 0.46859903381642515,
-            "rank": 18
+            "pct": 47.2,
+            "raw": 0.4716981132075472,
+            "rank": 23
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 41.4,
-            "raw": 0.4142857142857143,
-            "rank": 19
+            "pct": 41.5,
+            "raw": 0.4154929577464789,
+            "rank": 23
           }
         }
       },
       "pit": {
         "gamesIncluded": 5,
         "gameIds": [
-          "2026_01_ATL_PIT",
           "2026_02_PIT_NE",
           "2026_03_CIN_PIT",
           "2026_04_PIT_CLE",
-          "2026_05_IND_PIT"
+          "2026_05_IND_PIT",
+          "2026_06_PIT_TB"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 42.7,
-            "raw": 0.42679127725856697,
-            "rank": 17
+            "pct": 43.4,
+            "raw": 0.43373493975903615,
+            "rank": 16
           },
           "off.passSuccessRate": {
-            "pct": 43.4,
-            "raw": 0.4343891402714932,
+            "pct": 43.7,
+            "raw": 0.4366812227074236,
             "rank": 20
           },
           "off.rushSuccessRate": {
-            "pct": 41,
-            "raw": 0.41,
-            "rank": 13
+            "pct": 42.7,
+            "raw": 0.42718446601941745,
+            "rank": 9
           },
           "def.successRateAllowed": {
-            "pct": 44.6,
-            "raw": 0.44554455445544555,
+            "pct": 42.9,
+            "raw": 0.42902208201892744,
             "rank": 18
           },
           "def.passSuccessRateAllowed": {
-            "pct": 47.8,
-            "raw": 0.4782608695652174,
+            "pct": 46.4,
+            "raw": 0.46411483253588515,
             "rank": 20
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 39.5,
-            "raw": 0.3949579831932773,
-            "rank": 14
+            "pct": 36.1,
+            "raw": 0.3611111111111111,
+            "rank": 9
           }
         }
       },
       "sea": {
         "gamesIncluded": 5,
         "gameIds": [
-          "2026_01_NE_SEA",
           "2026_02_SEA_ARI",
           "2026_03_SEA_WAS",
           "2026_04_LAC_SEA",
-          "2026_05_SF_SEA"
+          "2026_05_SF_SEA",
+          "2026_06_SEA_DEN"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 42,
-            "raw": 0.4201954397394137,
+            "pct": 41.8,
+            "raw": 0.4176470588235294,
             "rank": 20
           },
           "off.passSuccessRate": {
-            "pct": 47.9,
-            "raw": 0.47928994082840237,
-            "rank": 15
+            "pct": 45.5,
+            "raw": 0.45454545454545453,
+            "rank": 17
           },
           "off.rushSuccessRate": {
-            "pct": 34.8,
-            "raw": 0.34782608695652173,
-            "rank": 22
+            "pct": 36.6,
+            "raw": 0.36619718309859156,
+            "rank": 20
           },
           "def.successRateAllowed": {
-            "pct": 38.4,
-            "raw": 0.38412698412698415,
+            "pct": 36,
+            "raw": 0.35973597359735976,
             "rank": 2
           },
           "def.passSuccessRateAllowed": {
-            "pct": 41.2,
-            "raw": 0.41237113402061853,
-            "rank": 4
+            "pct": 36.1,
+            "raw": 0.36065573770491804,
+            "rank": 2
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 33.9,
-            "raw": 0.33884297520661155,
-            "rank": 3
+            "pct": 35.8,
+            "raw": 0.35833333333333334,
+            "rank": 8
           }
         }
       },
       "sf": {
         "gamesIncluded": 5,
         "gameIds": [
-          "2026_01_SF_LA",
           "2026_02_MIA_SF",
           "2026_03_ARI_SF",
           "2026_04_DEN_SF",
-          "2026_05_SF_SEA"
+          "2026_05_SF_SEA",
+          "2026_06_WAS_SF"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 51.9,
-            "raw": 0.519163763066202,
+            "pct": 50.7,
+            "raw": 0.5070422535211268,
             "rank": 1
           },
           "off.passSuccessRate": {
-            "pct": 56.4,
-            "raw": 0.5644171779141104,
-            "rank": 1
+            "pct": 52.2,
+            "raw": 0.5217391304347826,
+            "rank": 2
           },
           "off.rushSuccessRate": {
-            "pct": 46,
-            "raw": 0.4596774193548387,
-            "rank": 4
+            "pct": 48.8,
+            "raw": 0.4878048780487805,
+            "rank": 2
           },
           "def.successRateAllowed": {
-            "pct": 41.6,
-            "raw": 0.4161676646706587,
-            "rank": 8
+            "pct": 42.6,
+            "raw": 0.4260355029585799,
+            "rank": 15
           },
           "def.passSuccessRateAllowed": {
-            "pct": 41,
-            "raw": 0.41,
-            "rank": 3
+            "pct": 43.1,
+            "raw": 0.4305555555555556,
+            "rank": 7
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 42.5,
-            "raw": 0.4253731343283582,
-            "rank": 22
+            "pct": 41.8,
+            "raw": 0.4180327868852459,
+            "rank": 24
           }
         }
       },
       "tb": {
         "gamesIncluded": 5,
         "gameIds": [
-          "2026_01_TB_CIN",
           "2026_02_CLE_TB",
           "2026_03_MIN_TB",
           "2026_04_GB_TB",
-          "2026_05_TB_DAL"
+          "2026_05_TB_DAL",
+          "2026_06_PIT_TB"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 41,
-            "raw": 0.40993788819875776,
-            "rank": 21
+            "pct": 37.1,
+            "raw": 0.37058823529411766,
+            "rank": 30
           },
           "off.passSuccessRate": {
-            "pct": 41,
-            "raw": 0.4097560975609756,
-            "rank": 26
+            "pct": 36.5,
+            "raw": 0.365296803652968,
+            "rank": 32
           },
           "off.rushSuccessRate": {
-            "pct": 41,
-            "raw": 0.41025641025641024,
-            "rank": 12
+            "pct": 38,
+            "raw": 0.38016528925619836,
+            "rank": 17
           },
           "def.successRateAllowed": {
-            "pct": 42.5,
-            "raw": 0.42517006802721086,
-            "rank": 12
+            "pct": 40.4,
+            "raw": 0.40390879478827363,
+            "rank": 7
           },
           "def.passSuccessRateAllowed": {
-            "pct": 46.6,
-            "raw": 0.4656084656084656,
-            "rank": 16
+            "pct": 43.2,
+            "raw": 0.4320388349514563,
+            "rank": 9
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 35.2,
-            "raw": 0.3523809523809524,
+            "pct": 34.7,
+            "raw": 0.3465346534653465,
             "rank": 5
           }
         }
@@ -6255,84 +6499,84 @@
       "ten": {
         "gamesIncluded": 5,
         "gameIds": [
-          "2026_01_NYJ_TEN",
           "2026_02_PHI_TEN",
           "2026_03_TEN_NYG",
           "2026_04_TEN_BAL",
-          "2026_05_HOU_TEN"
+          "2026_05_HOU_TEN",
+          "2026_06_TEN_IND"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 40.3,
-            "raw": 0.4027777777777778,
-            "rank": 22
+            "pct": 39.6,
+            "raw": 0.3957597173144876,
+            "rank": 26
           },
           "off.passSuccessRate": {
-            "pct": 41.6,
-            "raw": 0.41578947368421054,
-            "rank": 23
+            "pct": 40.2,
+            "raw": 0.40229885057471265,
+            "rank": 26
           },
           "off.rushSuccessRate": {
-            "pct": 37.8,
-            "raw": 0.37755102040816324,
-            "rank": 15
+            "pct": 38.5,
+            "raw": 0.3853211009174312,
+            "rank": 16
           },
           "def.successRateAllowed": {
-            "pct": 42.9,
-            "raw": 0.42857142857142855,
-            "rank": 14
+            "pct": 41.5,
+            "raw": 0.414985590778098,
+            "rank": 9
           },
           "def.passSuccessRateAllowed": {
-            "pct": 48.2,
-            "raw": 0.4823529411764706,
+            "pct": 46.9,
+            "raw": 0.4690721649484536,
             "rank": 22
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 37.1,
-            "raw": 0.3710691823899371,
-            "rank": 8
+            "pct": 34.6,
+            "raw": 0.3464052287581699,
+            "rank": 4
           }
         }
       },
       "wsh": {
         "gamesIncluded": 5,
         "gameIds": [
-          "2026_01_WAS_PHI",
           "2026_02_WAS_DAL",
           "2026_03_SEA_WAS",
           "2026_04_IND_WAS",
-          "2026_05_NYG_WAS"
+          "2026_05_NYG_WAS",
+          "2026_06_WAS_SF"
         ],
         "metrics": {
           "off.successRate": {
-            "pct": 39.9,
-            "raw": 0.3987915407854985,
-            "rank": 23
+            "pct": 40.8,
+            "raw": 0.40797546012269936,
+            "rank": 22
           },
           "off.passSuccessRate": {
-            "pct": 41.3,
-            "raw": 0.41262135922330095,
-            "rank": 24
+            "pct": 43.3,
+            "raw": 0.4325581395348837,
+            "rank": 23
           },
           "off.rushSuccessRate": {
-            "pct": 37.6,
-            "raw": 0.376,
-            "rank": 18
+            "pct": 36,
+            "raw": 0.36036036036036034,
+            "rank": 21
           },
           "def.successRateAllowed": {
-            "pct": 46.8,
-            "raw": 0.46788990825688076,
-            "rank": 25
+            "pct": 49.7,
+            "raw": 0.49702380952380953,
+            "rank": 31
           },
           "def.passSuccessRateAllowed": {
-            "pct": 50,
-            "raw": 0.5,
+            "pct": 50.2,
+            "raw": 0.5022421524663677,
             "rank": 25
           },
           "def.rushSuccessRateAllowed": {
-            "pct": 40,
-            "raw": 0.4,
-            "rank": 17
+            "pct": 48.7,
+            "raw": 0.48672566371681414,
+            "rank": 32
           }
         }
       }
