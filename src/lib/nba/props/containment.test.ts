@@ -57,6 +57,11 @@ describe("containment rules", () => {
     expect(classifyContent('{"schemaVersion": "nba-raw-snapshot-meta-v1"}')).toEqual(["raw-snapshot-metadata"]);
     expect(classifyContent('{"schemaVersion":"nba-player-game-v1","playerId":1}')).toEqual(["nba-canonical-or-model-record"]);
     expect(classifyContent('{"modelVersion":"nba-minutes-v1-candidate"}')).toEqual(["nba-model-output"]);
+    // Research-pipeline records (captured lines, results, evaluations) are restricted the same way.
+    for (const name of ["pregame-snapshot", "final-result", "prop-evaluation", "capture-attempt", "job-run", "pipeline-game", "line-import-batch", "prop-partition"]) {
+      expect(classifyContent(`{"schemaVersion":"nba-${name}-v1","x":1}`)).toEqual(["nba-canonical-or-model-record"]);
+    }
+    expect(classifyPath("data/nba/pipeline/snapshots.jsonl")).toContain("nba-data-directory");
     expect(classifyContent(`# report\n<!-- ${RESTRICTED_REPORT_MARKER} -->`)).toEqual(["restricted-report-marker"]);
     expect(classifyContent('{"resultSets":[{"headers":["GAME_ID"]}]}')).toEqual([]);
     expect(classifyContent("fetch('https://stats.nba.com/stats/x')")).toEqual([]);

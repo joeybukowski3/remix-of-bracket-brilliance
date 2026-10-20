@@ -62,6 +62,11 @@ const inWindow = (iso: string, bounds: WindowBounds, nowMs: number) => {
   return t >= bounds.startMs && t <= Math.max(bounds.endMs, nowMs);
 };
 
+/** Entries created inside the window, whatever their status. */
+export function entriesInWindow(entries: readonly LedgerEntry[], bounds: WindowBounds, nowMs: number): LedgerEntry[] {
+  return entries.filter((entry) => inWindow(entry.createdAt, bounds, nowMs));
+}
+
 export function ledgerUnitsIn(entries: readonly LedgerEntry[], bounds: WindowBounds, nowMs: number, afterMs = -Infinity): number {
   return entries
     .filter((entry) => inWindow(entry.createdAt, bounds, nowMs) && Date.parse(entry.createdAt) > afterMs)
@@ -72,6 +77,37 @@ export function snapshotUsed(snapshot: ProviderUsageSnapshot, configuredLimit: n
   if (snapshot.used !== null) return snapshot.used;
   const limit = snapshot.limit ?? configuredLimit;
   return snapshot.remaining !== null && limit !== null ? limit - snapshot.remaining : null;
+}
+
+/** A provider-reported counter that went down between two snapshots of the same window. */
+export interface CounterDecrease {
+  fromUsed: number;
+  toUsed: number;
+  drop: number;
+  fromObservedAt: string;
+  toObservedAt: string;
+}
+
+/**
+ * Consecutive provider readings (by observation time) where `used` fell. A
+ * counter only resets at a window boundary, so inside one window this means
+ * the assumed boundary is wrong, the provider lags, or readings come from
+ * different accounts. Informational: usage decisions keep the highest reading.
+ */
+export function counterDecreases(snapshots: readonly ProviderUsageSnapshot[], configuredLimit: number | null): CounterDecrease[] {
+  const readings = snapshots
+    .map((snapshot, index) => ({ snapshot, index, used: snapshotUsed(snapshot, configuredLimit) }))
+    .filter((r): r is { snapshot: ProviderUsageSnapshot; index: number; used: number } => r.used !== null)
+    .sort((a, b) => Date.parse(a.snapshot.observedAt) - Date.parse(b.snapshot.observedAt) || a.index - b.index);
+  const decreases: CounterDecrease[] = [];
+  for (let i = 1; i < readings.length; i++) {
+    const prev = readings[i - 1];
+    const next = readings[i];
+    if (next.used < prev.used) {
+      decreases.push({ fromUsed: prev.used, toUsed: next.used, drop: prev.used - next.used, fromObservedAt: prev.snapshot.observedAt, toObservedAt: next.snapshot.observedAt });
+    }
+  }
+  return decreases;
 }
 
 export interface WindowUsage {
@@ -87,6 +123,8 @@ export interface WindowUsage {
   /** The figure every decision uses; never decreases within a window as snapshots arrive. */
   effectiveUsed: number;
   snapshotObservedAt: string | null;
+  /** Provider-reported counter decreases inside this window (see counterDecreases). */
+  counterDecreases: CounterDecrease[];
 }
 
 interface SnapshotEstimate {
@@ -124,8 +162,9 @@ export function windowUsage(config: QuotaWindowConfig, state: AccountUsageState,
     .map((s) => ({ s, used: snapshotUsed(s, config.limit) }))
     .filter((x): x is { s: ProviderUsageSnapshot; used: number } => x.used !== null)
     .map((x) => fromSnapshot(x.s, x.used, state.entries, bounds, nowMs, ledgerUnits));
+  const decreases = counterDecreases(snapshots, config.limit);
   if (estimates.length === 0) {
-    return { bounds, limit, ledgerUnits, providerUsed: null, unattributedUnits: null, effectiveUsed: ledgerUnits, snapshotObservedAt: null };
+    return { bounds, limit, ledgerUnits, providerUsed: null, unattributedUnits: null, effectiveUsed: ledgerUnits, snapshotObservedAt: null, counterDecreases: decreases };
   }
   const worst = estimates.reduce((a, b) => (b.effective >= a.effective ? b : a));
   return {
@@ -136,6 +175,7 @@ export function windowUsage(config: QuotaWindowConfig, state: AccountUsageState,
     unattributedUnits: Math.max(...estimates.map((e) => e.unattributed)),
     effectiveUsed: Math.max(ledgerUnits, worst.effective),
     snapshotObservedAt: estimates.map((e) => e.snapshot.observedAt).sort().at(-1) ?? null,
+    counterDecreases: decreases,
   };
 }
 

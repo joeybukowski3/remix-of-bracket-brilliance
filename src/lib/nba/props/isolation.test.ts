@@ -29,6 +29,8 @@ describe("NBA code isolation", () => {
       "src/lib/nba/props/minutesV1.ts",
       "src/lib/nba/props/minutesV1Backtest.ts",
       "src/lib/nba/props/minutesV1.test.ts",
+      // Phase 4A: the one evaluation-side re-export of the candidate; all other evaluation modules import it from here.
+      "src/lib/nba/props/evaluation/minutesV1Candidate.ts",
       "scripts/nba-minutes-synthetic-harness.ts",
     ]);
     const importers = files.filter((file) => importsOf(file).some((spec) => /(^|\/)(minutesV1|minutesV1Backtest|minutesFeatures)$/.test(spec)));

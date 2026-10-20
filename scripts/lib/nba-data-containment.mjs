@@ -62,7 +62,10 @@ export const CONTENT_RULES = [
   { id: "raw-snapshot-metadata", test: (text) => /"nba-raw-snapshot-meta-v1"/.test(text) },
   {
     id: "nba-canonical-or-model-record",
-    test: (text) => /"schemaVersion"\s*:\s*"nba-(player-game|team-game|prediction-snapshot|outcome|canonical-manifest)-v1"/.test(text),
+    test: (text) =>
+      /"schemaVersion"\s*:\s*"nba-(player-game|team-game|prediction-snapshot|outcome|canonical-manifest|pregame-snapshot|final-result|prop-evaluation|capture-attempt|job-run|pipeline-game|line-import-batch|prop-partition)-v1"/.test(
+        text,
+      ),
   },
   { id: "nba-model-output", test: (text) => /"modelVersion"\s*:\s*"nba-(props-baseline|minutes)-/.test(text) },
   { id: "restricted-report-marker", test: (text) => text.includes(RESTRICTED_REPORT_MARKER) },

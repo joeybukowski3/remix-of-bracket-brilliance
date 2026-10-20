@@ -1,5 +1,5 @@
 /**
- * Provider-account registry (reviewed 2026-10-13).
+ * Provider-account registry (reviewed 2026-10-20).
  *
  * Rules:
  * - One record per provider ACCOUNT. Env var names are listed for mapping only;
@@ -85,21 +85,21 @@ export const PROVIDER_ACCOUNTS: readonly ProviderAccountConfig[] = Object.freeze
   {
     accountId: "the-odds-api:unverified-pool",
     provider: "the-odds-api",
-    description: "The Odds API (api.the-odds-api.com/v4). Three credential names; whether they are one, two or three accounts is UNKNOWN.",
+    description: "The Odds API (api.the-odds-api.com/v4). THE_ODDS_API_KEY and ODDS_API_KEY share the reported Starter pool; backup-key identity remains unverified.",
     credentialEnvVars: ["ODDS_API_KEY", "THE_ODDS_API_KEY", "ODDS_API_KEY_BACKUP"],
     identity: "unverified-may-share",
     billingUnit: "credits",
     planStatus: "unknown",
     planBasis:
-      "data/market/betting-lines/quota-state.json shows used+remaining=500 (free plan) for the key behind THE_ODDS_API_KEY only. ODDS_API_KEY and ODDS_API_KEY_BACKUP plans UNKNOWN.",
-    windows: [{ kind: "month", limit: null, source: "unknown", resetDayOfMonth: 1, note: "Reset day assumed (1st, UTC)" }],
+      "User-reported authenticated Starter dashboard on 2026-10-20: $0, 500/month, 234 used, 266 remaining, reset 1st 00:00 UTC; exact observation time unknown. Nonsecret workflow-counter continuity links THE_ODDS_API_KEY and ODDS_API_KEY to one pool. ODDS_API_KEY_BACKUP identity and deployment bindings remain unverified; reported metadata is not a verified usage snapshot.",
+    windows: [{ kind: "month", limit: null, source: "unknown", resetDayOfMonth: 1, note: "Dashboard-reported reset: 1st at 00:00 UTC; executable limit stays unknown pending account verification" }],
     safetyReserve: 50,
     nonessentialMaxRatio: 0.5,
     alertThresholds: ALERTS,
     reservationTtlMs: RESERVATION_TTL_MS,
     maxUsageChecksPerWindow: 0,
     nonessentialBlockedReason:
-      "Account identity and plan UNKNOWN, and NBA use of NFL/MLB odds credits needs a shared-budget assessment (user decision 2026-10-12).",
+      "Backup-key and deployment identity remain unverified; the exposed shared credential awaits coordinated rotation. NBA spending also requires fresh verified provider usage, protected peer reserves and a separate single-use approval.",
     liveApproval: null,
     unmanagedConsumers: [
       ".github/workflows/nfl-betting-lines-daily.yml (THE_ODDS_API_KEY)",
