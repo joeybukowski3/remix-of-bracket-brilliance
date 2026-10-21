@@ -171,14 +171,14 @@ describe("registry", () => {
     await expect(manager.reserve("nope", ESSENTIAL, one)).rejects.toBeInstanceOf(UnknownAccountError);
   });
 
-  it("blocks every new NBA consumer on the real registry until approvals and verification exist", async () => {
+  it("blocks every new NBA consumer on the real registry until approval exists", async () => {
     const manager = new QuotaManager({ accounts: PROVIDER_ACCOUNTS, store: new MemoryUsageStore() });
     const codes = await Promise.all(PROVIDER_ACCOUNTS.map(async (a) => code(await manager.reserve(a.accountId, NBA_PROBE, statusCheck))));
     expect(Object.fromEntries(PROVIDER_ACCOUNTS.map((a, i) => [a.accountId, codes[i]]))).toEqual({
       "api-sports:nba": "NOT_APPROVED",
       "api-sports:basketball": "UNKNOWN_PLAN",
       "balldontlie:free": "NOT_APPROVED",
-      "the-odds-api:unverified-pool": "BLOCKED_BY_POLICY",
+      "the-odds-api:unverified-pool": "NOT_APPROVED",
       "parlayapi:primary": "BLOCKED_BY_POLICY",
       "therundown:primary": "BLOCKED_BY_POLICY",
     });
