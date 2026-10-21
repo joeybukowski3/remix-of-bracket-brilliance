@@ -9,16 +9,20 @@ import { quotaRequestGate } from "../src/lib/nba/props/pipeline/budget";
 import { ODDS_SOURCE_LICENSES } from "../src/lib/nba/props/pipeline/oddsSources";
 import { fileProbeClaim } from "../src/lib/nba/props/pipeline/probeClaim";
 import { discoverNbaEventsOnce } from "../src/lib/nba/props/pipeline/theOddsApiNbaEvents";
+import { accountWithOddsApproval, activationDir, DISCOVERY_SCOPE, ODDS_ACCOUNT_ID, readOddsApproval, recordCurrentOddsUsage } from "../src/lib/nba/props/pipeline/oddsActivation";
 
 async function main(): Promise<void> {
   if (process.argv.length !== 3 || process.argv[2] !== "--discover-once") throw new Error("NBA discovery is inert without --discover-once");
-  const account = PROVIDER_ACCOUNTS.find((item) => item.accountId === "the-odds-api:unverified-pool");
-  if (!account || account.liveApproval?.scope !== "NBA events discovery one request" || account.liveApproval.maxUnits !== 0 || account.nonessentialBlockedReason || account.planStatus === "unknown") throw new Error("NBA discovery approval and verified account are not recorded");
   if (!ODDS_SOURCE_LICENSES["the-odds-api"].permittedUses.includes("private-research")) throw new Error("NBA Odds API license gate remains closed");
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-  const dir = path.join(root, "data", "nba", "quota-probe");
-  const manager = new QuotaManager({ accounts: PROVIDER_ACCOUNTS, store: new FileUsageStore(dir) });
-  const result = await discoverNbaEventsOnce({ apiKey: process.env.THE_ODDS_API_KEY, approvalId: account.liveApproval.id, gate: quotaRequestGate(manager, account.accountId, "events-discovery", nbaAllowance(new Date())), claim: fileProbeClaim(path.join(dir, "claims")) });
+  const dir = activationDir(root);
+  const now = new Date();
+  const approval = readOddsApproval(path.join(dir, "events-discovery-approval.json"), DISCOVERY_SCOPE, now);
+  const accounts = accountWithOddsApproval(PROVIDER_ACCOUNTS, approval);
+  const account = accounts.find((item) => item.accountId === ODDS_ACCOUNT_ID)!;
+  const manager = new QuotaManager({ accounts, store: new FileUsageStore(dir) });
+  await recordCurrentOddsUsage(manager, account, path.join(dir, "current-usage.json"), now);
+  const result = await discoverNbaEventsOnce({ apiKey: process.env.THE_ODDS_API_KEY, approvalId: approval.id, gate: quotaRequestGate(manager, account.accountId, "events-discovery", nbaAllowance(now)), claim: fileProbeClaim(path.join(dir, "claims")) });
   console.log(JSON.stringify(result));
 }
 

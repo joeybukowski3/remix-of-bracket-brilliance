@@ -165,12 +165,12 @@ describe("NBA probe hardening", () => {
     expect(readFileSync(file, "utf8").trim().split("\n")).toHaveLength(1);
   });
 
-  it("dashboard usage cannot unlock the currently blocked shared account", async () => {
+  it("dashboard usage alone cannot authorize the shared account", async () => {
     const account = PROVIDER_ACCOUNTS.find((item) => item.accountId === "the-odds-api:unverified-pool");
     if (!account) throw new Error("shared account missing");
     const manager = new QuotaManager({ accounts: [account], store: new MemoryUsageStore(), now: () => new Date("2026-10-20T12:00:00Z") });
     await manager.recordProviderUsage(account.accountId, [{ window: "month", observedAt: "2026-10-20T11:00:00Z", used: 234, remaining: 266, limit: 500 }]);
-    expect(await manager.reserve(account.accountId, { priority: "nonessential", attribution: { sport: "nba", workflow: "probe", endpoint: "/events/{id}/odds" } }, { units: 1, basis: "test" })).toMatchObject({ allowed: false, code: "BLOCKED_BY_POLICY" });
+    expect(await manager.reserve(account.accountId, { priority: "nonessential", attribution: { sport: "nba", workflow: "probe", endpoint: "/events/{id}/odds" } }, { units: 1, basis: "test" })).toMatchObject({ allowed: false, code: "NOT_APPROVED" });
     expect(account.liveApproval).toBeNull();
   });
 

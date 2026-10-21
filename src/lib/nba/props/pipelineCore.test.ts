@@ -340,11 +340,11 @@ describe("request budgets", () => {
     expect(projectSlateCost(10, 1, 25).creditsPerMonth).toBe(250);
   });
 
-  it("is blocked on the real shared Odds API pool, so no NBA credit can be planned against NFL/MLB/PGA", async () => {
+  it("requires approval on the real shared Odds API pool, so no NBA credit can be planned against NFL/MLB/PGA", async () => {
     const manager = new QuotaManager({ accounts: PROVIDER_ACCOUNTS, store: new MemoryUsageStore(), now: () => new Date("2026-11-09T20:00:00Z") });
     const plan = await planCaptureBudget({ manager, accountId: "the-odds-api:unverified-pool", gameKeys: ["g1", "g2"], marketsPerGame: 3, allowance: { perDayCredits: 90, perMonthCredits: 400 }, now: new Date("2026-11-09T20:00:00Z") });
     expect(plan.affordable).toEqual([]);
-    expect(plan.blocked?.code).toBe("BLOCKED_BY_POLICY");
+    expect(plan.blocked?.code).toBe("NOT_APPROVED");
     expect(plan.deferred.every((d) => d.reason === "account_blocked")).toBe(true);
     const parlay = await planCaptureBudget({ manager, accountId: "parlayapi:primary", gameKeys: ["g1"], marketsPerGame: 3, allowance: { perDayCredits: 90, perMonthCredits: 400 }, now: new Date("2026-11-09T20:00:00Z") });
     expect(parlay.blocked).not.toBeNull();

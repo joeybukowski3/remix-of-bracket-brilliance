@@ -89,17 +89,16 @@ export const PROVIDER_ACCOUNTS: readonly ProviderAccountConfig[] = Object.freeze
     credentialEnvVars: ["ODDS_API_KEY", "THE_ODDS_API_KEY", "ODDS_API_KEY_BACKUP"],
     identity: "unverified-may-share",
     billingUnit: "credits",
-    planStatus: "unknown",
+    planStatus: "documented",
     planBasis:
-      "User-reported authenticated Starter dashboard on 2026-10-20: $0, 500/month, 234 used, 266 remaining, reset 1st 00:00 UTC; exact observation time unknown. Nonsecret workflow-counter continuity links THE_ODDS_API_KEY and ODDS_API_KEY to one pool. ODDS_API_KEY_BACKUP identity and deployment bindings remain unverified; reported metadata is not a verified usage snapshot.",
-    windows: [{ kind: "month", limit: null, source: "unknown", resetDayOfMonth: 1, note: "Dashboard-reported reset: 1st at 00:00 UTC; executable limit stays unknown pending account verification" }],
+      "Owner-confirmed Starter account: 500 credits/month, reset 1st 00:00 UTC. THE_ODDS_API_KEY is bound to this account; THE_ODDS_API_KEY and ODDS_API_KEY share its reported pool. Backup-key identity remains unverified and is conservatively counted through fresh provider usage. The 2026-10-20 balance is historical, not a usable snapshot.",
+    windows: [{ kind: "month", limit: 500, source: "repo-evidence", resetDayOfMonth: 1, note: "Owner-confirmed Starter account; fresh provider usage required before NBA spending" }],
     safetyReserve: 50,
     nonessentialMaxRatio: 0.5,
     alertThresholds: ALERTS,
     reservationTtlMs: RESERVATION_TTL_MS,
     maxUsageChecksPerWindow: 0,
-    nonessentialBlockedReason:
-      "Backup-key and deployment identity remain unverified; the exposed shared credential awaits coordinated rotation. NBA spending also requires fresh verified provider usage, protected peer reserves and a separate single-use approval.",
+    nonessentialBlockedReason: null,
     liveApproval: null,
     unmanagedConsumers: [
       ".github/workflows/nfl-betting-lines-daily.yml (THE_ODDS_API_KEY)",

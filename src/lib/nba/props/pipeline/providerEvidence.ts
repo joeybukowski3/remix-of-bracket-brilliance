@@ -50,10 +50,11 @@ export function parsePendingProviderEvidence(input: unknown, now: Date): Pending
   return { ...evidence, observedAtUtc: new Date(observed).toISOString(), resetDateUtc: new Date(reset).toISOString() };
 }
 
-/** Recording to the quota ledger requires independently verified account configuration. */
+/** Recording to the quota ledger requires configured account limits and matching reset evidence. */
 export function verifiedEvidenceSnapshot(account: ProviderAccountConfig, evidence: PendingProviderEvidence): ProviderUsageSnapshot {
   const month = account.windows.find((window) => window.kind === "month");
-  if (account.identity !== "single-key" || account.planStatus === "unknown" || !month || month.limit !== evidence.limit) throw new Error("provider account identity or plan is not independently verified");
+  const knownSharedPool = account.accountId === "the-odds-api:unverified-pool" && account.identity === "unverified-may-share" && month?.limit === 500;
+  if ((!knownSharedPool && account.identity !== "single-key") || account.planStatus === "unknown" || !month || month.limit !== evidence.limit) throw new Error("provider account identity or plan is not verified for this request");
   const reset = windowBounds(month, Date.parse(evidence.observedAtUtc)).endMs;
   if (reset !== Date.parse(evidence.resetDateUtc)) throw new Error("provider reset date disagrees with the configured quota window");
   return { window: "month", observedAt: evidence.observedAtUtc, used: evidence.used, remaining: evidence.remaining, limit: evidence.limit };
