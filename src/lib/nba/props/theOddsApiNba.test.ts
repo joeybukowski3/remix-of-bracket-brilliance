@@ -4,6 +4,7 @@ import { oneCreditNbaProbe } from "./pipeline/theOddsApiNbaProbe";
 import type { RequestGate } from "./pipeline/budget";
 import type { SourceLicense } from "./sources/types";
 import type { ProbeClaim } from "./pipeline/probeClaim";
+import { memoryCaptureSink } from "./__fixtures__/pipelineFixtures";
 
 const event = (books: unknown[] = []) => ({ id: "nba-event-1", sport_key: "basketball_nba", commence_time: "2026-10-20T23:00:00Z", home_team: "Boston Celtics", away_team: "New York Knicks", bookmakers: books });
 const book = (key: string, outcomes: unknown[], updated = "2026-10-20T19:00:00Z") => ({ key, last_update: updated, markets: [{ key: "player_points", outcomes }] });
@@ -66,13 +67,13 @@ describe("NBA Odds API v4 event adapter", () => {
     const settle = vi.fn(async () => undefined);
     const reserve = vi.fn(async () => ({ ok: true as const, settle }));
     const gate: RequestGate = { accountId: "the-odds-api:unverified-pool", enforcesNbaAllowance: true, reserve };
-    const closed = oneCreditNbaProbe({ eventId: request.sourceEventId, provider, gate, license: { ...grant, permittedUses: [] }, claim, approvalId: "test-closed" });
+    const closed = oneCreditNbaProbe({ eventId: request.sourceEventId, provider, gate, license: { ...grant, permittedUses: [] }, claim, approvalId: "test-closed", captureSink: memoryCaptureSink().sink });
     expect((await closed()).status).toBe("error");
     expect(reserve).not.toHaveBeenCalled();
-    const denied = oneCreditNbaProbe({ eventId: request.sourceEventId, provider, gate: { ...gate, reserve: async () => ({ ok: false, code: "NBA_STALE_EVIDENCE", message: "stale" }) }, license: grant, claim, approvalId: "test-denied" });
+    const denied = oneCreditNbaProbe({ eventId: request.sourceEventId, provider, gate: { ...gate, reserve: async () => ({ ok: false, code: "NBA_STALE_EVIDENCE", message: "stale" }) }, license: grant, claim, approvalId: "test-denied", captureSink: memoryCaptureSink().sink });
     expect((await denied()).status).toBe("error");
     expect(fetchImpl).not.toHaveBeenCalled();
-    const probe = oneCreditNbaProbe({ eventId: request.sourceEventId, provider, gate, license: grant, claim, approvalId: "test-probe" });
+    const probe = oneCreditNbaProbe({ eventId: request.sourceEventId, provider, gate, license: grant, claim, approvalId: "test-probe", captureSink: memoryCaptureSink().sink });
     expect((await probe()).status).toBe("ok");
     expect((await probe()).status).toBe("error");
     expect(reserve).toHaveBeenCalledWith(1, "/events/{id}/odds");

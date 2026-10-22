@@ -5,7 +5,7 @@ import { pathToFileURL } from "node:url";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { oddsAccount, quotaSetup } from "./__fixtures__/pipelineFixtures";
+import { memoryCaptureSink, oddsAccount, quotaSetup } from "./__fixtures__/pipelineFixtures";
 import { parseIncompleteProviderEvidence, parsePendingProviderEvidence, verifiedEvidenceSnapshot } from "./pipeline/providerEvidence";
 import { ODDS_SOURCE_LICENSES } from "./pipeline/oddsSources";
 import { fileProbeClaim } from "./pipeline/probeClaim";
@@ -49,7 +49,7 @@ describe("NBA probe hardening", () => {
     const provider: PropsProvider = { sourceId: "the-odds-api", fetchEventProps };
     const reserve = vi.fn(async () => ({ ok: true as const, settle: async () => undefined }));
     const gate = { accountId: "the-odds-api:unverified-pool", enforcesNbaAllowance: true, reserve };
-    const deps = { eventId: "event-1", approvalId: "approval-1", provider, claim, gate, license: grant };
+    const deps = { eventId: "event-1", approvalId: "approval-1", provider, claim, gate, license: grant, captureSink: memoryCaptureSink().sink };
     expect((await oneCreditNbaProbe(deps)()).status).toBe("ok");
     expect((await oneCreditNbaProbe(deps)()).status).toBe("error");
     expect(fetchEventProps).toHaveBeenCalledTimes(1);
@@ -64,7 +64,7 @@ describe("NBA probe hardening", () => {
       ["http-failure", async () => ({ status: "error" as const, message: "HTTP 503", failureKind: "http-error" as const, creditsCharged: 0 })],
       ["network-uncertain", async () => { throw new Error("request may have reached provider"); }],
     ] as const) {
-      const deps = { eventId: "event-1", approvalId, provider: { sourceId: "the-odds-api" as const, fetchEventProps }, claim, gate, license: grant };
+      const deps = { eventId: "event-1", approvalId, provider: { sourceId: "the-odds-api" as const, fetchEventProps }, claim, gate, license: grant, captureSink: memoryCaptureSink().sink };
       expect((await oneCreditNbaProbe(deps)()).status).toBe("error");
       const replay = await oneCreditNbaProbe(deps)();
       expect(replay.status === "error" ? replay.message : "").toContain("already claimed");
@@ -98,7 +98,7 @@ describe("NBA probe hardening", () => {
     const { manager, gate, accountId } = await quotaSetup({ accountId: "the-odds-api:unverified-pool" });
     const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ id: "event-1", sport_key: "basketball_nba", commence_time: "2026-11-10T00:00:00Z", home_team: "A", away_team: "B", bookmakers: [] }), { headers: { "x-requests-used": "2", "x-requests-remaining": "498", "x-requests-last": "2" } }));
     const provider = createTheOddsApiNbaProvider({ apiKey: "PRIVATE_TEST_TOKEN", fetchImpl, now: () => new Date("2026-11-09T20:00:01Z") });
-    const result = await oneCreditNbaProbe({ eventId: "event-1", approvalId: "overcharge-integration", provider, gate, claim: tempClaims(), license: grant })();
+    const result = await oneCreditNbaProbe({ eventId: "event-1", approvalId: "overcharge-integration", provider, gate, claim: tempClaims(), license: grant, captureSink: memoryCaptureSink().sink })();
     expect(result).toMatchObject({ status: "ok", creditsCharged: 2, usageIssue: expect.stringContaining("NBA_BREACH") });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
     expect((await manager.state(accountId)).entries[0]).toMatchObject({ actualUnits: 2, costSource: "provider-header" });

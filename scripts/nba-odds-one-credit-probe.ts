@@ -9,6 +9,7 @@ import { quotaRequestGate } from "../src/lib/nba/props/pipeline/budget";
 import { ODDS_SOURCE_LICENSES } from "../src/lib/nba/props/pipeline/oddsSources";
 import { createTheOddsApiNbaProvider } from "../src/lib/nba/props/pipeline/theOddsApiNba";
 import { oneCreditNbaProbe } from "../src/lib/nba/props/pipeline/theOddsApiNbaProbe";
+import { fileLineCaptureSink } from "../src/lib/nba/props/pipeline/lineCapture";
 import { fileProbeClaim } from "../src/lib/nba/props/pipeline/probeClaim";
 import { accountWithOddsApproval, activationDir, ODDS_ACCOUNT_ID, PROBE_SCOPE, readOddsApproval, recordCurrentOddsUsage } from "../src/lib/nba/props/pipeline/oddsActivation";
 
@@ -28,9 +29,11 @@ async function main(): Promise<void> {
   await recordCurrentOddsUsage(manager, account, path.join(dir, "current-usage.json"), now);
   const gate = quotaRequestGate(manager, ODDS_ACCOUNT_ID, "one-credit-probe", nbaAllowance(now));
   const provider = createTheOddsApiNbaProvider({ apiKey: process.env.THE_ODDS_API_KEY });
-  const result = await oneCreditNbaProbe({ eventId, gate, provider, claim: fileProbeClaim(path.join(dir, "claims")), approvalId: approval.id })();
+  const result = await oneCreditNbaProbe({ eventId, gate, provider, claim: fileProbeClaim(path.join(dir, "claims")), approvalId: approval.id, captureSink: fileLineCaptureSink(path.join(root, "data", "nba", "odds-captures")) })();
   if (result.status === "error") throw new Error(result.message);
-  console.log(JSON.stringify({ eventId, market: "player_points", regions: "us", requests: 1, creditsCharged: result.creditsCharged, lines: result.lines.length, unmatched: result.unmatched ?? [] }));
+  console.log(JSON.stringify({ eventId, market: "player_points", regions: "us", requests: 1, creditsCharged: result.creditsCharged, lines: result.lines.length, unmatched: result.unmatched ?? [], capture: result.capture ?? null }));
+  // The credit is spent either way; a missing capture must not look like success.
+  if (result.capture?.status !== "stored" && result.capture?.status !== "duplicate") throw new Error(`line-level capture was NOT persisted: ${result.capture?.status === "failed" ? result.capture.message : "no capture outcome"}`);
 }
 
 main().catch((error: unknown) => {

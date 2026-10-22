@@ -70,8 +70,13 @@ function Banners({ board }: { board: PropsBoardArtifact }) {
           SYNTHETIC DATA — every player, line, projection and DvP figure on this page is invented for interface review. Do not use it for betting decisions.
         </p>
       ) : null}
+      {board.entries.length === 0 ? (
+        <p role="status" className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] text-slate-700">
+          No qualifying props are published right now. A prop appears only with a licensed, current projection or an approved sportsbook line for a game that has not started.
+        </p>
+      ) : null}
       <p className="text-[11px] text-slate-500">
-        Lines: {board.sources.lines.join(", ") || "none"} · Defense vs. Position: {board.sources.dvp ?? "no source connected"}
+        Lines: {board.sources.lines.join(", ") || "not published"} · Defense vs. Position: {board.sources.dvp ?? "no source connected"}
         {board.sources.dvpUpdatedUtc ? ` (updated ${board.sources.dvpUpdatedUtc.slice(0, 10)})` : ""} · Board built {board.generatedAtUtc.slice(0, 16).replace("T", " ")} UTC
       </p>
     </div>

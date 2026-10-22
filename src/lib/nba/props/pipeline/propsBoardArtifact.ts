@@ -22,13 +22,27 @@ export interface BoardArtifactInput {
   allowSynthetic?: boolean;
   /** True when the DvP rows are invented test data. */
   dvpIsSynthetic?: boolean;
+  /** Show raw sportsbook lines. Default true; the public builder sets false until redistribution rights are affirmatively confirmed. */
+  publishLines?: boolean;
+  /** Withhold a stale line instead of showing it flagged. Default false; the public builder sets true. */
+  withholdStale?: boolean;
 }
 
-function withholdReason(s: NbaPregameSnapshot, allowSynthetic: boolean): string | null {
-  if (s.source.method === "synthetic" && !allowSynthetic) return "synthetic line";
+interface LineGates {
+  allowSynthetic: boolean;
+  publishLines: boolean;
+  withholdStale: boolean;
+}
+
+export const LINES_NOT_PUBLISHED_REASON = "sportsbook lines are not published (redistribution rights unresolved)";
+
+function withholdReason(s: NbaPregameSnapshot, gates: LineGates): string | null {
+  if (!gates.publishLines) return LINES_NOT_PUBLISHED_REASON;
+  if (s.source.method === "synthetic" && !gates.allowSynthetic) return "synthetic line";
   if (!s.permissions.permittedUses.includes("public-display")) return "source license does not permit public display of lines";
   if (s.permissions.attestation?.backfilled) return "backfilled after tipoff; capture time cannot be verified";
   if (s.freshness.status === "unknown") return "line age could not be established";
+  if (gates.withholdStale && s.freshness.status === "stale") return "line is stale";
   return null;
 }
 
@@ -40,8 +54,8 @@ function opponentOf(s: NbaPregameSnapshot): string | null {
   return team === homeTeam ? awayTeam : null;
 }
 
-function toEntry(s: NbaPregameSnapshot, positionLabels: Readonly<Record<string, string>>, allowSynthetic: boolean): BoardEntry {
-  const reason = withholdReason(s, allowSynthetic);
+function toEntry(s: NbaPregameSnapshot, positionLabels: Readonly<Record<string, string>>, gates: LineGates): BoardEntry {
+  const reason = withholdReason(s, gates);
   const line: BoardLine | null =
     reason === null
       ? { sportsbook: s.source.sportsbook, line: s.line, overPrice: s.overPrice, underPrice: s.underPrice, capturedAtUtc: s.timing.capturedAtUtc, freshness: s.freshness.status, ageMinutes: s.freshness.ageMinutes }
@@ -65,6 +79,7 @@ function toEntry(s: NbaPregameSnapshot, positionLabels: Readonly<Record<string, 
 
 export function buildPropsBoardArtifact(input: BoardArtifactInput): PropsBoardArtifact {
   const allowSynthetic = input.allowSynthetic ?? false;
+  const gates: LineGates = { allowSynthetic, publishLines: input.publishLines ?? true, withholdStale: input.withholdStale ?? false };
   const latest = new Map<string, NbaPregameSnapshot>();
   for (const s of input.snapshots) {
     const known = latest.get(s.marketKey);
@@ -72,7 +87,7 @@ export function buildPropsBoardArtifact(input: BoardArtifactInput): PropsBoardAr
   }
   const kept = [...latest.values()].filter((s) => allowSynthetic || s.source.method !== "synthetic");
   const entries = kept
-    .map((s) => toEntry(s, input.positionLabels, allowSynthetic))
+    .map((s) => toEntry(s, input.positionLabels, gates))
     .sort((a, b) => a.gameKey.localeCompare(b.gameKey) || a.playerName.localeCompare(b.playerName) || a.market.localeCompare(b.market) || a.entryKey.localeCompare(b.entryKey));
   const dvpUpdated = input.dvpRows.reduce<string | null>((max, r) => (max === null || r.lastUpdatedUtc > max ? r.lastUpdatedUtc : max), null);
   return {
