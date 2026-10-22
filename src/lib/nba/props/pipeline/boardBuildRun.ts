@@ -6,7 +6,8 @@
  * file under public/data/ or a private copy under data/nba/. The write is atomic, and the artifact is checked
  * before it is written, so a failed build never leaves a half-written or unsafe file.
  */
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
+import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, realpathSync, renameSync, rmSync, writeSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { BOARD_SCHEMA_VERSION } from "../propsBoard";
@@ -79,11 +80,53 @@ export interface BoardRunResult {
 }
 
 export const DEFAULT_BOARD_OUT = path.join("public", "data", "nba-props-board.json");
+/** Public board files only; any other file under public/data belongs to something else and is never overwritten. */
+const PUBLIC_BOARD_NAME = /^nba-props-board[A-Za-z0-9._-]*\.json$/;
 
+const fold = (p: string): string => (process.platform === "win32" ? p.toLowerCase() : p);
+const within = (dir: string, full: string): boolean => fold(full) === fold(dir) || fold(full).startsWith(fold(`${dir}${path.sep}`));
+
+/** Real location of a path that may not exist yet: the deepest existing ancestor is resolved through links, the rest is appended. */
+function realLocation(full: string): string {
+  const missing: string[] = [];
+  let probe = full;
+  while (!existsSync(probe)) {
+    const parent = path.dirname(probe);
+    if (parent === probe) break;
+    missing.unshift(path.basename(probe));
+    probe = parent;
+  }
+  return path.join(realpathSync.native(probe), ...missing);
+}
+
+/** A path under one of the allowed project directories, both as written and after links are resolved (a link out of the project is refused). */
 function inside(root: string, rel: string, allowed: readonly string[], what: string): string {
   const full = path.resolve(root, rel);
-  if (!allowed.some((dir) => full === path.join(root, dir) || full.startsWith(`${path.join(root, dir)}${path.sep}`))) throw new Error(`${what} must be under ${allowed.join(" or ")} (got ${rel})`);
+  const realRoot = realpathSync.native(root);
+  const ok = allowed.some((dir) => within(path.join(root, dir), full) && within(path.join(realRoot, dir), realLocation(full)));
+  if (!ok) throw new Error(`${what} must be under ${allowed.join(" or ")} (got ${rel})`);
   return full;
+}
+
+/** Create-new write under a unique temporary name, then rename over the target; nothing is ever written through an existing path. */
+function writeAtomically(file: string, text: string): void {
+  const tmp = `${file}.${randomBytes(6).toString("hex")}.tmp`;
+  const fd = openSync(tmp, "wx", 0o644);
+  try {
+    writeSync(fd, text);
+    fsyncSync(fd);
+  } catch (error) {
+    closeSync(fd);
+    rmSync(tmp, { force: true });
+    throw error;
+  }
+  closeSync(fd);
+  try {
+    renameSync(tmp, file);
+  } catch (error) {
+    rmSync(tmp, { force: true });
+    throw error;
+  }
 }
 
 const readJson = (file: string): unknown => JSON.parse(readFileSync(file, "utf8"));
@@ -93,6 +136,7 @@ export async function runBoardBuild(options: BoardRunOptions): Promise<BoardRunR
   const dataDir = path.join("data", "nba");
   const capturesDir = inside(root, options.capturesDir ?? path.join(dataDir, "odds-captures"), [dataDir], "the captures directory");
   const outFile = inside(root, options.outFile ?? DEFAULT_BOARD_OUT, [path.join("public", "data"), dataDir], "the output file");
+  if (within(path.join(root, "public", "data"), outFile) && !PUBLIC_BOARD_NAME.test(path.basename(outFile))) throw new Error(`the output file must be named nba-props-board*.json under public/data (got ${path.basename(outFile)})`);
 
   const roster: Record<string, RosterRecord> = {};
   if (options.rosterFile) {
@@ -124,8 +168,8 @@ export async function runBoardBuild(options: BoardRunOptions): Promise<BoardRunR
   if (!(options.publishLines ?? false) && artifact.entries.some((e) => e.line !== null)) throw new Error("refusing to write sportsbook lines without --publish-lines");
 
   mkdirSync(path.dirname(outFile), { recursive: true });
-  const tmp = `${outFile}.tmp`;
-  writeFileSync(tmp, `${JSON.stringify(artifact)}\n`);
-  renameSync(tmp, outFile);
+  // The directory was checked before it existed; check again now that it does, so a link made in between is caught.
+  inside(root, path.relative(root, outFile), [path.join("public", "data"), dataDir], "the output file");
+  writeAtomically(outFile, `${JSON.stringify(artifact)}\n`);
   return { outFile, report, conversion };
 }

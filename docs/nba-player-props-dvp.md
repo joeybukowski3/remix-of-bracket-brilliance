@@ -94,16 +94,24 @@ Gates (each counted in the printed report):
 
 Tests: `lineCapture.test.ts` (ledger, probe ordering, failed write, adapter path, scheduled job) and `boardBuild.test.ts` (ledger file through the runner to the written file, read back by the page's own view model; every gate).
 
+### Filesystem containment (reviewed 2026-10-22)
+
+- Input and output paths are checked twice: as written, and after links are resolved. A directory link (a junction on Windows) that points out of the project is refused for the captures, store, projections, roster and DvP inputs and for the output file. Before this check, a link at `public/data` made the builder write outside the project; the new tests in `boardBuildPaths.test.ts` reproduce that and now pass.
+- Under `public/data` the builder will only write `nba-props-board*.json`, so it cannot overwrite another sport's public file.
+- The board file is written to a unique create-new temporary name and renamed over the target, so a link planted at a predictable temporary name is never written through. The two tests that plant a *file* link are skipped on Windows accounts without the symlink privilege (reported as skipped, not passed).
+- The capture ledger reader accepts only regular files, so a link inside `data/nba/odds-captures/` cannot point a build at a file outside the ledger.
+- Capture files never contain the API key or request URL, and the public artifact carries none of the approval id, request reference, credits charged or capture id.
+
 ## DvP data source review (2025-26 and 2026-27, $0)
 
 Training a model on data and showing outputs derived from it are different rights, judged separately (`docs/nba-free-first-data-strategy.md`). Position-specific PTS/REB/AST allowed needs player-game box scores **and** a per-player position.
 
 | Source | Covers both seasons? | Position field | Internal model training | Public display of derived DvP |
 |---|---|---|---|---|
-| **hoopR-nba-data** (ESPN-derived release files; CC BY 4.0 repo license) | Yes: repo says 2002 to present, daily workflow during the season | The per-game `espn_nba_player_box` documents `athlete_position_abbreviation` and `athlete_position_name`; the release-file schema was **not** verified and nothing was downloaded | **Unresolved.** CC BY covers hoopR's own rights; ESPN's terms bar AI training and validation and automated extraction without written permission (`docs/nba-espn-upstream-rights-review.md`) | **Unresolved**, same reason; commercial use is separately barred by the ESPN terms |
+| **hoopR-nba-data** (ESPN-derived release files; CC BY 4.0 repo license) | Yes: repo says 2002 to present, daily workflow during the season | The per-game `espn_nba_player_box` documents `athlete_position_abbreviation` and `athlete_position_name`; checked on 2026-10-22 from range samples: the only values are **G / F / C**, never PG/SG/SF/PF/C | **Unresolved.** CC BY covers hoopR's own rights; ESPN's terms bar AI training and validation and automated extraction without written permission (`docs/nba-espn-upstream-rights-review.md`) | **Unresolved**, same reason; commercial use is separately barred by the ESPN terms |
 | API-NBA free plan | No: free plan ends at 2024-25 | Not checked | Private evaluation unverified | No license for publication |
 | Local NBA.com-derived player-games (2023-24 to 2025-26) | 2025-26 only, partial | **None in the schema** | Restricted: user decision 2026-10-12 forbids development or evaluation use | No |
-| BALLDONTLIE | Yes | Yes | Explicitly allowed (terms s6), but game player stats need the paid ALL-STAR tier ($9.99/month) | Allowed under the same terms; raw resale forbidden |
+| BALLDONTLIE | Yes | Coarse only: its docs show G, F, C and G-F, no five-position scheme | Explicitly allowed (terms s6), but game player stats need the paid ALL-STAR tier ($9.99/month) | Allowed under the same terms; raw resale forbidden |
 | FantasyPros | n/a | n/a | No permission; **not used, not scraped, not reproduced** | No |
 | Basketball-Reference / Kaggle copies | Varies | Varies | Sports Reference prohibits AI training use | No |
 
@@ -111,11 +119,28 @@ Training a model on data and showing outputs derived from it are different right
 
 Both season columns, per-position ranks, sample counts and the display-only blended metric are unchanged by any of this: they are computed from whatever rows pass the gate.
 
+### Five-position classification sources
+
+The interface needs PG/SG/SF/PF/C per player. Nothing is inferred from G/F/C. A classification source separate from the game statistics would be joined by player id (`positionLabel` on each line, or `positionMinutes` when a player's time is split).
+
+| Source | Five positions? | Rights | Finding (2026-10-22) |
+|---|---|---|---|
+| **Wikidata** (position played, property P413, joined by the ESPN NBA player id property P3685) | Yes: point guard, shooting guard, small forward, power forward, center | Structured data is released under CC0 (Wikidata:Licensing), with no attribution requirement stated; values drawn from third-party sites are not independently verified | About 6,000 NBA players carry a five-position value. For the 322 players who played in the first two days of 2026-27, all 322 are found by ESPN id but only **201 (62%)** have a five-position value and **174 (54%)** have exactly one. It is one career-level label per player, not per game or per season, and entries are community-maintained. The check queried only aggregate counts and matched IDs; nothing was stored or imported. |
+| hoopR / ESPN rosters | No (G / F / C) | Restricted until issue #24 is answered | Cannot give five positions |
+| BALLDONTLIE | No (G, F, C, G-F) | Explicit terms | Cannot give five positions, and stats need a paid tier |
+| NBA.com | No (G, F, C and combinations) | Restricted | Cannot give five positions |
+| Sleeper API | Fantasy slots | "Free to use for non-commercial purposes"; commercial use needs a license from Sleeper | Not usable for a commercial site |
+| SportsDataIO, Sportradar | Yes (primary position PG/SG/SF/PF/C in their data dictionaries) | Paid plans; free or trial terms not reviewed | Outside the zero-cost constraint |
+| Sports Reference, FantasyPros, Hashtag, DraftKings/Yahoo eligibility | Yes | No license obtained (Sports Reference prohibits AI training use) | Not used, scraped or reproduced |
+
+**Conclusion:** no zero-cost source gives complete, reusable five-position labels today. Wikidata is the only candidate whose license is clear, and its coverage and per-game accuracy are insufficient to publish a position matrix by itself. A DvP built on it would leave 38% of players without a position (shown as N/A). It is also not usable until some game-level statistics source has rights, and none does yet. Recording it here is not adoption: nothing was added to the builder, the rights registry or the public site.
+
 ## Remaining blockers
 
 1. **Rights for box scores and positions** (section above): no source has verified rights for both model development and public display. The SportsDataverse question is posted (hoopR-nba-data#24) and unanswered; hoopR positions are only G/F/C. Owner decision needed on waiting for an answer or paying for BALLDONTLIE ALL-STAR.
 2. **Raw sportsbook line display.** Needs affirmative permission from The Odds API (or an owner-recorded counsel conclusion) before `--publish-lines` is ever used.
 3. **A future approved odds capture.** The ledger is ready, but no capture exists; the first one needs its own approval and a roster source to resolve each player's team. The 150 lines from the first probe are gone.
 4. **Projection inputs.** Projections must come from sources with `model-development` and `public-display` rights. None exist today.
-5. **Holdout evaluation** of a DvP adjustment per position and stat before any projection change.
-6. **Scheduling.** Running the builder on a schedule, and committing or deploying its output, is intentionally not set up.
+5. **Five-position source.** No zero-cost source gives complete, reusable PG/SG/SF/PF/C labels (see above). Until one does, the five-position matrix stays N/A rather than inferred.
+6. **Holdout evaluation** of a DvP adjustment per position and stat before any projection change.
+7. **Scheduling.** Running the builder on a schedule, and committing or deploying its output, is intentionally not set up.

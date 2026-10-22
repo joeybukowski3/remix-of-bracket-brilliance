@@ -12,7 +12,7 @@
  * Captures are restricted research data: keep the directory under the gitignored
  * data/nba/. Turning a capture into pregame snapshots is `snapshotsFromCapture`.
  */
-import { chmodSync, closeSync, existsSync, fsyncSync, mkdirSync, openSync, readdirSync, readFileSync, writeSync } from "node:fs";
+import { chmodSync, closeSync, existsSync, fsyncSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, writeSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { sha256Json } from "../canonicalJson";
@@ -186,6 +186,8 @@ export function readLineCaptures(dir: string): NbaLineCapture[] {
     .sort()
     .map((name) => {
       try {
+        // The ledger is regular files only; a link could point a build at a file that is not part of it.
+        if (!lstatSync(path.join(dir, name)).isFile()) throw new Error("not a regular file");
         return parseLineCapture(JSON.parse(readFileSync(path.join(dir, name), "utf8")));
       } catch (error) {
         throw new Error(`capture ${name} is invalid: ${error instanceof Error ? error.message : String(error)}`);
