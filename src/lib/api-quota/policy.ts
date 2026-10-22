@@ -48,17 +48,28 @@ function checkNonessentialGates(account: ProviderAccountConfig, state: AccountUs
   return null;
 }
 
-function capFor(account: ProviderAccountConfig, usage: WindowUsage, consumer: Consumer): number {
+function capFor(account: ProviderAccountConfig, usage: WindowUsage, consumer: Consumer, estimate: CostEstimate): number {
   const limit = usage.limit as number;
   if (usage.bounds.kind === "minute") return limit;
   const reserveCap = limit - account.safetyReserve;
-  return consumer.priority === "essential" ? reserveCap : Math.min(reserveCap, Math.floor(limit * account.nonessentialMaxRatio));
+  if (consumer.priority === "essential") return reserveCap;
+  // The shared counter includes NFL and other peers. Their prior spend must not exhaust
+  // the NBA probe's separate allowance. Only its scoped, single-credit approval uses
+  // the account reserve cap; the NBA request gate enforces its own daily/monthly
+  // allowance, fresh provider evidence, and the dynamic peer reserve first.
+  const nbaProbe = account.accountId === "the-odds-api:unverified-pool"
+    && consumer.attribution.sport === "nba"
+    && consumer.attribution.workflow === "one-credit-probe"
+    && account.liveApproval?.scope === "NBA one-event player_points one-credit probe"
+    && account.liveApproval.maxUnits === 1
+    && estimate.units === 1;
+  return nbaProbe ? reserveCap : Math.min(reserveCap, Math.floor(limit * account.nonessentialMaxRatio));
 }
 
 function checkLimits(account: ProviderAccountConfig, consumer: Consumer, estimate: CostEstimate, usages: WindowUsage[], state: AccountUsageState, nowMs: number): Denial | null {
   for (const usage of usages) {
     if (usage.limit === null) continue;
-    const cap = capFor(account, usage, consumer);
+    const cap = capFor(account, usage, consumer, estimate);
     if (usage.effectiveUsed + estimate.units <= cap) continue;
     if (usage.bounds.kind === "minute") {
       const oldest = state.entries
