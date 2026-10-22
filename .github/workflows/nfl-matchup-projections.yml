@@ -122,6 +122,9 @@ jobs:
             if ! git rebase origin/main; then
               echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
               git rebase --abort || true
+            elif ! node scripts/validate-nfl-performance-publication.mjs --spread; then
+              echo "ERROR: Spread inputs changed during generation; refusing to push stale projections." >&2
+              exit 1
             elif git push origin HEAD:main; then
               pushed=true
               break

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { expectedFinalTeamGames, validateTeamGameCoverage, requireTeamGameCoverage } from "./nfl-current-season-coverage.mjs";
+import { expectedFinalTeamGames, validateTeamGameCoverage, requireTeamGameCoverage, teamGameCoverageFingerprint } from "./nfl-current-season-coverage.mjs";
 
 const finals = [
   { gameId: "2026_01_GB_MIN", seasonType: "REG", final: true, awayAbbr: "gb", homeAbbr: "min" },
@@ -31,4 +31,28 @@ test("reports a missing final game, unexpected game and sample mismatch", () => 
 
 test("rejects a final result absent from the canonical schedule", () => {
   assert.throws(() => expectedFinalTeamGames(finals, finals.slice(1)), /absent from the schedule/);
+});
+
+test("rejects a single missing team-game with the team named", () => {
+  const expected = expectedFinalTeamGames(finals);
+  assert.throws(() => requireTeamGameCoverage(expected, expected.slice(1), "one side"), /2026_01_GB_MIN\|min/);
+});
+
+test("rejects duplicate team-games even when all unique games are present", () => {
+  const expected = expectedFinalTeamGames(finals);
+  assert.throws(() => requireTeamGameCoverage(expected, [...expected, expected[0]], "duplicate"), /duplicate included team-game/);
+});
+
+test("rejects same-count replacement game IDs", () => {
+  const expected = expectedFinalTeamGames(finals);
+  const swapped = expected.map((row) => row.gameId === "2026_02_GB_NYJ" ? { ...row, gameId: "2026_02_GB_BUF" } : row);
+  assert.equal(swapped.length, expected.length);
+  assert.throws(() => requireTeamGameCoverage(expected, swapped, "wrong game"), /2026_02_GB_NYJ\|gb/);
+});
+
+test("accepts exact complete coverage and honest zero-game preseason", () => {
+  const expected = expectedFinalTeamGames(finals);
+  assert.deepEqual(requireTeamGameCoverage(expected, [...expected].reverse(), "complete").missingTeamGames, []);
+  assert.deepEqual(requireTeamGameCoverage([], [], "preseason").missingTeamGames, []);
+  assert.equal(teamGameCoverageFingerprint(expected), teamGameCoverageFingerprint([...expected].reverse()));
 });

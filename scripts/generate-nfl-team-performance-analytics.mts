@@ -26,12 +26,12 @@
  * directly: `npx tsx scripts/generate-nfl-team-performance-analytics.mts`.
  */
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { createInterface } from "node:readline";
 import { createReadStream } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { expectedFinalTeamGames, requireTeamGameCoverage } from "./lib/nfl-current-season-coverage.mjs";
-// @ts-expect-error -- plain .mjs sibling, no type declarations
+import { expectedFinalTeamGames, requireTeamGameCoverage, teamGameCoverageFingerprint, finalResultFingerprint } from "./lib/nfl-current-season-coverage.mjs";
 import { parsePerformanceCompactRow, PERFORMANCE_COMPACT_COLUMNS } from "./lib/nfl-performance-metrics-core.mjs";
 import {
   deriveTeamPerformanceMetrics,
@@ -190,13 +190,14 @@ function loadFinalGames(resultsPath: string, teamsByFullName: Map<string, string
   return games;
 }
 
-export async function generateTeamPerformanceAnalytics(season: number): Promise<TeamPerformanceAnalyticsArtifact> {
+type GenerationPaths = { cacheFile?: string; resultsFile?: string; manifestFile?: string; generatedAt?: string };
+export async function generateTeamPerformanceAnalytics(season: number, paths: GenerationPaths = {}): Promise<TeamPerformanceAnalyticsArtifact> {
   const teamsJson = JSON.parse(readFileSync(join(ROOT, "public", "data", "nfl", "teams.json"), "utf-8")) as {
     teams: { abbr: string }[];
   };
   const allAbbrs = teamsJson.teams.map((t) => t.abbr).sort();
 
-  const cachePath = join(ROOT, "data", "nfl", "nflverse", "performance-team-game", `performance_team_game_${season}.csv`);
+  const cachePath = paths.cacheFile ?? join(ROOT, "data", "nfl", "nflverse", "performance-team-game", `performance_team_game_${season}.csv`);
   const compactRows = await readCompactCache(cachePath);
 
   const rowsByGameTeam = new Map<string, CompactRow>();
@@ -209,12 +210,28 @@ export async function generateTeamPerformanceAnalytics(season: number): Promise<
   }
   for (const rows of rowsByTeam.values()) rows.sort((a, b) => a.week - b.week);
 
-  const finalGames = loadFinalGames(join(ROOT, "public", "data", "nfl", String(season), "results.json"), new Map());
-  const resultsPath = join(ROOT, "public", "data", "nfl", String(season), "results.json");
+  const resultsPath = paths.resultsFile ?? join(ROOT, "public", "data", "nfl", String(season), "results.json");
+  const finalGames = loadFinalGames(resultsPath, new Map());
+  const resultsJson = existsSync(resultsPath) ? JSON.parse(readFileSync(resultsPath, "utf-8")) : { results: [] };
   const expectedCurrent = expectedFinalTeamGames(
-    existsSync(resultsPath) ? (JSON.parse(readFileSync(resultsPath, "utf-8")).results ?? []) : []
+    resultsJson.results ?? []
   );
   requireTeamGameCoverage(expectedCurrent, compactRows, "performance cache");
+  const manifestPath = paths.manifestFile ?? join(dirname(cachePath), "manifest.json");
+  const manifest = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, "utf-8")) : null;
+  const cacheEntry = manifest?.files?.find((entry: { season: number; filename: string }) => entry.season === season && entry.filename === `performance_team_game_${season}.csv`);
+  const cacheSha256 = existsSync(cachePath) ? createHash("sha256").update(readFileSync(cachePath)).digest("hex") : null;
+  if (compactRows.length && (!cacheEntry || cacheEntry.sha256 !== cacheSha256 || cacheEntry.rowCount !== compactRows.length)) {
+    throw new Error(`performance cache manifest mismatch: ${manifestPath}; expected sha256=${cacheSha256}, rows=${compactRows.length}`);
+  }
+  // Older manifests record only a date; never invent a midnight retrieval time.
+  const sourceRetrievedAt = cacheEntry?.sourceRetrievedAt ?? null;
+  const generatedAt = paths.generatedAt ?? new Date().toISOString();
+  if (!Number.isFinite(Date.parse(generatedAt)) || !generatedAt.endsWith("Z") ||
+      (sourceRetrievedAt && Date.parse(generatedAt) < Date.parse(sourceRetrievedAt)) ||
+      (resultsJson._meta?.generatedAt && Date.parse(generatedAt) < Date.parse(resultsJson._meta.generatedAt))) {
+    throw new Error("artifact generation timestamp is invalid or predates source retrieval/results cutoff");
+  }
   const finalGamesByTeam = new Map<string, FinalGame[]>();
   for (const g of finalGames) {
     if (!finalGamesByTeam.has(g.team)) finalGamesByTeam.set(g.team, []);
@@ -359,9 +376,17 @@ export async function generateTeamPerformanceAnalytics(season: number): Promise<
     schemaVersion: TEAM_PERFORMANCE_ANALYTICS_SCHEMA_VERSION,
     _meta: {
       season,
-      generatedAt: new Date().toISOString(),
+      generatedAt,
       throughWeek: compactRows.length ? Math.max(...compactRows.map((row) => row.week)) : null,
       includedGameCount: new Set(compactRows.map((row) => row.gameId)).size,
+      coverage: {
+        teamGames: compactRows.map((row) => `${row.gameId}|${row.team}`).sort(),
+        sha256: teamGameCoverageFingerprint(compactRows),
+        resultsSha256: finalResultFingerprint(resultsJson.results ?? []),
+        cacheSha256,
+        sourceRetrievedAt,
+        gameDataCutoffAt: resultsJson._meta?.generatedAt ?? null,
+      },
       source: "nflverse (play-by-play, nflfastR EPA + traditional Success Rate + drives) + public/data/nfl results.json",
       ...CURRENT_PERFORMANCE_MODEL_META,
       ratingFormula:
@@ -377,12 +402,22 @@ export async function generateTeamPerformanceAnalytics(season: number): Promise<
 }
 
 async function main() {
+  const allowed = ["--season=", "--cache-file=", "--results-file=", "--manifest-file=", "--output=", "--generated-at="];
+  for (const arg of process.argv.slice(2)) if (!allowed.some((prefix) => arg.startsWith(prefix))) throw new Error(`Unknown argument: ${arg}`);
+  const value = (name: string) => process.argv.find((arg) => arg.startsWith(`${name}=`))?.slice(name.length + 1);
   const seasonArg = process.argv.find((a) => a.startsWith("--season="));
   const season = seasonArg ? Number(seasonArg.slice("--season=".length)) : 2026;
-  const artifact = await generateTeamPerformanceAnalytics(season);
-  const outDir = join(ROOT, "public", "data", "nfl", String(season));
+  const previewInput = value("--cache-file") || value("--results-file") || value("--manifest-file");
+  const explicitOutput = value("--output");
+  if (previewInput && (!explicitOutput || !relative(ROOT, resolve(explicitOutput)).startsWith(".."))) {
+    throw new Error("input overrides require --output outside the repository");
+  }
+  const artifact = await generateTeamPerformanceAnalytics(season, {
+    cacheFile: value("--cache-file"), resultsFile: value("--results-file"), manifestFile: value("--manifest-file"), generatedAt: value("--generated-at"),
+  });
+  const outPath = explicitOutput ?? join(ROOT, "public", "data", "nfl", String(season), "team-performance-analytics.json");
+  const outDir = dirname(outPath);
   mkdirSync(outDir, { recursive: true });
-  const outPath = join(outDir, "team-performance-analytics.json");
   writeFileSync(outPath, `${JSON.stringify(artifact, null, 2)}\n`, "utf-8");
   const played = artifact.teams.filter((t) => t.gamesPlayed > 0).length;
   console.log(`[nfl:performance-analytics] ${season}: wrote ${artifact.teams.length} teams (${played} with completed games) -> ${outPath}`);

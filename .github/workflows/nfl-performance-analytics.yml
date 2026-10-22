@@ -15,9 +15,10 @@ on:
       timezone: "America/New_York"
   workflow_dispatch:
 
-# Share one lock with the other automated workflows that commit generated data to main.
+# A dedicated pending slot prevents unrelated data writers from evicting this
+# weekly refresh. The commit step rebases/retries against concurrent writers.
 concurrency:
-  group: main-data-writers-${{ github.repository }}
+  group: nfl-performance-analytics-${{ github.repository }}
   cancel-in-progress: false
 
 permissions:
@@ -46,19 +47,12 @@ jobs:
         run: npm ci
 
       # Streams nflverse play-by-play and writes the compact per-team-game
-      # cache. When 2026 play-by-play isn't published yet (true before/very
-      # early in the season) or upstream is temporarily unavailable, this
-      # script itself reports "not yet published upstream" / "no completed
-      # REG-season games yet" and exits 0 without touching the committed
-      # cache -- a benign no-op, not a failure, per scripts/refresh-nfl-
-      # performance-source-cache.mjs's documented behavior.
+      # cache. A missing/no-op source fails once canonical final results exist.
       - name: Refresh performance source cache
         run: npm run nfl:performance-cache
 
-      # Reads whatever cache exists (possibly still the honest zero-game
-      # state) and (re)writes the public artifact. This never fails just
-      # because there's no play-by-play yet -- a zero-game artifact is a
-      # valid, correct output, not an error state.
+      # Exact final-game/team coverage and cache hashes are checked before
+      # writing. An honest zero-game preseason artifact remains valid.
       - name: Generate team performance analytics artifact
         run: npm run nfl:performance-analytics
 
@@ -121,6 +115,9 @@ jobs:
             if ! git rebase origin/main; then
               echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
               git rebase --abort || true
+            elif ! node scripts/validate-nfl-performance-publication.mjs; then
+              echo "ERROR: Canonical finals changed during refresh; refusing to push stale performance data." >&2
+              exit 1
             elif git push origin HEAD:main; then
               pushed=true
               break

@@ -1,4 +1,17 @@
 /** Compare current regular-season team-games with the canonical final results. */
+import { createHash } from "node:crypto";
+
+export function teamGameCoverageFingerprint(rows) {
+  const keys = rows.map((row) => `${row.gameId}|${row.team}`).sort();
+  return createHash("sha256").update(keys.join("\n")).digest("hex");
+}
+
+export function finalResultFingerprint(results) {
+  const rows = results.filter((row) => row.seasonType === "REG" && row.final === true)
+    .map((row) => `${row.gameId}|${row.homeAbbr}|${row.awayAbbr}|${row.homeScore}|${row.awayScore}`).sort();
+  return createHash("sha256").update(rows.join("\n")).digest("hex");
+}
+
 export function expectedFinalTeamGames(results, games = null) {
   const scheduled = games == null ? null : new Set(
     games.filter((game) => game.seasonType === "REG").map((game) => game.gameId)
@@ -36,6 +49,8 @@ export function validateTeamGameCoverage(expectedRows, includedRows, label) {
     includedGames: new Set(includedRows.map((row) => row.gameId)).size,
     missingGameIds: [...new Set(missing.map(gameId))].sort(),
     unexpectedGameIds: [...new Set(unexpected.map(gameId))].sort(),
+    missingTeamGames: missing.sort(),
+    unexpectedTeamGames: unexpected.sort(),
     teamsWithSampleCountMismatches,
   };
   const problems = [];

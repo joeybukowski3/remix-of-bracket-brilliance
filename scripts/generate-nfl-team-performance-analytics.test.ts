@@ -1,21 +1,33 @@
-import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { afterAll, describe, expect, it } from "vitest";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
 import { generateTeamPerformanceAnalytics } from "./generate-nfl-team-performance-analytics.mts";
 import { validateTeamPerformanceAnalyticsArtifact } from "../src/lib/nfl/teamPerformanceAnalytics";
 import { PERFORMANCE_SCALE_DIVISORS, PERFORMANCE_OVERALL_WEIGHTS } from "../src/lib/nfl/performanceComposite2026";
 
-// The real 2026 season is live. Zero-game behavior uses a nonexistent season.
+// The committed cache is an immutable fixture that may lag live results. Match
+// only those results in these metric tests; the separate stale-input test below
+// asserts that production generation rejects the full current results file.
+const fixtureDir = mkdtempSync(join(tmpdir(), "jkb-performance-test-"));
+const cacheText = readFileSync(join(process.cwd(), "data/nfl/nflverse/performance-team-game/performance_team_game_2026.csv"), "utf8");
+const cachedIds = new Set(cacheText.trim().split(/\r?\n/).slice(1).map((line) => line.split(",")[0]));
+const allResults = JSON.parse(readFileSync(join(process.cwd(), "public/data/nfl/2026/results.json"), "utf8"));
+const fixtureResults = { ...allResults, results: allResults.results.filter((game: { gameId: string }) => cachedIds.has(game.gameId)) };
+const fixtureResultsPath = join(fixtureDir, "results.json");
+writeFileSync(fixtureResultsPath, JSON.stringify(fixtureResults));
+afterAll(() => rmSync(fixtureDir, { recursive: true, force: true }));
+const generateFixturePerformance = () => generateTeamPerformanceAnalytics(2026, { resultsFile: fixtureResultsPath });
 
 describe("generateTeamPerformanceAnalytics — 2026", () => {
   it("1. produces exactly 32 teams with unique abbreviations", async () => {
-    const artifact = await generateTeamPerformanceAnalytics(2026);
+    const artifact = await generateFixturePerformance();
     expect(artifact.teams).toHaveLength(32);
     expect(new Set(artifact.teams.map((t) => t.team)).size).toBe(32);
   });
 
   it("2. every team exposes all 9 offense + 9 defense metrics (both filter variants) in every window", async () => {
-    const artifact = await generateTeamPerformanceAnalytics(2026);
+    const artifact = await generateFixturePerformance();
     const row = artifact.teams[0];
     for (const windowKey of ["last4", "last8", "fullSeason"] as const) {
       const w = row.windows[windowKey];
@@ -32,7 +44,7 @@ describe("generateTeamPerformanceAnalytics — 2026", () => {
   });
 
   it("3. last4/last8/fullSeason windows all exist for every team", async () => {
-    const artifact = await generateTeamPerformanceAnalytics(2026);
+    const artifact = await generateFixturePerformance();
     for (const row of artifact.teams) {
       expect(row.windows.last4).toBeDefined();
       expect(row.windows.last8).toBeDefined();
@@ -41,8 +53,8 @@ describe("generateTeamPerformanceAnalytics — 2026", () => {
   });
 
   it("4. full-season samples match final results for every team", async () => {
-    const artifact = await generateTeamPerformanceAnalytics(2026);
-    const results = JSON.parse(readFileSync(join(process.cwd(), "public/data/nfl/2026/results.json"), "utf-8")).results;
+    const artifact = await generateFixturePerformance();
+    const results = fixtureResults.results;
     for (const row of artifact.teams) {
       const expected = results.filter((game: { seasonType: string; final: boolean; homeAbbr: string; awayAbbr: string }) =>
         game.seasonType === "REG" && game.final && [game.homeAbbr, game.awayAbbr].includes(row.team)
@@ -53,7 +65,7 @@ describe("generateTeamPerformanceAnalytics — 2026", () => {
   });
 
   it("5. never fabricates games: window sampleSize never exceeds gamesPlayed", async () => {
-    const artifact = await generateTeamPerformanceAnalytics(2026);
+    const artifact = await generateFixturePerformance();
     for (const row of artifact.teams) {
       expect(row.windows.last4.sampleSize).toBeLessThanOrEqual(row.gamesPlayed);
       expect(row.windows.last8.sampleSize).toBeLessThanOrEqual(row.gamesPlayed);
@@ -82,12 +94,12 @@ describe("generateTeamPerformanceAnalytics — 2026", () => {
   });
 
   it("8. artifact passes its own validator", async () => {
-    const artifact = await generateTeamPerformanceAnalytics(2026);
+    const artifact = await generateFixturePerformance();
     expect(() => validateTeamPerformanceAnalyticsArtifact(artifact)).not.toThrow();
   });
 
   it("9. divisors in the artifact exactly match the committed constants (offense/defense unchanged, overall = v1.1.0 refit)", async () => {
-    const artifact = await generateTeamPerformanceAnalytics(2026);
+    const artifact = await generateFixturePerformance();
     expect(artifact._meta.scaleDivisors).toEqual(PERFORMANCE_SCALE_DIVISORS);
     expect(PERFORMANCE_SCALE_DIVISORS.offense).toBeCloseTo(0.92485, 5);
     expect(PERFORMANCE_SCALE_DIVISORS.defense).toBeCloseTo(0.86484, 5);
@@ -96,7 +108,7 @@ describe("generateTeamPerformanceAnalytics — 2026", () => {
 
   it("10. Overall weights are exactly 40/20/40 (nfl-current-ovr-v1.2.0) and the artifact says so", async () => {
     expect(PERFORMANCE_OVERALL_WEIGHTS).toEqual({ offense: 0.4, defense: 0.2, pointDifferential: 0.4 });
-    const artifact = await generateTeamPerformanceAnalytics(2026);
+    const artifact = await generateFixturePerformance();
     expect(artifact._meta.overallWeights).toEqual({ offense: 0.4, defense: 0.2, pointDifferential: 0.4 });
     expect(artifact._meta.currentOvrModelVersion).toBe("nfl-current-ovr-v1.2.0");
     expect(artifact._meta.opponentAdjustment).toBe("leave-one-out-v1");
@@ -109,15 +121,15 @@ describe("generateTeamPerformanceAnalytics — 2026", () => {
   });
 
   it("10b. the published performance ratings are the production board's, not a second calculation (per-team OFF/DEF/overall ratings are finite and consistently ranked)", async () => {
-    const artifact = await generateTeamPerformanceAnalytics(2026);
+    const artifact = await generateFixturePerformance();
     const played = artifact.teams.filter((t) => t.gamesPlayed > 0);
     const byRating = [...played].sort((a, b) => (b.performance.performanceRating as number) - (a.performance.performanceRating as number));
     byRating.forEach((team, i) => expect(team.performance.performanceRank).toBe(i + 1));
   });
 
   it("11. the generator is deterministic for the same input (ignoring generatedAt)", async () => {
-    const a = await generateTeamPerformanceAnalytics(2026);
-    const b = await generateTeamPerformanceAnalytics(2026);
+    const a = await generateFixturePerformance();
+    const b = await generateFixturePerformance();
     const strip = (x: typeof a) => ({ ...x, _meta: { ...x._meta, generatedAt: "STRIPPED" } });
     expect(strip(a)).toEqual(strip(b));
   });
@@ -133,7 +145,7 @@ describe("generateTeamPerformanceAnalytics — 2026", () => {
   });
 
   it("13. fullSeason window carries opponent-adjusted fields; last4/last8 do not expose an adjusted block", async () => {
-    const artifact = await generateTeamPerformanceAnalytics(2026);
+    const artifact = await generateFixturePerformance();
     const row = artifact.teams[0];
     expect(row.windows.fullSeason.adjusted).toBeDefined();
     expect("adjusted" in row.windows.last4).toBe(false);
@@ -141,7 +153,7 @@ describe("generateTeamPerformanceAnalytics — 2026", () => {
   });
 
   it("14. metric ranks exist for all 9 offense + 9 defense metrics on fullSeason with correct key set", async () => {
-    const artifact = await generateTeamPerformanceAnalytics(2026);
+    const artifact = await generateFixturePerformance();
     const ranks = artifact.teams[0].windows.fullSeason.metricRanks;
     expect(Object.keys(ranks.offense).sort()).toEqual([
       "earlyDownEpaPerPlay", "earlyDownSuccessRate", "epaPerPlay", "explosiveRate",
@@ -151,17 +163,17 @@ describe("generateTeamPerformanceAnalytics — 2026", () => {
   });
 
   it("15. schemaVersion is nfl-performance-v1", async () => {
-    const artifact = await generateTeamPerformanceAnalytics(2026);
+    const artifact = await generateFixturePerformance();
     expect(artifact.schemaVersion).toBe("nfl-performance-v1");
   });
 
   it("16. _meta.season matches the requested season", async () => {
-    const artifact = await generateTeamPerformanceAnalytics(2026);
+    const artifact = await generateFixturePerformance();
     expect(artifact._meta.season).toBe(2026);
   });
 
   it("17. teams are ordered by canonical abbreviation, not by rating (stable regardless of ties)", async () => {
-    const artifact = await generateTeamPerformanceAnalytics(2026);
+    const artifact = await generateFixturePerformance();
     const abbrs = artifact.teams.map((t) => t.team);
     expect(abbrs).toEqual([...abbrs].sort());
   });
@@ -177,5 +189,13 @@ describe("generateTeamPerformanceAnalytics — nonexistent season (no cache, no 
 
   it("19. does not throw when the compact cache and results.json are both absent", async () => {
     await expect(generateTeamPerformanceAnalytics(1899)).resolves.toBeDefined();
+  });
+});
+
+describe("production input completeness", () => {
+  it("rejects the stale committed cache against current final results", async () => {
+    if (allResults.results.filter((game: { final: boolean; seasonType: string }) => game.final && game.seasonType === "REG").length > cachedIds.size) {
+      await expect(generateTeamPerformanceAnalytics(2026)).rejects.toThrow(/missing team-games/);
+    }
   });
 });
