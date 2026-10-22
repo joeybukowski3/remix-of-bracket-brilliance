@@ -63,6 +63,22 @@ describe("nonessential gates", () => {
 });
 
 describe("limits", () => {
+  it("keeps the shared-account hard reserve and ordinary nonessential cap around the scoped NBA probe", async () => {
+    const base = PROVIDER_ACCOUNTS.find((account) => account.accountId === "the-odds-api:unverified-pool")!;
+    const account = { ...base, liveApproval: { id: "nba-one", approvedBy: "test", approvedOn: START, scope: "NBA one-event player_points one-credit probe", maxUnits: 1, expiresAt: null } };
+    const { manager, id } = setup(account);
+    await manager.recordProviderUsage(id, [{ window: "month", observedAt: START, used: 250, remaining: 250, limit: 500 }]);
+    const probe = { priority: "nonessential", attribution: { sport: "nba", workflow: "one-credit-probe", endpoint: "/events/{id}/odds" } } as const;
+    expect(code(await manager.reserve(id, NBA_PROBE, one))).toBe("QUOTA_HARD_STOP");
+    expect((await manager.reserve(id, probe, one)).allowed).toBe(true);
+    expect((await manager.reserve(id, ESSENTIAL, one)).allowed).toBe(true);
+
+    const nearLimit = setup(account);
+    await nearLimit.manager.recordProviderUsage(id, [{ window: "month", observedAt: START, used: 450, remaining: 50, limit: 500 }]);
+    expect(code(await nearLimit.manager.reserve(id, probe, one))).toBe("QUOTA_HARD_STOP");
+    expect(code(await nearLimit.manager.reserve(id, ESSENTIAL, one))).toBe("QUOTA_HARD_STOP");
+  });
+
   it("stops nonessential consumers at the ratio cap and essential consumers at limit minus reserve", async () => {
     const { manager, id, time } = setup(testAccount({ windows: [{ kind: "day", limit: 100, source: "provider-docs" }] }));
     await knownUsage(manager, id, 89);
