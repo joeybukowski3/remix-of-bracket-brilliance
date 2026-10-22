@@ -14,8 +14,10 @@ import type { NflProjectionMarket, NflProjectionStatus } from "./projectionOutpu
 import type { NflYardageMatchupScore } from "./matchupScore";
 import type { NflPropPosition } from "./identity";
 import type { NflWindowedRate } from "./qbPassingFeatures";
+import type { AvailabilityRecord } from "../../availability/resolver";
 
 export const NFL_CURRENT_WEEK_PROJECTION_SCHEMA_VERSION = "nfl-current-week-yardage-projection-v1" as const;
+export const NFL_CURRENT_WEEK_AVAILABILITY_SCHEMA_VERSION = "nfl-current-week-yardage-projection-v2" as const;
 
 /**
  * How much target-season/prior-season history backs this player's own
@@ -119,7 +121,7 @@ export type NflEstimatedRange = {
 };
 
 export type NflCurrentWeekRowIdentity = {
-  schemaVersion: typeof NFL_CURRENT_WEEK_PROJECTION_SCHEMA_VERSION;
+  schemaVersion: typeof NFL_CURRENT_WEEK_PROJECTION_SCHEMA_VERSION | typeof NFL_CURRENT_WEEK_AVAILABILITY_SCHEMA_VERSION;
   season: number;
   week: number;
   gameId: string;
@@ -135,6 +137,7 @@ export type NflCurrentWeekRowIdentity = {
   historyStatus: NflCurrentWeekHistoryStatus;
   generatedAt: string;
   modelVersion: string;
+  availability?: Pick<AvailabilityRecord, "availability" | "gameStatus" | "role" | "lineupEligibility" | "confidence" | "conflict" | "usedEvidenceIds">;
   /**
    * How this row's market eligibility was established. `"historicalVolume"`
    * -- the player cleared the Phase 5.5 prior-season/current-season
@@ -150,12 +153,14 @@ export type NflCurrentWeekRowIdentity = {
    * among this team's ACT quarterbacks, independent of whether that
    * leader's own history clears any threshold -- used only when sourced
    * depth-chart evidence was unavailable or ambiguous for this team.
+   * `"officialStarter"` -- an official team announcement selected the QB
+   * ahead of the depth chart and historical attempts heuristic.
    * `"depthChart"` (Phase 9.2) -- admitted primarily on sourced
    * ESPN/nflverse depth-chart evidence (`roleSource`/`depthRank` below),
    * independent of historical volume. This is how a legitimate rookie/new
    * starter enters with zero prior NFL usage.
    */
-  fallbackProvenance: "historicalVolume" | "depthChart" | "rosterScarcityFloor" | "starterHeuristic";
+  fallbackProvenance: "historicalVolume" | "depthChart" | "officialStarter" | "rosterScarcityFloor" | "starterHeuristic";
   /**
    * Phase 9.2 role-evidence disclosure. `roleSource` is
    * `"nflverse-depth-charts-espn"` when sourced depth-chart data actually
@@ -167,7 +172,7 @@ export type NflCurrentWeekRowIdentity = {
    * This block answers ONLY "should this player plausibly be in the
    * universe" -- it never feeds `projectedYards` or the Matchup Score.
    */
-  roleSource: "nflverse-depth-charts-espn" | "historicalVolume" | "rosterScarcityFloor" | "unavailable";
+  roleSource: "nflverse-depth-charts-espn" | "official_team" | "historicalVolume" | "rosterScarcityFloor" | "unavailable";
   roleSourceUpdatedAt: string | null;
   depthRank: number | null;
   starterFlag: boolean;
@@ -184,7 +189,7 @@ export type NflCurrentWeekPassingRow = NflCurrentWeekRowIdentity & {
   hardCaseFlags: NflCurrentWeekHardCaseFlags;
   featureSnapshot: NflCurrentWeekPassingFeatureSnapshot;
   diagnostics: {
-    starterResolution: "sourcedDepthChart" | "rollingAttemptsLeader" | "onlyActiveQb" | "noHistoryFallback";
+    starterResolution: "officialStarter" | "sourcedDepthChart" | "rollingAttemptsLeader" | "onlyActiveQb" | "noHistoryFallback";
     gamesStartedPriorThisSeason: number;
     /** True when the depth-chart source listed more than one ACT QB at rank 1 for this team -- never silently resolved; resolution fell back to the historical heuristic. */
     sourceAmbiguous: boolean;
@@ -332,13 +337,14 @@ export type NflCurrentWeekQaSummary = {
 };
 
 export type NflCurrentWeekProjectionArtifact = {
-  schemaVersion: typeof NFL_CURRENT_WEEK_PROJECTION_SCHEMA_VERSION;
+  schemaVersion: typeof NFL_CURRENT_WEEK_PROJECTION_SCHEMA_VERSION | typeof NFL_CURRENT_WEEK_AVAILABILITY_SCHEMA_VERSION;
   season: number;
   week: number;
   generatedAt: string;
   generationMode: "currentWeek" | "historicalReplay";
   temporalContract: typeof NFL_CURRENT_WEEK_TEMPORAL_CONTRACT;
   modelVersions: Record<NflProjectionMarket, string>;
+  availabilitySource?: { policyVersion: string; capturedAt: string | null; coverage: "missing" | "stale" | "partial" | "complete"; observations: number };
   scoreVersions: { scoreVersion: string; referenceDistributionVersion: string };
   sourceVersions: {
     trainingSeasons: readonly number[];

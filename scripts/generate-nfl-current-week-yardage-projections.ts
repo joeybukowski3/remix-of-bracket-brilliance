@@ -11,7 +11,8 @@
  *   npx tsx scripts/generate-nfl-current-week-yardage-projections.ts --season=2026 --week=1 --dry-run
  */
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { tmpdir } from "node:os";
+import { dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildGameJoinIndex, gameJoinKey, type NflPropRawGameRecord } from "../src/lib/nfl/props/historicalOutcomes";
 import { buildTeamGameLog, buildTeamPregameFeatures, type NflTeamGameLogEntry } from "../src/lib/nfl/props/teamPlayVolume";
@@ -27,6 +28,7 @@ import type { NflReceivingOutcome } from "../src/lib/nfl/props/types/receivingOu
 import { buildActivityLogFromUniverse, type NflCurrentWeekRosterSourceRow } from "../src/lib/nfl/props/currentWeekRosterUniverse";
 import type { NflPlayerGameUniverseRow } from "../src/lib/nfl/props/types/playerGameUniverse";
 import { generateCurrentWeekYardageProjections, type NflCurrentWeekSources } from "../src/lib/nfl/props/currentWeekGenerator";
+import type { OfficialCapture } from "../src/lib/nfl/availability/capture";
 import { resolveReceivingV2ProductionModel } from "../src/lib/nfl/props/roleAllocation/resolveProductionModel";
 import type { NflReceivingShareModel } from "../src/lib/nfl/props/roleAllocation/receivingProduction";
 import { resolveRushingShadowModel } from "../src/lib/nfl/props/roleAllocation/resolveRushingShadowModel";
@@ -101,6 +103,12 @@ function parseArgs(argv: string[]) {
     throw new Error(
       "Usage: --season=YYYY --week=N [--dry-run] [--output=path] [--archive-root=path] [--generated-at=iso] [--allow-receiving-v1-fallback]",
     );
+  }
+  if (args.dryRun && args.output) {
+    const tempRelative = relative(tmpdir(), args.output);
+    if (tempRelative === "" || tempRelative === ".." || tempRelative.startsWith(`..\\`) || tempRelative.startsWith("../") || isAbsolute(tempRelative)) {
+      throw new Error("Dry-run output must be a file inside the system temporary directory.");
+    }
   }
   return args;
 }
@@ -474,6 +482,9 @@ function main(): void {
   }
 
   const archiveCaptures: ArchiveCapture[] = [];
+  const availabilityPath = join(ROOT, "data", "nfl", "availability", String(args.season), `week-${String(args.week).padStart(2, "0")}.json`);
+  const availabilityCapture = existsSync(availabilityPath) ? JSON.parse(readSource(availabilityPath)) as OfficialCapture : null;
+  console.log(`[nfl:current-week-projections] official availability capture: ${availabilityCapture ? availabilityPath : "missing; all statuses unverified"}`);
   let fittedModels: { passing: NflFittedPassingModel; rushing: NflFittedRushingModel; receiving: NflFittedReceivingModel } | null = null;
   const sources: NflCurrentWeekSources = {
     season: args.season, week: args.week, generatedAt: args.generatedAt,
@@ -482,6 +493,7 @@ function main(): void {
     rushActivityLog, targetActivityLog, attemptActivityLog,
     historicalPassingRows, historicalRushingRows, historicalReceivingRows,
     depthChartIndex,
+    availabilityCapture,
     receivingShareModel,
     teamOpportunityDropbacksByTeam,
     scoreDefinitions: { passing: scoreResearch.passing.selectedDefinition, rushing: scoreResearch.rushing.selectedDefinition, receiving: scoreResearch.receiving.selectedDefinition },
@@ -639,7 +651,8 @@ function main(): void {
   console.log(`[nfl:current-week-projections] unresolved identity rows=${artifact.qa.unresolvedIdentityRows}`);
 
   if (args.dryRun) {
-    console.log("[nfl:current-week-projections] --dry-run: not writing artifact.");
+    if (args.output) writeAtomic(args.output, JSON.stringify(artifact));
+    console.log(`[nfl:current-week-projections] --dry-run: ${args.output ? `wrote preview ${args.output}` : "not writing artifact"}; no archives.`);
     return;
   }
 

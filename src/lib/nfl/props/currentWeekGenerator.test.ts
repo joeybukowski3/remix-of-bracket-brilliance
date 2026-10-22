@@ -154,6 +154,32 @@ function buildLeague(
 }
 
 describe("generateCurrentWeekYardageProjections", () => {
+  it("labels an expired official capture stale and preserves legacy candidates", () => {
+    const { sources } = buildLeague(2025, 1);
+    const baseline = generateCurrentWeekYardageProjections(sources);
+    const stale = generateCurrentWeekYardageProjections({ ...sources,
+      availabilityCapture: { schemaVersion: "nfl-official-availability-capture-v1", season: 2025, week: 1,
+        capturedAt: "2025-12-01T00:00:00Z", captureMethod: "test", coverage: { scope: "partial", gameStatus: "unverified", inactives: "unverified", starterAnnouncements: "unverified" }, observations: [] } });
+    expect(stale.rows.map((r) => `${r.gameId}|${r.playerId}|${r.market}`)).toEqual(baseline.rows.map((r) => `${r.gameId}|${r.playerId}|${r.market}`));
+    expect(stale.rows.every((r) => r.availability?.availability === "unknown")).toBe(true);
+    expect(stale.availabilitySource?.coverage).toBe("stale");
+    expect(stale.modelVersions).toEqual(baseline.modelVersions);
+  });
+  it.each(["out", "inactive"] as const)("stops publication when expired capture contains official %s", (value) => {
+    const { sources } = buildLeague(2025, 1);
+    const capture = {
+      schemaVersion: "nfl-official-availability-capture-v1" as const, season: 2025, week: 1,
+      capturedAt: "2025-12-01T00:00:00Z", captureMethod: "test",
+      coverage: { scope: "partial" as const, gameStatus: "partial", inactives: "unverified", starterAnnouncements: "unverified" },
+      observations: [{ id: `stale-${value}`, source: "official_nfl" as const, url: "https://www.nfl.com/news/example",
+        retrievedAt: "2025-12-01T00:00:00Z", publishedAt: null, publicationDisplay: null,
+        season: 2025, week: 1, gameId: "2025_01_BBB_AAA", team: "aaa", playerId: "gsis:00-0000001",
+        playerName: "Example Player", position: "RB", kind: value === "out" ? "game_status" as const : "inactive" as const,
+        value, attribution: "Official status classification" }],
+    };
+    expect(() => generateCurrentWeekYardageProjections({ ...sources, availabilityCapture: capture }))
+      .toThrow("Stale official OUT/inactive evidence");
+  });
   it("is deterministic given identical inputs", () => {
     const { sources } = buildLeague(2025, 1);
     const first = generateCurrentWeekYardageProjections(sources);

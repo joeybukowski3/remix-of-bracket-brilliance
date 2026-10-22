@@ -54,6 +54,7 @@ The repository contains both data inputs and generated outputs.
 
 - `data/nfl/nflverse/` holds byte-verified compact caches derived from nflverse and nflfastR releases: `stats-team-week`, `stats-player-week`, `play-by-play`-derived `epa-team-game` and `play-volume-team-game`, `injuries`, `snap-counts`, `weekly-rosters`, `players`, `depth-charts`, `performance-team-game`. Each directory carries a `manifest.json` with source URL, retrieval date, byte size, sha256, and row/column provenance. Raw play-by-play is streamed and discarded, never committed.
 - `data/nfl/props/` holds the NFL yardage-prop research datasets (historical outcomes, pregame features, per-market baseline-competition outputs, player-game universe, matchup-score research).
+- `data/nfl/availability/` holds manually verified, versioned official weekly status/role facts for current-week yardage candidate selection. Coverage is explicit and may be partial; no official page text is stored.
 - `data/nfl/{research,benchmark}/` hold NFL research datasets and offline benchmark inputs used only by tests.
 - `data/fantasy/` holds fantasy inputs and research outputs: the workbook-sourced draft list, FantasyPros ADP, PAR consensus, points-allowed, Rest-of-Season research (`data/fantasy/ros-research/`), and the Sleeper draft-board source and draft-preview corrections (`data/fantasy/draft-preview/`, `data/fantasy/source/`).
 - `data/cfb/research/` is the (gitignored) CFB Model V2 research corpus; `data/cfb/cfbd/raw/` is the CFBD raw cache; `data/cfb/v2-support/` holds V2 support inputs.
