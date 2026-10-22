@@ -187,6 +187,22 @@ guarantee of future performance or a calibrated uncertainty interval.
 
 ## Artifact, producer, and consumers
 
+Publication requires exact completed regular-season
+team-game coverage in the performance artifact, a matching SHA-256 coverage
+fingerprint, per-team sample counts, and a matching compact-cache manifest/hash.
+The guard runs before the prediction archive and public artifact are written.
+The spread artifact also records the performance-coverage, compact-cache, and
+canonical-final-results fingerprints. The scheduled writer rechecks them after
+each Git rebase and refuses a push if its inputs changed during generation.
+`--preview-only --output=<absolute temporary path>` uses the same calculation
+and completeness gate but cannot write prediction archives; input overrides
+are restricted to that preview mode. Source retrieval time and canonical
+results cutoff remain distinct provenance fields. The model formula and weights
+are unchanged.
+The Week 7 comparison utility requires both preview timestamps and the source
+retrieval and game-data cutoff to precede the first Week 7 kickoff; it refuses
+to label later data as a pregame repair.
+
 The production artifact uses schema `nfl-matchup-projections-v2` and model
 version `jkb-power-number-v1.2.0`. For every game it carries the two Current
 OVRs, league-average OVR, Power Numbers, neutral margin, HFA, unrounded expected

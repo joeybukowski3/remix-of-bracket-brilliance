@@ -18,13 +18,15 @@
  */
 
 import { createGunzip } from "node:zlib";
+import { createHash } from "node:crypto";
 import { Readable } from "node:stream";
 import { createInterface } from "node:readline";
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildNflverseTeamMap } from "./lib/nfl-schedules-results-core.mjs";
 import { buildCacheManifestEntry } from "./lib/nfl-source-cache.mjs";
+import { expectedFinalTeamGames, requireTeamGameCoverage } from "./lib/nfl-current-season-coverage.mjs";
 import {
   REQUIRED_PERFORMANCE_PBP_COLUMNS,
   PERFORMANCE_COMPACT_COLUMNS,
@@ -35,7 +37,6 @@ import {
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DATA_DIR = join(ROOT, "public", "data", "nfl");
 const CACHE_DIR = join(ROOT, "data", "nfl", "nflverse", "performance-team-game");
-const MANIFEST_PATH = join(CACHE_DIR, "manifest.json");
 
 export const PERFORMANCE_CACHE_MANIFEST_VERSION = "nfl-performance-team-game-cache-v1";
 export const PERFORMANCE_SOURCE_LABEL = "nflverse (play-by-play, nflfastR EPA + traditional Success Rate + drives)";
@@ -50,14 +51,21 @@ function nflversePbpUrl(season) {
 }
 
 function parseArgs(argv) {
-  const args = { seasons: DEFAULT_SEASONS, dryRun: false };
+  const args = { seasons: DEFAULT_SEASONS, dryRun: false, sourceFile: null, cacheDir: CACHE_DIR, resultsFile: null };
   for (const raw of argv.slice(2)) {
     if (raw === "--dry-run") args.dryRun = true;
+    else if (raw.startsWith("--source-file=")) args.sourceFile = resolve(raw.slice(14));
+    else if (raw.startsWith("--cache-dir=")) args.cacheDir = resolve(raw.slice(12));
+    else if (raw.startsWith("--results-file=")) args.resultsFile = resolve(raw.slice(15));
     else if (raw.startsWith("--seasons=")) {
       args.seasons = raw.slice(10).split(",").map((s) => Number(s.trim())).filter(Number.isInteger);
     } else throw new Error(`Unknown argument: ${raw}`);
   }
   if (args.seasons.length === 0) throw new Error("No valid seasons requested");
+  if (args.sourceFile && args.seasons.length !== 1) throw new Error("--source-file requires one season");
+  if (args.sourceFile && !relative(ROOT, args.cacheDir).startsWith("..")) {
+    throw new Error("--source-file requires --cache-dir outside the repository");
+  }
   return args;
 }
 
@@ -79,24 +87,27 @@ function splitCsvLine(line) {
   return out;
 }
 
-async function streamSeason(season, { teamMap }) {
+async function streamSeason(season, { teamMap, sourceFile }) {
   const url = nflversePbpUrl(season);
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-  let response;
-  try {
-    response = await fetch(url, {
-      headers: { "User-Agent": USER_AGENT, Accept: "application/octet-stream" },
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timer);
+  let compressed;
+  if (sourceFile) {
+    compressed = readFileSync(sourceFile);
+  } else {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    let response;
+    try {
+      response = await fetch(url, {
+        headers: { "User-Agent": USER_AGENT, Accept: "application/octet-stream" },
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+    if (response.status === 404) return { notPublished: true };
+    if (!response.ok) throw new Error(`${season}: HTTP ${response.status} fetching play-by-play`);
+    compressed = Buffer.from(await response.arrayBuffer());
   }
-
-  if (response.status === 404) return { notPublished: true };
-  if (!response.ok) throw new Error(`${season}: HTTP ${response.status} fetching play-by-play`);
-
-  const compressed = Buffer.from(await response.arrayBuffer());
   if (compressed.byteLength === 0) throw new Error(`${season}: empty play-by-play response`);
 
   const lines = createInterface({
@@ -137,7 +148,8 @@ async function streamSeason(season, { teamMap }) {
 
   const teamGames = aggregateSeason(rows, { season, teamMap });
 
-  return { notPublished: false, teamGames, sourceRows, compressedBytes: compressed.byteLength, headerColumnCount: header.length };
+  return { notPublished: false, teamGames, sourceRows, compressedBytes: compressed.byteLength,
+    compressedSha256: createHash("sha256").update(compressed).digest("hex"), headerColumnCount: header.length };
 }
 
 function writeAtomic(path, text) {
@@ -154,8 +166,8 @@ function writeAtomic(path, text) {
   }
 }
 
-function readManifest() {
-  if (!existsSync(MANIFEST_PATH)) {
+function readManifest(manifestPath) {
+  if (!existsSync(manifestPath)) {
     return {
       schemaVersion: PERFORMANCE_CACHE_MANIFEST_VERSION,
       source: PERFORMANCE_SOURCE_LABEL,
@@ -165,28 +177,36 @@ function readManifest() {
       notPublished: [],
     };
   }
-  return JSON.parse(readFileSync(MANIFEST_PATH, "utf-8"));
+  return JSON.parse(readFileSync(manifestPath, "utf-8"));
 }
 
 async function main() {
   const args = parseArgs(process.argv);
+  const manifestPath = join(args.cacheDir, "manifest.json");
   const teamsJson = JSON.parse(readFileSync(join(DATA_DIR, "teams.json"), "utf-8"));
   const teamMap = buildNflverseTeamMap(teamsJson);
-  const manifest = readManifest();
-  const retrievedDateUtc = new Date().toISOString().slice(0, 10);
+  const manifest = readManifest(manifestPath);
   const notPublished = [];
   let changed = false;
 
   for (const season of args.seasons) {
     const label = `performance ${season}`;
-    const result = await streamSeason(season, { teamMap });
+    const result = await streamSeason(season, { teamMap, sourceFile: args.sourceFile });
+    const sourceRetrievedAt = new Date().toISOString();
+    const retrievedDateUtc = sourceRetrievedAt.slice(0, 10);
+    const resultsPath = args.resultsFile ?? join(DATA_DIR, String(season), "results.json");
+    const canonical = existsSync(resultsPath) ? JSON.parse(readFileSync(resultsPath, "utf-8")) : { results: [] };
+    const expected = expectedFinalTeamGames(canonical.results ?? []);
 
     if (result.notPublished) {
+      if (expected.length) throw new Error(`${season}: upstream has no usable REG games but canonical results contain ${expected.length / 2} final games`);
       const reason = result.zeroRegRows ? "no completed REG-season games yet" : "not yet published upstream";
       console.log(`[nfl:performance-cache] ${label}: ${reason} (expected before/early in the season)`);
       notPublished.push({ season, sourceUrl: nflversePbpUrl(season), reason });
       continue;
     }
+
+    requireTeamGameCoverage(expected, result.teamGames, `performance source ${season}`);
 
     const filename = `performance_team_game_${season}.csv`;
     const text = serializePerformanceCompact(result.teamGames);
@@ -199,7 +219,7 @@ async function main() {
       retrievedDateUtc,
       upstream: {
         byteSize: result.compressedBytes,
-        sha256: "n/a — raw play-by-play is streamed and discarded, never stored",
+        sha256: result.compressedSha256,
         rowCount: result.sourceRows,
         headerColumns: [...REQUIRED_PERFORMANCE_PBP_COLUMNS],
       },
@@ -207,6 +227,8 @@ async function main() {
       projectionFilter: "REG season only; per-team-game EPA/success/drive sums, unfiltered + garbage-time-filtered",
     });
     entry.upstreamCompressedBytes = result.compressedBytes;
+    entry.sourceRetrievedAt = sourceRetrievedAt;
+    entry.gameDataCutoffAt = canonical._meta?.generatedAt ?? null;
     entry.upstreamSourceRows = result.sourceRows;
     entry.compactRowCount = result.teamGames.length;
 
@@ -216,7 +238,7 @@ async function main() {
     );
 
     if (!args.dryRun) {
-      writeAtomic(join(CACHE_DIR, filename), text);
+      writeAtomic(join(args.cacheDir, filename), text);
       const index = manifest.files.findIndex((f) => f.filename === filename);
       if (index >= 0) manifest.files[index] = entry;
       else manifest.files.push(entry);
@@ -232,11 +254,11 @@ async function main() {
     manifest.rawPlayByPlayCommitted = false;
     manifest.notPublished = notPublished;
     manifest.files.sort((a, b) => a.season - b.season);
-    if (changed || !existsSync(MANIFEST_PATH)) {
-      writeAtomic(MANIFEST_PATH, `${JSON.stringify(manifest, null, 2)}\n`);
+    if (changed || !existsSync(manifestPath)) {
+      writeAtomic(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
     }
-    const attrs = join(CACHE_DIR, ".gitattributes");
-    if (!existsSync(attrs)) {
+    const attrs = join(args.cacheDir, ".gitattributes");
+    if (args.cacheDir === CACHE_DIR && !existsSync(attrs)) {
       writeAtomic(attrs, "# Compact Performance-Rating cache derived from nflverse play-by-play; keep bytes stable.\n*.csv -text\n");
     }
   }

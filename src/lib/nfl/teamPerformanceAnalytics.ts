@@ -81,6 +81,14 @@ export type TeamPerformanceAnalyticsArtifact = {
     generatedAt: string;
     throughWeek?: number | null;
     includedGameCount?: number;
+    coverage?: {
+      teamGames: readonly string[];
+      sha256: string;
+      resultsSha256: string;
+      cacheSha256: string | null;
+      sourceRetrievedAt: string | null;
+      gameDataCutoffAt: string | null;
+    };
     source: string;
     /** Composed Current OVR model identity the ratings in this artifact were produced under. */
     currentOvrModelVersion: typeof NFL_CURRENT_OVR_MODEL_VERSION;

@@ -299,6 +299,13 @@ board in `useNflCurrentRating2026` from:
 
 The performance producer is
 [`generate-nfl-team-performance-analytics.mts`](../../scripts/generate-nfl-team-performance-analytics.mts).
+Its artifact carries sorted exact team-game keys, a SHA-256 coverage fingerprint,
+the compact-cache hash, the source retrieval timestamp, and the canonical
+game-data cutoff. Generation compares every final regular-season team-game
+against the cache and checks the cache manifest before writing. These
+provenance fields do not change any rating formula or weight.
+The performance writer has its own concurrency group and revalidates the
+artifact against latest canonical finals after rebasing, before pushing.
 It reads the compact nflverse cache under
 [`data/nfl/nflverse/performance-team-game/`](../../data/nfl/nflverse/performance-team-game/),
 season results, and the team registry. The matchup-projection producer

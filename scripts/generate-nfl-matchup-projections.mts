@@ -28,9 +28,10 @@
  *   npx tsx scripts/generate-nfl-matchup-projections.mts --dry-run
  */
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildNflMeta, toNflJsonFileString } from "./lib/nfl-data-meta.mjs";
+import { verifyPerformancePublicationInput } from "./lib/nfl-performance-publication-gate.mjs";
 import { buildCurrentRatingBoard } from "../src/lib/nfl/currentRating2026.ts";
 import type { CurrentRatingRow } from "../src/lib/nfl/currentRating2026.ts";
 import { validateNflV03ReviewArtifact } from "../src/lib/nfl/v03Review.ts";
@@ -108,13 +109,30 @@ function formatTeamSpread(
 }
 
 function parseArgs(argv: string[]) {
-  const args = { dryRun: false, output: OUT_FILE, archiveRoot: ARCHIVE_ROOT, generatedAt: new Date().toISOString() };
+  const args = { dryRun: false, previewOnly: false, output: OUT_FILE, archiveRoot: ARCHIVE_ROOT, generatedAt: new Date().toISOString(),
+    performanceInput: join(DATA_DIR, "team-performance-analytics.json"), resultsFile: join(DATA_DIR, "results.json"),
+    cacheFile: join(ROOT, "data", "nfl", "nflverse", "performance-team-game", `performance_team_game_${CURRENT_SEASON}.csv`),
+    manifestFile: join(ROOT, "data", "nfl", "nflverse", "performance-team-game", "manifest.json") };
   for (const raw of argv) {
     if (raw === "--dry-run") args.dryRun = true;
+    else if (raw === "--preview-only") args.previewOnly = true;
     else if (raw.startsWith("--output=")) args.output = resolve(ROOT, raw.slice(9));
     else if (raw.startsWith("--archive-root=")) args.archiveRoot = resolve(ROOT, raw.slice(15));
     else if (raw.startsWith("--generated-at=")) args.generatedAt = raw.slice(15);
+    else if (raw.startsWith("--performance-input=")) args.performanceInput = resolve(ROOT, raw.slice(20));
+    else if (raw.startsWith("--results-file=")) args.resultsFile = resolve(ROOT, raw.slice(15));
+    else if (raw.startsWith("--cache-file=")) args.cacheFile = resolve(ROOT, raw.slice(13));
+    else if (raw.startsWith("--manifest-file=")) args.manifestFile = resolve(ROOT, raw.slice(16));
     else throw new Error(`Unknown argument: ${raw}`);
+  }
+  if (args.previewOnly && (args.output === OUT_FILE || !relative(ROOT, args.output).startsWith("..") || args.archiveRoot !== ARCHIVE_ROOT)) {
+    throw new Error("--preview-only requires an output outside the repository and forbids --archive-root");
+  }
+  if (!args.previewOnly && (args.performanceInput !== join(DATA_DIR, "team-performance-analytics.json") ||
+      args.resultsFile !== join(DATA_DIR, "results.json") ||
+      args.cacheFile !== join(ROOT, "data", "nfl", "nflverse", "performance-team-game", `performance_team_game_${CURRENT_SEASON}.csv`) ||
+      args.manifestFile !== join(ROOT, "data", "nfl", "nflverse", "performance-team-game", "manifest.json"))) {
+    throw new Error("input overrides require --preview-only");
   }
   return args;
 }
@@ -138,8 +156,13 @@ function main() {
   const v04Artifact = validateNflV04ProjectionArtifact(readJson(v04Path), v04Path);
   const v04Board = buildPublicProjectionBoard(v04Artifact);
 
-  const performancePath = join(DATA_DIR, "team-performance-analytics.json");
+  const performancePath = args.performanceInput;
   const performanceAnalytics = validateTeamPerformanceAnalyticsArtifact(readJson(performancePath));
+  if (performanceAnalytics._meta.season !== CURRENT_SEASON) throw new Error("performance artifact season mismatch");
+  const results = readJson(args.resultsFile) as { results: any[] };
+  const coverage = verifyPerformancePublicationInput({ performance: performanceAnalytics, results,
+    cachePath: args.cacheFile, manifestPath: args.manifestFile, generatedAt: args.generatedAt });
+  console.log(`[nfl:projections] verified performance coverage: ${coverage.games} games, ${coverage.teamGames} team-games, sha256=${coverage.fingerprint}`);
 
   const currentRatingBoard = buildCurrentRatingBoard({
     season: CURRENT_SEASON,
@@ -230,10 +253,15 @@ function main() {
     provenance: {
       generatedAt,
       gamesProjected: projected,
+      inputFingerprints: {
+        performanceCoverageSha256: performanceAnalytics._meta.coverage!.sha256,
+        performanceCacheSha256: performanceAnalytics._meta.coverage!.cacheSha256,
+        finalResultsSha256: performanceAnalytics._meta.coverage!.resultsSha256,
+      },
       inputs: {
         preseasonV03: "public/data/nfl/2026/preseason-power-ratings.json",
         preseasonV04: "public/data/nfl/2026/projected-power-ratings-v04.json",
-        performanceAnalytics: "public/data/nfl/2026/team-performance-analytics.json",
+        performanceAnalytics: args.previewOnly ? args.performanceInput : "public/data/nfl/2026/team-performance-analytics.json",
         schedule: "public/data/nfl/2026/games.json",
       },
     },
@@ -246,6 +274,13 @@ function main() {
 
   if (args.dryRun) {
     console.log("[nfl:projections] dry run; nothing written");
+    return;
+  }
+
+  if (args.previewOnly) {
+    mkdirSync(dirname(args.output), { recursive: true });
+    writeFileSync(args.output, toNflJsonFileString(artifact), "utf-8");
+    console.log(`[nfl:projections] preview wrote ${args.output}; no prediction archive touched`);
     return;
   }
 
