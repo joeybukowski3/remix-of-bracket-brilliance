@@ -9,6 +9,7 @@ import { clock, sequentialIds, testAccount } from "../../../api-quota/__fixtures
 import { quotaRequestGate, planCaptureBudget, type NbaAllowance } from "../pipeline/budget";
 import type { NbaPipelineGame, OddsSourceId } from "../pipeline/contracts";
 import { PIPELINE_SCHEMA } from "../pipeline/contracts";
+import type { LineCaptureSink, NbaLineCapture } from "../pipeline/lineCapture";
 import { ODDS_SOURCE_LICENSES } from "../pipeline/oddsSources";
 import type { ProviderGameResult, ResultsFetch, ResultsProvider } from "../pipeline/postgameJob";
 import type { ProviderPropLine, PropsFetchResult, PropsProvider, PregameDeps } from "../pipeline/pregameJob";
@@ -17,6 +18,12 @@ import type { SourceLicense } from "../sources/types";
 import type { ProviderAccountConfig } from "../../../api-quota/types";
 
 export const MIN = 60_000;
+
+/** An in-memory capture ledger for tests that must not touch disk. */
+export function memoryCaptureSink(): { sink: LineCaptureSink; captures: NbaLineCapture[] } {
+  const captures: NbaLineCapture[] = [];
+  return { captures, sink: async (capture) => (captures.push(capture), { status: "stored", captureId: capture.captureId, file: `memory:${capture.captureId}` }) };
+}
 
 /** A fixed import time: after the synthetic lines were captured, before the game. */
 export const IMPORT_NOW = new Date("2026-11-09T21:10:00Z");

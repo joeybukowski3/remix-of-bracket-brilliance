@@ -64,7 +64,7 @@ If SportsDataverse answers that it holds no ESPN authorization, evidence 1 is un
 
 ---
 
-## 5. Proposed public GitHub issue (not posted)
+## 5. Proposed public GitHub issue (superseded: a shorter question was posted 2026-10-22 as hoopR-nba-data#24)
 
 **Repository:** sportsdataverse/hoopR-nba-data
 **Date:** 2026-10-18

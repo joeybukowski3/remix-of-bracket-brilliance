@@ -31,6 +31,7 @@ import {
   PIPELINE_SCHEMA,
   PipelineValidationError,
 } from "./contracts";
+import { buildLineCapture, type LineCaptureSink } from "./lineCapture";
 import { ODDS_SOURCE_LICENSES, ODDS_SOURCE_PROFILES } from "./oddsSources";
 import type { PipelineStore } from "./store";
 import { canonicalTeamCode } from "../canonical";
@@ -49,8 +50,16 @@ export interface ProviderPropLine {
   rawProviderRef?: { eventId: string; bookmakerKey: string; marketKey: string; overOutcomeIndex: number; underOutcomeIndex: number };
 }
 
+/** The event a response described, as the provider named it. */
+export interface ProviderEventRef {
+  id: string;
+  commenceTimeUtc: string;
+  homeTeam: string;
+  awayTeam: string;
+}
+
 export type PropsFetchResult =
-  | { status: "ok"; lines: readonly ProviderPropLine[]; creditsCharged: number | null; requestRef: string | null; unmatched?: readonly string[]; usageSnapshots?: readonly ProviderUsageSnapshot[]; usageIssue?: string | null }
+  | { status: "ok"; lines: readonly ProviderPropLine[]; creditsCharged: number | null; requestRef: string | null; unmatched?: readonly string[]; usageSnapshots?: readonly ProviderUsageSnapshot[]; usageIssue?: string | null; event?: ProviderEventRef; receivedAtUtc?: string }
   | { status: "error"; message: string; creditsCharged: number | null; failureKind?: "http-error" | "network-error" | "provider-error"; usageSnapshots?: readonly ProviderUsageSnapshot[]; usageIssue?: string | null };
 
 /** Fetches every requested market for one event. Real adapters sit behind the quota gate; none exists yet. */
@@ -82,6 +91,8 @@ export interface PregameDeps {
   licenses?: Readonly<Record<OddsSourceId, SourceLicense>>;
   lockTtlMs?: number;
   resolvePlayer?: (name: string, team: string | null) => string | null;
+  /** When set, every successful response is written to this ledger before any line is validated or filtered. A write failure fails the run. */
+  captureSink?: LineCaptureSink;
   project?: (player: { name: string; team: string | null; canonicalPlayerId: string | null }, market: Market, game: NbaPipelineGame, capturedAtUtc: string) => ProjectionValue | null;
 }
 
@@ -266,6 +277,26 @@ async function captureGame(
   report.creditsCharged += charged;
 
   const capturedAtUtc = deps.now().toISOString();
+  if (deps.captureSink) {
+    try {
+      await deps.captureSink(
+        buildLineCapture({
+          sourceId: deps.provider.sourceId,
+          capturedAtUtc: fetched.receivedAtUtc ?? capturedAtUtc,
+          approvalId: null,
+          requestRef: fetched.requestRef,
+          creditsCharged: fetched.creditsCharged,
+          event: { sourceEventId: game.sourceEventId as string, commenceTimeUtc: game.tipoffUtc, homeTeamName: fetched.event?.homeTeam ?? game.homeTeam ?? "", awayTeamName: fetched.event?.awayTeam ?? game.awayTeam ?? "" },
+          lines: fetched.lines,
+          unmatched: fetched.unmatched ?? [],
+          usageIssue: fetched.usageIssue ?? null,
+        }),
+      );
+    } catch (error) {
+      await recordAttempt(deps, game, attemptId, "error", `capture ledger write failed after the provider call: ${error instanceof Error ? error.message.slice(0, 140) : "unknown"}`, decision.minutesToTipoff, charged, 0);
+      throw error;
+    }
+  }
   // The clock may have crossed the floor during the call: never store a price captured too close to tipoff.
   if ((Date.parse(game.tipoffUtc) - Date.parse(capturedAtUtc)) / 60_000 < policy.floorMinutes) {
     await recordAttempt(deps, game, attemptId, "missed_window", "the response arrived after the capture floor and was discarded", decision.minutesToTipoff, charged, 0);

@@ -11,7 +11,7 @@ import type { NbaSeasonType } from "./seasonType";
 import type { NbaSourceId } from "./sources/types";
 import type { NbaPlayerGame } from "./types";
 
-const CANONICAL_TEAM_CODES = [
+export const CANONICAL_TEAM_CODES = [
   "ATL", "BOS", "BKN", "CHA", "CHI", "CLE", "DAL", "DEN", "DET", "GSW", "HOU", "IND", "LAC", "LAL", "MEM", "MIA", "MIL", "MIN", "NOP", "NYK",
   "OKC", "ORL", "PHI", "PHX", "POR", "SAC", "SAS", "TOR", "UTA", "WAS",
 ] as const;

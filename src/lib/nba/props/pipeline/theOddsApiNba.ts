@@ -136,7 +136,7 @@ export function createTheOddsApiNbaProvider(options: NbaOddsAdapterOptions): Pro
         const body: unknown = await response.json();
         const parsed = parseTheOddsApiNbaEvent(body, request.markets, request.sourceEventId);
         const zeroWithLines = headers.last === 0 && parsed.lines.length > 0;
-        return { status: "ok", lines: parsed.lines, unmatched: parsed.unmatched, creditsCharged: headers.last, usageSnapshots: headers.snapshots, usageIssue: zeroWithLines ? "NBA_BREACH: zero-cost header with nonempty player props" : headers.issue, requestRef: `basketball_nba/events/${request.sourceEventId}/odds` };
+        return { status: "ok", lines: parsed.lines, unmatched: parsed.unmatched, creditsCharged: headers.last, usageSnapshots: headers.snapshots, usageIssue: zeroWithLines ? "NBA_BREACH: zero-cost header with nonempty player props" : headers.issue, event: parsed.event, receivedAtUtc: now().toISOString(), requestRef: `basketball_nba/events/${request.sourceEventId}/odds` };
       } catch {
         return { status: "error", message: "NBA Odds API request or response failed", failureKind: headers ? "provider-error" : "network-error", creditsCharged: headers?.last ?? null, usageSnapshots: headers?.snapshots ?? [], usageIssue: headers?.issue ?? null };
       }

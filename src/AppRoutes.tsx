@@ -96,6 +96,7 @@ const NflV03Review = lazy(() => import("./pages/NflV03Review"));
 const WalterResearch = lazy(() => import("./pages/WalterResearch"));
 const SixteenZeroPage = lazy(() => import("./features/sixteen-zero/SixteenZeroPage"));
 const StevePoolDashboard = lazy(() => import("./pages/StevePoolDashboard"));
+const NbaPlayerProps = lazy(() => import("./pages/NbaPlayerProps"));
 
 function LegacyScheduleRedirect() {
   const { gameId = "" } = useParams();
@@ -229,6 +230,14 @@ export default function AppRoutes() {
             }
           />
           <Route path="/nba" element={<ComingSoon sport="NBA" />} />
+          <Route
+            path="/nba/props"
+            element={
+              <Suspense fallback={<div className="min-h-screen bg-slate-50 p-6 text-sm text-slate-600">Loading NBA props…</div>}>
+                <NbaPlayerProps />
+              </Suspense>
+            }
+          />
           <Route path="/world-cup" element={<WorldCup2026 />} />
           <Route path="/world-cup/analyzer" element={<WorldCupAnalyzer />} />
           <Route path="/odds-tracker" element={<PublicBetting />} />

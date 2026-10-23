@@ -1,13 +1,17 @@
 /**
  * Isolation guard: minutes-v1 is an unpromoted candidate and NBA code is not
- * part of the application. These checks read import statements only.
+ * part of the application, except the unlisted /nba/props page (route, page and
+ * components), which may import only the browser-safe board and DvP modules.
+ * These checks read import statements only.
  */
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const repoRoot = path.resolve(__dirname, "../../../..");
-const SOURCE_EXT = /\.(ts|tsx|mts|mjs|js)$/;
+/** The one application surface allowed to import NBA code: the unlisted, noindex /nba/props page. */
+const NBA_PROPS_PAGE_FILES = /^(src\/AppRoutes\.tsx|src\/pages\/NbaPlayerProps\.tsx|src\/components\/nba\/[^/]+\.tsx?)$/;
+const SOURCE_EXT =/\.(ts|tsx|mts|mjs|js)$/;
 /** Walking src/, scripts/ and api/ can exceed the 5 s default under a parallel run. */
 const WALK_TIMEOUT_MS = 60_000;
 
@@ -39,7 +43,15 @@ describe("NBA code isolation", () => {
 
   it("keeps NBA code out of the application and other sports", () => {
     const importers = files.filter((file) => importsOf(file).some((spec) => /lib\/nba\/|\/nba\/props\//.test(spec)));
-    const outside = importers.filter((file) => !file.startsWith("src/lib/nba/") && !/^scripts\/(nba-|lib\/nba-)/.test(file));
+    const outside = importers.filter((file) => !file.startsWith("src/lib/nba/") && !/^scripts\/(nba-|lib\/nba-)/.test(file) && !NBA_PROPS_PAGE_FILES.test(file));
     expect(outside).toEqual([]);
+  }, WALK_TIMEOUT_MS);
+
+  it("limits the /nba/props page to the browser-safe board and DvP modules", () => {
+    const pageFiles = files.filter((file) => NBA_PROPS_PAGE_FILES.test(file) && file !== "src/AppRoutes.tsx");
+    const nbaImports = pageFiles.flatMap((file) => importsOf(file).filter((spec) => /lib\/nba\//.test(spec)).map((spec) => `${file} -> ${spec}`));
+    const disallowed = nbaImports.filter((entry) => !/-> @\/lib\/nba\/props\/(propsBoard|dvp|dvpPositions|canonical|__fixtures__\/boardDemo)$/.test(entry));
+    expect(disallowed).toEqual([]);
+    expect(importsOf("src/AppRoutes.tsx").filter((spec) => /nba/i.test(spec))).toEqual(["./pages/NbaPlayerProps"]);
   }, WALK_TIMEOUT_MS);
 });
