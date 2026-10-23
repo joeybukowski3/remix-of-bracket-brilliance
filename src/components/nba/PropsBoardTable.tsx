@@ -123,12 +123,12 @@ export default function PropsBoardTable({ rows, sortKey, direction, onSort, mark
                   <div className="whitespace-nowrap text-[10px] font-normal text-slate-500">
                     {entry.team ?? "—"} {entry.opponent ? `vs ${entry.opponent}` : ""} ·{" "}
                     {entry.positionLabel ? (
-                      <span title={dvp.kind === "ok" && dvp.isMultiPosition ? `Multi-position player; DvP uses ${dvp.position}` : undefined}>
+                      <span title={dvp.kind === "ok" && dvp.isMultiPosition ? `Multi-position label; DvP uses ${dvp.position}. Estimated, not verified minutes at a position.` : "Estimated position from depth charts and rotation roles, not verified minutes at a position."}>
                         {entry.positionLabel}
-                        {dvp.kind === "ok" && dvp.isMultiPosition ? ` → ${dvp.position}` : ""}
+                        {dvp.kind === "ok" && dvp.isMultiPosition ? ` → ${dvp.position}` : ""} <span className="text-slate-400">(est.)</span>
                       </span>
                     ) : (
-                      <span title="No roster position for this player">pos N/A</span>
+                      <span title="No estimated position for this player">pos N/A</span>
                     )}
                   </div>
                 </th>

@@ -146,7 +146,7 @@ function BoardView({ board }: { board: PropsBoardArtifact }) {
       </div>
       <PropsBoardTable rows={rows} sortKey={sortKey} direction={direction} onSort={onSort} marketLabel={MARKET_LABEL[market]} />
       <p className="mt-2 text-[11px] text-slate-500">
-        Proj − line is the JKB projection minus the posted line; positive leans Over. N/A means the input is missing (hover for the reason), not zero. DvP is shown for each player's primary position; the matchup label reads the blended rank and says how much of it is last season. DvP is context only and does not change the projection.
+        Proj − line is the JKB projection minus the posted line; positive leans Over. N/A means the input is missing (hover for the reason), not zero. Positions are estimates from depth charts and rotation roles, not verified minutes at a position. DvP is the estimated primary-position view (each player's box score counts toward one estimated position, not minutes played at it); the matchup label reads the blended rank and says how much of it is last season. A projection is shown even when a line or DvP is missing. DvP is context only and does not change the projection.
       </p>
     </>
   );
@@ -192,7 +192,7 @@ function EmptyState({ reason }: { reason: string }) {
       <h2 className="text-base font-bold text-slate-900">No NBA props to show yet</h2>
       <p className="mx-auto mt-2 max-w-xl text-[13px] text-slate-600">{reason}</p>
       <p className="mx-auto mt-2 max-w-xl text-[12px] text-slate-500">
-        This page shows only real sportsbook lines and real box-score splits, and only where their licenses allow display. Until those are connected there is nothing to rank, so nothing is estimated or filled in.
+        This page shows only projections built from box-score data whose license allows display, and sportsbook lines only where their terms allow it. Until such a source is connected there is nothing to show, so no player statistic, projection or line is invented or filled in.
       </p>
     </section>
   );
