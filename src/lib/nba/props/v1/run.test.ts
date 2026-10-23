@@ -12,7 +12,7 @@ import { FIXTURE_BUILD_AT, fixtureImportFile, fixturePositionsFile, fixtureRows,
 import { buildBoardRows, type PropsBoardArtifact } from "../propsBoard";
 import { SOURCE_LICENSES } from "../sources/licenses";
 import type { NbaSourceId, SourceLicense } from "../sources/types";
-import { runV1Build } from "./run";
+import { runV1Build, runV1PrivatePreview } from "./run";
 
 const dirs: string[] = [];
 afterEach(() => {
@@ -87,6 +87,17 @@ describe("V1 with a licensed source (test-only agreement)", () => {
     expect(rows).toHaveLength(16);
   });
 
+  it("writes the roster into the public board inputs only for a source that may be published", async () => {
+    const licensedRoot = project();
+    const licensed = await runV1Build({ root: licensedRoot, generatedAtUtc: FIXTURE_BUILD_AT, sourceLicenses: LICENSED });
+    const licensedRoster = JSON.parse(readFileSync(path.join(licensedRoot, licensed.files.roster), "utf8")) as { players: Record<string, unknown> };
+    expect(Object.keys(licensedRoster.players)).toHaveLength(240 + 1);
+    // hoopR/ESPN has no public-display right, so its team and position labels never ride into a public build.
+    const hooprRoot = project({ sourceId: "hoopr-espn" });
+    const hoopr = await runV1Build({ root: hooprRoot, generatedAtUtc: FIXTURE_BUILD_AT });
+    expect(JSON.parse(readFileSync(path.join(hooprRoot, hoopr.files.roster), "utf8"))).toEqual({ players: {} });
+  });
+
   it("accepts the same data as a CSV export plus a source record", async () => {
     const root = project({ csv: true });
     const result = await runV1Build({ root, generatedAtUtc: FIXTURE_BUILD_AT, sourceLicenses: LICENSED });
@@ -134,6 +145,43 @@ describe("V1 under the repository's real source rights (the blocker that holds t
     const root = project({ csv: true, sourceId: "synthetic" });
     const result = await runV1Build({ root, generatedAtUtc: FIXTURE_BUILD_AT });
     expect(result.board.report.projections.accepted).toBe(0);
+  });
+});
+
+describe("V1 private preview through the runner (real registry)", () => {
+  it("writes a private board for hoopR/ESPN data under data/nba only, never under public, with its notice", () => {
+    const root = project({ sourceId: "hoopr-espn" });
+    const result = runV1PrivatePreview({ root, generatedAtUtc: FIXTURE_BUILD_AT });
+    expect(result.outFile.split(path.sep).join("/")).toBe("data/nba/props-v1/private-preview-board.json");
+    expect(existsSync(path.join(root, "public"))).toBe(false);
+    const board = readBoard(path.join(root, result.outFile));
+    expect(board.privatePreview?.notice).toMatch(/PRIVATE PREVIEW/);
+    expect(board.entries).toHaveLength(48);
+    expect(board.dvpRows).toHaveLength(900);
+    expect(result.preview).toMatchObject({ sources: ["hoopr-espn"], entries: 48 });
+    expect(result.v1.projections.projectedWithoutPosition).toBe(0);
+  });
+
+  it("refuses sources with no private-research right, so nothing is written", () => {
+    for (const sourceId of ["balldontlie", "synthetic", "api-sports-nba"]) {
+      const root = project({ sourceId });
+      expect(() => runV1PrivatePreview({ root, generatedAtUtc: FIXTURE_BUILD_AT })).toThrow(/private-research|synthetic/);
+      expect(existsSync(path.join(root, "data", "nba", "props-v1", "private-preview-board.json"))).toBe(false);
+    }
+  });
+
+  it("refuses an input directory outside data/nba, including public/", () => {
+    const root = project({ sourceId: "hoopr-espn" });
+    expect(() => runV1PrivatePreview({ root, generatedAtUtc: FIXTURE_BUILD_AT, inputDir: "public/data" })).toThrow(/must be under/);
+  });
+
+  it("leaves the public path unchanged for the same data: the public run still withholds everything", async () => {
+    const root = project({ sourceId: "hoopr-espn" });
+    const result = await runV1Build({ root, generatedAtUtc: FIXTURE_BUILD_AT });
+    expect(result.board.report.projections.accepted).toBe(0);
+    expect(result.board.report.dvp.status).toBe("withheld");
+    expect(readBoard(result.board.outFile).entries).toEqual([]);
+    expect(readBoard(result.board.outFile).privatePreview).toBeUndefined();
   });
 });
 

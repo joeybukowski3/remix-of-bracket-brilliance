@@ -1,6 +1,6 @@
 # NBA player props board: practical V1
 
-Status: **the pipeline from import to `/nba/props` is built and tested; the public board stays empty because no player-statistics source has publishable rights.** Nothing real is populated. No Odds API request was made, no provider was called, no source license record was changed, no scheduled job was added, and the NFL quota protections are untouched.
+Status: **real hoopR/ESPN statistics now flow through V1 into a populated board that works as a local, private preview. The public board stays empty: no source has publishable rights.** The owner approved hoopR/ESPN on 2026-10-23 for private analysis; that is the owner's decision, **not ESPN's permission**, and ESPN's commercial and public reuse terms remain unresolved. Only `private-research` is recorded for it (`licenses.ts`), the public board builder and its rights gates are unchanged, and the private board is written only under the gitignored `data/nba/`. No Odds API request was made, no scheduled job was added, the quota manager and odds capture are unchanged, and no other sport was touched.
 
 ## The blocker, precisely
 
@@ -14,6 +14,46 @@ A projection or DvP row may reach the public board only if the source of every i
 | `api-sports-nba`, `thesportsdb`, `sportsdataio` | No publication license, or no per-game player stats. |
 
 No source is `licensed`, so no real PTS/REB/AST can be shown. The V1 route below leaves every one of these gates closed.
+
+## Real data: hoopR/ESPN, private preview only
+
+**Rights, plainly.** hoopR-nba-data is CC BY 4.0 (credit hoopR, link the license, indicate changes), but its data is ESPN-derived and ESPN's terms bar commercial use and automated collection without written permission. The owner decided on 2026-10-23 to use it for private analysis. The registry now records `private-research` and nothing else for `hoopr-espn` and its origin `espn` (both records say it is an owner decision and not ESPN permission). `model-development`, `public-display` and `raw-redistribution` are still empty, so the public builder withholds everything from this source (a test proves it), and the private preview refuses any source that is already publishable (that goes through the public builder) or synthetic. Anything published needs a rights basis from ESPN, its counsel, or a different licensed source; see `docs/nba-espn-upstream-rights-review.md`.
+
+**Season mapping.** hoopR season 2026 = 2025-26 and 2027 = 2026-27 (a fixed table; any other season is an error, and a row whose season disagrees with its file or whose date falls outside its season's window rejects the import).
+
+**Steps** (all local; the one download is gated and pinned):
+
+```
+python scripts/nba-hoopr-fetch.py --confirm-owner-decision            # 3 files, one pinned commit, sha256 manifest; needs pyarrow
+npx tsx scripts/nba-hoopr-import.ts --wikidata=data/nba/wikidata-positions/snapshot.json [--overrides=data/nba/props-v1/position-overrides.json]
+npx tsx scripts/nba-props-v1-build.ts --private-preview               # writes data/nba/props-v1/private-preview-board.json
+npm run dev    # then open /nba/props?private=1 and choose that file (dev only; read in the browser, never uploaded or served)
+```
+
+- **Fetch:** `player_box_2026`, `player_box_2027` and `nba_schedule_2027` from `sportsdataverse/hoopR-nba-data`, 750 KB in total, at the commit recorded in `manifest.json`. No retry, size-capped, output confined to `data/nba/`.
+- **Import:** excludes, and counts, did-not-play rows, rows with no or zero minutes, All-Star teams (STARS, STRIPES, WORLD), unknown season types and incomplete games. Identity is the ESPN athlete id as a string (the same id Wikidata property P3685 uses); names are display only and name changes or shared names are reported.
+- **Positions.** No depth-chart source exists (ESPN's pages cannot be collected), so positions are estimated from Wikidata's CC0 career-level five-position labels joined by ESPN athlete id, narrowed by ESPN's coarse G/F/C listing when Wikidata lists several, with ESPN's own listing used directly when it names one position (a "C"). A Wikidata label that ESPN's listing contradicts is kept and flagged. A player ESPN lists only as "G" or "F" and Wikidata does not label stays **unclassified** (PG vs SG, SF vs PF would be a guess), is still projected, and shows "pos N/A" with no DvP context. Roles come from starts and minutes. Manual overrides need a reason and only apply to players that exist in the data. The same career-level label is applied to both seasons, and the file says so. Wikidata's snapshot comes from `scripts/nba-wikidata-position-probe.ts` on the `feat/nba-wikidata-position-audit` branch, which is not merged; any file in that snapshot format works.
+- **Slate:** the next Eastern game date with games still to play, from hoopR's 2026-27 schedule.
+
+**Results from the real run (2026-10-23, hoopR commit `13f2e6ac8a`, private):**
+
+These are operational counts and coverage figures only. No player name, statistic, projection or position from the data is committed; everything derived from it stays under the gitignored `data/nba/`.
+
+| | 2025-26 | 2026-27 |
+|---|---|---|
+| Player-game records imported | 28,588 (from 34,883 rows) | 367 (from 440 rows) |
+| Games | 1,322 | 16 (Oct 20 to 22) |
+| Players with a game | 582 | 345 |
+| Players with an assigned position | 359 (70.0% of minutes) | 224 (71.5% of minutes) |
+| Position source | 279 Wikidata single, 19 multi (ESPN tie-break), 36 Wikidata over ESPN, 25 ESPN "C" | 180, 13, 19, 12 |
+| DvP rows | 450 (all ranked, 82 to 83 games per team) | 450 (all ranked, 1 to 2 games per team) |
+| DvP regular-season minutes attributed to a position | 69.4% | 71.5% |
+
+Projections: 828 props (PTS, REB and AST for 276 players) for 12 games and 24 teams, 100 of those players without a position. Lines: none (no Odds API request was made). 2026-27 DvP rests on 1 to 2 games per team, so the page labels it "mostly last season" and the blended view carries the 2025-26 baseline.
+
+**What remains restricted.** Public publication. Nothing derived from hoopR/ESPN may be published, committed, deployed or shared (PR images included) until ESPN permission, counsel's written conclusion accepted as a dated decision, or a licensed source exists. The attribution to hoopR (CC BY 4.0) and ESPN is kept in the board's private notice.
+
+**To close the position gap** (about 30% of minutes): add overrides for the highest-minute unclassified players (`position-map-report.json` lists them), or decide whether a documented rule may split ESPN's "G" and "F" (for example the repository's own equal split for generic labels).
 
 ## What was built
 

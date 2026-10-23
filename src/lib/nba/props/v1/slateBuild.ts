@@ -21,7 +21,8 @@ import type { DvpInput, ProjectionRecord, RosterRecord } from "../pipeline/board
 import { BASELINE_MODEL_VERSION, BASELINE_V0_PUBLIC_PARAMS, projectBaseline, type BaselineParams, type BaselinePriors } from "../projection";
 import type { NbaPlayerGame } from "../types";
 import type { ImportedPlayerGame, PlayerGameImport } from "./playerGameImport";
-import { dvpLabelFor, type PositionEstimate, type PositionEstimateSet } from "./positionEstimates";
+import type { DvpPosition } from "../dvpPositions";
+import { dvpLabelFor, type PositionEstimateSet } from "./positionEstimates";
 
 export const SLATE_SEASON = "2026-27";
 const ISO_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
@@ -66,7 +67,7 @@ export interface V1Report {
   source: { sourceId: string; retrievedAtUtc: string; provenance: string; rows: number; rowsBySeason: Record<string, number>; players: number };
   slate: { games: number; teams: number };
   positions: { method: "estimated-primary-position"; estimates: Record<string, number>; overridden: number; asOfUtc: Record<string, string> };
-  projections: { playersConsidered: number; playersProjected: number; propsProduced: number; skipped: Array<{ player: string; team: string; reason: string }>; byHistoryTier: Record<string, number> };
+  projections: { playersConsidered: number; playersProjected: number; /** Projected players with no position estimate: shown without DvP context. */ projectedWithoutPosition: number; propsProduced: number; skipped: Array<{ player: string; team: string; reason: string }>; byHistoryTier: Record<string, number> };
   dvp: {
     method: "estimated-primary-position";
     regularSeasonLines: Record<string, number>;
@@ -129,15 +130,40 @@ export function leagueRates(rows: readonly ImportedPlayerGame[], beforeDate: str
   return { leagueRate: { pts: rate((r) => r.pts), reb: rate((r) => r.reb), ast: rate((r) => r.ast) } };
 }
 
-function buildRoster(positions: PositionEstimateSet, warnings: string[]): Record<string, RosterRecord> {
-  const byName = new Map<string, PositionEstimate[]>();
-  for (const e of positions.values()) {
-    if (e.season === SLATE_SEASON && e.role !== "out") byName.set(normalizePlayerName(e.name), [...(byName.get(normalizePlayerName(e.name)) ?? []), e]);
+/** A player who may be projected on the slate. `position` is null when no estimate exists: the projection still shows, with no DvP context. */
+interface SlatePlayer {
+  playerId: string;
+  name: string;
+  team: string;
+  position: DvpPosition | null;
+}
+
+/**
+ * Everyone who can be projected: players with a 2026-27 position estimate (role "out" excluded) plus every other player
+ * who has played this season, on the team of their latest game, with no position. A player without an estimate is
+ * never dropped from the board, only left without a position.
+ */
+function slatePlayersFrom(positions: PositionEstimateSet, rows: readonly ImportedPlayerGame[]): SlatePlayer[] {
+  const current = [...positions.values()].filter((e) => e.season === SLATE_SEASON);
+  const known = new Set(current.map((e) => e.playerId));
+  const players: SlatePlayer[] = current.filter((e) => e.role !== "out").map((e) => ({ playerId: e.playerId, name: e.name, team: e.team, position: e.primary }));
+  const latest = new Map<string, ImportedPlayerGame>();
+  for (const r of rows) {
+    if (r.season !== SLATE_SEASON || r.seasonType === "preseason" || known.has(r.playerId)) continue;
+    const seen = latest.get(r.playerId);
+    if (!seen || r.gameDate > seen.gameDate || (r.gameDate === seen.gameDate && r.gameId > seen.gameId)) latest.set(r.playerId, r);
   }
+  for (const r of latest.values()) players.push({ playerId: r.playerId, name: r.playerName, team: r.team, position: null });
+  return players;
+}
+
+function buildRoster(players: readonly SlatePlayer[], warnings: string[]): Record<string, RosterRecord> {
+  const byName = new Map<string, SlatePlayer[]>();
+  for (const p of players) byName.set(normalizePlayerName(p.name), [...(byName.get(normalizePlayerName(p.name)) ?? []), p]);
   const entries: Array<[string, RosterRecord]> = [];
   for (const [name, list] of byName) {
     if (list.length > 1) warnings.push(`two 2026-27 players share the name "${name}"; left off the roster, so their prop lines cannot be matched by name`);
-    else entries.push([name, { team: list[0].team, position: list[0].primary }]);
+    else entries.push([name, { team: list[0].team, position: list[0].position }]);
   }
   // fromEntries defines own properties, so a player named "__proto__" is kept as data and never touches the prototype.
   return Object.fromEntries(entries);
@@ -145,7 +171,7 @@ function buildRoster(positions: PositionEstimateSet, warnings: string[]): Record
 
 function projectGame(
   game: SlateGame,
-  slatePlayers: readonly PositionEstimate[],
+  slatePlayers: readonly SlatePlayer[],
   histories: ReadonlyMap<string, NbaPlayerGame[]>,
   teamGameDates: ReturnType<typeof buildTeamGameDates>,
   ctx: { priors: BaselinePriors; params: BaselineParams; source: PlayerGameImport },
@@ -170,6 +196,7 @@ function projectGame(
     const projected = projectBaseline(features, ctx.priors, ctx.params);
     bump(out.report.byHistoryTier, features.historyTier);
     out.report.playersProjected += 1;
+    if (player.position === null) out.report.projectedWithoutPosition += 1;
     for (const market of ["pts", "reb", "ast"] as const) {
       const value = projected[market];
       if (value === null || !Number.isFinite(value)) continue;
@@ -266,7 +293,7 @@ export function buildV1Inputs(args: V1BuildArgs): V1Inputs {
     source: { sourceId: imported.sourceId, retrievedAtUtc: imported.retrievedAtUtc, provenance: imported.provenance, rows: imported.rows.length, rowsBySeason, players: playerIds.length },
     slate: { games: slate.length, teams: new Set(slate.flatMap((g) => [g.away, g.home])).size },
     positions: { method: "estimated-primary-position", estimates, overridden, asOfUtc: asOf },
-    projections: { playersConsidered: 0, playersProjected: 0, propsProduced: 0, skipped: [], byHistoryTier: {} },
+    projections: { playersConsidered: 0, playersProjected: 0, projectedWithoutPosition: 0, propsProduced: 0, skipped: [], byHistoryTier: {} },
     dvp: { method: "estimated-primary-position", regularSeasonLines: {}, excludedNonRegularSeason: 0, linesWithPosition: {}, linesWithoutPosition: {}, minutesCoverage: {}, playersWithoutPosition: {}, teamSeasonsWithoutAnyPosition: [] },
     warnings,
   };
@@ -274,15 +301,15 @@ export function buildV1Inputs(args: V1BuildArgs): V1Inputs {
   const firstDate = slate.map((g) => g.date).sort()[0];
   const priors = firstDate ? leagueRates(imported.rows, firstDate) : null;
   const projections: ProjectionRecord[] = [];
-  const slatePlayers = [...positions.values()].filter((e) => e.season === SLATE_SEASON && e.role !== "out");
+  const slatePlayers = slatePlayersFrom(positions, imported.rows);
   if (priors === null) warnings.push("no competitive minutes before the first slate game: no projection can be built");
   else for (const game of slate) projectGame(game, slatePlayers, histories, teamGameDates, { priors, params: args.params ?? BASELINE_V0_PUBLIC_PARAMS, source: imported }, { projections, report: report.projections });
-  if (slatePlayers.length === 0) warnings.push("no 2026-27 position estimates: no player is on the slate");
+  if (slatePlayers.length === 0) warnings.push("no 2026-27 players: nobody is on the slate");
 
   const lines = buildDvpLines(imported, positions, report.dvp);
   const dvp: DvpInput | null = lines.length > 0 ? { sourceId: imported.sourceId, lines } : null;
   const unlabeled = Object.values(report.dvp.linesWithoutPosition).reduce((a, b) => a + b, 0);
   if (report.dvp.teamSeasonsWithoutAnyPosition.length > 0) warnings.push(`${report.dvp.teamSeasonsWithoutAnyPosition.length} team-season(s) have no position estimate for any opposing player and are left out of DvP (no ranks are invented): ${report.dvp.teamSeasonsWithoutAnyPosition.slice(0, 6).join(", ")}${report.dvp.teamSeasonsWithoutAnyPosition.length > 6 ? ", ..." : ""}`);
   if (unlabeled > 0) warnings.push(`${unlabeled} regular-season player-games have no position estimate for their season; they are excluded from DvP, not guessed`);
-  return { projections, roster: buildRoster(positions, warnings), dvp, report };
+  return { projections, roster: buildRoster(slatePlayers, warnings), dvp, report };
 }

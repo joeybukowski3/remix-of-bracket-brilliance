@@ -70,6 +70,11 @@ function Banners({ board }: { board: PropsBoardArtifact }) {
           SYNTHETIC DATA — every player, line, projection and DvP figure on this page is invented for interface review. Do not use it for betting decisions.
         </p>
       ) : null}
+      {board.privatePreview ? (
+        <p role="status" className="rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-900">
+          {board.privatePreview.notice} <span className="font-normal">{board.privatePreview.attribution}.</span>
+        </p>
+      ) : null}
       {board.entries.length === 0 ? (
         <p role="status" className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] text-slate-700">
           No qualifying props are published right now. A prop appears only with a licensed, current projection or an approved sportsbook line for a game that has not started.
@@ -198,6 +203,35 @@ function EmptyState({ reason }: { reason: string }) {
   );
 }
 
+/**
+ * Development only (`npm run dev`, `?private=1`): loads a private preview board from a file on this computer. The file
+ * is read by the browser directly; it is never uploaded, never served, and this component is not in production builds.
+ */
+function PrivateBoardPicker({ onLoad }: { onLoad: (board: PropsBoardArtifact) => void }) {
+  const [error, setError] = useState<string | null>(null);
+  const onFile = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      const body: unknown = JSON.parse(await file.text());
+      if (!isBoard(body)) throw new Error("this file is not an NBA props board");
+      if (!body.privatePreview) throw new Error("only private preview boards load this way; a public board is published to public/data instead");
+      setError(null);
+      onLoad(body);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "could not read the file");
+    }
+  };
+  return (
+    <section className="mb-4 rounded border border-dashed border-amber-400 bg-amber-50 px-3 py-2 text-[12px] text-amber-900" aria-label="Private preview loader">
+      <label className="flex flex-wrap items-center gap-2 font-semibold">
+        Private preview (this computer only): choose data/nba/props-v1/private-preview-board.json
+        <input type="file" accept="application/json,.json" data-testid="private-board-file" onChange={(e) => void onFile(e.target.files?.[0])} />
+      </label>
+      {error ? <p role="alert" className="mt-1 font-semibold text-red-700">{error}</p> : null}
+    </section>
+  );
+}
+
 export default function NbaPlayerProps() {
   usePageSeo({
     title: "NBA Player Props — Joe Knows Ball",
@@ -223,6 +257,7 @@ export default function NbaPlayerProps() {
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">NBA player props</h1>
           <p className="mt-1 text-[13px] text-slate-600">JKB projections against sportsbook lines, with how each opponent defends the player's position.</p>
         </header>
+        {import.meta.env.DEV && window.location.search.includes("private=1") ? <PrivateBoardPicker onLoad={(board) => setState({ status: "ready", board })} /> : null}
         {state.status === "loading" ? <p className="text-[13px] text-slate-500">Loading…</p> : null}
         {state.status === "empty" ? <EmptyState reason={state.reason} /> : null}
         {state.status === "ready" ? (

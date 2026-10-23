@@ -178,6 +178,46 @@ describe("approximate DvP inputs (estimated primary position)", () => {
   });
 });
 
+describe("players without a position estimate stay on the board", () => {
+  const file = fixturePositionsFile("2026-27") as { players: Array<{ playerId: string }> };
+  const without = (...ids: string[]) => buildEstimateSet([fixturePositionsFile("2025-26"), { ...file, players: file.players.filter((p) => !ids.includes(p.playerId)) }]);
+  const result = buildV1Inputs({ generatedAtUtc: FIXTURE_BUILD_AT, imported: imported(), positions: without("BOS-1", "BOS-2", "NYK-5"), slate: slate() });
+
+  it("projects them, with no position and no DvP context, instead of dropping them", () => {
+    expect(result.report.projections).toMatchObject({ playersConsidered: 16, playersProjected: 16, projectedWithoutPosition: 3, propsProduced: 48 });
+    expect(result.projections.filter((p) => p.playerName === "Demo Player BOS 1")).toHaveLength(3);
+    expect(result.roster["demo player bos 1"]).toEqual({ team: "BOS", position: null });
+    expect(result.roster["demo player nyk 5"]).toEqual({ team: "NYK", position: null });
+    expect(result.roster["demo player bos 3"]).toEqual({ team: "BOS", position: "SF" });
+  });
+
+  it("gives the same projection as when the player has a position: a position never changes a projection", () => {
+    const withPosition = build();
+    const value = (r: typeof result, name: string) => r.projections.find((p) => p.playerName === name && p.market === "pts")?.value;
+    expect(value(result, "Demo Player BOS 1")).toBe(value(withPosition, "Demo Player BOS 1"));
+  });
+
+  it("uses the team of the player's latest 2026-27 game, and still leaves out a player marked out", () => {
+    const outFile = { ...file, players: file.players.map((p) => (p.playerId === "BOS-4" ? { ...p, role: "out" } : p)) };
+    const r = buildV1Inputs({ generatedAtUtc: FIXTURE_BUILD_AT, imported: imported(), positions: buildEstimateSet([fixturePositionsFile("2025-26"), outFile]), slate: slate() });
+    expect(r.projections.some((p) => p.playerName === "Demo Player BOS 4")).toBe(false);
+    expect(r.report.projections.playersConsidered).toBe(15);
+  });
+
+  it("does not add a player whose only 2026-27 rows are preseason: he may no longer be on that team", () => {
+    const pre = (team: string, opponent: string, isHome: boolean, playerId: string) => ({ season: "2026-27", seasonType: "preseason", gameId: "pre-x", gameDate: "2026-10-05", team, opponent, isHome, playerId, playerName: `Demo Player ${playerId}`, minutes: 20, pts: 5, reb: 2, ast: 1 });
+    const rows = fixtureRows().concat(pre("BOS", "NYK", true, "ZZ-1"), pre("NYK", "BOS", false, "ZZ-2"));
+    const r = buildV1Inputs({ generatedAtUtc: FIXTURE_BUILD_AT, imported: imported(rows), positions: without(), slate: slate() });
+    expect(r.projections.some((p) => p.playerName === "Demo Player ZZ-1" || p.playerName === "Demo Player ZZ-2")).toBe(false);
+    expect(r.roster).not.toHaveProperty("demo player zz-1");
+  });
+
+  it("does not add a player with no 2026-27 game: nobody is invented from a roster", () => {
+    const r = buildV1Inputs({ generatedAtUtc: FIXTURE_BUILD_AT, imported: imported(fixtureRows().filter((x) => x.season === "2025-26" || x.playerId !== "BOS-8")), positions: without("BOS-8"), slate: slate() });
+    expect(r.projections.some((p) => p.playerName === "Demo Player BOS 8")).toBe(false);
+  });
+});
+
 describe("no invented DvP ranks or props", () => {
   const licenses: Record<NbaSourceId, SourceLicense> = { ...SOURCE_LICENSES, balldontlie: { status: "commercial-licensed", permittedUses: ["private-research", "model-development", "public-display"], basis: "test agreement", reviewedOn: "2026-10-23" } };
 
