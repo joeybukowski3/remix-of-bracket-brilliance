@@ -1,10 +1,10 @@
 {
   "date": "2026-10-23",
-  "generatedAt": "2026-10-23T15:58:09.828Z",
+  "generatedAt": "2026-10-23T18:32:46.296Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "American Family Field's 1.1 park factor sets the stage for a righty-heavy slate where Nick Martinez and Jacob Misiorowski both carry elevated HR/FB rates. The thin air and pull-friendly dimensions amplify barrel rates above 12% for the top four names, while the 48 HRs allowed by Martinez to opposing righties creates a clear edge for Milwaukee bats.",
-    "modelNote": "The model is overweighting barrel rate, hard-hit rate, and opposing-pitcher HR vulnerability, which is why Chourio and Bauers sit atop the board despite modest recent power numbers."
+    "slateOverview": "American Family Field's 1.1 park factor and right-handed pitching from both Nick Martinez and Jacob Misiorowski set up a favorable HR environment. The Brewers' top three (Chourio, Bauers, Mitchell) all post elite barrel/hard-hit rates against Martinez, while Caminero's 6.8 HR/FB ratio gives the Rays a lone power threat on the road.",
+    "modelNote": "The model is prioritizing barrel rate, hard-hit rate, and park-adjusted HR/FB ratios over recent HR volume, which is why Chourio and Bauers rank 1-2 despite zero homers in their last seven games."
   },
   "bestBets": [
     {
@@ -71,12 +71,12 @@
       "opposingPitcher": "Jacob Misiorowski",
       "hrScoreRank": 4,
       "topStats": [
-        "Hard Hit%=49.7",
-        "Pitcher HR VS=24.9"
+        "hrScore=48.4",
+        "barrel=13.1%"
       ],
       "bullets": [
-        "HR score 48.4 (#4)",
-        "Pitcher HR VS 24.9 at park 1.10"
+        "hrScore=48.4",
+        "barrel=13.1%"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -90,12 +90,12 @@
       "opposingPitcher": "Nick Martinez",
       "hrScoreRank": 5,
       "topStats": [
-        "Pitcher HR VS=48.0",
-        "Hard Hit%=41.6"
+        "hrScore=45.1",
+        "barrel=7.7%"
       ],
       "bullets": [
-        "HR score 45.1 (#5)",
-        "Pitcher HR VS 48.0 at park 1.10"
+        "hrScore=45.1",
+        "barrel=7.7%"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -105,18 +105,56 @@
   ],
   "valueBets": [
     {
-      "player": "Junior Caminero",
-      "team": "TB",
-      "opponent": "MIL",
-      "opposingPitcher": "Jacob Misiorowski",
-      "hrScoreRank": 4,
+      "player": "Jackson Chourio",
+      "team": "MIL",
+      "opponent": "TB",
+      "opposingPitcher": "Nick Martinez",
+      "hrScoreRank": 1,
       "topStats": [
-        "hrScore=48.4",
-        "barrel=13.1%"
+        "hrScore=53.8",
+        "barrel=12.3%"
       ],
       "bullets": [
-        "hrScore=48.4",
-        "barrel=13.1%"
+        "hrScore=53.8",
+        "barrel=12.3%"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jake Bauers",
+      "team": "MIL",
+      "opponent": "TB",
+      "opposingPitcher": "Nick Martinez",
+      "hrScoreRank": 2,
+      "topStats": [
+        "hrScore=51.4",
+        "barrel=14%"
+      ],
+      "bullets": [
+        "hrScore=51.4",
+        "barrel=14%"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Garrett Mitchell",
+      "team": "MIL",
+      "opponent": "TB",
+      "opposingPitcher": "Nick Martinez",
+      "hrScoreRank": 3,
+      "topStats": [
+        "hrScore=48.6",
+        "barrel=11.7%"
+      ],
+      "bullets": [
+        "hrScore=48.6",
+        "barrel=11.7%"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -126,18 +164,37 @@
   ],
   "longshots": [
     {
-      "player": "Brice Turang",
+      "player": "Jackson Chourio",
       "team": "MIL",
       "opponent": "TB",
       "opposingPitcher": "Nick Martinez",
-      "hrScoreRank": 5,
+      "hrScoreRank": 1,
       "topStats": [
-        "hrScore=45.1",
-        "barrel=7.7%"
+        "hrScore=53.8",
+        "barrel=12.3%"
       ],
       "bullets": [
-        "hrScore=45.1",
-        "barrel=7.7%"
+        "hrScore=53.8",
+        "barrel=12.3%"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Jake Bauers",
+      "team": "MIL",
+      "opponent": "TB",
+      "opposingPitcher": "Nick Martinez",
+      "hrScoreRank": 2,
+      "topStats": [
+        "hrScore=51.4",
+        "barrel=14%"
+      ],
+      "bullets": [
+        "hrScore=51.4",
+        "barrel=14%"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
