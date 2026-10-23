@@ -34,6 +34,13 @@ export const PATH_RULES = [
   { id: "nba-data-directory", test: (p) => /(^|\/)data\/nba(\/|$)/.test(p) },
   { id: "stats-nba-raw-snapshot", test: (p) => /(^|\/)stats-nba\//.test(p) || (/nba/i.test(p) && /\.(body|meta)\.json$/.test(p)) },
   { id: "nba-canonical-or-prediction-table", test: (p) => /nba/i.test(p) && /(^|\/)(player-games|team-games|predictions-[^/]+|outcomes-[^/]+)\.jsonl$/.test(p) },
+  // Private V1 artifacts (hoopR/ESPN-derived): caught by name wherever they are copied, not only under data/nba/.
+  {
+    id: "nba-v1-private-artifact",
+    test: (p) =>
+      /(^|\/)(player-games\.json|hoopr-import-report\.json|position-map-report\.json|position-review-list\.(json|csv)|private-preview-board\.json|positions-20\d\d-\d\d\.json)$/.test(p) ||
+      /(^|\/)props-v1\/raw\//.test(p),
+  },
   { id: "nba-backtest-artifact", test: (p) => /nba[^/]*\/(backtest|canonical|reports)\//i.test(p) },
   { id: "nba-com-retrieval-tool", test: (p) => LOCAL_ONLY_RETRIEVAL_TOOLS.has(p) },
 ];
@@ -66,6 +73,10 @@ export const CONTENT_RULES = [
       /"schemaVersion"\s*:\s*"nba-(player-game|team-game|prediction-snapshot|outcome|canonical-manifest|pregame-snapshot|final-result|prop-evaluation|capture-attempt|job-run|pipeline-game|line-import-batch|prop-partition)-v1"/.test(
         text,
       ),
+  },
+  {
+    id: "nba-v1-private-record",
+    test: (text) => /"schemaVersion"\s*:\s*"jkb-(player-games-import|hoopr-manifest|position-estimates)-v1"/.test(text) || /"privatePreview"\s*:\s*\{/.test(text),
   },
   { id: "nba-model-output", test: (text) => /"modelVersion"\s*:\s*"nba-(props-baseline|minutes)-/.test(text) },
   { id: "restricted-report-marker", test: (text) => text.includes(RESTRICTED_REPORT_MARKER) },

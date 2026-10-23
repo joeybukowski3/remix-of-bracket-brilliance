@@ -68,6 +68,21 @@ describe("containment rules", () => {
     expect(classifyContent("fetch('https://stats.nba.com/stats/x')", { deployable: true })).toEqual(["nba-ingest-code-in-bundle"]);
   });
 
+  it("flags the private hoopR/ESPN V1 artifacts by name and by record shape, wherever they are copied", () => {
+    for (const name of ["player-games.json", "hoopr-import-report.json", "position-map-report.json", "position-review-list.csv", "position-review-list.json", "private-preview-board.json", "positions-2026-27.json", "positions-2025-26.json"]) {
+      expect(classifyPath(`public/exports/${name}`), name).toEqual(["nba-v1-private-artifact"]);
+    }
+    expect(classifyPath("dist/props-v1/raw/hoopr/player_box_2026.json")).toEqual(["nba-v1-private-artifact"]);
+    expect(classifyPath("src/lib/nba/props/v1/positionReview.ts")).toEqual([]);
+    expect(classifyPath("docs/nba-props-v1.md")).toEqual([]);
+    for (const schema of ["jkb-player-games-import-v1", "jkb-hoopr-manifest-v1", "jkb-position-estimates-v1"]) {
+      expect(classifyContent(`{"schemaVersion":"${schema}","rows":[]}`), schema).toEqual(["nba-v1-private-record"]);
+    }
+    expect(classifyContent('{"privatePreview": {"notice": "x"}}')).toEqual(["nba-v1-private-record"]);
+    // Source code and prose that merely name the schema are not records.
+    expect(classifyContent('const x = { schemaVersion: "jkb-player-games-import-v1" }')).toEqual([]);
+  });
+
   it("scans content only for data-like files in git scope and all text in deployable scope", () => {
     const files: Record<string, string> = {
       "src/lib/nba/props/types.ts": 'schemaVersion: "nba-player-game-v1"',

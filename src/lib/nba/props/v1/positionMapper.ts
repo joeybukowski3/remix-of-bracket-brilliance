@@ -23,9 +23,7 @@ import { z } from "zod";
 import { DVP_POSITIONS, type DvpPosition } from "../dvpPositions";
 import { POSITION_ESTIMATES_SCHEMA, ESTIMATE_SEASONS, type EstimateSeason } from "./positionEstimates";
 import type { PlayerSeasonSummary } from "./hooprAdapter";
-
-/** Wikidata position items for basketball (match by QID, never by label: football "center" and "guard" also exist). */
-const FIVE_QIDS: Readonly<Record<string, DvpPosition>> = Object.freeze({ Q212413: "PG", Q273199: "SG", Q308879: "SF", Q462471: "PF", Q222052: "C" });
+import { FIVE_POSITION_QIDS, OTHER_BASKETBALL_POSITION_QIDS, SNAPSHOT_SCHEMA_VERSION } from "./wikidata/wikidataTypes";
 
 /** What each ESPN position abbreviation allows. */
 const ESPN_ALLOWS: Readonly<Record<string, readonly DvpPosition[]>> = Object.freeze({
@@ -39,11 +37,11 @@ export const ROLE_ROTATION_MINUTES = 12;
 const MAX_UNCLASSIFIED_LISTED = 15;
 
 const snapshotSchema = z.object({
-  schemaVersion: z.literal("wikidata-positions-snapshot-v1"),
-  provenance: z.object({ retrievedAtUtc: z.string() }),
+  schemaVersion: z.literal(SNAPSHOT_SCHEMA_VERSION),
+  provenance: z.object({ retrievedAtUtc: z.string().refine((t) => !Number.isNaN(Date.parse(t)), "retrievedAtUtc must be a date"), restrictedToItems: z.array(z.string()).nullable(), vocabularyIssues: z.array(z.string()) }),
   players: z.array(
     z.object({
-      qid: z.string(),
+      qid: z.string().regex(/^Q\d+$/),
       ids: z.object({ espn: z.array(z.object({ value: z.string(), rank: z.enum(["preferred", "normal", "deprecated"]) })) }),
       positions: z.array(
         z.object({
@@ -58,7 +56,12 @@ const snapshotSchema = z.object({
 
 export interface WikidataLabel {
   qid: string;
+  /** Career-level five-position labels: the only Wikidata evidence used to classify a player. */
   positions: DvpPosition[];
+  /** Five-position labels that exist only on season-, team- or end-date-scoped statements. Weak evidence: for human review, never used to classify. */
+  scoped: DvpPosition[];
+  /** Hybrid or generic basketball labels (forward, guard, swingman...). Weak evidence: for human review, never used to classify. */
+  hybrid: string[];
 }
 
 export interface WikidataIndex {
@@ -68,14 +71,32 @@ export interface WikidataIndex {
   ambiguousIds: ReadonlySet<string>;
 }
 
-/** Reads the Wikidata snapshot written by the position audit (only the fields used here are required). */
+const orderedFive = (labels: Iterable<DvpPosition>): DvpPosition[] => {
+  const set = new Set(labels);
+  return DVP_POSITIONS.filter((p) => set.has(p));
+};
+
+/**
+ * Reads the Wikidata snapshot written by scripts/nba-wikidata-position-probe.ts. A snapshot restricted to a sample of
+ * items, or one whose live vocabulary no longer matched the expected labels, is refused: either would make the labels
+ * unreliable without saying so.
+ */
 export function indexWikidataSnapshot(raw: unknown): WikidataIndex {
   const snapshot = snapshotSchema.parse(raw);
+  if (snapshot.provenance.restrictedToItems !== null) throw new Error("the Wikidata snapshot covers only a sample of items, not the NBA-player population; re-run the probe without --items");
+  if (snapshot.provenance.vocabularyIssues.length > 0) throw new Error(`the Wikidata snapshot's vocabulary check failed (${snapshot.provenance.vocabularyIssues.join("; ")}); positions cannot be trusted`);
   const owners = new Map<string, WikidataLabel[]>();
   for (const player of snapshot.players) {
-    const careerLevel = player.positions.filter((s) => s.rank !== "deprecated" && s.qualifiers.seasons.length === 0 && s.qualifiers.teamQids.length === 0 && s.qualifiers.end === null);
-    const set = new Set(careerLevel.flatMap((s) => (s.positionQid in FIVE_QIDS ? [FIVE_QIDS[s.positionQid]] : [])));
-    const label: WikidataLabel = { qid: player.qid, positions: DVP_POSITIONS.filter((p) => set.has(p)) };
+    const live = player.positions.filter((s) => s.rank !== "deprecated");
+    const careerLevel = live.filter((s) => s.qualifiers.seasons.length === 0 && s.qualifiers.teamQids.length === 0 && s.qualifiers.end === null);
+    const scoped = live.filter((s) => !careerLevel.includes(s));
+    const five = (list: typeof live) => list.flatMap((s) => (s.positionQid in FIVE_POSITION_QIDS ? [FIVE_POSITION_QIDS[s.positionQid]] : []));
+    const label: WikidataLabel = {
+      qid: player.qid,
+      positions: orderedFive(five(careerLevel)),
+      scoped: orderedFive(five(scoped)),
+      hybrid: [...new Set(live.flatMap((s) => (s.positionQid in OTHER_BASKETBALL_POSITION_QIDS ? [OTHER_BASKETBALL_POSITION_QIDS[s.positionQid]] : [])))].sort(),
+    };
     for (const id of new Set(player.ids.espn.filter((i) => i.rank !== "deprecated").map((i) => i.value))) owners.set(id, [...(owners.get(id) ?? []), label]);
   }
   const byEspnId = new Map<string, WikidataLabel>();
@@ -113,8 +134,19 @@ export interface SeasonMapReport {
   topUnclassified: Array<{ playerId: string; name: string; team: string; minutes: number; reason: string }>;
 }
 
+/** Why a player has no usable Wikidata label. The weaker kinds carry candidates for a human to review; none is ever applied. */
+export type EvidenceKind = "ambiguous-wikidata-id" | "no-wikidata-item" | "item-without-position" | "scoped-label-only" | "hybrid-label-only";
+
+/** A player-season left without a position, with the evidence that exists for a reviewer. */
+export interface UnclassifiedPlayer {
+  summary: PlayerSeasonSummary;
+  evidence: { kind: EvidenceKind; qid: string | null; scopedCandidates: DvpPosition[]; hybridLabels: string[] };
+}
+
 export interface PositionMapResult {
   files: Record<EstimateSeason, unknown>;
+  /** Every player-season left unclassified (the full set, not just the top by minutes). */
+  unclassified: UnclassifiedPlayer[];
   report: { seasons: Record<string, SeasonMapReport>; wikidataRetrievedAtUtc: string; overridesApplied: number };
 }
 
@@ -130,20 +162,24 @@ function espnAllowed(p: PlayerSeasonSummary): readonly DvpPosition[] {
 }
 
 type Source = "single" | "multi" | "wikidataOverEspn" | "espnListing";
-type Decision = { kind: "classified"; primary: DvpPosition; secondary: DvpPosition[]; source: Source; note: string } | { kind: "unclassified"; reason: string };
+type Decision = { kind: "classified"; primary: DvpPosition; secondary: DvpPosition[]; source: Source; note: string } | { kind: "unclassified"; reason: string; evidence: UnclassifiedPlayer["evidence"] };
 
 /** ESPN's own listing as a label, only when it names exactly one position. */
-function espnOnly(p: PlayerSeasonSummary, why: string): Decision {
+function espnOnly(p: PlayerSeasonSummary, why: string, evidence: UnclassifiedPlayer["evidence"]): Decision {
   const allowed = espnAllowed(p);
   if (allowed.length === 1) return { kind: "classified", primary: allowed[0], secondary: [], source: "espnListing", note: `ESPN lists ${allowed[0]}; ${why}` };
-  return { kind: "unclassified", reason: `${why}, and ESPN lists only G or F (PG vs SG, SF vs PF would be a guess)` };
+  return { kind: "unclassified", reason: `${why}, and ESPN lists only G or F (PG vs SG, SF vs PF would be a guess)`, evidence };
 }
 
 function decide(p: PlayerSeasonSummary, wikidata: WikidataIndex): Decision {
-  if (wikidata.ambiguousIds.has(p.playerId)) return espnOnly(p, "ESPN id matches two Wikidata items");
+  const none = (kind: EvidenceKind): UnclassifiedPlayer["evidence"] => ({ kind, qid: null, scopedCandidates: [], hybridLabels: [] });
+  if (wikidata.ambiguousIds.has(p.playerId)) return espnOnly(p, "ESPN id matches two Wikidata items", none("ambiguous-wikidata-id"));
   const label = wikidata.byEspnId.get(p.playerId);
-  if (!label) return espnOnly(p, "no Wikidata item for this ESPN id");
-  if (label.positions.length === 0) return espnOnly(p, "Wikidata item has no career-level five-position label");
+  if (!label) return espnOnly(p, "no Wikidata item for this ESPN id", none("no-wikidata-item"));
+  if (label.positions.length === 0) {
+    const kind: EvidenceKind = label.scoped.length > 0 ? "scoped-label-only" : label.hybrid.length > 0 ? "hybrid-label-only" : "item-without-position";
+    return espnOnly(p, "Wikidata item has no career-level five-position label", { kind, qid: label.qid, scopedCandidates: label.scoped, hybridLabels: label.hybrid });
+  }
   const candidates = label.positions.filter((pos) => espnAllowed(p).includes(pos));
   const primary = (candidates.length > 0 ? candidates : label.positions)[0];
   const source: Source = candidates.length === 0 ? "wikidataOverEspn" : candidates.length > 1 ? "multi" : "single";
@@ -193,6 +229,7 @@ export function buildPositionFiles(args: { players: readonly PlayerSeasonSummary
   validateOverrides(overrides, args.players);
 
   const reports: Record<string, SeasonMapReport> = {};
+  const unclassified: UnclassifiedPlayer[] = [];
   const entries: Record<string, unknown[]> = {};
   const totalMinutes: Record<string, number> = {};
   const coveredMinutes: Record<string, number> = {};
@@ -216,6 +253,7 @@ export function buildPositionFiles(args: { players: readonly PlayerSeasonSummary
     } else {
       report.unclassified[decision.reason] = (report.unclassified[decision.reason] ?? 0) + 1;
       report.topUnclassified.push({ playerId: p.playerId, name: p.name, team: p.team, minutes: Math.round(p.minutes), reason: decision.reason });
+      unclassified.push({ summary: p, evidence: decision.evidence });
       continue;
     }
     report.classified += 1;
@@ -228,5 +266,5 @@ export function buildPositionFiles(args: { players: readonly PlayerSeasonSummary
     report.topUnclassified = report.topUnclassified.sort((a, b) => b.minutes - a.minutes).slice(0, MAX_UNCLASSIFIED_LISTED);
   }
   const files = assembleFiles(entries, overrides, args.wikidata, args.asOfUtc);
-  return { files, report: { seasons: reports, wikidataRetrievedAtUtc: args.wikidata.retrievedAtUtc, overridesApplied: overrides.length } };
+  return { files, unclassified, report: { seasons: reports, wikidataRetrievedAtUtc: args.wikidata.retrievedAtUtc, overridesApplied: overrides.length } };
 }

@@ -11,8 +11,10 @@ const item = (qid: string, espnIds: string[], positions: Stmt[]) => ({
   ids: { espn: espnIds.map((value) => ({ value, rank: "normal" as "normal" | "deprecated" | "preferred" })) },
   positions: positions.map((s) => ({ positionQid: s.positionQid, rank: s.rank ?? "normal", qualifiers: { seasons: s.seasons ?? [], teamQids: s.teamQids ?? [], end: s.end ?? null } })),
 });
-const snapshot = (players: ReturnType<typeof item>[]) => ({ schemaVersion: "wikidata-positions-snapshot-v1", provenance: { retrievedAtUtc: "2026-10-23T14:48:10.264Z" }, players });
+const provenance = { retrievedAtUtc: "2026-10-23T14:48:10.264Z", restrictedToItems: null as string[] | null, vocabularyIssues: [] as string[] };
+const snapshot = (players: ReturnType<typeof item>[], over: Partial<typeof provenance> = {}) => ({ schemaVersion: "wikidata-positions-snapshot-v1", provenance: { ...provenance, ...over }, players });
 const index = (players: ReturnType<typeof item>[]) => indexWikidataSnapshot(snapshot(players));
+const FORWARD = "Q10498241", SWINGMAN = "Q2302133";
 
 const player = (id: string, over: Partial<PlayerSeasonSummary> = {}): PlayerSeasonSummary => ({
   season: "2026-27", playerId: id, name: `Demo Player ${id}`, team: "BOS", games: 10, starts: 8, minutes: 300, espnPositions: { G: 10 }, ...over,
@@ -24,7 +26,7 @@ const entryOf = (result: ReturnType<typeof map>, season: "2025-26" | "2026-27", 
 describe("indexWikidataSnapshot", () => {
   it("keeps career-level five-position labels only, by QID, in PG..C order", () => {
     const idx = index([item("Q1", ["10"], [{ positionQid: C }, { positionQid: PG }, { positionQid: "Q25075" }, { positionQid: "Q10498241" }])]);
-    expect(idx.byEspnId.get("10")).toEqual({ qid: "Q1", positions: ["PG", "C"] });
+    expect(idx.byEspnId.get("10")).toEqual({ qid: "Q1", positions: ["PG", "C"], scoped: [], hybrid: ["forward"] });
   });
 
   it("ignores deprecated, season-scoped, team-scoped and end-dated statements", () => {
@@ -49,6 +51,28 @@ describe("indexWikidataSnapshot", () => {
 
   it("rejects a snapshot in an unexpected format", () => {
     expect(() => indexWikidataSnapshot({ schemaVersion: "other" })).toThrow();
+  });
+
+  it("refuses a sample snapshot: labels for a few items must not stand in for the population", () => {
+    expect(() => indexWikidataSnapshot(snapshot([], { restrictedToItems: ["Q1"] }))).toThrow(/only a sample of items/);
+  });
+
+  it("refuses a snapshot whose vocabulary check failed", () => {
+    expect(() => indexWikidataSnapshot(snapshot([], { vocabularyIssues: ["Q212413 label changed"] }))).toThrow(/vocabulary check failed.*Q212413 label changed/);
+  });
+
+  it("refuses a snapshot written before provenance carried those fields", () => {
+    expect(() => indexWikidataSnapshot({ schemaVersion: "wikidata-positions-snapshot-v1", provenance: { retrievedAtUtc: "2026-10-23T14:48:10.264Z" }, players: [] })).toThrow();
+  });
+
+  it("refuses an unreadable retrieval date, which would silence the stale-snapshot warning, and a malformed item id", () => {
+    expect(() => indexWikidataSnapshot(snapshot([], { retrievedAtUtc: "not a date" }))).toThrow();
+    expect(() => index([item("=HYPERLINK(1)", ["10"], [{ positionQid: PG }])])).toThrow();
+  });
+
+  it("keeps scoped five-position labels and hybrid labels as weak evidence, apart from the career-level labels", () => {
+    const idx = index([item("Q1", ["10"], [{ positionQid: SG, seasons: [{}] }, { positionQid: PF, end: "2019-06-30" }, { positionQid: SWINGMAN }, { positionQid: FORWARD }, { positionQid: PG, rank: "deprecated" }])]);
+    expect(idx.byEspnId.get("10")).toEqual({ qid: "Q1", positions: [], scoped: ["SG", "PF"], hybrid: ["forward", "swingman"] });
   });
 });
 
@@ -98,6 +122,45 @@ describe("primary position rules", () => {
     expect(entryOf(unlabelled, "2026-27", "10")).toBeUndefined();
     expect(Object.keys(unlabelled.report.seasons["2026-27"].unclassified)[0]).toMatch(/^ESPN id matches two Wikidata items/);
     expect(entryOf(map([player("10", { espnPositions: { C: 5 } })], ambiguous), "2026-27", "10")).toMatchObject({ primary: "C" });
+  });
+});
+
+describe("unclassified players carry evidence for review and are never classified from it", () => {
+  const evidenceOf = (r: ReturnType<typeof map>, id: string) => r.unclassified.find((u) => u.summary.playerId === id)?.evidence;
+
+  it("tells apart no item, an item with nothing, scoped-only and hybrid-only evidence", () => {
+    const wikidata = index([
+      item("Q2", ["20"], []),
+      item("Q3", ["30"], [{ positionQid: SG, seasons: [{}] }, { positionQid: PG, teamQids: ["Q9"] }]),
+      item("Q4", ["40"], [{ positionQid: SWINGMAN }]),
+      item("Q5", ["50"], [{ positionQid: PG }]),
+      item("Q6", ["60"], [{ positionQid: PG }]),
+      item("Q7", ["60"], [{ positionQid: C }]),
+    ]);
+    const r = map(["10", "20", "30", "40", "60"].map((id) => player(id)), wikidata);
+    expect(evidenceOf(r, "10")).toEqual({ kind: "no-wikidata-item", qid: null, scopedCandidates: [], hybridLabels: [] });
+    expect(evidenceOf(r, "20")).toEqual({ kind: "item-without-position", qid: "Q2", scopedCandidates: [], hybridLabels: [] });
+    expect(evidenceOf(r, "30")).toEqual({ kind: "scoped-label-only", qid: "Q3", scopedCandidates: ["PG", "SG"], hybridLabels: [] });
+    expect(evidenceOf(r, "40")).toEqual({ kind: "hybrid-label-only", qid: "Q4", scopedCandidates: [], hybridLabels: ["swingman"] });
+    expect(evidenceOf(r, "60")).toMatchObject({ kind: "ambiguous-wikidata-id", qid: null });
+  });
+
+  it("applies none of it: a player with only weak evidence has no position in the files", () => {
+    const wikidata = index([item("Q3", ["30"], [{ positionQid: SG, seasons: [{}] }]), item("Q4", ["40"], [{ positionQid: SWINGMAN }])]);
+    const r = map([player("30"), player("40")], wikidata);
+    expect(entryOf(r, "2026-27", "30")).toBeUndefined();
+    expect(entryOf(r, "2026-27", "40")).toBeUndefined();
+    expect(r.unclassified).toHaveLength(2);
+  });
+
+  it("does not list a player ESPN's own single listing classified, or a manual override", () => {
+    const r = map([player("10", { espnPositions: { C: 10 } }), player("20")], index([]), [{ season: "2026-27", playerId: "20", primary: "PG", secondary: [], reason: "starting point guard per team site" }]);
+    expect(r.unclassified).toEqual([]);
+  });
+
+  it("lists one entry per player-season, with the season's own summary", () => {
+    const r = map([player("10", { season: "2025-26", minutes: 700 }), player("10", { minutes: 90 })], index([]));
+    expect(r.unclassified.map((u) => [u.summary.season, u.summary.minutes]).sort()).toEqual([["2025-26", 700], ["2026-27", 90]]);
   });
 });
 
