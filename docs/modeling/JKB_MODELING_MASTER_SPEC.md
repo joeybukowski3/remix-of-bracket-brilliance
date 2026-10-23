@@ -1,5 +1,7 @@
 # JKB Football Modeling Master Specification
 
+The [NFL player availability foundation and Phase 2B yardage slice](../features/nfl-player-availability-foundation.md) adds a versioned, manually verified official fact capture to current-week yardage candidate selection. Verified OUT/inactive players are excluded, official QB starter announcements take precedence over depth charts, and conditional/unknown availability stays labeled. No yardage coefficient or usage allocation changes; historical projection archives are untouched. Fantasy, DFS, TD Scorer, Current OVR, totals, and spreads do not consume this capture.
+
 The [NFL Fantasy Points Allowed by Position](../features/nfl-fantasy-points-allowed.md) contract owns the `nfl-fantasy-points-allowed-v2` artifact extension: combined WR allowed points are aggregated from raw WR player-week rows for every sample, while the current-season Wide/Slot snapshot remains separate. This adds a valid fallback column without changing fantasy scoring, projections, model edges, archives, or evaluation.
 
 The offline [2026 Week 1 Spread + ATS Audit](../research/nfl-week1-spread-ats-audit-2026/REPORT.md)

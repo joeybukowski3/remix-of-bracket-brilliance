@@ -1,0 +1,409 @@
+{
+  "schemaVersion": "nfl-player-availability-v1",
+  "policyVersion": "nfl-availability-resolution-v1",
+  "previewOnly": true,
+  "predictionCutoff": "2026-10-22T21:11:00Z",
+  "generatedAt": "2026-10-22T21:11:00Z",
+  "inputHashes": {
+    "public/data/nfl/2026/games.json": "c68e3a8c86856806e0dcc42d50e423b5ffd2297c894077fb4ff6d0f7e61944a8",
+    "public/data/nfl/2026/yardage-projections.json": "6bf2ddb65a419b61752655ae71b3817ac123db7211f5e90644873310e7ac0db2",
+    "public/data/fantasy/projections/2026/week-07.json": "d7c91e82ad08e2a50e81c0dc38eb744667d83633031938a6bb02b57295eefd95",
+    "public/data/nfl/2026/touchdown-preview.json": "8133b0cc9bcb7a575fd321c8cdfabeb28f558830db427b42b8c843b857069c42",
+    "data/nfl/availability/2026/week-07.json": "65b46782958328a3dab0a97d9ed1236b097ccb1f4cf32776ef4ddee22bc5939d"
+  },
+  "evidence": [
+    {
+      "id": "2026w7-bears-monangai-out",
+      "source": "official_team",
+      "url": "https://www.chicagobears.com/news/injury-update-bears-rg-jonah-jackson-set-to-play-vs-patriots",
+      "retrievedAt": "2026-10-22T21:10:43Z",
+      "publishedAt": null,
+      "publicationDisplay": "Oct 21, 2026 at 03:12 PM; timezone not stated on page",
+      "season": 2026,
+      "week": 7,
+      "gameId": "2026_07_NE_CHI",
+      "team": "chi",
+      "playerId": "gsis:00-0040236",
+      "playerName": "Kyle Monangai",
+      "position": "RB",
+      "kind": "game_status",
+      "value": "out",
+      "attribution": "Chicago Bears injury update; explicitly ruled out for Patriots game"
+    },
+    {
+      "id": "2026w7-nfl-monangai-out",
+      "source": "official_nfl",
+      "url": "https://amp.nfl.com/news/nfl-week-7-injury-report-2026-season",
+      "retrievedAt": "2026-10-22T21:10:43Z",
+      "publishedAt": null,
+      "publicationDisplay": "Published Oct 21, 2026 at 03:19 PM; updated Oct 22 at 03:23 PM; timezone not stated on page",
+      "season": 2026,
+      "week": 7,
+      "gameId": "2026_07_NE_CHI",
+      "team": "chi",
+      "playerId": "gsis:00-0040236",
+      "playerName": "Kyle Monangai",
+      "position": "RB",
+      "kind": "game_status",
+      "value": "out",
+      "attribution": "NFL Week 7 injury report lists Monangai OUT for Patriots at Bears"
+    },
+    {
+      "id": "2026w7-giants-mccarthy-starter",
+      "source": "official_team",
+      "url": "https://www.giants.com/news/j-j-mccarthy-to-start-quarterback-new-york-giants-week-7-houston-texans-john-harbaugh-jameis-winston",
+      "retrievedAt": "2026-10-22T21:10:43Z",
+      "publishedAt": null,
+      "publicationDisplay": "Oct 22, 2026 at 12:43 PM; timezone not stated on page",
+      "season": 2026,
+      "week": 7,
+      "gameId": "2026_07_NYG_HOU",
+      "team": "nyg",
+      "playerId": "gsis:00-0039923",
+      "playerName": "J.J. McCarthy",
+      "position": "QB",
+      "kind": "role",
+      "value": "confirmed_starter",
+      "attribution": "New York Giants announcement naming McCarthy Week 7 starter"
+    },
+    {
+      "id": "2026w7-giants-winston-backup",
+      "source": "official_team",
+      "url": "https://www.giants.com/news/j-j-mccarthy-to-start-quarterback-new-york-giants-week-7-houston-texans-john-harbaugh-jameis-winston",
+      "retrievedAt": "2026-10-22T21:10:43Z",
+      "publishedAt": null,
+      "publicationDisplay": "Oct 22, 2026 at 12:43 PM; timezone not stated on page",
+      "season": 2026,
+      "week": 7,
+      "gameId": "2026_07_NYG_HOU",
+      "team": "nyg",
+      "playerId": "gsis:00-0031503",
+      "playerName": "Jameis Winston",
+      "position": "QB",
+      "kind": "role",
+      "value": "backup_rotation",
+      "attribution": "New York Giants announcement naming Winston backup"
+    }
+  ],
+  "records": [
+    {
+      "season": 2026,
+      "week": 7,
+      "gameId": "2026_07_NE_CHI",
+      "kickoff": "2026-10-23T00:15:00.000Z",
+      "playerId": "gsis:00-0040236",
+      "playerName": "Kyle Monangai",
+      "team": "chi",
+      "opponent": "ne",
+      "position": "RB",
+      "competingPlayerIds": [],
+      "schemaVersion": "nfl-player-availability-v1",
+      "policyVersion": "nfl-availability-resolution-v1",
+      "predictionCutoff": "2026-10-22T21:11:00Z",
+      "role": "unknown",
+      "depthRank": null,
+      "depthSlot": null,
+      "gameStatus": "out",
+      "practice": "unknown",
+      "availability": "out",
+      "lineupEligibility": "excluded",
+      "confidence": "high",
+      "conflict": false,
+      "reasons": [
+        "official-out",
+        "no-verified-role"
+      ],
+      "usedEvidenceIds": [
+        "2026w7-bears-monangai-out"
+      ],
+      "rejectedEvidence": [
+        {
+          "id": "2026w7-giants-mccarthy-starter",
+          "reason": "identity-or-game-mismatch"
+        },
+        {
+          "id": "2026w7-giants-winston-backup",
+          "reason": "identity-or-game-mismatch"
+        }
+      ],
+      "sourceEvidence": [
+        {
+          "id": "2026w7-bears-monangai-out",
+          "kind": "game_status",
+          "source": "official_team",
+          "url": "https://www.chicagobears.com/news/injury-update-bears-rg-jonah-jackson-set-to-play-vs-patriots",
+          "publishedAt": null,
+          "retrievedAt": "2026-10-22T21:10:43Z",
+          "season": 2026,
+          "week": 7,
+          "gameId": "2026_07_NE_CHI",
+          "playerId": "gsis:00-0040236",
+          "team": "chi",
+          "value": "out",
+          "detail": "Chicago Bears injury update; explicitly ruled out for Patriots game"
+        },
+        {
+          "id": "2026w7-nfl-monangai-out",
+          "kind": "game_status",
+          "source": "official_nfl",
+          "url": "https://amp.nfl.com/news/nfl-week-7-injury-report-2026-season",
+          "publishedAt": null,
+          "retrievedAt": "2026-10-22T21:10:43Z",
+          "season": 2026,
+          "week": 7,
+          "gameId": "2026_07_NE_CHI",
+          "playerId": "gsis:00-0040236",
+          "team": "chi",
+          "value": "out",
+          "detail": "NFL Week 7 injury report lists Monangai OUT for Patriots at Bears"
+        }
+      ]
+    },
+    {
+      "season": 2026,
+      "week": 7,
+      "gameId": "2026_07_NYG_HOU",
+      "kickoff": "2026-10-25T17:00:00.000Z",
+      "playerId": "gsis:00-0031503",
+      "playerName": "Jameis Winston",
+      "team": "nyg",
+      "opponent": "hou",
+      "position": "QB",
+      "competingPlayerIds": [
+        "gsis:00-0039923"
+      ],
+      "schemaVersion": "nfl-player-availability-v1",
+      "policyVersion": "nfl-availability-resolution-v1",
+      "predictionCutoff": "2026-10-22T21:11:00Z",
+      "role": "backup_rotation",
+      "depthRank": null,
+      "depthSlot": null,
+      "gameStatus": "unknown",
+      "practice": "unknown",
+      "availability": "unknown",
+      "lineupEligibility": "unknown",
+      "confidence": "high",
+      "conflict": false,
+      "reasons": [
+        "no-verified-game-status"
+      ],
+      "usedEvidenceIds": [
+        "2026w7-giants-winston-backup"
+      ],
+      "rejectedEvidence": [
+        {
+          "id": "2026w7-bears-monangai-out",
+          "reason": "identity-or-game-mismatch"
+        },
+        {
+          "id": "2026w7-giants-mccarthy-starter",
+          "reason": "identity-or-game-mismatch"
+        },
+        {
+          "id": "2026w7-nfl-monangai-out",
+          "reason": "identity-or-game-mismatch"
+        }
+      ],
+      "sourceEvidence": [
+        {
+          "id": "2026w7-giants-winston-backup",
+          "kind": "role",
+          "source": "official_team",
+          "url": "https://www.giants.com/news/j-j-mccarthy-to-start-quarterback-new-york-giants-week-7-houston-texans-john-harbaugh-jameis-winston",
+          "publishedAt": null,
+          "retrievedAt": "2026-10-22T21:10:43Z",
+          "season": 2026,
+          "week": 7,
+          "gameId": "2026_07_NYG_HOU",
+          "playerId": "gsis:00-0031503",
+          "team": "nyg",
+          "value": "backup_rotation",
+          "detail": "New York Giants announcement naming Winston backup"
+        }
+      ]
+    },
+    {
+      "season": 2026,
+      "week": 7,
+      "gameId": "2026_07_NYG_HOU",
+      "kickoff": "2026-10-25T17:00:00.000Z",
+      "playerId": "gsis:00-0039923",
+      "playerName": "J.J. McCarthy",
+      "team": "nyg",
+      "opponent": "hou",
+      "position": "QB",
+      "competingPlayerIds": [
+        "gsis:00-0031503"
+      ],
+      "schemaVersion": "nfl-player-availability-v1",
+      "policyVersion": "nfl-availability-resolution-v1",
+      "predictionCutoff": "2026-10-22T21:11:00Z",
+      "role": "confirmed_starter",
+      "depthRank": null,
+      "depthSlot": null,
+      "gameStatus": "unknown",
+      "practice": "unknown",
+      "availability": "unknown",
+      "lineupEligibility": "unknown",
+      "confidence": "high",
+      "conflict": false,
+      "reasons": [
+        "no-verified-game-status"
+      ],
+      "usedEvidenceIds": [
+        "2026w7-giants-mccarthy-starter"
+      ],
+      "rejectedEvidence": [
+        {
+          "id": "2026w7-bears-monangai-out",
+          "reason": "identity-or-game-mismatch"
+        },
+        {
+          "id": "2026w7-giants-winston-backup",
+          "reason": "identity-or-game-mismatch"
+        },
+        {
+          "id": "2026w7-nfl-monangai-out",
+          "reason": "identity-or-game-mismatch"
+        }
+      ],
+      "sourceEvidence": [
+        {
+          "id": "2026w7-giants-mccarthy-starter",
+          "kind": "role",
+          "source": "official_team",
+          "url": "https://www.giants.com/news/j-j-mccarthy-to-start-quarterback-new-york-giants-week-7-houston-texans-john-harbaugh-jameis-winston",
+          "publishedAt": null,
+          "retrievedAt": "2026-10-22T21:10:43Z",
+          "season": 2026,
+          "week": 7,
+          "gameId": "2026_07_NYG_HOU",
+          "playerId": "gsis:00-0039923",
+          "team": "nyg",
+          "value": "confirmed_starter",
+          "detail": "New York Giants announcement naming McCarthy Week 7 starter"
+        }
+      ]
+    }
+  ],
+  "comparisons": [
+    {
+      "playerId": "gsis:00-0040236",
+      "playerName": "Kyle Monangai",
+      "gameId": "2026_07_NE_CHI",
+      "old": {
+        "yardage": [
+          {
+            "market": "rushing",
+            "status": "projected",
+            "roleSource": "nflverse-depth-charts-espn",
+            "depthRank": 2
+          },
+          {
+            "market": "receiving",
+            "status": "projected",
+            "roleSource": "nflverse-depth-charts-espn",
+            "depthRank": 2
+          }
+        ],
+        "fantasy": [
+          {
+            "position": "RB",
+            "projected": true,
+            "availability": "not represented",
+            "role": "not represented"
+          }
+        ],
+        "dfs": "upload-dependent; no canonical Week 7 slate",
+        "touchdown": [
+          {
+            "candidate": true,
+            "playerId": "gsis:00-0040236"
+          }
+        ]
+      },
+      "proposed": {
+        "role": "unknown",
+        "availability": "out",
+        "lineupEligibility": "excluded",
+        "confidence": "high"
+      },
+      "supportingEvidenceIds": [
+        "2026w7-bears-monangai-out"
+      ]
+    },
+    {
+      "playerId": "gsis:00-0031503",
+      "playerName": "Jameis Winston",
+      "gameId": "2026_07_NYG_HOU",
+      "old": {
+        "yardage": [],
+        "fantasy": [
+          {
+            "position": "QB",
+            "projected": true,
+            "availability": "not represented",
+            "role": "not represented"
+          }
+        ],
+        "dfs": "upload-dependent; no canonical Week 7 slate",
+        "touchdown": []
+      },
+      "proposed": {
+        "role": "backup_rotation",
+        "availability": "unknown",
+        "lineupEligibility": "unknown",
+        "confidence": "high"
+      },
+      "supportingEvidenceIds": [
+        "2026w7-giants-winston-backup"
+      ]
+    },
+    {
+      "playerId": "gsis:00-0039923",
+      "playerName": "J.J. McCarthy",
+      "gameId": "2026_07_NYG_HOU",
+      "old": {
+        "yardage": [
+          {
+            "market": "passing",
+            "status": "projected",
+            "roleSource": "nflverse-depth-charts-espn",
+            "depthRank": 1
+          },
+          {
+            "market": "rushing",
+            "status": "projected",
+            "roleSource": "nflverse-depth-charts-espn",
+            "depthRank": 1
+          }
+        ],
+        "fantasy": [
+          {
+            "position": "QB",
+            "projected": true,
+            "availability": "not represented",
+            "role": "not represented"
+          }
+        ],
+        "dfs": "upload-dependent; no canonical Week 7 slate",
+        "touchdown": [
+          {
+            "candidate": true,
+            "playerId": "gsis:00-0039923"
+          }
+        ]
+      },
+      "proposed": {
+        "role": "confirmed_starter",
+        "availability": "unknown",
+        "lineupEligibility": "unknown",
+        "confidence": "high"
+      },
+      "supportingEvidenceIds": [
+        "2026w7-giants-mccarthy-starter"
+      ]
+    }
+  ],
+  "snapshotId": "nfl-availability-6aa184825411de5182871e0af7b5293c2d87afab667977c404c3423015fa92e6"
+}

@@ -138,7 +138,7 @@ export function computeDepthChartStaleness(sourceSnapshotAt: string | null, asOf
 }
 
 export type NflRoleEvidence = {
-  roleSource: typeof DEPTH_CHART_ROLE_SOURCE | "historicalVolume" | "rosterScarcityFloor" | "unavailable";
+  roleSource: typeof DEPTH_CHART_ROLE_SOURCE | "official_team" | "historicalVolume" | "rosterScarcityFloor" | "unavailable";
   roleSourceUpdatedAt: string | null;
   depthRank: number | null;
   starterFlag: boolean;

@@ -20,6 +20,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 export const EXPECTED_SCHEMA_VERSION = "nfl-current-week-yardage-projection-v1";
+export const AVAILABILITY_SCHEMA_VERSION = "nfl-current-week-yardage-projection-v2";
 
 /**
  * @param {unknown} artifact
@@ -30,8 +31,8 @@ export function validateCurrentWeekProjectionArtifact(artifact, { expectedSeason
   const problems = [];
   const a = /** @type {Record<string, unknown>} */ (artifact ?? {});
 
-  if (a.schemaVersion !== EXPECTED_SCHEMA_VERSION) {
-    problems.push(`unexpected schemaVersion "${a.schemaVersion}" (expected "${EXPECTED_SCHEMA_VERSION}")`);
+  if (![EXPECTED_SCHEMA_VERSION, AVAILABILITY_SCHEMA_VERSION].includes(a.schemaVersion)) {
+    problems.push(`unexpected schemaVersion "${a.schemaVersion}"`);
   }
   if (a.season !== expectedSeason) problems.push(`season mismatch: artifact has ${a.season}, expected ${expectedSeason}`);
   if (a.week !== expectedWeek) problems.push(`week mismatch: artifact has ${a.week}, expected ${expectedWeek}`);
@@ -39,6 +40,7 @@ export function validateCurrentWeekProjectionArtifact(artifact, { expectedSeason
 
   const rows = Array.isArray(a.rows) ? a.rows : [];
   if (!Array.isArray(a.rows)) problems.push("rows is not an array");
+  const availabilityCoverage = a.schemaVersion === AVAILABILITY_SCHEMA_VERSION ? a.availabilitySource?.coverage : null;
 
   const qa = /** @type {Record<string, any>} */ (a.qa ?? {});
   if (!a.qa) problems.push("missing qa summary");
@@ -49,6 +51,22 @@ export function validateCurrentWeekProjectionArtifact(artifact, { expectedSeason
     const key = `${row.market}|${row.playerId}|${row.gameId}`;
     if (seen.has(key)) problems.push(`duplicate row for market/player/game ${key}`);
     seen.add(key);
+    if (a.schemaVersion === AVAILABILITY_SCHEMA_VERSION) {
+      if (!row.availability || !["out", "inactive", "conditional", "unknown"].includes(row.availability.availability)) {
+        problems.push(`missing or invalid availability for ${key}`);
+      } else if (row.availability.lineupEligibility === "excluded" || ["out", "inactive"].includes(row.availability.availability)) {
+        problems.push(`excluded player reached active yardage rows: ${key}`);
+      } else if (!["conditional", "unknown"].includes(row.availability.lineupEligibility)) {
+        problems.push(`invalid active-row availability eligibility for ${key}`);
+      } else if (["missing", "stale"].includes(availabilityCoverage)
+        && (row.availability.availability !== "unknown" || row.availability.gameStatus !== "unknown"
+          || row.availability.role !== "unknown" || row.availability.lineupEligibility !== "unknown")) {
+        problems.push(`unverified source coverage presented as verified availability for ${key}`);
+      }
+    }
+  }
+  if (a.schemaVersion === AVAILABILITY_SCHEMA_VERSION && (!a.availabilitySource || !["missing", "stale", "partial", "complete"].includes(a.availabilitySource.coverage))) {
+    problems.push("missing availability source coverage metadata");
   }
 
   // Zero unresolved identities.

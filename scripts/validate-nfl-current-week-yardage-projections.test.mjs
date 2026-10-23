@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EXPECTED_SCHEMA_VERSION, validateCurrentWeekProjectionArtifact } from "./validate-nfl-current-week-yardage-projections.mjs";
+import { EXPECTED_SCHEMA_VERSION, AVAILABILITY_SCHEMA_VERSION, validateCurrentWeekProjectionArtifact } from "./validate-nfl-current-week-yardage-projections.mjs";
 
 function baseArtifact(overrides = {}) {
   return {
@@ -27,6 +27,27 @@ const expectations = { expectedSeason: 2026, expectedWeek: 3, expectedGameIds };
 describe("validateCurrentWeekProjectionArtifact", () => {
   it("passes a well-formed artifact", () => {
     expect(validateCurrentWeekProjectionArtifact(baseArtifact(), expectations)).toEqual([]);
+  });
+
+  it("accepts v2 unknown availability but rejects an excluded published row", () => {
+    const artifact = baseArtifact({ schemaVersion: AVAILABILITY_SCHEMA_VERSION,
+      availabilitySource: { coverage: "partial", capturedAt: "2026-09-20T11:00:00Z", observations: 1, policyVersion: "nfl-availability-resolution-v1" } });
+    for (const row of artifact.rows) row.availability = { availability: "unknown", lineupEligibility: "unknown" };
+    expect(validateCurrentWeekProjectionArtifact(artifact, expectations)).toEqual([]);
+    artifact.rows[0].availability = { availability: "out", lineupEligibility: "excluded" };
+    expect(validateCurrentWeekProjectionArtifact(artifact, expectations).some((p) => p.includes("excluded player"))).toBe(true);
+  });
+
+  it.each(["missing", "stale"])("rejects verified-looking rows under %s coverage", (coverage) => {
+    const artifact = baseArtifact({ schemaVersion: AVAILABILITY_SCHEMA_VERSION,
+      availabilitySource: { coverage, capturedAt: null, observations: 0, policyVersion: "nfl-availability-resolution-v1" } });
+    for (const row of artifact.rows) row.availability = {
+      availability: "unknown", gameStatus: "unknown", role: "unknown", lineupEligibility: "unknown",
+    };
+    expect(validateCurrentWeekProjectionArtifact(artifact, expectations)).toEqual([]);
+    artifact.rows[0].availability.role = "confirmed_starter";
+    expect(validateCurrentWeekProjectionArtifact(artifact, expectations)
+      .some((p) => p.includes("unverified source coverage presented as verified"))).toBe(true);
   });
 
   it("flags an unexpected schemaVersion", () => {

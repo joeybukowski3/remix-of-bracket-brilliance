@@ -44,6 +44,19 @@ Repository-wide notes:
 | Fragility / caveats | Windows `core.autocrlf=true` can corrupt committed CSV caches vs. `manifest.json`; `.gitattributes` (`-text`) guards this and re-normalized caches must not be committed. Two EPA definitions coexist deliberately (nflfastR play-by-play vs. legacy `stats_team_week`). |
 | Pointers | `docs/nfl-data-inventory.md`, `docs/nfl-matchup-analyzer-redesign-spec.md` §20–§27, `docs/nfl-play-by-play-audit.md`, `src/lib/nfl/props/README.md` |
 
+## NFL — official weekly availability (Phase 2B)
+
+| Field | Value |
+|---|---|
+| Provider | Public NFL and individual team injury updates and starter announcements |
+| Purpose | Current-week yardage candidate availability and confirmed QB starter roles |
+| Access | Manual review of public official pages; no licensed or paid feed and no automated page scraping |
+| Source ledger | `data/nfl/availability/<season>/week-<NN>.json`, schema `nfl-official-availability-capture-v1`; factual status/role values, canonical IDs, URLs, attribution, retrieval timestamp, nullable verified UTC publication timestamp, and explicit partial/complete coverage metadata |
+| Validation | `src/lib/nfl/availability/capture.ts` rejects malformed, conflicting, identity-mismatched, and post-cutoff captures; over-72-hour captures are ignored and labeled stale by the yardage generator |
+| Consumer | Current-week yardage generator only; missing ledger leaves availability unverified |
+| Refresh | Manual recheck and ledger update before each production run; game-day inactives require a later official list |
+| Limitations | Current Week 7 ledger covers Monangai OUT and Giants QB roles only; other statuses remain unknown. No source article text is redistributed. NFLverse 2026 injury data is not present in the committed cache. |
+
 ## NFL — RBSDM (success rate)
 
 | Field | Value |

@@ -30,6 +30,7 @@
  */
 import type { NflCurrentWeekCandidate } from "./currentWeekRosterUniverse";
 import type { NflQbStatGameLogEntry } from "./qbPassingFeatures";
+import type { AvailabilityRecord } from "../availability/resolver";
 import { depthRankOneCandidates, fallbackRoleEvidence, sourcedRoleEvidence, type NflDepthChartIndex, type NflRoleEvidence } from "./currentWeekDepthChart";
 
 export type NflQbStarterResolution = {
@@ -37,7 +38,7 @@ export type NflQbStarterResolution = {
   rollingAttempts: number | null;
   gamesStartedPriorThisSeason: number;
   hasPriorSeasonStarts: boolean;
-  resolution: "sourcedDepthChart" | "rosterOnlyCandidate" | "rollingAttemptsLeader" | "noCompetingQb";
+  resolution: "officialStarter" | "sourcedDepthChart" | "rosterOnlyCandidate" | "rollingAttemptsLeader" | "noCompetingQb";
   starterUncertain: boolean;
   multiQbRoleUncertain: boolean;
   sourceAmbiguous: boolean;
@@ -78,10 +79,12 @@ export function resolvePassingStarters(
   candidates: readonly NflCurrentWeekCandidate[],
   qbStatGameLog: readonly NflQbStatGameLogEntry[],
   depthChartIndex: NflDepthChartIndex | null,
+  availabilityByPlayer?: ReadonlyMap<string, AvailabilityRecord>,
 ): NflQbStarterResolution[] {
   const byTeam = new Map<string, NflCurrentWeekCandidate[]>();
   for (const c of candidates) {
     if (c.position !== "QB") continue;
+    if (availabilityByPlayer?.get(`${c.gameId}|${c.playerId}`)?.role === "backup_rotation") continue;
     const list = byTeam.get(c.team) ?? [];
     list.push(c);
     byTeam.set(c.team, list);
@@ -94,10 +97,25 @@ export function resolvePassingStarters(
       .sort((a, b) => (b.attempts ?? -1) - (a.attempts ?? -1) || a.candidate.playerId.localeCompare(b.candidate.playerId));
     if (ranked.length === 0) continue;
 
+    const announced = qbs.filter((c) => availabilityByPlayer?.get(`${c.gameId}|${c.playerId}`)?.role === "confirmed_starter");
+    if (announced.length > 1) throw new Error(`Conflicting official QB starter announcements for ${team}`);
+    if (announced.length === 1) {
+      const winner = announced[0];
+      const rolling = rollingAttempts(qbStatGameLog, winner.playerId, winner.season, winner.gameDateUtc);
+      const record = availabilityByPlayer!.get(`${winner.gameId}|${winner.playerId}`)!;
+      results.push({ candidate: winner, rollingAttempts: rolling.attempts,
+        gamesStartedPriorThisSeason: rolling.gamesStartedPriorThisSeason, hasPriorSeasonStarts: rolling.hasPriorSeasonStarts,
+        resolution: "officialStarter", starterUncertain: false, multiQbRoleUncertain: false, sourceAmbiguous: false,
+        roleEvidence: { roleSource: "official_team", roleSourceUpdatedAt: record.sourceEvidence.find((e) => e.kind === "role")?.publishedAt ?? null,
+          depthRank: null, starterFlag: true, roleConfidence: "sourced", roleEvidence: "Official team starter announcement" } });
+      continue;
+    }
+
     // Step 1: sourced depth chart, restricted to ACT candidates on this team's own roster.
     const actPlayerIds = new Set(qbs.map((c) => c.playerId));
     const sourcedCandidates = depthChartIndex
-      ? depthRankOneCandidates(depthChartIndex, team, "QB").filter((e) => actPlayerIds.has(e.playerId))
+      ? depthRankOneCandidates(depthChartIndex, team, "QB").filter((e) => actPlayerIds.has(e.playerId)
+        && availabilityByPlayer?.get(`${qbs[0].gameId}|${e.playerId}`)?.role !== "backup_rotation")
       : [];
     if (sourcedCandidates.length === 1) {
       const winner = qbs.find((c) => c.playerId === sourcedCandidates[0].playerId)!;
