@@ -15,17 +15,17 @@ export const SOURCE_LICENSES: Readonly<Record<NbaSourceId, SourceLicense>> = Obj
   },
   espn: {
     status: "unlicensed",
-    permittedUses: [],
+    permittedUses: ["private-research"],
     basis:
-      "Origin of hoopR's ESPN-derived datasets. Disney Terms of Use - United States, last updated May 24, 2024 (https://disneytermsofuse.com/english/): section 2.A personal, noncommercial license excluding AI training/validation; 2.B bars commercial use (viii) and automated extraction or scraping, including dataset building (x), without express written permission; 3.H bars commercial use unless expressly licensed. No ESPN-specific sports-data or API terms were found. No ESPN permission is on file, so nothing is permitted. See docs/nba-espn-upstream-rights-review.md.",
-    reviewedOn: "2026-10-18",
+      "Origin of hoopR's ESPN-derived datasets. Disney Terms of Use - United States, last updated May 24, 2024 (https://disneytermsofuse.com/english/): section 2.A personal, noncommercial license excluding AI training/validation; 2.B bars commercial use (viii) and automated extraction or scraping, including dataset building (x), without express written permission; 3.H bars commercial use unless expressly licensed. No ESPN-specific sports-data or API terms were found. No ESPN permission is on file. OWNER DECISION 2026-10-23 (task instruction to proceed with hoopR/ESPN as the NBA player-statistics source): private-research ONLY is recorded, for local and private analysis and preview. This is the owner's decision to use the data privately; it is NOT ESPN's permission and does not resolve the commercial or public reuse question. model-development, public-display and raw-redistribution stay unpermitted, so nothing derived from this source reaches the public board. Re-review before any publication. See docs/nba-espn-upstream-rights-review.md.",
+    reviewedOn: "2026-10-23",
   },
   "hoopr-espn": {
     status: "unlicensed",
-    permittedUses: [],
+    permittedUses: ["private-research"],
     basis:
-      "sportsdataverse hoopR-nba-data. LICENSE.md (read 2026-10-18) is CC BY 4.0 over the repository's 'data, code, and documentation' (commercial use and adaptation allowed with credit, a license link and a note of changes). It says nothing about ESPN or other upstream rights, the repository README labels the data 'source: ESPN', the plain LICENSE file is a two-line stub and GitHub reports NOASSERTION. A licensor can only license rights it holds, so the grant is recorded here but NOT applied: permittedUses stays empty until written evidence of ESPN authority (or a counsel conclusion accepted by the user) is on file; see docs/nba-espn-upstream-rights-review.md. Effective rights are in any case capped by the ESPN origin record.",
-    reviewedOn: "2026-10-18",
+      "sportsdataverse hoopR-nba-data. LICENSE.md (read 2026-10-18) is CC BY 4.0 over the repository's 'data, code, and documentation' (commercial use and adaptation allowed with credit, a license link and a note of changes). It says nothing about ESPN or other upstream rights, the repository README labels the data 'source: ESPN', the plain LICENSE file is a two-line stub and GitHub reports NOASSERTION. A licensor can only license rights it holds, so the CC BY grant is recorded here but NOT applied as a basis for public use: model-development, public-display and raw-redistribution stay empty until written evidence of ESPN authority (or a counsel conclusion accepted by the user) is on file; see docs/nba-espn-upstream-rights-review.md. Attribution to hoopR (sportsdataverse, CC BY 4.0) and ESPN as the upstream source is kept wherever the data is used. Effective rights are in any case capped by the ESPN origin record. OWNER DECISION 2026-10-23 (task instruction to proceed with hoopR/ESPN as the NBA player-statistics source): private-research ONLY is recorded, for local and private analysis and preview. This is the owner's decision to use the data privately; it is NOT ESPN's permission and does not resolve the commercial or public reuse question. model-development, public-display and raw-redistribution stay unpermitted, so nothing derived from this source reaches the public board. Re-review before any publication.",
+    reviewedOn: "2026-10-23",
   },
   "llimllib-nba-data": {
     status: "restricted",

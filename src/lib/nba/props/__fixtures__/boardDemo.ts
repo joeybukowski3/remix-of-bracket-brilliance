@@ -47,13 +47,13 @@ interface DemoPlayer {
 
 const PLAYERS: DemoPlayer[] = [
   { name: "Demo Guard One", team: "NYK", label: "PG", pts: [24.5, 26.1], reb: [3.5, 3.8], ast: [8.5, 9.4] },
-  { name: "Demo Wing Two", team: "NYK", label: "G-F", pts: [19.5, 17.9], reb: [5.5, 5.1], ast: [3.5, 3.2] },
-  { name: "Demo Forward Three", team: "NYK", label: "F", pts: [16.5, 18.2], reb: [7.5, 8.4], ast: [2.5, 2.9] },
+  { name: "Demo Wing Two", team: "NYK", label: "SG", pts: [19.5, 17.9], reb: [5.5, 5.1], ast: [3.5, 3.2] },
+  { name: "Demo Forward Three", team: "NYK", label: "PF", pts: [16.5, 18.2], reb: [7.5, 8.4], ast: [2.5, 2.9] },
   { name: "Demo Big Four", team: "NYK", label: "C", pts: [14.5, 14.0], reb: [11.5, 12.3], ast: [2.5, 2.2] },
   { name: "Demo Guard Five", team: "BOS", label: "SG", pts: [22.5, 23.4], reb: [4.5, 4.2], ast: [4.5, 5.0] },
   { name: "Demo Wing Six", team: "BOS", label: "SF", pts: [18.5, null], reb: [6.5, null], ast: [3.5, null] },
   { name: "Demo Bench Seven", team: "BOS", label: null, pts: [null, 9.1], reb: [null, 3.0], ast: [null, 1.5] },
-  { name: "Demo Big Eight", team: "BOS", label: "F-C", pts: [13.5, 15.2], reb: [10.5, 10.1], ast: [1.5, 1.7] },
+  { name: "Demo Big Eight", team: "BOS", label: "C", pts: [13.5, 15.2], reb: [10.5, 10.1], ast: [1.5, 1.7] },
 ];
 
 function entryFor(player: DemoPlayer, market: "pts" | "reb" | "ast"): BoardEntry {

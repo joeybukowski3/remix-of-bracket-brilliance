@@ -77,7 +77,7 @@ export default function DvpMatrix({ rows, view, stat, position, sourceLabel }: D
         </table>
       </DenseTableScroller>
       <p className="mt-2 text-[11px] text-slate-500">
-        {stat} allowed per game to the position. Rank 1 allows the most (easiest matchup); green is ranks 1–10, red is 21–30. Multi-position players are split by weight.
+        {stat} allowed per game to the position. Rank 1 allows the most (easiest matchup); green is ranks 1–10, red is 21–30. Estimated primary-position DvP: each player-game counts toward the player's one estimated position (depth chart and rotation role), not minutes played at it; a season's positions are never applied to another season.
         {sourceLabel ? ` Source: ${sourceLabel}.` : ""} {CANONICAL_TEAM_CODES.length} teams.
       </p>
     </div>

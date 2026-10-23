@@ -18,10 +18,21 @@ const ACCOUNT_IDS = new Set(PROVIDER_ACCOUNTS.map((a) => a.accountId));
 const grant = (uses: SourceLicense["permittedUses"]): SourceLicense => ({ status: "commercial-licensed", permittedUses: uses, basis: "synthetic test grant", reviewedOn: "2026-10-18" });
 
 describe("source license records", () => {
-  it("treats every real third-party source as unusable until a verified grant is recorded", () => {
-    const real: NbaSourceId[] = ["stats.nba.com", "espn", "hoopr-espn", "llimllib-nba-data", "thesportsdb", "sportsdataio", "balldontlie", "api-sports-nba"];
+  it("treats every real third-party source as unusable until a verified grant is recorded, except the owner's private-research decision for hoopR/ESPN", () => {
+    const real: NbaSourceId[] = ["stats.nba.com", "llimllib-nba-data", "thesportsdb", "sportsdataio", "balldontlie", "api-sports-nba"];
     for (const id of real) expect(SOURCE_LICENSES[id].permittedUses).toEqual([]);
     expect(SOURCE_LICENSES.synthetic.permittedUses).toEqual([...DATA_USES]);
+  });
+
+  it("records hoopR/ESPN as private-research only, as an owner decision that is not ESPN's permission", () => {
+    for (const id of ["espn", "hoopr-espn"] as const) {
+      expect(SOURCE_LICENSES[id].permittedUses).toEqual(["private-research"]);
+      expect(SOURCE_LICENSES[id].status).toBe("unlicensed");
+      expect(SOURCE_LICENSES[id].basis).toMatch(/OWNER DECISION 2026-10-23/);
+      expect(SOURCE_LICENSES[id].basis).toMatch(/NOT ESPN's permission/);
+    }
+    expect(effectivePermittedUses("hoopr-espn").permittedUses).toEqual(["private-research"]);
+    for (const use of ["model-development", "public-display", "raw-redistribution"] as const) expect(effectivePermittedUses("hoopr-espn").permittedUses).not.toContain(use);
   });
 
   it("keeps raw redistribution a separate use from public derived display", () => {
@@ -30,9 +41,9 @@ describe("source license records", () => {
   });
 
   it("caps a mirror at what its origin permits, however the mirror is licensed", () => {
-    const licenses = { ...SOURCE_LICENSES, "hoopr-espn": grant(["private-research", "model-development"]), espn: grant(["private-research"]) };
+    const licenses = { ...SOURCE_LICENSES, "hoopr-espn": grant(["private-research", "model-development", "public-display"]) };
     expect(effectivePermittedUses("hoopr-espn", licenses)).toEqual({ permittedUses: ["private-research"], chain: ["hoopr-espn", "espn"] });
-    expect(effectivePermittedUses("hoopr-espn").permittedUses).toEqual([]);
+    expect(effectivePermittedUses("hoopr-espn").permittedUses).toEqual(["private-research"]);
     expect(effectivePermittedUses("llimllib-nba-data", { ...SOURCE_LICENSES, "llimllib-nba-data": grant(["model-development"]) }).permittedUses).toEqual([]);
   });
 
@@ -53,13 +64,17 @@ describe("ingestion gate honors the origin cap", () => {
   const mirror = (own: SourceLicense, sourceId: NbaSourceId = "hoopr-espn"): NbaSourceAdapter => ({ ...syntheticSourceAdapter, sourceId, license: own });
 
   it("refuses a redistributor whose own record grants a use its origin does not", () => {
-    const adapter = mirror(grant(["private-research"]));
-    expect(() => normalizePayloads(adapter, [], "private-research")).toThrow(SourceUseNotPermittedError);
-    expect(() => normalizePayloads(adapter, [], "private-research")).toThrow(/hoopr-espn -> espn/);
+    const adapter = mirror(grant(["private-research", "model-development", "public-display"]));
+    expect(() => normalizePayloads(adapter, [], "model-development")).toThrow(SourceUseNotPermittedError);
+    expect(() => normalizePayloads(adapter, [], "public-display")).toThrow(/hoopr-espn -> espn/);
+    expect(normalizePayloads(adapter, [], "private-research")).toEqual([]);
   });
 
-  it("still refuses a redistributor that has no grant of its own", () => {
-    expect(() => normalizePayloads(mirror(SOURCE_LICENSES["hoopr-espn"]), [], "private-research")).toThrow(SourceUseNotPermittedError);
+  it("permits only private-research for the recorded hoopR/ESPN adapter, and refuses every wider use", () => {
+    expect(normalizePayloads(mirror(SOURCE_LICENSES["hoopr-espn"]), [], "private-research")).toEqual([]);
+    for (const use of ["model-development", "public-display", "raw-redistribution"] as const) {
+      expect(() => normalizePayloads(mirror(SOURCE_LICENSES["hoopr-espn"]), [], use)).toThrow(SourceUseNotPermittedError);
+    }
   });
 
   it("keeps the existing behavior for sources without an origin", () => {
