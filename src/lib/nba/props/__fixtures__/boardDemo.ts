@@ -6,6 +6,7 @@
 import { CANONICAL_TEAM_CODES } from "../canonical";
 import { buildDvpRows, DVP_POSITIONS, type DvpPlayerGameLine, type DvpSeason } from "../dvp";
 import { BOARD_SCHEMA_VERSION, type BoardEntry, type PropsBoardArtifact } from "../propsBoard";
+import type { SeasonStatsView, SeasonTotals } from "../seasonStats";
 
 const SOURCE = { sourceId: "synthetic-box", sourceUpdatedAtUtc: "2026-11-09T12:00:00Z" } as const;
 const STAT_BASE = { pts: [22, 20, 18, 16, 14], reb: [4, 5, 7, 9, 11], ast: [8, 5, 4, 3, 2] } as const;
@@ -36,8 +37,22 @@ const TIPOFF = "2026-11-10T00:30:00Z";
 const GAME_KEY = "2026-11-09|NYK@BOS";
 const CAPTURED = "2026-11-09T21:30:00Z";
 
+/** Invented season totals from per-game figures: games, minutes, points, rebounds and assists per game. Not real data. */
+const totals = (season: string, games: number, mpg: number, ppg: number, rpg: number, apg: number): SeasonTotals => ({
+  season,
+  games,
+  minutes: Math.round(games * mpg * 10) / 10,
+  pts: Math.round(games * ppg * 10) / 10,
+  reb: Math.round(games * rpg * 10) / 10,
+  ast: Math.round(games * apg * 10) / 10,
+});
+
 interface DemoPlayer {
   name: string;
+  /** JKB projected minutes. */
+  minutes: number;
+  /** Invented season-to-date figures; absent for a player with no history at all. */
+  seasonStats?: SeasonStatsView;
   team: "NYK" | "BOS";
   label: string | null;
   pts: [line: number | null, projection: number | null];
@@ -45,15 +60,22 @@ interface DemoPlayer {
   ast: [number | null, number | null];
 }
 
+const CURRENT = "2026-27";
+const PREVIOUS = "2025-26";
+
 const PLAYERS: DemoPlayer[] = [
-  { name: "Demo Guard One", team: "NYK", label: "PG", pts: [24.5, 26.1], reb: [3.5, 3.8], ast: [8.5, 9.4] },
-  { name: "Demo Wing Two", team: "NYK", label: "SG", pts: [19.5, 17.9], reb: [5.5, 5.1], ast: [3.5, 3.2] },
-  { name: "Demo Forward Three", team: "NYK", label: "PF", pts: [16.5, 18.2], reb: [7.5, 8.4], ast: [2.5, 2.9] },
-  { name: "Demo Big Four", team: "NYK", label: "C", pts: [14.5, 14.0], reb: [11.5, 12.3], ast: [2.5, 2.2] },
-  { name: "Demo Guard Five", team: "BOS", label: "SG", pts: [22.5, 23.4], reb: [4.5, 4.2], ast: [4.5, 5.0] },
-  { name: "Demo Wing Six", team: "BOS", label: "SF", pts: [18.5, null], reb: [6.5, null], ast: [3.5, null] },
-  { name: "Demo Bench Seven", team: "BOS", label: null, pts: [null, 9.1], reb: [null, 3.0], ast: [null, 1.5] },
-  { name: "Demo Big Eight", team: "BOS", label: "C", pts: [13.5, 15.2], reb: [10.5, 10.1], ast: [1.5, 1.7] },
+  // Full-sample veteran: this season and last, shown with a clear sample size.
+  { name: "Demo Guard One", team: "NYK", label: "PG", minutes: 34, seasonStats: { current: totals(CURRENT, 24, 33.8, 25.4, 3.9, 8.6), previous: totals(PREVIOUS, 74, 34.6, 24.1, 4.2, 8.1) }, pts: [24.5, 26.1], reb: [3.5, 3.8], ast: [8.5, 9.4] },
+  // Early in the season: three games, so last season is shown beside it, separately.
+  { name: "Demo Wing Two", team: "NYK", label: "SG", minutes: 31.5, seasonStats: { current: totals(CURRENT, 3, 29.1, 15.3, 5.7, 3.0), previous: totals(PREVIOUS, 70, 32.4, 19.8, 5.3, 3.6) }, pts: [19.5, 17.9], reb: [5.5, 5.1], ast: [3.5, 3.2] },
+  { name: "Demo Forward Three", team: "NYK", label: "PF", minutes: 29, seasonStats: { current: totals(CURRENT, 22, 28.4, 16.9, 8.1, 2.7), previous: totals(PREVIOUS, 66, 27.8, 15.2, 7.6, 2.4) }, pts: [16.5, 18.2], reb: [7.5, 8.4], ast: [2.5, 2.9] },
+  { name: "Demo Big Four", team: "NYK", label: "C", minutes: 26, seasonStats: { current: totals(CURRENT, 20, 25.5, 13.8, 11.9, 2.1), previous: totals(PREVIOUS, 61, 26.9, 14.6, 11.2, 2.3) }, pts: [14.5, 14.0], reb: [11.5, 12.3], ast: [2.5, 2.2] },
+  { name: "Demo Guard Five", team: "BOS", label: "SG", minutes: 33, seasonStats: { current: totals(CURRENT, 18, 32.6, 22.7, 4.1, 4.9), previous: totals(PREVIOUS, 72, 33.1, 21.9, 4.4, 4.6) }, pts: [22.5, 23.4], reb: [4.5, 4.2], ast: [4.5, 5.0] },
+  // No games yet this season: only last season exists, shown on its own.
+  { name: "Demo Wing Six", team: "BOS", label: "SF", minutes: 30, seasonStats: { current: null, previous: totals(PREVIOUS, 58, 30.2, 17.4, 6.4, 3.3) }, pts: [18.5, null], reb: [6.5, null], ast: [3.5, null] },
+  // No history at all: no season figures, and a projection with no minutes to scale from is still shown.
+  { name: "Demo Bench Seven", team: "BOS", label: null, minutes: 14, pts: [null, 9.1], reb: [null, 3.0], ast: [null, 1.5] },
+  { name: "Demo Big Eight", team: "BOS", label: "C", minutes: 27, seasonStats: { current: totals(CURRENT, 21, 26.7, 14.9, 10.2, 1.8), previous: totals(PREVIOUS, 64, 27.3, 14.1, 10.6, 1.6) }, pts: [13.5, 15.2], reb: [10.5, 10.1], ast: [1.5, 1.7] },
 ];
 
 function entryFor(player: DemoPlayer, market: "pts" | "reb" | "ast"): BoardEntry {
@@ -70,8 +92,9 @@ function entryFor(player: DemoPlayer, market: "pts" | "reb" | "ast"): BoardEntry
     market,
     line: line === null ? null : { sportsbook: "demobook", line, overPrice: -115, underPrice: -105, capturedAtUtc: CAPTURED, freshness: "fresh", ageMinutes: 12 },
     lineWithheldReason: line === null ? "no line posted" : null,
-    projection: projection === null ? null : { value: projection, minutes: 31.5, modelVersion: "synthetic-demo" },
+    projection: projection === null ? null : { value: projection, minutes: player.minutes, modelVersion: "synthetic-demo" },
     projectionUnavailableReason: projection === null ? "no usable history" : null,
+    ...(player.seasonStats ? { seasonStats: player.seasonStats } : {}),
   };
 }
 

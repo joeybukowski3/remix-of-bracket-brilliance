@@ -23,6 +23,8 @@ import type { NbaPlayerGame } from "../types";
 import type { ImportedPlayerGame, PlayerGameImport } from "./playerGameImport";
 import type { DvpPosition } from "../dvpPositions";
 import { dvpLabelFor, type PositionEstimateSet } from "./positionEstimates";
+import type { SeasonStatsView } from "../seasonStats";
+import { seasonStatsFor } from "./seasonStatsBuild";
 
 export const SLATE_SEASON = "2026-27";
 const ISO_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
@@ -85,6 +87,11 @@ export interface V1Report {
 
 export interface V1Inputs {
   projections: ProjectionRecord[];
+  /**
+   * Season-to-date production by `gameKey|normalized player name`, for the private preview only. Deliberately not part of a
+   * ProjectionRecord: the public board builder never receives it.
+   */
+  seasonStats: Record<string, SeasonStatsView>;
   roster: Record<string, RosterRecord>;
   dvp: DvpInput | null;
   report: V1Report;
@@ -175,7 +182,7 @@ function projectGame(
   histories: ReadonlyMap<string, NbaPlayerGame[]>,
   teamGameDates: ReturnType<typeof buildTeamGameDates>,
   ctx: { priors: BaselinePriors; params: BaselineParams; source: PlayerGameImport },
-  out: { projections: ProjectionRecord[]; report: V1Report["projections"] },
+  out: { projections: ProjectionRecord[]; seasonStats: Record<string, SeasonStatsView>; report: V1Report["projections"] },
 ): void {
   const inGame = slatePlayers.filter((p) => p.team === game.away || p.team === game.home);
   const nameCounts = new Map<string, number>();
@@ -194,6 +201,7 @@ function projectGame(
       continue;
     }
     const projected = projectBaseline(features, ctx.priors, ctx.params);
+    out.seasonStats[`${game.gameKey}|${normalizePlayerName(player.name)}`] = seasonStatsFor(history, { gameId: game.gameKey, cutoffDate: game.date, season: SLATE_SEASON });
     bump(out.report.byHistoryTier, features.historyTier);
     out.report.playersProjected += 1;
     if (player.position === null) out.report.projectedWithoutPosition += 1;
@@ -301,9 +309,10 @@ export function buildV1Inputs(args: V1BuildArgs): V1Inputs {
   const firstDate = slate.map((g) => g.date).sort()[0];
   const priors = firstDate ? leagueRates(imported.rows, firstDate) : null;
   const projections: ProjectionRecord[] = [];
+  const seasonStats: Record<string, SeasonStatsView> = {};
   const slatePlayers = slatePlayersFrom(positions, imported.rows);
   if (priors === null) warnings.push("no competitive minutes before the first slate game: no projection can be built");
-  else for (const game of slate) projectGame(game, slatePlayers, histories, teamGameDates, { priors, params: args.params ?? BASELINE_V0_PUBLIC_PARAMS, source: imported }, { projections, report: report.projections });
+  else for (const game of slate) projectGame(game, slatePlayers, histories, teamGameDates, { priors, params: args.params ?? BASELINE_V0_PUBLIC_PARAMS, source: imported }, { projections, seasonStats, report: report.projections });
   if (slatePlayers.length === 0) warnings.push("no 2026-27 players: nobody is on the slate");
 
   const lines = buildDvpLines(imported, positions, report.dvp);
@@ -311,5 +320,5 @@ export function buildV1Inputs(args: V1BuildArgs): V1Inputs {
   const unlabeled = Object.values(report.dvp.linesWithoutPosition).reduce((a, b) => a + b, 0);
   if (report.dvp.teamSeasonsWithoutAnyPosition.length > 0) warnings.push(`${report.dvp.teamSeasonsWithoutAnyPosition.length} team-season(s) have no position estimate for any opposing player and are left out of DvP (no ranks are invented): ${report.dvp.teamSeasonsWithoutAnyPosition.slice(0, 6).join(", ")}${report.dvp.teamSeasonsWithoutAnyPosition.length > 6 ? ", ..." : ""}`);
   if (unlabeled > 0) warnings.push(`${unlabeled} regular-season player-games have no position estimate for their season; they are excluded from DvP, not guessed`);
-  return { projections, roster: buildRoster(slatePlayers, warnings), dvp, report };
+  return { projections, seasonStats, roster: buildRoster(slatePlayers, warnings), dvp, report };
 }

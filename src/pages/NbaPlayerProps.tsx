@@ -1,29 +1,16 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import SiteShell from "@/components/layout/SiteShell";
 import DvpMatrix from "@/components/nba/DvpMatrix";
 import { DVP_VIEWS, viewLabel } from "@/components/nba/dvpViews";
-import PropsBoardTable from "@/components/nba/PropsBoardTable";
+import { Chip } from "@/components/nba/Chip";
+import PropsBoardView from "@/components/nba/PropsBoardView";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { cn } from "@/lib/utils";
 import { DVP_POSITIONS, DVP_STATS, type DvpPosition, type DvpStat, type DvpView } from "@/lib/nba/props/dvp";
-import {
-  BOARD_MARKETS,
-  BOARD_SCHEMA_VERSION,
-  DEFAULT_FILTERS,
-  boardTeams,
-  buildBoardRows,
-  filterBoardRows,
-  sortBoardRows,
-  type BoardFilters,
-  type BoardMarket,
-  type BoardSortKey,
-  type PropsBoardArtifact,
-  type SortDirection,
-} from "@/lib/nba/props/propsBoard";
+import { BOARD_SCHEMA_VERSION, containsPrivateData, type PropsBoardArtifact } from "@/lib/nba/props/propsBoard";
 
 const BOARD_URL = `${import.meta.env.BASE_URL}data/nba-props-board.json`;
 const DEMO_QUERY = "demo=synthetic";
-const MARKET_LABEL: Record<BoardMarket, string> = { pts: "Points", reb: "Rebounds", ast: "Assists" };
 type Tab = "board" | "matrix";
 type LoadState = { status: "loading" } | { status: "empty"; reason: string } | { status: "ready"; board: PropsBoardArtifact };
 
@@ -40,27 +27,13 @@ async function loadBoard(): Promise<LoadState> {
     const response = await fetch(BOARD_URL, { headers: { accept: "application/json" } });
     if (!response.ok) return { status: "empty", reason: "No NBA props board has been published yet." };
     const body: unknown = await response.json();
+    if (isBoard(body) && containsPrivateData(body)) return { status: "empty", reason: "The published NBA props board is not in a supported format." };
     return isBoard(body) ? { status: "ready", board: body } : { status: "empty", reason: "The published NBA props board is not in a supported format." };
   } catch {
     // A missing file is served as the app shell (HTML), which fails JSON parsing: same as unpublished.
     return { status: "empty", reason: "No NBA props board has been published yet." };
   }
 }
-
-function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn("rounded-full border px-3 py-1 text-[12px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500", active ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50")}
-    >
-      {children}
-    </button>
-  );
-}
-
-const fieldClass = "rounded border border-slate-200 bg-white px-2 py-1 text-[12px] text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500";
 
 function Banners({ board }: { board: PropsBoardArtifact }) {
   return (
@@ -85,75 +58,6 @@ function Banners({ board }: { board: PropsBoardArtifact }) {
         {board.sources.dvpUpdatedUtc ? ` (updated ${board.sources.dvpUpdatedUtc.slice(0, 10)})` : ""} · Board built {board.generatedAtUtc.slice(0, 16).replace("T", " ")} UTC
       </p>
     </div>
-  );
-}
-
-function BoardView({ board }: { board: PropsBoardArtifact }) {
-  const [market, setMarket] = useState<BoardMarket>("pts");
-  const [filters, setFilters] = useState<BoardFilters>(DEFAULT_FILTERS);
-  const [sortKey, setSortKey] = useState<BoardSortKey>("difference");
-  const [direction, setDirection] = useState<SortDirection>("desc");
-  const teams = useMemo(() => boardTeams(board), [board]);
-  const rows = useMemo(() => sortBoardRows(filterBoardRows(buildBoardRows(board, market), filters), sortKey, direction), [board, market, filters, sortKey, direction]);
-  const onSort = (key: BoardSortKey) => {
-    if (key === sortKey) setDirection((d) => (d === "asc" ? "desc" : "asc"));
-    else {
-      setSortKey(key);
-      setDirection(key === "player" || key === "team" || key === "dvpRank" ? "asc" : "desc");
-    }
-  };
-  const patch = (next: Partial<BoardFilters>) => setFilters((current) => ({ ...current, ...next }));
-  return (
-    <>
-      <div className="mb-3 flex flex-wrap items-center gap-2" role="group" aria-label="Market">
-        {BOARD_MARKETS.map((m) => (
-          <Chip key={m} active={market === m} onClick={() => setMarket(m)}>
-            {MARKET_LABEL[m]}
-          </Chip>
-        ))}
-      </div>
-      <div className="mb-3 flex flex-wrap items-end gap-3 text-[11px] text-slate-600">
-        <label className="flex flex-col gap-1">
-          Player
-          <input type="search" value={filters.search} onChange={(e) => patch({ search: e.target.value })} placeholder="Search" className={fieldClass} />
-        </label>
-        <label className="flex flex-col gap-1">
-          Team
-          <select value={filters.team ?? ""} onChange={(e) => patch({ team: e.target.value || null })} className={fieldClass}>
-            <option value="">All</option>
-            {teams.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col gap-1">
-          Position
-          <select value={filters.position ?? ""} onChange={(e) => patch({ position: (e.target.value || null) as DvpPosition | null })} className={fieldClass}>
-            <option value="">All</option>
-            {DVP_POSITIONS.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex items-center gap-1.5 pb-1">
-          <input type="checkbox" checked={filters.onlyWithLine} onChange={(e) => patch({ onlyWithLine: e.target.checked })} /> Has line
-        </label>
-        <label className="flex items-center gap-1.5 pb-1">
-          <input type="checkbox" checked={filters.onlyWithProjection} onChange={(e) => patch({ onlyWithProjection: e.target.checked })} /> Has projection
-        </label>
-        <span className="pb-1" aria-live="polite">
-          {rows.length} {rows.length === 1 ? "prop" : "props"}
-        </span>
-      </div>
-      <PropsBoardTable rows={rows} sortKey={sortKey} direction={direction} onSort={onSort} marketLabel={MARKET_LABEL[market]} />
-      <p className="mt-2 text-[11px] text-slate-500">
-        Proj − line is the JKB projection minus the posted line; positive leans Over. N/A means the input is missing (hover for the reason), not zero. Positions are estimates from depth charts and rotation roles, not verified minutes at a position. DvP is the estimated primary-position view (each player's box score counts toward one estimated position, not minutes played at it); the matchup label reads the blended rank and says how much of it is last season. A projection is shown even when a line or DvP is missing. DvP is context only and does not change the projection.
-      </p>
-    </>
   );
 }
 
@@ -270,7 +174,7 @@ export default function NbaPlayerProps() {
                 </button>
               ))}
             </div>
-            {tab === "board" ? <BoardView board={state.board} /> : <MatrixView board={state.board} />}
+            {tab === "board" ? <PropsBoardView board={state.board} /> : <MatrixView board={state.board} />}
           </>
         ) : null}
       </main>
