@@ -1,0 +1,156 @@
+{
+  "date": "2026-10-26",
+  "timezone": "America/New_York",
+  "methodologyVersion": "3.0.0",
+  "scheduledFor": "04:44 America/New_York (morning) / lineup-confirmed before first game",
+  "generationStartedAt": "2026-10-26T15:05:16.152Z",
+  "generationCompletedAt": "2026-10-26T15:05:18.379Z",
+  "generatedAt": "2026-10-26T15:05:18.379Z",
+  "lineupDataAsOf": "2026-10-26T15:05:16.394Z",
+  "generationMode": "live",
+  "updatePhase": "morning",
+  "morningGeneratedAt": "2026-10-26T15:05:16.152Z",
+  "lineupConfirmedGeneratedAt": null,
+  "narrativeSource": "grok",
+  "rankingBasis": "numerology_only",
+  "baseballContextOnly": true,
+  "dataStatus": "unavailable",
+  "candidatePool": {
+    "candidatePoolType": "daily_jkb_hr_model_selectable_recent_at_bats",
+    "description": "Players from the daily HR model with at least one at-bat across their previous five completed games. The page defaults to at least three at-bats across the previous two games.",
+    "eligiblePlayerCount": 0,
+    "evaluatedPlayerCount": 9,
+    "excludedPlayerCount": 9,
+    "exclusionReasons": [
+      {
+        "reason": "no_at_bat_previous_five_games",
+        "count": 9
+      }
+    ],
+    "preHrModelFilterCount": 18,
+    "activityLookbackDays": 10,
+    "activityRules": {
+      "default": "atBatsPrevious2 >= 3",
+      "broad": "atBatsPrevious5 >= 1"
+    },
+    "activityFilterCheckedAt": "2026-10-26T15:05:18.426Z"
+  },
+  "dailyProfile": {
+    "universalDayRawSum": 19,
+    "universalDayCompound": 19,
+    "universalDayMaster": null,
+    "universalDayRoot": 1,
+    "universalDayTrace": [
+      "2 + 0 + 2 + 6 + 1 + 0 + 2 + 6 = 19",
+      "1 + 0 = 1"
+    ],
+    "calendarDayCompound": 26,
+    "calendarDayRoot": 8,
+    "universalYear": 1,
+    "universalMonth": 2,
+    "structuralEcho": "10/1",
+    "primaryFamily": [
+      1,
+      4,
+      7
+    ],
+    "secondaryFamily": [
+      2,
+      5,
+      8
+    ],
+    "balancingComplement": 9,
+    "countercurrent": 8,
+    "repeatedDigits": [
+      {
+        "digit": 2,
+        "count": 3,
+        "reinforces": "secondary"
+      },
+      {
+        "digit": 6,
+        "count": 2,
+        "reinforces": "neither"
+      }
+    ],
+    "interpretation": "Today's compound 19 reduces to root 1, aligning with leadership-oriented, low-variance profiles. Secondary 8 energy and countercurrent 8 suggest swing-volume or power patterns may face resistance, while 9 complement favors disciplined contact skills over raw aggression."
+  },
+  "exactNumberMatches": [],
+  "rootNumberMatches": [],
+  "featuredPlays": [],
+  "bestAvailable": [],
+  "watchlist": [],
+  "countercurrents": [],
+  "scoringConfiguration": {
+    "weights": {
+      "personalDayExactMaster": 24,
+      "personalDayExact": 22,
+      "personalDayRoot": 11,
+      "jerseyExactMaster": 24,
+      "jerseyExact": 18,
+      "jerseyRoot": 9,
+      "battingOrderExactRoot": 8,
+      "battingOrderRoot": 5,
+      "lifePathExactMaster": 24,
+      "lifePathExact": 22,
+      "lifePathRoot": 11,
+      "birthDayExactMaster": 24,
+      "birthDayExact": 22,
+      "birthDayRoot": 11,
+      "ageExactMaster": 24,
+      "ageExact": 15,
+      "ageRoot": 8,
+      "expressionExact": 22,
+      "expressionRoot": 11,
+      "primaryFamilyMatchTier1": 5,
+      "primaryFamilyMatch": 3,
+      "calendarDayExactCompound": 8,
+      "calendarDayRoot": 4,
+      "secondaryFamilyMatch": 1,
+      "repeatedDateDigit": 2,
+      "gameTimeMatch": 1,
+      "contextMatch": 1,
+      "countercurrentHighField": 7,
+      "countercurrentTier2": 5,
+      "countercurrentTier3": 3,
+      "countercurrentMultiple": 3,
+      "synergyDoubleExactTier1": 12,
+      "synergyTripleExactTier1": 6,
+      "synergyExactPlusRootTier1": 4,
+      "normCeiling": 76,
+      "normalizationDenominator": 76,
+      "convergenceMaxBonus": 0,
+      "exactComboBonus": 0,
+      "birthdayComboBonus": 0,
+      "numerologyWeight": 1,
+      "baseballWeight": 0
+    },
+    "methodologyVersion": "3.0.0",
+    "rankingBasis": "numerology_only",
+    "baseballContextOnly": true
+  },
+  "sources": {
+    "hrPropsRaw": "loaded",
+    "mlbStatsApi": "used",
+    "grok": "used"
+  },
+  "narrative": {
+    "closingObservation": "Overall pattern favors steady, root-1 archetypes rather than volatile, high-root-8 types."
+  },
+  "activityFilter": {
+    "rule": "selectable_previous_game_at_bat_thresholds",
+    "defaultMode": "three_at_bats_previous_two_games",
+    "alternateMode": "one_at_bat_previous_five_games",
+    "scheduleDate": "2026-10-26",
+    "scheduledTeams": [
+      "MIL",
+      "TB"
+    ],
+    "hrModelGeneratedAt": "2026-10-26T14:24:22.507Z",
+    "checkedAt": "2026-10-26T15:05:18.426Z",
+    "lookbackDays": 10,
+    "source": "mlb_stats_api_boxscore",
+    "completedGamesChecked": 0,
+    "failedGamePks": []
+  }
+}
