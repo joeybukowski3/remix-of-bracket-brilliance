@@ -105,6 +105,25 @@ On an invented one-game slate through the real runner:
 | Sportsbook lines | 0 | 0 (no captures; lines are withheld by default) |
 | Real players or statistics available for publication | **none** | not applicable |
 
+## Season averages and manual minutes overrides on `/nba/props`
+
+The board table shows season-long production beside each prop and lets a viewer try their own minutes. Neither changes the JKB projection model: `projection.ts`, the board builders and the rights gates are untouched.
+
+**Columns.** *Your min* (editable, 0-48, one decimal, blank means the JKB minutes), *Line*, *JKB proj*, *JKB min*, *JKB - line*, *Adj proj*, *Adj - line*, *Season-rate est*, *JKB PTS/REB/AST* (the player's JKB projection in all three markets), then, on a private preview board, *Season sample*, *MPG*, *PPG* and *PTS/min* in every market, plus *RPG* and *REB/min* in the rebounds view or *APG* and *AST/min* in the assists view. Every season column and the rest of the table sorts; a row missing the sorted value always goes last.
+
+**Two different estimates, never conflated.**
+- *Adj proj* = JKB projection x your minutes / JKB projected minutes: the model's own per-minute rate at your minutes.
+- *Season-rate est* = your minutes x this season's stat per minute: no model involved.
+Both have their own difference from the line; *JKB - line* is kept as it was. They appear only while a minutes override is active, and they are `N/A` (with the reason on hover) rather than a number whenever an input is missing: no JKB projection, JKB minutes of zero or none, no line, or no games this season for a per-minute rate. Input outside 0-48 or not a number is refused with a message and applied to nothing. An override is keyed by player and game, so it follows the player across the points, rebounds and assists views; each row has a reset, and *Reset all minutes* clears everything.
+
+**Safeguards in the table.** The error for a bad entry appears when the field is left (a half-typed "." never flashes one) and nothing is applied meanwhile. Under *Adj proj* a small note gives your minutes relative to the JKB minutes (× 1.06 JKB min) and turns amber beyond × 1.5 or below × 0.5, so a typo is visible. *Season-rate est* states its sample ("on 3 g · small sample" under 15 games). A value that rounds to zero prints "0.0", never a signed zero. After a per-player reset focus returns to the minutes field.
+
+**Overrides stay in the page.** They live in React state only: nothing is written to storage, a cookie, the server, the board or any artifact, and a reload clears them (tests check that nothing is stored or requested).
+
+**Season statistics** (`seasonStats.ts`, `v1/seasonStatsBuild.ts`). Totals over completed games dated strictly before the upcoming matchup (the same leakage gate the projection uses), with did-not-play and zero-minute appearances excluded; per-game figures divide by games and per-minute figures by minutes, and are null (shown as a dash or N/A, never zero) without a positive denominator. The current season is every competitive game so far; last season is its regular season. They are never added together: the *Season sample* column names the season and the number of games, and while the current sample is under 15 games (or empty) last season appears beside it in small type, labelled with its own games.
+
+**Rights.** Season statistics are hoopR/ESPN-derived, so they exist only in the private preview board (`v1/privatePreview.ts`, which still refuses any source that is publishable or lacks a private-research right) and are loaded only through the dev-only local file picker. The public board builder never receives or sets them (a test builds a licensed public board and checks the field is absent), and a public board without them simply has no season columns. At run time the public page also refuses any published board that carries season statistics or a private-preview notice (`containsPrivateData`), so a private file copied into the published data folder cannot be shown. The invented demo board (`?demo=synthetic`, dev server only) carries made-up figures so the interface can be reviewed.
+
 ## Backtest and position proposals (private research)
 
 Both tools read the private hoopR import under the gitignored `data/nba/` and write only there. Their reports are never committed or published; the figures are in the owner's private reports, not in this repository.

@@ -8,6 +8,8 @@
  */
 import { compareDvp, type DvpComparison, type DvpRow, type DvpStat } from "./dvp";
 import { classifyRosterLabel, type DvpPosition, type PositionClassification } from "./dvpPositions";
+import { NO_OVERRIDE, overrideView, playerOverrideKey, type OverrideView } from "./minutesOverride";
+import { marketRates, seasonColumns, type SeasonColumns, type SeasonStatsView } from "./seasonStats";
 
 export const BOARD_SCHEMA_VERSION = "nba-props-board-v1";
 export const BOARD_MARKETS = ["pts", "reb", "ast"] as const;
@@ -46,6 +48,11 @@ export interface BoardEntry {
   lineWithheldReason: string | null;
   projection: BoardProjection | null;
   projectionUnavailableReason: string | null;
+  /**
+   * Season-to-date production before this game. Present only on a private preview board (hoopR/ESPN-derived, not licensed
+   * for publication); the public board builder never sets it. See seasonStats.ts.
+   */
+  seasonStats?: SeasonStatsView;
 }
 
 export interface BoardSources {
@@ -77,11 +84,19 @@ export type DvpState =
   | { kind: "no-opponent" }
   | { kind: "no-dvp-data"; position: DvpPosition };
 
+/** The player's JKB projection in each market for this game (null where the board has none). */
+export type JkbTriple = Record<BoardMarket, number | null>;
+
 export interface BoardRow {
   entry: BoardEntry;
-  /** Projection minus line; positive leans Over. Null unless both exist. */
+  /** JKB projection minus line; positive leans Over. Null unless both exist. Never changed by a minutes override. */
   difference: number | null;
   dvp: DvpState;
+  /** Season-to-date columns for this market, or null when the board carries no season statistics for the player. */
+  season: SeasonColumns | null;
+  /** The viewer's minutes override applied to this row (all null while none is active). The JKB values above stay as they were. */
+  override: OverrideView;
+  jkbTriple: JkbTriple;
 }
 
 const hasDvpData = (rows: readonly DvpRow[], team: string, position: DvpPosition, stat: DvpStat): boolean =>
@@ -96,17 +111,65 @@ export function dvpStateFor(entry: BoardEntry, rows: readonly DvpRow[]): DvpStat
   return { kind: "ok", position: position.primary, isMultiPosition: position.isMultiPosition, comparison: compareDvp(rows, entry.opponent, position.primary, stat) };
 }
 
-export function buildBoardRows(artifact: PropsBoardArtifact, market: BoardMarket): BoardRow[] {
-  return artifact.entries
-    .filter((entry) => entry.market === market)
-    .map((entry) => ({
-      entry,
-      difference: entry.line && entry.projection ? entry.projection.value - entry.line.line : null,
-      dvp: dvpStateFor(entry, artifact.dvpRows),
-    }));
+/** Each player's JKB projection by market, keyed like the minutes override. */
+function jkbTriples(artifact: PropsBoardArtifact): Map<string, JkbTriple> {
+  const triples = new Map<string, JkbTriple>();
+  for (const entry of artifact.entries) {
+    const key = playerOverrideKey(entry);
+    const triple = triples.get(key) ?? { pts: null, reb: null, ast: null };
+    triples.set(key, { ...triple, [entry.market]: entry.projection?.value ?? null });
+  }
+  return triples;
 }
 
-export const BOARD_SORT_KEYS = ["player", "team", "difference", "line", "projection", "dvpRank"] as const;
+/**
+ * @param minutes the viewer's applied minutes by player (minutesOverride.ts); omit for none. The rows' JKB fields are always
+ * the model's own; the override only fills `override`.
+ */
+export function buildBoardRows(artifact: PropsBoardArtifact, market: BoardMarket, minutes: ReadonlyMap<string, number> = new Map()): BoardRow[] {
+  const triples = jkbTriples(artifact);
+  return artifact.entries
+    .filter((entry) => entry.market === market)
+    .map((entry) => {
+      const key = playerOverrideKey(entry);
+      const season = seasonColumns(entry.seasonStats);
+      return {
+        entry,
+        difference: entry.line && entry.projection ? entry.projection.value - entry.line.line : null,
+        dvp: dvpStateFor(entry, artifact.dvpRows),
+        season,
+        override: minutes.has(key)
+          ? overrideView({ jkbProjection: entry.projection?.value ?? null, jkbMinutes: entry.projection?.minutes ?? null, line: entry.line?.line ?? null, seasonPerMinute: marketRates(season?.current ?? null, market).perMinute, userMinutes: minutes.get(key) ?? null })
+          : NO_OVERRIDE,
+        jkbTriple: triples.get(key) ?? { pts: null, reb: null, ast: null },
+      };
+    });
+}
+
+/**
+ * True when a board carries anything that may only exist on a private preview: its notice or any season statistics. The
+ * public page refuses such a board at run time, so a private file copied into the published data folder cannot be shown.
+ */
+export const containsPrivateData = (board: PropsBoardArtifact): boolean => board.privatePreview !== undefined || board.entries.some((e) => e.seasonStats !== undefined);
+
+export const BOARD_SORT_KEYS = [
+  "player",
+  "team",
+  "difference",
+  "line",
+  "projection",
+  "dvpRank",
+  "jkbMinutes",
+  "userMinutes",
+  "adjustedProjection",
+  "adjustedDifference",
+  "seasonRateEstimate",
+  "seasonMpg",
+  "seasonPpg",
+  "seasonPtsPerMinute",
+  "seasonStatPerGame",
+  "seasonStatPerMinute",
+] as const;
 export type BoardSortKey = (typeof BOARD_SORT_KEYS)[number];
 export type SortDirection = "asc" | "desc";
 
@@ -149,6 +212,26 @@ const sortValue = (row: BoardRow, key: BoardSortKey): number | string | null => 
       return row.entry.projection?.value ?? null;
     case "dvpRank":
       return row.dvp.kind === "ok" ? row.dvp.comparison.blended?.rank ?? null : null;
+    case "jkbMinutes":
+      return row.entry.projection?.minutes ?? null;
+    case "userMinutes":
+      return row.override.userMinutes;
+    case "adjustedProjection":
+      return row.override.adjustedProjection;
+    case "adjustedDifference":
+      return row.override.adjustedDifference;
+    case "seasonRateEstimate":
+      return row.override.seasonRateEstimate;
+    case "seasonMpg":
+      return row.season?.current?.mpg ?? null;
+    case "seasonPpg":
+      return row.season?.current?.ppg ?? null;
+    case "seasonPtsPerMinute":
+      return row.season?.current?.ptsPerMinute ?? null;
+    case "seasonStatPerGame":
+      return marketRates(row.season?.current ?? null, row.entry.market).perGame;
+    case "seasonStatPerMinute":
+      return marketRates(row.season?.current ?? null, row.entry.market).perMinute;
   }
 };
 

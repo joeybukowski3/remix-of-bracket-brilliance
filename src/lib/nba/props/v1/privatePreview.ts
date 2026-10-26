@@ -17,6 +17,7 @@ import { buildDvpRows } from "../dvp";
 import { normalizePlayerName } from "../pipeline/contracts";
 import type { DvpInput, ProjectionRecord, RosterRecord } from "../pipeline/boardBuild";
 import { BOARD_MARKETS, BOARD_SCHEMA_VERSION, type BoardEntry, type PropsBoardArtifact } from "../propsBoard";
+import type { SeasonStatsView } from "../seasonStats";
 import { SOURCE_LICENSES } from "../sources/licenses";
 import { effectivePermittedUses } from "../sources/registry";
 import type { NbaSourceId, SourceLicense } from "../sources/types";
@@ -32,6 +33,8 @@ export interface PrivatePreviewInput {
   projections: readonly ProjectionRecord[];
   roster: Readonly<Record<string, RosterRecord>>;
   dvp: DvpInput | null;
+  /** Season-to-date production by `gameKey|normalized name` (v1/seasonStatsBuild.ts); shown only because this board is private. */
+  seasonStats?: Readonly<Record<string, SeasonStatsView>>;
   /** Rights records; defaults to the repository registry. A test seam. */
   licenses?: Readonly<Record<NbaSourceId, SourceLicense>>;
 }
@@ -77,7 +80,7 @@ function problemWith(p: ProjectionRecord, generatedMs: number): string | null {
   return null;
 }
 
-function entryFor(p: ProjectionRecord, roster: PrivatePreviewInput["roster"]): BoardEntry {
+function entryFor(p: ProjectionRecord, roster: PrivatePreviewInput["roster"], seasonStats: PrivatePreviewInput["seasonStats"]): BoardEntry {
   const rostered = roster[normalizePlayerName(p.playerName)];
   const teams = teamsOf(p.gameKey) as [string, string];
   const team = p.team ?? rostered?.team ?? null;
@@ -95,6 +98,7 @@ function entryFor(p: ProjectionRecord, roster: PrivatePreviewInput["roster"]): B
     lineWithheldReason: NO_LINE_REASON,
     projection: { value: p.value, minutes: p.minutes, modelVersion: p.modelVersion },
     projectionUnavailableReason: null,
+    ...(seasonStats?.[`${p.gameKey}|${normalizePlayerName(p.playerName)}`] ? { seasonStats: seasonStats[`${p.gameKey}|${normalizePlayerName(p.playerName)}`] } : {}),
   };
 }
 
@@ -121,7 +125,7 @@ export function buildPrivatePreviewBoard(input: PrivatePreviewInput): { artifact
   if (stray) throw new Error(`box-score line ${stray.gameId}/${stray.playerId} names source ${stray.sourceId}, not ${input.dvp?.sourceId}`);
   const dvp = input.dvp ? buildDvpRows(input.dvp.lines) : { rows: [], excluded: [] };
   const entries = [...slots.values()]
-    .map((p) => entryFor(p, input.roster))
+    .map((p) => entryFor(p, input.roster, input.seasonStats))
     .sort((a, b) => a.gameKey.localeCompare(b.gameKey) || a.playerName.localeCompare(b.playerName) || a.market.localeCompare(b.market));
   const artifact: PropsBoardArtifact = {
     schemaVersion: BOARD_SCHEMA_VERSION,
