@@ -1,25 +1,44 @@
 {
-  "date": "2026-10-24",
-  "generatedAt": "2026-10-24T18:21:54.290Z",
+  "date": "2026-10-26",
+  "generatedAt": "2026-10-26T14:24:39.539Z",
   "modelVersion": "mlb-hr-quality-v1.1",
   "slatePreview": {
-    "slateOverview": "American Family Field's 1.1 park factor sets the stage for a right-handed pitching slate where Logan Henderson and Drew Rasmussen both carry elevated HR/FB rates against today's lineups. The thin air and pull-friendly dimensions amplify barrel and exit-velo edges for the top three model names, while Henderson's 53.2 opposing-pitcher HR rate gives Tampa Bay bats a clear platoon advantage.",
-    "modelNote": "The model is prioritizing barrel rate, exit velocity, and opposing-pitcher HR vulnerability over recent power droughts, pushing Caminero to the top despite a zero in the last seven days."
+    "slateOverview": "Tropicana Field plays neutral (0.98) with lefty Robert Gasser on the hill against Tampa Bay and righty Freddy Peralta facing Milwaukee. Both starters carry elevated HR rates allowed (52 and 39.9), setting up a modest power environment where barrel and exit-velo edges matter more than park boost.",
+    "modelNote": "The model ranks hitters by a composite hrScore that blends barrel rate, hard-hit rate, and opposing pitcher HR vulnerability, elevating Caminero and Díaz at the top despite zero recent homers."
   },
   "bestBets": [
     {
       "player": "Junior Caminero",
       "team": "TB",
       "opponent": "MIL",
-      "opposingPitcher": "Logan Henderson",
+      "opposingPitcher": "Robert Gasser",
       "hrScoreRank": 1,
       "topStats": [
-        "hrScore=55.2",
+        "hrScore=58.1",
         "barrel=13.1%"
       ],
       "bullets": [
-        "hrScore=55.2",
+        "hrScore=58.1",
         "barrel=13.1%"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Yandy Díaz",
+      "team": "TB",
+      "opponent": "MIL",
+      "opposingPitcher": "Robert Gasser",
+      "hrScoreRank": 2,
+      "topStats": [
+        "hrScore=52.9",
+        "barrel=7.1%"
+      ],
+      "bullets": [
+        "hrScore=52.9",
+        "barrel=7.1%"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -30,14 +49,14 @@
       "player": "Jake Bauers",
       "team": "MIL",
       "opponent": "TB",
-      "opposingPitcher": "Drew Rasmussen",
-      "hrScoreRank": 2,
+      "opposingPitcher": "Freddy Peralta",
+      "hrScoreRank": 3,
       "topStats": [
-        "hrScore=45.9",
+        "hrScore=50.9",
         "barrel=14%"
       ],
       "bullets": [
-        "hrScore=45.9",
+        "hrScore=50.9",
         "barrel=14%"
       ],
       "hrOddsYes": null,
@@ -49,14 +68,54 @@
       "player": "Jackson Chourio",
       "team": "MIL",
       "opponent": "TB",
-      "opposingPitcher": "Drew Rasmussen",
-      "hrScoreRank": 3,
+      "opposingPitcher": "Freddy Peralta",
+      "hrScoreRank": 4,
       "topStats": [
-        "hrScore=44.2",
+        "Hard Hit%=47.0",
+        "Pitcher HR VS=39.9"
+      ],
+      "bullets": [
+        "HR score 48.8 (#4)",
+        "Pitcher HR VS 39.9 at park 0.98"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    },
+    {
+      "player": "Garrett Mitchell",
+      "team": "MIL",
+      "opponent": "TB",
+      "opposingPitcher": "Freddy Peralta",
+      "hrScoreRank": 5,
+      "topStats": [
+        "Hard Hit%=52.7",
+        "Pitcher HR VS=39.9"
+      ],
+      "bullets": [
+        "HR score 48.0 (#5)",
+        "Pitcher HR VS 39.9 at park 0.98"
+      ],
+      "hrOddsYes": null,
+      "marketImpliedProbability": null,
+      "valueStatus": "unavailable",
+      "hrValueEdge": null
+    }
+  ],
+  "valueBets": [
+    {
+      "player": "Jackson Chourio",
+      "team": "MIL",
+      "opponent": "TB",
+      "opposingPitcher": "Freddy Peralta",
+      "hrScoreRank": 4,
+      "topStats": [
+        "hrScore=48.8",
         "barrel=12.3%"
       ],
       "bullets": [
-        "hrScore=44.2",
+        "hrScore=48.8",
         "barrel=12.3%"
       ],
       "hrOddsYes": null,
@@ -68,34 +127,15 @@
       "player": "Garrett Mitchell",
       "team": "MIL",
       "opponent": "TB",
-      "opposingPitcher": "Drew Rasmussen",
-      "hrScoreRank": 4,
-      "topStats": [
-        "hrScore=43",
-        "barrel=11.7%"
-      ],
-      "bullets": [
-        "hrScore=43",
-        "barrel=11.7%"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Yandy Díaz",
-      "team": "TB",
-      "opponent": "MIL",
-      "opposingPitcher": "Logan Henderson",
+      "opposingPitcher": "Freddy Peralta",
       "hrScoreRank": 5,
       "topStats": [
-        "hrScore=42.9",
-        "barrel=7.1%"
+        "hrScore=48",
+        "barrel=11.7%"
       ],
       "bullets": [
-        "hrScore=42.9",
-        "barrel=7.1%"
+        "hrScore=48",
+        "barrel=11.7%"
       ],
       "hrOddsYes": null,
       "marketImpliedProbability": null,
@@ -103,103 +143,5 @@
       "hrValueEdge": null
     }
   ],
-  "valueBets": [
-    {
-      "player": "Junior Caminero",
-      "team": "TB",
-      "opponent": "MIL",
-      "opposingPitcher": "Logan Henderson",
-      "hrScoreRank": 1,
-      "topStats": [
-        "hrScore=55.2",
-        "barrel=13.1%"
-      ],
-      "bullets": [
-        "hrScore=55.2",
-        "barrel=13.1%"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jake Bauers",
-      "team": "MIL",
-      "opponent": "TB",
-      "opposingPitcher": "Drew Rasmussen",
-      "hrScoreRank": 2,
-      "topStats": [
-        "hrScore=45.9",
-        "barrel=14%"
-      ],
-      "bullets": [
-        "hrScore=45.9",
-        "barrel=14%"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jackson Chourio",
-      "team": "MIL",
-      "opponent": "TB",
-      "opposingPitcher": "Drew Rasmussen",
-      "hrScoreRank": 3,
-      "topStats": [
-        "hrScore=44.2",
-        "barrel=12.3%"
-      ],
-      "bullets": [
-        "hrScore=44.2",
-        "barrel=12.3%"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    }
-  ],
-  "longshots": [
-    {
-      "player": "Junior Caminero",
-      "team": "TB",
-      "opponent": "MIL",
-      "opposingPitcher": "Logan Henderson",
-      "hrScoreRank": 1,
-      "topStats": [
-        "hrScore=55.2",
-        "barrel=13.1%"
-      ],
-      "bullets": [
-        "hrScore=55.2",
-        "barrel=13.1%"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    },
-    {
-      "player": "Jake Bauers",
-      "team": "MIL",
-      "opponent": "TB",
-      "opposingPitcher": "Drew Rasmussen",
-      "hrScoreRank": 2,
-      "topStats": [
-        "hrScore=45.9",
-        "barrel=14%"
-      ],
-      "bullets": [
-        "hrScore=45.9",
-        "barrel=14%"
-      ],
-      "hrOddsYes": null,
-      "marketImpliedProbability": null,
-      "valueStatus": "unavailable",
-      "hrValueEdge": null
-    }
-  ]
+  "longshots": []
 }
