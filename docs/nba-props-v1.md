@@ -105,6 +105,26 @@ On an invented one-game slate through the real runner:
 | Sportsbook lines | 0 | 0 (no captures; lines are withheld by default) |
 | Real players or statistics available for publication | **none** | not applicable |
 
+## Backtest and position proposals (private research)
+
+Both tools read the private hoopR import under the gitignored `data/nba/` and write only there. Their reports are never committed or published; the figures are in the owner's private reports, not in this repository.
+
+```
+npx tsx scripts/nba-v1-backtest.ts                          # data/nba/props-v1/backtest/backtest-report.json
+python -I scripts/nba-hoopr-player-features.py              # per-player-season totals from the local hoopR files (sha256-checked)
+npx tsx scripts/nba-position-proposals.ts                   # data/nba/props-v1/position-proposals/position-proposals.csv and .json
+```
+
+**Backtest** (`v1/backtest/`). Walk-forward over the 2025-26 regular season, with 2026-27 shown separately as a tiny forward check. Every prediction uses only games dated strictly before it: features come from the board's own leakage gate (`computePregameFeatures`), league per-minute rates are an expanding window, and the model is the frozen public baseline v0. It is scored on PTS, REB and AST independently, plus minutes and the per-minute rate, against naive last-5, last-10 and season-to-date averages, all on the same player-games. Differences are paired with conservative 95% intervals: errors are clustered both by player and by calendar week, the wider standard error is used, and a Student-t critical value replaces 1.96. Tables: projected-minutes tier, prior-games band, returning from absence, team change, role change, team rest, home and away, expected margin and opponent defense (both from earlier games only), and month. Two further tables use the game's outcome (actual minutes band, final margin) and are diagnostics, never features. The split of PTS error into minutes and per-minute-rate parts uses two counterfactuals that no model can use.
+
+*Measured, not adopted.* `opportunities.ts` re-runs v0 with a few alternative settings chosen in advance from the diagnosis, and learns segment error shifts on the first half of the season to apply to the second. Nothing changes `projection.ts` or the board.
+
+*Limits.* The projection is conditional on appearing (the import has no did-not-play rows). There is no 2024-25 data, so every 2025-26 target runs on the new-player and league-rate priors, not the previous-season priors the board uses in 2026-27: results for the priors cannot be read off this sample. The 2026-27 sample is too small to conclude anything. Rates and minutes errors are correlated within a team and a week; the intervals account for that, but the what-if variants were chosen after looking at the same season and the segment corrections are not adjusted for multiple comparisons, so the "second half" figures are a stability check, not an out-of-sample test, and a change needs confirmation on later games before it is adopted. In 2026-27 the season-to-date baseline does not exist for a player's first game, so those rows are left out of every comparison (the report counts them).
+
+**Position proposals** (`positionProposals.ts`, `positionModel.ts`). For the highest-minute players with no position, a small ridge logistic model compares their per-36 box-score rates with players whose position is known (a clean single Wikidata label). ESPN's coarse listing restricts the answer to two classes (a guard is PG or SG, a forward is SF or PF; a guard is never proposed as a small forward here). Held-out accuracy and precision at each confidence threshold come from 10-fold out-of-fold predictions. A position is **proposed** only at a threshold whose held-out precision is at least 85% (medium) or 90% (high) on at least 30 held-out players, and every proposal shows the 95% lower bound of that precision; below that, or for centers and players with no G or F listing, the player stays unassigned and only a best guess is shown. The held-out players are ones whose positions are already known, so the precision is probably an upper bound for the players Wikidata cannot place; the truth it is checked against is the Wikidata label, which is itself imperfect; and a wing ESPN lists as a guard can only be proposed as PG or SG, so reviewers must confirm hybrids.
+
+Nothing is applied. The proposals CSV ends with the review list's blank `primary`, `secondary` and `reason` columns: copying a proposal into `primary` with a reason is the review, and `--overrides-csv` on the import then reads it. An unreviewed file changes no position (a test checks that). Potential minutes coverage is computed as if the proposals were accepted, for position coverage (every game except preseason) and for DvP (regular season only); the current coverage is reproduced first as a check.
+
 ## Decisions that would open real data
 
 Each needs an explicit owner decision, recorded with its basis in `licenses.ts`. None was made.

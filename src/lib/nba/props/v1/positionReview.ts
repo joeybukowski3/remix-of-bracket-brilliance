@@ -126,6 +126,9 @@ const cell = (text: string): string => {
   return /[",\n\r]/.test(neutral) ? `"${neutral.replace(/"/g, '""')}"` : neutral;
 };
 
+/** One spreadsheet-safe CSV cell (formula-neutralized, quoted when needed). */
+export const csvCell = cell;
+
 /** The review list as CSV. The last three columns (primary, secondary, reason) are blank for the reviewer to fill. */
 export function reviewListCsv(entries: readonly ReviewEntry[]): string {
   const lines = entries.map((e) =>
