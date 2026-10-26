@@ -1,32 +1,611 @@
 {
-  "schemaVersion": 2,
-  "tournament": "Butterfield Bermuda Championship",
-  "tournamentId": "R2026528",
-  "localScheduleId": "butterfield-bermuda-championship-2026",
-  "course": "Port Royal Golf Course",
-  "generatedAt": "2026-10-19T17:15:18.037Z",
-  "status": "unavailable",
-  "reason": "NO_VALID_PICKS",
+  "schemaVersion": 3,
+  "tournament": "VidantaWorld Mexico Open",
+  "tournamentId": "R2026540",
+  "localScheduleId": "vidantaworld-mexico-open-2026",
+  "course": "Vidanta Vallarta",
+  "generatedAt": "2026-10-26T17:43:11.207Z",
+  "status": "model-leans-only",
+  "reason": "Verified exact-market prices were unavailable this week (no event matched tournament \"VidantaWorld Mexico Open\" by normalized name or configured alias -- refusing to fall back to an unrelated event, an \"active\" sport key, or a major championship).",
   "sourceStatus": {
     "model": "available",
-    "grok": "unavailable",
+    "grok": "available",
     "odds": "unavailable",
-    "article": "unavailable"
+    "article": "available"
   },
-  "preview": null,
+  "oddsDiagnostics": {
+    "providerKey": "the-odds-api",
+    "providerName": "The Odds API",
+    "requestedTournament": "VidantaWorld Mexico Open",
+    "matchedEventName": null,
+    "providerEventId": null,
+    "eventStartTime": null,
+    "eventMatchStatus": "unmatched",
+    "marketsRequested": [
+      "outright",
+      "top5",
+      "top10",
+      "top20"
+    ],
+    "marketsAvailable": [],
+    "fetchedAt": "2026-10-26T17:42:54.062Z",
+    "quotaDiagnostics": {
+      "requestsRemaining": 203,
+      "requestsUsed": 297
+    },
+    "errors": [
+      "no event matched tournament \"VidantaWorld Mexico Open\" by normalized name or configured alias -- refusing to fall back to an unrelated event, an \"active\" sport key, or a major championship"
+    ]
+  },
+  "recommendations": [],
+  "modelLeans": [
+    {
+      "player": "David Lipsky",
+      "normalizedPlayer": "david lipsky",
+      "marketContext": "outright",
+      "modelRank": 1,
+      "powerRank": null,
+      "provisionalModelProbability": 2.557968178817022e-8,
+      "note": "Provisional field-relative model context for a outright finish; no verified market line was confirmed for this player this week."
+    },
+    {
+      "player": "Sudarshan Yellamaraju",
+      "normalizedPlayer": "sudarshan yellamaraju",
+      "marketContext": "outright",
+      "modelRank": 2,
+      "powerRank": null,
+      "provisionalModelProbability": 1.2762891821938514e-8,
+      "note": "Provisional field-relative model context for a outright finish; no verified market line was confirmed for this player this week."
+    },
+    {
+      "player": "David Lipsky",
+      "normalizedPlayer": "david lipsky",
+      "marketContext": "top5",
+      "modelRank": 1,
+      "powerRank": null,
+      "provisionalModelProbability": 0.0002335651597359179,
+      "note": "Provisional field-relative model context for a top-5 finish; no verified market line was confirmed for this player this week."
+    },
+    {
+      "player": "Sudarshan Yellamaraju",
+      "normalizedPlayer": "sudarshan yellamaraju",
+      "marketContext": "top5",
+      "modelRank": 2,
+      "powerRank": null,
+      "provisionalModelProbability": 0.00013919845142294229,
+      "note": "Provisional field-relative model context for a top-5 finish; no verified market line was confirmed for this player this week."
+    },
+    {
+      "player": "David Lipsky",
+      "normalizedPlayer": "david lipsky",
+      "marketContext": "top10",
+      "modelRank": 1,
+      "powerRank": null,
+      "provisionalModelProbability": 0.04908943133424676,
+      "note": "Provisional field-relative model context for a top-10 finish; no verified market line was confirmed for this player this week."
+    },
+    {
+      "player": "Sudarshan Yellamaraju",
+      "normalizedPlayer": "sudarshan yellamaraju",
+      "marketContext": "top10",
+      "modelRank": 2,
+      "powerRank": null,
+      "provisionalModelProbability": 0.036064917421684384,
+      "note": "Provisional field-relative model context for a top-10 finish; no verified market line was confirmed for this player this week."
+    },
+    {
+      "player": "Andrew Putnam",
+      "normalizedPlayer": "andrew putnam",
+      "marketContext": "top10",
+      "modelRank": 3,
+      "powerRank": null,
+      "provisionalModelProbability": 0.025951464856118836,
+      "note": "Provisional field-relative model context for a top-10 finish; no verified market line was confirmed for this player this week."
+    },
+    {
+      "player": "David Lipsky",
+      "normalizedPlayer": "david lipsky",
+      "marketContext": "top20",
+      "modelRank": 1,
+      "powerRank": null,
+      "provisionalModelProbability": 0.9269770003808925,
+      "note": "Provisional field-relative model context for a top-20 finish; no verified market line was confirmed for this player this week."
+    },
+    {
+      "player": "Sudarshan Yellamaraju",
+      "normalizedPlayer": "sudarshan yellamaraju",
+      "marketContext": "top20",
+      "modelRank": 2,
+      "powerRank": null,
+      "provisionalModelProbability": 0.9029018146253743,
+      "note": "Provisional field-relative model context for a top-20 finish; no verified market line was confirmed for this player this week."
+    },
+    {
+      "player": "Andrew Putnam",
+      "normalizedPlayer": "andrew putnam",
+      "marketContext": "top20",
+      "modelRank": 3,
+      "powerRank": null,
+      "provisionalModelProbability": 0.8732551399485753,
+      "note": "Provisional field-relative model context for a top-20 finish; no verified market line was confirmed for this player this week."
+    }
+  ],
+  "ladders": [],
+  "portfolioDiagnostics": {
+    "totalRecommendations": 0,
+    "uniqueGolfers": 0,
+    "duplicationRate": 0,
+    "maximumAppearances": 0,
+    "numberOfLadders": 0,
+    "oddsCoverage": 0,
+    "staleOddsCount": 0,
+    "candidatesCreated": 480,
+    "candidatesWithExactPrice": 0,
+    "rejectedByProbabilityFloor": 0,
+    "rejectedByProbabilityEdge": 0,
+    "rejectedByExpectedValue": 0,
+    "rejectedByFreshness": 0,
+    "rejectedByFieldMembership": 0,
+    "rejectedByMissingModelData": 132,
+    "rejectedByOverlapRules": 0
+  },
+  "probabilityMethod": "provisional-plackett-luce-style-independent-race-approximation",
+  "fieldCoverage": {
+    "fieldCount": 120,
+    "modeledCount": 87,
+    "unmodeledCount": 33,
+    "coveragePct": 72.5,
+    "unmodeledPlayers": [
+      "Aaron Baddeley",
+      "Aaron Wise",
+      "Alejandro Fierro",
+      "Alvaro Ortiz",
+      "Ben James",
+      "Ben Martin",
+      "Ben Silverman",
+      "Blades Brown",
+      "C.T. Pan",
+      "Cameron Tankersley",
+      "Camilo Villegas",
+      "Chan Kim",
+      "David Skinns",
+      "Eli Ortego",
+      "Garrett Endicott",
+      "Gerardo Gomez",
+      "Harry Higgs",
+      "Hayden Springer",
+      "John Daly II",
+      "Keita Nakajima",
+      "Kihei Akina",
+      "Kristoffer Ventura",
+      "Mauricio Figueroa Ramirez",
+      "Omar Morales",
+      "Paul Peterson",
+      "Ryder Cowan",
+      "Santiago de la Fuente",
+      "Tayler Termeer",
+      "Trace Crowe",
+      "Trent Phillips",
+      "Tyler Duncan",
+      "Will Gordon",
+      "Zac Blair"
+    ],
+    "reason": "no current statistics available for these official entrants"
+  },
+  "methodologyNotes": [
+    "Recommendations are generated by a deterministic candidate/threshold/portfolio pipeline against verified sportsbook prices; Grok never selects a golfer, a market, or a price -- it only writes prose about the frozen selection.",
+    "Finish probabilities come from a provisional, field-relative model (see probabilityMethod) blended with no-vig market probability; neither component is historically calibrated.",
+    "Post-Open Championship / FedExCup context does not apply this week."
+  ],
+  "dataLimitations": [
+    "Weather and tee-time data are not available in this pipeline; the article does not make weather- or tee-time-specific claims."
+  ],
+  "outrights": [
+    {
+      "player": "David Lipsky",
+      "tournamentRank": 1,
+      "powerRank": 0,
+      "topStats": [
+        "provisionalModelProbability=0.0%"
+      ],
+      "bullets": [
+        "Provisional field-relative model context for a outright finish; no verified market line was confirmed for this player this week."
+      ],
+      "risk": "",
+      "angles": [],
+      "odds": null,
+      "isModelLeanOnly": true
+    },
+    {
+      "player": "Sudarshan Yellamaraju",
+      "tournamentRank": 2,
+      "powerRank": 0,
+      "topStats": [
+        "provisionalModelProbability=0.0%"
+      ],
+      "bullets": [
+        "Provisional field-relative model context for a outright finish; no verified market line was confirmed for this player this week."
+      ],
+      "risk": "",
+      "angles": [],
+      "odds": null,
+      "isModelLeanOnly": true
+    }
+  ],
+  "top5": [
+    {
+      "player": "David Lipsky",
+      "tournamentRank": 1,
+      "powerRank": 0,
+      "topStats": [
+        "provisionalModelProbability=0.0%"
+      ],
+      "bullets": [
+        "Provisional field-relative model context for a top-5 finish; no verified market line was confirmed for this player this week."
+      ],
+      "risk": "",
+      "angles": [],
+      "odds": null,
+      "isModelLeanOnly": true
+    },
+    {
+      "player": "Sudarshan Yellamaraju",
+      "tournamentRank": 2,
+      "powerRank": 0,
+      "topStats": [
+        "provisionalModelProbability=0.0%"
+      ],
+      "bullets": [
+        "Provisional field-relative model context for a top-5 finish; no verified market line was confirmed for this player this week."
+      ],
+      "risk": "",
+      "angles": [],
+      "odds": null,
+      "isModelLeanOnly": true
+    }
+  ],
+  "top10": [
+    {
+      "player": "David Lipsky",
+      "tournamentRank": 1,
+      "powerRank": 0,
+      "topStats": [
+        "provisionalModelProbability=4.9%"
+      ],
+      "bullets": [
+        "Provisional field-relative model context for a top-10 finish; no verified market line was confirmed for this player this week."
+      ],
+      "risk": "",
+      "angles": [],
+      "odds": null,
+      "isModelLeanOnly": true
+    },
+    {
+      "player": "Sudarshan Yellamaraju",
+      "tournamentRank": 2,
+      "powerRank": 0,
+      "topStats": [
+        "provisionalModelProbability=3.6%"
+      ],
+      "bullets": [
+        "Provisional field-relative model context for a top-10 finish; no verified market line was confirmed for this player this week."
+      ],
+      "risk": "",
+      "angles": [],
+      "odds": null,
+      "isModelLeanOnly": true
+    },
+    {
+      "player": "Andrew Putnam",
+      "tournamentRank": 3,
+      "powerRank": 0,
+      "topStats": [
+        "provisionalModelProbability=2.6%"
+      ],
+      "bullets": [
+        "Provisional field-relative model context for a top-10 finish; no verified market line was confirmed for this player this week."
+      ],
+      "risk": "",
+      "angles": [],
+      "odds": null,
+      "isModelLeanOnly": true
+    }
+  ],
+  "top20": [
+    {
+      "player": "David Lipsky",
+      "tournamentRank": 1,
+      "powerRank": 0,
+      "topStats": [
+        "provisionalModelProbability=92.7%"
+      ],
+      "bullets": [
+        "Provisional field-relative model context for a top-20 finish; no verified market line was confirmed for this player this week."
+      ],
+      "risk": "",
+      "angles": [],
+      "odds": null,
+      "isModelLeanOnly": true
+    },
+    {
+      "player": "Sudarshan Yellamaraju",
+      "tournamentRank": 2,
+      "powerRank": 0,
+      "topStats": [
+        "provisionalModelProbability=90.3%"
+      ],
+      "bullets": [
+        "Provisional field-relative model context for a top-20 finish; no verified market line was confirmed for this player this week."
+      ],
+      "risk": "",
+      "angles": [],
+      "odds": null,
+      "isModelLeanOnly": true
+    },
+    {
+      "player": "Andrew Putnam",
+      "tournamentRank": 3,
+      "powerRank": 0,
+      "topStats": [
+        "provisionalModelProbability=87.3%"
+      ],
+      "bullets": [
+        "Provisional field-relative model context for a top-20 finish; no verified market line was confirmed for this player this week."
+      ],
+      "risk": "",
+      "angles": [],
+      "odds": null,
+      "isModelLeanOnly": true
+    }
+  ],
+  "preview": {
+    "tournamentOverview": "Vidanta Vallarta rewards ball-striking and scrambling over pure putting. The course weights SG Around-the-Green at 6% and SG Total at 8%, making approach play and short-game recovery the decisive skills. This event matters because it offers a strong field and valuable early-season data for the 2025 season.",
+    "modelExplainer": "Our model prioritizes SG Around-the-Green 6%) and SG Total 8%) as the top inputs. Off-the-tee 6%) and approach 6%) follow, while putting 4%) and accuracy metrics carry minimal weight. This weighting reflects Vidanta Vallarta's emphasis on recovery shots and consistent scoring rather than elite putting.",
+    "pickApproach": "We tier players by combining current form with course-specific skill fits. Top-tier bets target golfers strong in SG Around-the-Green and SG Total, while mid-tier bets include players with solid approach numbers. We fade players whose games rely heavily on putting or driving accuracy due to their low course weights."
+  },
+  "article": {
+    "title": "VidantaWorld Mexico Open 2026: Model Ranks Lipsky, Yellamaraju, Putnam Ahead of Power",
+    "dek": "Tournament model places three players with top-10 ranks and large power-rank gaps at Vidanta Vallarta.",
+    "introduction": "The 120-player field at Vidanta Vallarta opens 2026-10-29 with course weights favoring SG ATG 6%) and SG Total 8%). David Lipsky (model rank 1, power rank 24), Sudarshan Yellamaraju (model rank 2, power rank 19), and Andrew Putnam (model rank 3, power rank 39) lead the model output. All three skipped the Scottish Open and carry zero tracked rounds in the major-swing workload block.",
+    "sections": [
+      {
+        "heading": "Tournament Overview",
+        "body": "Vidanta Vallarta weights SG ATG at 6% and SG Total at 8%, with SG OTT at 6% and SG APP at 6%. The model ranks 120 players using these weights and outputs Lipsky, Yellamaraju, and Putnam in the top three."
+      },
+      {
+        "heading": "Course Fit",
+        "body": "Lipsky posts 524 SG ATG, Yellamaraju posts 34 SG Total, and Putnam posts 515 SG ATG. These values align with the two highest-weighted categories at Vidanta Vallarta."
+      },
+      {
+        "heading": "Recent Form",
+        "body": "Lipsky enters with 89 SG Total, Yellamaraju with 34 SG Total, and Putnam with 479 SG Total. The model uses these season-long strokes-gained figures to produce the tournament ranks."
+      },
+      {
+        "heading": "Post-Open Workload",
+        "body": "All three players show NO_TRACKED_ROUNDS in the major-swing workload block. The classification indicates zero rounds recorded in the tracked events and does not imply rest."
+      },
+      {
+        "heading": "FedExCup Motivation",
+        "body": "Lipsky sits at FedExCup rank 85 (CHASING_81_PLUS), Yellamaraju at rank 58 (BUBBLE_51_80), and Putnam at rank 76 (BUBBLE_51_80). These positions place each player inside or just outside the top-80 bubble."
+      },
+      {
+        "heading": "Crossover Research Angles",
+        "body": "Lipsky, Yellamaraju, and Putnam each combine a top-10 model rank with a tournament rank well ahead of power rank after skipping the Scottish Open. The model therefore places them higher than their season-long power ranks."
+      },
+      {
+        "heading": "Outright Targets",
+        "body": "Lipsky (model rank 1) and Yellamaraju (model rank 2) are the two outright targets."
+      },
+      {
+        "heading": "Top-10 Targets",
+        "body": "Lipsky (model rank 1), Yellamaraju (model rank 2), and Putnam (model rank 3) form the top-10 card. All three lines are marked UNAVAILABLE."
+      },
+      {
+        "heading": "Top-20 Targets",
+        "body": "The same three players—Lipsky, Yellamaraju, and Putnam—anchor the top-20 card. All lines remain UNAVAILABLE."
+      },
+      {
+        "heading": "Data Limitations",
+        "body": "Weather and tee-time data are not available in this pipeline. The article does not make weather- or tee-time-specific claims."
+      },
+      {
+        "heading": "Final Betting Card",
+        "body": "Strong model-supported tier: Lipsky (rank 1) and Yellamaraju (rank 2). Secondary tier: Putnam (rank 3)."
+      }
+    ],
+    "conclusion": "Primary model plays: Lipsky and Yellamaraju. Secondary model play: Putnam. All lines marked UNAVAILABLE.",
+    "keyTakeaways": [
+      {
+        "text": "Lipsky leads the model at rank 1 with 0.89 SG Total and sits 23 spots ahead of his power rank.",
+        "players": [
+          "David Lipsky"
+        ]
+      },
+      {
+        "text": "Yellamaraju ranks second in the model with 1.34 SG Total and 19th in power rank.",
+        "players": [
+          "Sudarshan Yellamaraju"
+        ]
+      },
+      {
+        "text": "Putnam ranks third in the model with 0.479 SG Total and 39th in power rank.",
+        "players": [
+          "Andrew Putnam"
+        ]
+      },
+      {
+        "text": "All three targets carry zero tracked rounds in the major-swing workload block and skipped the Scottish Open.",
+        "players": [
+          "David Lipsky",
+          "Sudarshan Yellamaraju",
+          "Andrew Putnam"
+        ]
+      }
+    ],
+    "playersToApproachCautiously": []
+  },
   "valueBets": [],
-  "outrights": [],
-  "top5": [],
-  "top10": [],
-  "top20": [],
-  "article": null,
-  "methodologyNotes": [],
-  "dataLimitations": [],
-  "sectionStatus": {
-    "outrights": 0,
-    "top5": 0,
-    "top10": 0,
-    "top20": 0,
-    "article": 0
-  }
+  "researchContext": {
+    "david lipsky": {
+      "player": "David Lipsky",
+      "openFinishBucket": "DID_NOT_PLAY",
+      "openResult": "did_not_play",
+      "scottish": {
+        "participation": "skipped",
+        "finishPosition": null,
+        "finishText": null,
+        "status": null,
+        "roundsPlayed": 0
+      },
+      "majorSwingWorkload": {
+        "rounds": 0,
+        "bucket": "NO_TRACKED_ROUNDS",
+        "scope": "open_and_scottish_only",
+        "windowStart": "2026-10-15",
+        "windowEnd": "2026-10-29",
+        "coverage": "partial",
+        "trackedEvents": [
+          "The Open Championship",
+          "Genesis Scottish Open"
+        ]
+      },
+      "workloadRoundCount": 0,
+      "fedex": {
+        "status": "chasing",
+        "bucket": "CHASING_81_PLUS",
+        "rank": 85,
+        "points": 487
+      },
+      "model": {
+        "tournamentRank": 1,
+        "powerRank": 24,
+        "rankDifferential": 23,
+        "modelScore": "72.4",
+        "sgTotal": "0.890",
+        "sgApp": "0.192",
+        "sgPutt": "0.485",
+        "sgAtg": "0.524",
+        "sgOtt": "-0.310"
+      },
+      "crossoverAngles": [
+        {
+          "id": "skipped_scottish_top_model",
+          "label": "Skipped the Scottish Open + top-10 model rank"
+        },
+        {
+          "id": "model_outruns_power_rank",
+          "label": "Tournament model rank well ahead of power rank"
+        }
+      ]
+    },
+    "sudarshan yellamaraju": {
+      "player": "Sudarshan Yellamaraju",
+      "openFinishBucket": "DID_NOT_PLAY",
+      "openResult": "did_not_play",
+      "scottish": {
+        "participation": "skipped",
+        "finishPosition": null,
+        "finishText": null,
+        "status": null,
+        "roundsPlayed": 0
+      },
+      "majorSwingWorkload": {
+        "rounds": 0,
+        "bucket": "NO_TRACKED_ROUNDS",
+        "scope": "open_and_scottish_only",
+        "windowStart": "2026-10-15",
+        "windowEnd": "2026-10-29",
+        "coverage": "partial",
+        "trackedEvents": [
+          "The Open Championship",
+          "Genesis Scottish Open"
+        ]
+      },
+      "workloadRoundCount": 0,
+      "fedex": {
+        "status": "bubble",
+        "bucket": "BUBBLE_51_80",
+        "rank": 58,
+        "points": 752
+      },
+      "model": {
+        "tournamentRank": 2,
+        "powerRank": 19,
+        "rankDifferential": 17,
+        "modelScore": "72.4",
+        "sgTotal": "1.340",
+        "sgApp": "0.474",
+        "sgPutt": "0.616",
+        "sgAtg": "-0.188",
+        "sgOtt": "0.438"
+      },
+      "crossoverAngles": [
+        {
+          "id": "skipped_scottish_top_model",
+          "label": "Skipped the Scottish Open + top-10 model rank"
+        },
+        {
+          "id": "model_outruns_power_rank",
+          "label": "Tournament model rank well ahead of power rank"
+        }
+      ]
+    },
+    "andrew putnam": {
+      "player": "Andrew Putnam",
+      "openFinishBucket": "DID_NOT_PLAY",
+      "openResult": "did_not_play",
+      "scottish": {
+        "participation": "skipped",
+        "finishPosition": null,
+        "finishText": null,
+        "status": null,
+        "roundsPlayed": 0
+      },
+      "majorSwingWorkload": {
+        "rounds": 0,
+        "bucket": "NO_TRACKED_ROUNDS",
+        "scope": "open_and_scottish_only",
+        "windowStart": "2026-10-15",
+        "windowEnd": "2026-10-29",
+        "coverage": "partial",
+        "trackedEvents": [
+          "The Open Championship",
+          "Genesis Scottish Open"
+        ]
+      },
+      "workloadRoundCount": 0,
+      "fedex": {
+        "status": "bubble",
+        "bucket": "BUBBLE_51_80",
+        "rank": 76,
+        "points": 538
+      },
+      "model": {
+        "tournamentRank": 3,
+        "powerRank": 39,
+        "rankDifferential": 36,
+        "modelScore": "69.8",
+        "sgTotal": "0.479",
+        "sgApp": "0.240",
+        "sgPutt": "0.066",
+        "sgAtg": "0.515",
+        "sgOtt": "-0.341"
+      },
+      "crossoverAngles": [
+        {
+          "id": "skipped_scottish_top_model",
+          "label": "Skipped the Scottish Open + top-10 model rank"
+        },
+        {
+          "id": "model_outruns_power_rank",
+          "label": "Tournament model rank well ahead of power rank"
+        }
+      ]
+    }
+  },
+  "selectedPlayers": [
+    "David Lipsky",
+    "Sudarshan Yellamaraju",
+    "Andrew Putnam"
+  ]
 }
