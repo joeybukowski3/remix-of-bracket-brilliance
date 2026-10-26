@@ -125,6 +125,29 @@ npx tsx scripts/nba-position-proposals.ts                   # data/nba/props-v1/
 
 Nothing is applied. The proposals CSV ends with the review list's blank `primary`, `secondary` and `reason` columns: copying a proposal into `primary` with a reason is the review, and `--overrides-csv` on the import then reads it. An unreviewed file changes no position (a test checks that). Potential minutes coverage is computed as if the proposals were accepted, for position coverage (every game except preseason) and for DvP (regular season only); the current coverage is reproduced first as a check.
 
+## Validating the proposed improvements on independent history (private research)
+
+The public V1 projection is unchanged. Two candidate changes from the backtest were frozen, in code and tests (`v1/validation/frozenPlan.ts`, committed before any 2024-25 data was imported or any candidate scored), and are re-validated with 2024-25 context (see the independence note below):
+
+- **A**: no shrink toward the fixed 14-minute new-player prior once the player has an in-season game, for players with no qualifying previous season. Players with a previous season of at least 10 games are untouched.
+- **B**: per-minute rates shrunk toward the previous-season (or league) rate with a 25-minute weight instead of 100, for PTS, REB and AST.
+- **AB**: both.
+
+```
+python -I scripts/nba-hoopr-fetch-prior-season.py --confirm-owner-decision   # 2024-25 player box, at the commit already pinned in the manifest
+npx tsx scripts/nba-v1-validation.ts                                          # data/nba/props-v1/validation/validation-report.json
+```
+
+2024-25 supplies the previous-season context, 2025-26 is the evaluation season (chronological, every prediction from games strictly before it), and 2026-27 gets an early-season sanity check (projection ranges, a few weeks of games; not decisive). The fetch script downloads one file at the same pinned commit, size-capped and redirect-refusing, and writes its own manifest; `v1/validation/researchGames.ts` is the research-only loader for three seasons, so 2024-25 never reaches the board, its positions or its DvP.
+
+**Decision rule (frozen).** A candidate justifies a *targeted change* only if (1) each primary measure's paired MAE difference has a 95% upper bound below zero (A: minutes and PTS; B: PTS, REB and AST; AB: all four), (2) no measure is significantly worse, (3) every primary measure also improves in the later half of the season's dates, and (4) no pregame subgroup (projected-minutes tier, prior-games band, season segment, previous-season status, absence, team change, role change, rest, home or away) with at least 200 scored player-games is materially worse: significantly worse and at least 2% worse than its baseline MAE. Intervals cluster errors by player and by week, take the wider standard error and a Student-t critical value. Passing is a recommendation, never an automatic change; the position proposals stay review-only throughout.
+
+**Independence note (2026-10-26, written after review; the frozen file is not edited).** The candidates, including the 25-minute weight, were chosen on the PR #441 backtest of 2025-26. Evaluating them on 2025-26 again is therefore **not independent**: only the previous-season context (2024-25) is new, and a pass is optimistic through selection. Treat a pass as "needs forward validation", and judge it on 2026-27 as games accumulate; the early-season check here is far too short to do that. The comment at the top of `frozenPlan.ts` says "data they were not chosen on"; read it with this note.
+
+**Subgroups.** The implemented set was fixed in code before the first run and is a superset of the frozen list: it adds month, team rest, home or away, a "fixed prior applies" split and a third previous-season level (under 10 games), and the material-worsening rule is applied to all four measures, not only the primary ones. That can only block a recommendation more often than the frozen text, never less.
+
+Limits: one evaluation season; many subgroups are checked, so a single flagged small subgroup is read in context; the data is ESPN-derived and private, so the report is never committed or published and this document carries no figures.
+
 ## Decisions that would open real data
 
 Each needs an explicit owner decision, recorded with its basis in `licenses.ts`. None was made.

@@ -139,7 +139,7 @@ def main() -> int:
         os.remove(manifest_path)
 
     commit = get(API_COMMIT, as_json=True)["sha"]
-    if not COMMIT_PATTERN.match(str(commit)):
+    if not COMMIT_PATTERN.fullmatch(str(commit)):
         raise SystemExit("the GitHub API did not return a 40-character commit hash")
     retrieved = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     # Download every file before writing any, so a failure on file 2 or 3 leaves nothing half-written.

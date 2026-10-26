@@ -69,13 +69,13 @@ describe("containment rules", () => {
   });
 
   it("flags the private hoopR/ESPN V1 artifacts by name and by record shape, wherever they are copied", () => {
-    for (const name of ["player-games.json", "hoopr-import-report.json", "position-map-report.json", "position-review-list.csv", "position-review-list.json", "private-preview-board.json", "positions-2026-27.json", "positions-2025-26.json", "player-features.json", "position-proposals.csv", "position-proposals.json", "backtest-report.json"]) {
+    for (const name of ["player-games.json", "hoopr-import-report.json", "position-map-report.json", "position-review-list.csv", "position-review-list.json", "private-preview-board.json", "positions-2026-27.json", "positions-2025-26.json", "player-features.json", "position-proposals.csv", "position-proposals.json", "backtest-report.json", "validation-report.json", "manifest-prior-season.json"]) {
       expect(classifyPath(`public/exports/${name}`), name).toEqual(["nba-v1-private-artifact"]);
     }
     expect(classifyPath("dist/props-v1/raw/hoopr/player_box_2026.json")).toEqual(["nba-v1-private-artifact"]);
     expect(classifyPath("src/lib/nba/props/v1/positionReview.ts")).toEqual([]);
     expect(classifyPath("docs/nba-props-v1.md")).toEqual([]);
-    for (const schema of ["jkb-player-games-import-v1", "jkb-hoopr-manifest-v1", "jkb-position-estimates-v1", "jkb-player-features-v1", "jkb-position-proposals-v1", "jkb-v1-backtest-report-v1"]) {
+    for (const schema of ["jkb-player-games-import-v1", "jkb-hoopr-manifest-v1", "jkb-position-estimates-v1", "jkb-player-features-v1", "jkb-position-proposals-v1", "jkb-v1-backtest-report-v1", "jkb-v1-validation-report-v1"]) {
       expect(classifyContent(`{"schemaVersion":"${schema}","rows":[]}`), schema).toEqual(["nba-v1-private-record"]);
     }
     expect(classifyContent('{"privatePreview": {"notice": "x"}}')).toEqual(["nba-v1-private-record"]);

@@ -11,7 +11,7 @@
  *
  * Private research only. The input is hoopR/ESPN-derived; nothing in this folder writes anywhere but data/nba/.
  */
-import { buildTeamGameDates, computePregameFeatures } from "../../features";
+import { buildTeamGameDates, computePregameFeatures, type PregameFeatures } from "../../features";
 import { BASELINE_V0_PUBLIC_PARAMS, projectBaseline, projectNaive, type BaselineParams, type BaselinePriors, type StatProjection } from "../../projection";
 import { NBA_COMPETITIVE_SEASON_TYPES } from "../../seasonType";
 import type { ImportedPlayerGame } from "../playerGameImport";
@@ -23,6 +23,12 @@ export const STATS = ["pts", "reb", "ast"] as const;
 export type Stat = (typeof STATS)[number];
 
 const DAY_MS = 86_400_000;
+
+/** A player-game row of any season: the imported shape with the season widened, so research can add prior seasons. */
+export type WalkRow = Omit<ImportedPlayerGame, "season"> & { season: string };
+
+/** Pregame projector under test: a pure function of the features and the league rates, so it cannot see the outcome. */
+export type Projector = (features: PregameFeatures, priors: BaselinePriors) => StatProjection;
 
 export interface Actual {
   minutes: number;
@@ -40,6 +46,9 @@ export interface BacktestRow {
   team: string;
   isHome: boolean;
   priorGames: number;
+  /** Games already played this season and, separately, games in the previous regular season, before this one. */
+  seasonPriorGames: number;
+  previousSeasonGames: number;
   historyTier: "none" | "thin" | "partial" | "full";
   flags: { teamChangedRecently: boolean; returningFromAbsence: boolean; roleChange: boolean };
   /** Days since the player's own team last played, from earlier game dates only. Null at the team's first game. */
@@ -51,6 +60,8 @@ export interface BacktestRow {
   /** Pregame: the opponent's average points allowed in earlier games minus the league's. Positive means a weaker defense. */
   opponentDefense: number | null;
   predictions: Record<Method, StatProjection>;
+  /** Extra projectors' predictions by id (empty unless the caller passed projectors). */
+  candidates: Record<string, StatProjection>;
   actual: Actual;
 }
 
@@ -65,7 +76,7 @@ export interface WalkForwardResult {
 }
 
 /** Expanding league per-minute rates: for each date, the rates over every competitive game dated strictly before it. */
-export function expandingLeagueRates(rows: readonly ImportedPlayerGame[]): (date: string) => BaselinePriors | null {
+export function expandingLeagueRates(rows: readonly WalkRow[]): (date: string) => BaselinePriors | null {
   const byDate = new Map<string, { minutes: number; pts: number; reb: number; ast: number }>();
   for (const r of rows) {
     if (!NBA_COMPETITIVE_SEASON_TYPES.includes(r.seasonType)) continue;
@@ -93,7 +104,7 @@ export function expandingLeagueRates(rows: readonly ImportedPlayerGame[]): (date
 }
 
 /** Final margin per game, from the sum of each team's player points. Ex-post: used only to describe blowouts. */
-function marginsByGame(rows: readonly ImportedPlayerGame[]): Map<string, number> {
+function marginsByGame(rows: readonly WalkRow[]): Map<string, number> {
   const points = new Map<string, Map<string, number>>();
   for (const r of rows) {
     const teams = points.get(r.gameId) ?? new Map<string, number>();
@@ -122,7 +133,7 @@ export const MIN_FORM_GAMES = 5;
  * Team results as a function of (team, date) that sees only games dated strictly before the date, plus the league's
  * average points per team-game before the date. A team's score is the sum of its players' points.
  */
-function teamFormLookup(rows: readonly ImportedPlayerGame[]): { form: (team: string, date: string) => TeamForm | null; leagueAverage: (date: string) => number | null } {
+function teamFormLookup(rows: readonly WalkRow[]): { form: (team: string, date: string) => TeamForm | null; leagueAverage: (date: string) => number | null } {
   const scores = new Map<string, { date: string; byTeam: Map<string, number> }>();
   for (const r of rows) {
     if (!NBA_COMPETITIVE_SEASON_TYPES.includes(r.seasonType)) continue;
@@ -185,9 +196,11 @@ export interface WalkForwardOptions {
   targetSeasons: readonly string[];
   /** v0 parameters. The frozen public defaults unless a sensitivity run says otherwise. */
   params?: BaselineParams;
+  /** Further projectors to score on the same targets, by id. */
+  projectors?: Readonly<Record<string, Projector>>;
 }
 
-export function walkForward(imported: readonly ImportedPlayerGame[], options: WalkForwardOptions): WalkForwardResult {
+export function walkForward(imported: readonly WalkRow[], options: WalkForwardOptions): WalkForwardResult {
   const playerNumbers = new Map([...new Set(imported.map((r) => r.playerId))].sort().map((id, i) => [id, i + 1]));
   const games = toPlayerGames(imported, playerNumbers);
   const histories = new Map<string, typeof games>();
@@ -230,6 +243,8 @@ export function walkForward(imported: readonly ImportedPlayerGame[], options: Wa
       team: r.team,
       isHome: r.isHome,
       priorGames: features.priorGames,
+      seasonPriorGames: features.seasonPriorGames,
+      previousSeasonGames: features.previousRegularSeason?.games ?? 0,
       historyTier: features.historyTier,
       flags: { teamChangedRecently: features.teamChangedRecently, returningFromAbsence: features.returningFromAbsence, roleChange: features.roleChange },
       teamRestDays: restDays(teamDatesByCode.get(r.team), r.gameDate),
@@ -237,6 +252,7 @@ export function walkForward(imported: readonly ImportedPlayerGame[], options: Wa
       expectedAbsMargin: enough ? Math.abs(own.avgMargin - opp.avgMargin) : null,
       opponentDefense: opp !== null && opp.games >= MIN_FORM_GAMES && league !== null ? opp.avgAllowed - league : null,
       predictions: { v0: projectBaseline(features, priors, params), naive_l5: naive.naive_l5, naive_l10: naive.naive_l10, naive_season_to_date: naive.naive_season_to_date },
+      candidates: Object.fromEntries(Object.entries(options.projectors ?? {}).map(([id, project]) => [id, project(features, priors)])),
       actual: { minutes: r.minutes, pts: r.pts, reb: r.reb, ast: r.ast },
     });
   });
