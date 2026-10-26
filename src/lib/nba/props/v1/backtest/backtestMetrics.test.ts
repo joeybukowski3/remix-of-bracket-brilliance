@@ -11,9 +11,10 @@ function row(over: Omit<Partial<BacktestRow>, "actual" | "predictions"> & { pred
   const base = proj(30, 15, 6, 4);
   const { predict, actual, ...rest } = over;
   return {
-    season: "2025-26", gameDate: "2025-12-01", gameId: "g1", playerId: "p1", team: "BOS", isHome: true, priorGames: 25, historyTier: "full",
+    season: "2025-26", gameDate: "2025-12-01", gameId: "g1", playerId: "p1", team: "BOS", isHome: true, priorGames: 25, seasonPriorGames: 25, previousSeasonGames: 0, historyTier: "full",
     flags: { teamChangedRecently: false, returningFromAbsence: false, roleChange: false }, teamRestDays: 2, marginAbs: 8, expectedAbsMargin: 4, opponentDefense: 0,
     predictions: { v0: base, naive_l5: base, naive_l10: base, naive_season_to_date: base, ...predict },
+    candidates: {},
     actual: { minutes: 30, pts: 15, reb: 6, ast: 4, ...actual },
     ...rest,
   };
