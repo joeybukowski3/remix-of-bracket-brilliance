@@ -95,9 +95,9 @@ const bump = (counts: Record<string, number>, key: string, by = 1): void => {
 };
 
 /** Surrogate numeric ids for the feature code, which keys on numbers; the external ids stay strings. */
-const teamNumber = (code: string): number => CANONICAL_TEAM_CODES.indexOf(code as (typeof CANONICAL_TEAM_CODES)[number]) + 1;
+export const teamNumber = (code: string): number => CANONICAL_TEAM_CODES.indexOf(code as (typeof CANONICAL_TEAM_CODES)[number]) + 1;
 
-function toPlayerGames(rows: readonly ImportedPlayerGame[], playerNumbers: ReadonlyMap<string, number>): NbaPlayerGame[] {
+export function toPlayerGames(rows: readonly ImportedPlayerGame[], playerNumbers: ReadonlyMap<string, number>): NbaPlayerGame[] {
   return rows.map((r) => ({
     schemaVersion: "nba-player-game-v1" as const,
     playerId: playerNumbers.get(r.playerId) ?? 0,

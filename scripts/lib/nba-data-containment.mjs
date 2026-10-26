@@ -38,7 +38,7 @@ export const PATH_RULES = [
   {
     id: "nba-v1-private-artifact",
     test: (p) =>
-      /(^|\/)(player-games\.json|hoopr-import-report\.json|position-map-report\.json|position-review-list\.(json|csv)|private-preview-board\.json|positions-20\d\d-\d\d\.json)$/.test(p) ||
+      /(^|\/)(player-games\.json|hoopr-import-report\.json|position-map-report\.json|position-review-list\.(json|csv)|private-preview-board\.json|positions-20\d\d-\d\d\.json|player-features\.json|position-proposals\.(json|csv)|backtest-report\.json)$/.test(p) ||
       /(^|\/)props-v1\/raw\//.test(p),
   },
   { id: "nba-backtest-artifact", test: (p) => /nba[^/]*\/(backtest|canonical|reports)\//i.test(p) },
@@ -76,7 +76,7 @@ export const CONTENT_RULES = [
   },
   {
     id: "nba-v1-private-record",
-    test: (text) => /"schemaVersion"\s*:\s*"jkb-(player-games-import|hoopr-manifest|position-estimates)-v1"/.test(text) || /"privatePreview"\s*:\s*\{/.test(text),
+    test: (text) => /"schemaVersion"\s*:\s*"jkb-(player-games-import|hoopr-manifest|position-estimates|player-features|position-proposals|v1-backtest-report)-v1"/.test(text) || /"privatePreview"\s*:\s*\{/.test(text),
   },
   { id: "nba-model-output", test: (text) => /"modelVersion"\s*:\s*"nba-(props-baseline|minutes)-/.test(text) },
   { id: "restricted-report-marker", test: (text) => text.includes(RESTRICTED_REPORT_MARKER) },
