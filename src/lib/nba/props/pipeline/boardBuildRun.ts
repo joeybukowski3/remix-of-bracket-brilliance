@@ -100,7 +100,7 @@ function realLocation(full: string): string {
 }
 
 /** A path under one of the allowed project directories, both as written and after links are resolved (a link out of the project is refused). */
-function inside(root: string, rel: string, allowed: readonly string[], what: string): string {
+export function inside(root: string, rel: string, allowed: readonly string[], what: string): string {
   const full = path.resolve(root, rel);
   const realRoot = realpathSync.native(root);
   const ok = allowed.some((dir) => within(path.join(root, dir), full) && within(path.join(realRoot, dir), realLocation(full)));
@@ -109,7 +109,7 @@ function inside(root: string, rel: string, allowed: readonly string[], what: str
 }
 
 /** Create-new write under a unique temporary name, then rename over the target; nothing is ever written through an existing path. */
-function writeAtomically(file: string, text: string): void {
+export function writeAtomically(file: string, text: string): void {
   const tmp = `${file}.${randomBytes(6).toString("hex")}.tmp`;
   const fd = openSync(tmp, "wx", 0o644);
   try {
@@ -131,12 +131,18 @@ function writeAtomically(file: string, text: string): void {
 
 const readJson = (file: string): unknown => JSON.parse(readFileSync(file, "utf8"));
 
+/** The board output path, checked as written and after links resolve. Exported so callers can fail before writing anything else. */
+export function resolveBoardOutFile(root: string, outFile: string | undefined): string {
+  const resolved = inside(root, outFile ?? DEFAULT_BOARD_OUT, [path.join("public", "data"), path.join("data", "nba")], "the output file");
+  if (within(path.join(root, "public", "data"), resolved) && !PUBLIC_BOARD_NAME.test(path.basename(resolved))) throw new Error(`the output file must be named nba-props-board*.json under public/data (got ${path.basename(resolved)})`);
+  return resolved;
+}
+
 export async function runBoardBuild(options: BoardRunOptions): Promise<BoardRunResult> {
   const { root } = options;
   const dataDir = path.join("data", "nba");
   const capturesDir = inside(root, options.capturesDir ?? path.join(dataDir, "odds-captures"), [dataDir], "the captures directory");
-  const outFile = inside(root, options.outFile ?? DEFAULT_BOARD_OUT, [path.join("public", "data"), dataDir], "the output file");
-  if (within(path.join(root, "public", "data"), outFile) && !PUBLIC_BOARD_NAME.test(path.basename(outFile))) throw new Error(`the output file must be named nba-props-board*.json under public/data (got ${path.basename(outFile)})`);
+  const outFile = resolveBoardOutFile(root, options.outFile);
 
   const roster: Record<string, RosterRecord> = {};
   if (options.rosterFile) {

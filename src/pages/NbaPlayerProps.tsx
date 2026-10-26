@@ -70,6 +70,11 @@ function Banners({ board }: { board: PropsBoardArtifact }) {
           SYNTHETIC DATA — every player, line, projection and DvP figure on this page is invented for interface review. Do not use it for betting decisions.
         </p>
       ) : null}
+      {board.privatePreview ? (
+        <p role="status" className="rounded border border-red-300 bg-red-50 px-3 py-2 text-[12px] font-semibold text-red-900">
+          {board.privatePreview.notice} <span className="font-normal">{board.privatePreview.attribution}.</span>
+        </p>
+      ) : null}
       {board.entries.length === 0 ? (
         <p role="status" className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] text-slate-700">
           No qualifying props are published right now. A prop appears only with a licensed, current projection or an approved sportsbook line for a game that has not started.
@@ -146,7 +151,7 @@ function BoardView({ board }: { board: PropsBoardArtifact }) {
       </div>
       <PropsBoardTable rows={rows} sortKey={sortKey} direction={direction} onSort={onSort} marketLabel={MARKET_LABEL[market]} />
       <p className="mt-2 text-[11px] text-slate-500">
-        Proj − line is the JKB projection minus the posted line; positive leans Over. N/A means the input is missing (hover for the reason), not zero. DvP is shown for each player's primary position; the matchup label reads the blended rank and says how much of it is last season. DvP is context only and does not change the projection.
+        Proj − line is the JKB projection minus the posted line; positive leans Over. N/A means the input is missing (hover for the reason), not zero. Positions are estimates from depth charts and rotation roles, not verified minutes at a position. DvP is the estimated primary-position view (each player's box score counts toward one estimated position, not minutes played at it); the matchup label reads the blended rank and says how much of it is last season. A projection is shown even when a line or DvP is missing. DvP is context only and does not change the projection.
       </p>
     </>
   );
@@ -192,8 +197,37 @@ function EmptyState({ reason }: { reason: string }) {
       <h2 className="text-base font-bold text-slate-900">No NBA props to show yet</h2>
       <p className="mx-auto mt-2 max-w-xl text-[13px] text-slate-600">{reason}</p>
       <p className="mx-auto mt-2 max-w-xl text-[12px] text-slate-500">
-        This page shows only real sportsbook lines and real box-score splits, and only where their licenses allow display. Until those are connected there is nothing to rank, so nothing is estimated or filled in.
+        This page shows only projections built from box-score data whose license allows display, and sportsbook lines only where their terms allow it. Until such a source is connected there is nothing to show, so no player statistic, projection or line is invented or filled in.
       </p>
+    </section>
+  );
+}
+
+/**
+ * Development only (`npm run dev`, `?private=1`): loads a private preview board from a file on this computer. The file
+ * is read by the browser directly; it is never uploaded, never served, and this component is not in production builds.
+ */
+function PrivateBoardPicker({ onLoad }: { onLoad: (board: PropsBoardArtifact) => void }) {
+  const [error, setError] = useState<string | null>(null);
+  const onFile = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      const body: unknown = JSON.parse(await file.text());
+      if (!isBoard(body)) throw new Error("this file is not an NBA props board");
+      if (!body.privatePreview) throw new Error("only private preview boards load this way; a public board is published to public/data instead");
+      setError(null);
+      onLoad(body);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "could not read the file");
+    }
+  };
+  return (
+    <section className="mb-4 rounded border border-dashed border-amber-400 bg-amber-50 px-3 py-2 text-[12px] text-amber-900" aria-label="Private preview loader">
+      <label className="flex flex-wrap items-center gap-2 font-semibold">
+        Private preview (this computer only): choose data/nba/props-v1/private-preview-board.json
+        <input type="file" accept="application/json,.json" data-testid="private-board-file" onChange={(e) => void onFile(e.target.files?.[0])} />
+      </label>
+      {error ? <p role="alert" className="mt-1 font-semibold text-red-700">{error}</p> : null}
     </section>
   );
 }
@@ -223,6 +257,7 @@ export default function NbaPlayerProps() {
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">NBA player props</h1>
           <p className="mt-1 text-[13px] text-slate-600">JKB projections against sportsbook lines, with how each opponent defends the player's position.</p>
         </header>
+        {import.meta.env.DEV && window.location.search.includes("private=1") ? <PrivateBoardPicker onLoad={(board) => setState({ status: "ready", board })} /> : null}
         {state.status === "loading" ? <p className="text-[13px] text-slate-500">Loading…</p> : null}
         {state.status === "empty" ? <EmptyState reason={state.reason} /> : null}
         {state.status === "ready" ? (

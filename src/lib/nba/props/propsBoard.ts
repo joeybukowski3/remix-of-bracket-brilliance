@@ -64,6 +64,11 @@ export interface PropsBoardArtifact {
   sources: BoardSources;
   entries: BoardEntry[];
   dvpRows: DvpRow[];
+  /**
+   * Present only on a board built for local, private preview from a source whose rights allow private research but
+   * not publication (v1/privatePreview.ts). The page must show the notice. Such a board is never written under public/.
+   */
+  privatePreview?: { notice: string; attribution: string };
 }
 
 export type DvpState =
