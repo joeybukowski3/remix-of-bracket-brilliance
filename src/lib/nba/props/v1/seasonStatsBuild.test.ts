@@ -27,7 +27,7 @@ describe("seasonStatsFor: completed games before the matchup", () => {
       game("2026-27", "2026-10-25", { minutes: 20, pts: 10, reb: 4, ast: 2 }),
       game("2025-26", "2026-03-01", { minutes: 36, pts: 30, reb: 8, ast: 6 }),
     ];
-    expect(seasonStatsFor(history, target)).toEqual({
+    expect(seasonStatsFor(history, target)).toMatchObject({
       current: { season: "2026-27", games: 2, minutes: 50, pts: 30, reb: 10, ast: 6 },
       previous: { season: "2025-26", games: 1, minutes: 36, pts: 30, reb: 8, ast: 6 },
     });
@@ -67,13 +67,69 @@ describe("seasonStatsFor: completed games before the matchup", () => {
   it("has no current figures before the player's first game, and no previous ones for a newcomer", () => {
     expect(seasonStatsFor([game("2025-26", "2026-03-01")], target)).toMatchObject({ current: null, previous: { games: 1 } });
     expect(seasonStatsFor([game("2026-27", "2026-10-22")], target)).toMatchObject({ current: { games: 1 }, previous: null });
-    expect(seasonStatsFor([], target)).toEqual({ current: null, previous: null });
+    expect(seasonStatsFor([], target)).toEqual({ current: null, previous: null, last5: null, last10: null });
   });
 
   it("is unchanged when later games are rewritten or deleted", () => {
     const early = [game("2026-27", "2026-10-22"), game("2026-27", "2026-11-01", { pts: 11 })];
     const later = [game("2026-27", "2026-11-12", { pts: 80, minutes: 48 }), game("2026-27", "2026-12-01", { pts: 80 })];
     expect(seasonStatsFor([...early, ...later], target)).toEqual(seasonStatsFor(early, target));
+  });
+});
+
+describe("seasonStatsFor: last five and last ten completed games", () => {
+  /** n games on consecutive October/November dates, oldest first; points rise by one each game so the window is identifiable. */
+  const run = (n: number, over: Partial<NbaPlayerGame> = {}): NbaPlayerGame[] =>
+    Array.from({ length: n }, (_, i) => game("2026-27", `2026-10-${String(10 + i).padStart(2, "0")}`, { pts: 10 + i, reb: 2 + i, ast: 1 + i, minutes: 30, ...over }));
+
+  it("is the five most recent games, newest by date regardless of input order, not a season average", () => {
+    const history = run(8);
+    const forward = seasonStatsFor(history, target).last5;
+    const reversed = seasonStatsFor([...history].reverse(), target).last5;
+    // Games 4..8 of the run: points 13..17.
+    expect(forward).toEqual({ games: 5, minutes: 150, pts: 13 + 14 + 15 + 16 + 17, reb: 5 + 6 + 7 + 8 + 9, ast: 4 + 5 + 6 + 7 + 8 });
+    expect(reversed).toEqual(forward);
+    expect(seasonStatsFor(history, target).current?.pts).toBe(10 + 11 + 12 + 13 + 14 + 15 + 16 + 17);
+  });
+
+  it("keeps the ten-game window separate from the five-game one", () => {
+    const stats = seasonStatsFor(run(12), target);
+    expect(stats.last5?.games).toBe(5);
+    expect(stats.last10).toMatchObject({ games: 10, pts: [12, 13, 14, 15, 16, 17, 18, 19, 20, 21].reduce((a, b) => a + b, 0) });
+  });
+
+  it("uses only games strictly before the matchup: the same day, the target game id and later games never enter the window", () => {
+    const history = [...run(3), game("2026-27", "2026-11-10", { pts: 99 }), game("2026-27", "2026-11-12", { pts: 99 }), game("2026-27", "2026-11-05", { gameId: "target", pts: 99 })];
+    expect(seasonStatsFor(history, target).last5).toMatchObject({ games: 3, pts: 10 + 11 + 12 });
+  });
+
+  it("skips did-not-play and zero-minute games rather than counting them as zeros or as window slots", () => {
+    const history = [...run(6), game("2026-27", "2026-10-30", { minutes: 0, pts: 0 }), game("2026-27", "2026-10-31", { minutes: Number.NaN, pts: 50 }), game("2026-27", "2026-11-01", { minutes: -2, pts: 50 })];
+    // Still the last five PLAYED games: points 11..15.
+    expect(seasonStatsFor(history, target).last5).toEqual({ games: 5, minutes: 150, pts: 11 + 12 + 13 + 14 + 15, reb: 3 + 4 + 5 + 6 + 7, ast: 2 + 3 + 4 + 5 + 6 });
+  });
+
+  it("reports a short window honestly early in the season and never reaches into last season to fill it", () => {
+    const history = [...run(3), game("2025-26", "2026-03-01", { pts: 99 }), game("2025-26", "2026-03-03", { pts: 99 })];
+    const stats = seasonStatsFor(history, target);
+    expect(stats.last5).toMatchObject({ games: 3, pts: 10 + 11 + 12 });
+    expect(stats.last10?.games).toBe(3);
+  });
+
+  it("is null before the player's first game this season and for a player with no rows", () => {
+    expect(seasonStatsFor([game("2025-26", "2026-03-01")], target)).toMatchObject({ last5: null, last10: null });
+    expect(seasonStatsFor([], target)).toMatchObject({ last5: null, last10: null });
+  });
+
+  it("leaves preseason out of the window", () => {
+    const history = [...run(2), game("2026-27", "2026-10-25", { seasonType: "preseason", pts: 99 })];
+    expect(seasonStatsFor(history, target).last5).toMatchObject({ games: 2, pts: 10 + 11 });
+  });
+
+  it("is unchanged when later games are rewritten or deleted", () => {
+    const early = run(7);
+    const later = [game("2026-27", "2026-11-12", { pts: 80, minutes: 48 }), game("2026-27", "2026-12-01", { pts: 80 })];
+    expect(seasonStatsFor([...early, ...later], target).last5).toEqual(seasonStatsFor(early, target).last5);
   });
 });
 

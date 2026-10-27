@@ -6,11 +6,15 @@
  * rows, and any that slipped in are dropped here too. The current season is every competitive game of this season so far; the
  * previous season is its regular season. The two are returned apart and never added together.
  *
+ * The last-five and last-ten windows are the player's most recent played games of the current season, newest first. They
+ * come from the same gated rows, never from season totals, and stop at the current season rather than reaching into last
+ * season: a player with three games this season has a three-game window, reported as three games.
+ *
  * The rows are hoopR/ESPN-derived: the result goes only into a private preview board (privatePreview.ts), never the public one.
  */
 import { selectPriorGames } from "../features";
 import { previousSeason } from "../seasonType";
-import type { SeasonStatsView, SeasonTotals } from "../seasonStats";
+import { RECENT_WINDOWS, type RecentTotals, type SeasonStatsView, type SeasonTotals } from "../seasonStats";
 import type { NbaPlayerGame } from "../types";
 
 function totalsOf(season: string, rows: readonly NbaPlayerGame[]): SeasonTotals | null {
@@ -25,11 +29,22 @@ function totalsOf(season: string, rows: readonly NbaPlayerGame[]): SeasonTotals 
   };
 }
 
+/** The first `size` rows of an already newest-first list, summed; null when there are none. */
+function recentTotals(newestFirst: readonly NbaPlayerGame[], size: number): RecentTotals | null {
+  const window = newestFirst.slice(0, size);
+  if (window.length === 0) return null;
+  const { season: _season, ...totals } = totalsOf("", window)!;
+  return totals;
+}
+
 export function seasonStatsFor(history: readonly NbaPlayerGame[], target: { gameId: string; cutoffDate: string; season: string }): SeasonStatsView {
   const played = selectPriorGames(history, { ...target, teamId: 0 }).filter((r) => Number.isFinite(r.minutes) && r.minutes > 0);
   const previous = previousSeason(target.season);
+  const currentRows = played.filter((r) => r.season === target.season);
   return {
-    current: totalsOf(target.season, played.filter((r) => r.season === target.season)),
+    current: totalsOf(target.season, currentRows),
     previous: totalsOf(previous, played.filter((r) => r.season === previous && r.seasonType === "regular")),
+    last5: recentTotals(currentRows, RECENT_WINDOWS.last5),
+    last10: recentTotals(currentRows, RECENT_WINDOWS.last10),
   };
 }

@@ -6,10 +6,10 @@
  * code may import it. Every missing input becomes an explicit state, never a
  * blank or an invented number.
  */
-import { compareDvp, type DvpComparison, type DvpRow, type DvpStat } from "./dvp";
+import { compareDvp, DVP_SEASONS, type DvpComparison, type DvpRow, type DvpSeason, type DvpStat } from "./dvp";
 import { classifyRosterLabel, type DvpPosition, type PositionClassification } from "./dvpPositions";
 import { NO_OVERRIDE, overrideView, playerOverrideKey, type OverrideView } from "./minutesOverride";
-import { marketRates, seasonColumns, type SeasonColumns, type SeasonStatsView } from "./seasonStats";
+import { marketRates, recentPerGame, seasonColumns, type SeasonColumns, type SeasonStatsView } from "./seasonStats";
 
 export const BOARD_SCHEMA_VERSION = "nba-props-board-v1";
 export const BOARD_MARKETS = ["pts", "reb", "ast"] as const;
@@ -165,10 +165,11 @@ export const BOARD_SORT_KEYS = [
   "adjustedDifference",
   "seasonRateEstimate",
   "seasonMpg",
-  "seasonPpg",
-  "seasonPtsPerMinute",
   "seasonStatPerGame",
   "seasonStatPerMinute",
+  "lastFive",
+  "lastTen",
+  "dvpAllowed",
 ] as const;
 export type BoardSortKey = (typeof BOARD_SORT_KEYS)[number];
 export type SortDirection = "asc" | "desc";
@@ -224,14 +225,16 @@ const sortValue = (row: BoardRow, key: BoardSortKey): number | string | null => 
       return row.override.seasonRateEstimate;
     case "seasonMpg":
       return row.season?.current?.mpg ?? null;
-    case "seasonPpg":
-      return row.season?.current?.ppg ?? null;
-    case "seasonPtsPerMinute":
-      return row.season?.current?.ptsPerMinute ?? null;
     case "seasonStatPerGame":
       return marketRates(row.season?.current ?? null, row.entry.market).perGame;
     case "seasonStatPerMinute":
       return marketRates(row.season?.current ?? null, row.entry.market).perMinute;
+    case "lastFive":
+      return recentPerGame(row.season?.last5 ?? null, row.entry.market);
+    case "lastTen":
+      return recentPerGame(row.season?.last10 ?? null, row.entry.market);
+    case "dvpAllowed":
+      return row.dvp.kind === "ok" ? row.dvp.comparison.blended?.allowedPerGame ?? null : null;
   }
 };
 
@@ -247,6 +250,27 @@ export function sortBoardRows(rows: readonly BoardRow[], key: BoardSortKey, dire
     const cmp = typeof av === "string" || typeof bv === "string" ? String(av).localeCompare(String(bv)) : av - bv;
     return cmp !== 0 ? sign * cmp : a.entry.entryKey.localeCompare(b.entry.entryKey);
   });
+}
+
+/**
+ * How much of each season's opponent minutes could be attributed to an estimated position (0-1, averaged over the rows of
+ * that season). The remainder is left out of DvP, so DvP describes only part of what opponents allowed. Seasons with no rows
+ * are omitted rather than shown as zero.
+ */
+export function dvpPositionCoverage(rows: readonly DvpRow[]): Array<{ season: DvpSeason; coverage: number }> {
+  return DVP_SEASONS.flatMap((season) => {
+    const own = rows.filter((r) => r.season === season && Number.isFinite(r.minutesCoverage));
+    return own.length === 0 ? [] : [{ season, coverage: own.reduce((sum, r) => sum + r.minutesCoverage, 0) / own.length }];
+  });
+}
+
+/**
+ * Fewest and most games any team has sampled this season in the DvP rows, or null when there are none. When the most is
+ * below the prior-led threshold, every Opp allows / Matchup reading leans on last season, which the page says once.
+ */
+export function dvpCurrentSampleRange(rows: readonly DvpRow[]): { min: number; max: number } | null {
+  const games = rows.filter((r) => r.season === DVP_SEASONS[1]).map((r) => r.gamesSampled);
+  return games.length === 0 ? null : { min: Math.min(...games), max: Math.max(...games) };
 }
 
 export function boardTeams(artifact: PropsBoardArtifact): string[] {

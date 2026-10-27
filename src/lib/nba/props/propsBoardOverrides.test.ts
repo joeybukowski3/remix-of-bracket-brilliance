@@ -118,8 +118,8 @@ describe("sorting by the new columns", () => {
     expect(mpg[0]).toBe("Demo Guard One");
     expect(mpg.slice(-2)).toEqual(expect.arrayContaining(["Demo Bench Seven", "Demo Wing Six"]));
     expect(names(sortBoardRows(rows, "seasonMpg", "asc")).slice(-2)).toEqual(expect.arrayContaining(["Demo Bench Seven", "Demo Wing Six"]));
-    expect(names(sortBoardRows(rows, "seasonPpg", "desc"))[0]).toBe("Demo Guard One");
-    const perMinute = sortBoardRows(rows, "seasonPtsPerMinute", "desc");
+    expect(names(sortBoardRows(rows, "seasonStatPerGame", "desc"))[0]).toBe("Demo Guard One");
+    const perMinute = sortBoardRows(rows, "seasonStatPerMinute", "desc");
     const values = perMinute.map((r) => r.season?.current?.ptsPerMinute ?? null).filter((v): v is number => v !== null);
     expect(values).toEqual([...values].sort((a, b) => b - a));
   });
@@ -160,5 +160,8 @@ describe("containsPrivateData: what the public page refuses at run time", () => 
     const oneEntry: PropsBoardArtifact = { ...noStats, entries: noStats.entries.map((e, i) => (i === 0 ? { ...e, seasonStats: { current: null, previous: null } } : e)) };
     expect(containsPrivateData(oneEntry)).toBe(true);
     expect(containsPrivateData({ ...noStats, entries: [] })).toBe(false);
+    // The last-five and last-ten windows are season statistics too: a board carrying only them is refused.
+    const recentOnly: PropsBoardArtifact = { ...noStats, entries: noStats.entries.map((e, i) => (i === 0 ? { ...e, seasonStats: { current: null, previous: null, last5: { games: 5, minutes: 150, pts: 100, reb: 25, ast: 10 }, last10: null } } : e)) };
+    expect(containsPrivateData(recentOnly)).toBe(true);
   });
 });

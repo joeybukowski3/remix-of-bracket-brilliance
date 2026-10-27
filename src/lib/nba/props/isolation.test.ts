@@ -50,7 +50,7 @@ describe("NBA code isolation", () => {
   it("limits the /nba/props page to the browser-safe board and DvP modules", () => {
     const pageFiles = files.filter((file) => NBA_PROPS_PAGE_FILES.test(file) && file !== "src/AppRoutes.tsx");
     const nbaImports = pageFiles.flatMap((file) => importsOf(file).filter((spec) => /lib\/nba\//.test(spec)).map((spec) => `${file} -> ${spec}`));
-    const disallowed = nbaImports.filter((entry) => !/-> @\/lib\/nba\/props\/(propsBoard|dvp|dvpPositions|canonical|seasonStats|minutesOverride|__fixtures__\/boardDemo)$/.test(entry));
+    const disallowed = nbaImports.filter((entry) => !/-> @\/lib\/nba\/props\/(propsBoard|dvp|dvpPositions|canonical|seasonStats|minutesOverride|boardColumns|__fixtures__\/boardDemo)$/.test(entry));
     expect(disallowed).toEqual([]);
     expect(importsOf("src/AppRoutes.tsx").filter((spec) => /nba/i.test(spec))).toEqual(["./pages/NbaPlayerProps"]);
   }, WALK_TIMEOUT_MS);
