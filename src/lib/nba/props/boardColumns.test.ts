@@ -3,6 +3,7 @@ import {
   COLUMN_IDS,
   COLUMN_PREFERENCE_KEY,
   DEFAULT_COLUMNS,
+  FIXED_COLUMNS,
   clearColumnPreference,
   defaultSelection,
   loadColumnPreference,
@@ -11,6 +12,7 @@ import {
   saveColumnPreference,
   visibleColumns,
   withColumn,
+  withFixedColumns,
 } from "./boardColumns";
 
 /** A throwaway in-memory Storage so no test touches the real one. */
@@ -25,27 +27,50 @@ function memoryStorage(initial: Record<string, string> = {}) {
 }
 
 describe("default columns", () => {
-  it("are, in order: MPG, per game, per minute, player L10, opponent L10 allowed, matchup, JKB projection", () => {
-    expect([...DEFAULT_COLUMNS]).toEqual(["mpg", "perGame", "perMinute", "last10", "oppLast10", "matchup", "jkbProjection"]);
+  it("are, in order: MPG, per game, per minute, player L10, opponent L10 allowed, matchup, Vegas Line, JKB projection", () => {
+    expect([...DEFAULT_COLUMNS]).toEqual(["mpg", "perGame", "perMinute", "last10", "oppLast10", "matchup", "line", "jkbProjection"]);
+  });
+
+  it("put the Vegas Line immediately before the JKB projection, in the registry and in what is shown", () => {
+    expect(COLUMN_IDS.indexOf("line") + 1).toBe(COLUMN_IDS.indexOf("jkbProjection"));
+    const shown = visibleColumns(defaultSelection(), true);
+    expect(shown.indexOf("line") + 1).toBe(shown.indexOf("jkbProjection"));
+    // No optional column can come between them, whatever the viewer chose.
+    expect(visibleColumns(new Set(COLUMN_IDS), true).indexOf("line") + 1).toBe(visibleColumns(new Set(COLUMN_IDS), true).indexOf("jkbProjection"));
   });
 
   it("are all registered columns, and display in registry order whatever order they were chosen in", () => {
     expect(DEFAULT_COLUMNS.every((id) => (COLUMN_IDS as readonly string[]).includes(id))).toBe(true);
     const shuffled = new Set(["jkbProjection", "mpg", "last10", "dvpAllowed"] as const);
-    expect(visibleColumns(shuffled, true)).toEqual(["mpg", "last10", "dvpAllowed", "jkbProjection"]);
+    expect(visibleColumns(shuffled, true)).toEqual(["mpg", "last10", "dvpAllowed", "line", "jkbProjection"]);
   });
 
-  it("leave the sportsbook line, prices, JKB minutes, your minutes, adjusted values and the edge as optional columns", () => {
+  it("leave the over/under prices, JKB minutes, your minutes, adjusted values and the edge as optional columns", () => {
     const optional = COLUMN_IDS.filter((id) => !DEFAULT_COLUMNS.includes(id));
-    for (const id of ["line", "overUnder", "jkbMinutes", "userMinutes", "adjustedProjection", "adjustedDifference", "modelEdge", "last5", "dvpAllowed", "dvpPrior", "dvpCurrent", "seasonRateEstimate", "seasonSample", "lastSeason"] as const) {
+    for (const id of ["overUnder", "jkbMinutes", "userMinutes", "adjustedProjection", "adjustedDifference", "modelEdge", "last5", "dvpAllowed", "dvpPrior", "dvpCurrent", "seasonRateEstimate", "seasonSample", "lastSeason"] as const) {
       expect(optional).toContain(id);
     }
   });
 
   it("each selection starts as a fresh set, so one viewer's change cannot alter the default", () => {
     const a = defaultSelection();
-    a.add("line");
-    expect(defaultSelection().has("line")).toBe(false);
+    a.add("dvpAllowed");
+    expect(defaultSelection().has("dvpAllowed")).toBe(false);
+  });
+});
+
+describe("fixed columns", () => {
+  it("are only the Vegas Line, which is part of the default and cannot be switched off", () => {
+    expect([...FIXED_COLUMNS]).toEqual(["line"]);
+    expect(FIXED_COLUMNS.every((id) => DEFAULT_COLUMNS.includes(id))).toBe(true);
+    expect(withColumn(defaultSelection(), "line", false).has("line")).toBe(true);
+  });
+
+  it("show even when an older saved choice, or an empty one, does not name them", () => {
+    expect(visibleColumns(new Set(), true)).toEqual(["line"]);
+    expect(visibleColumns(new Set(["mpg"] as const), true)).toEqual(["mpg", "line"]);
+    expect(visibleColumns(new Set(), false)).toEqual(["line"]);
+    expect([...withFixedColumns(new Set(["mpg"] as const))].sort()).toEqual(["line", "mpg"]);
   });
 });
 
@@ -62,10 +87,10 @@ describe("visibleColumns", () => {
 describe("withColumn", () => {
   it("returns a new selection and leaves the input alone", () => {
     const base = defaultSelection();
-    const added = withColumn(base, "line", true);
-    expect(added.has("line")).toBe(true);
-    expect(base.has("line")).toBe(false);
-    expect(withColumn(added, "line", false).has("line")).toBe(false);
+    const added = withColumn(base, "dvpAllowed", true);
+    expect(added.has("dvpAllowed")).toBe(true);
+    expect(base.has("dvpAllowed")).toBe(false);
+    expect(withColumn(added, "dvpAllowed", false).has("dvpAllowed")).toBe(false);
   });
 });
 

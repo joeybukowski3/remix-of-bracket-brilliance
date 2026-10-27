@@ -7,7 +7,7 @@ import ColumnsMenu from "@/components/nba/ColumnsMenu";
 import PropsBoardTable from "@/components/nba/PropsBoardTable";
 import { useIsWide } from "@/components/nba/useIsWide";
 import { COLUMN_DEFS } from "@/components/nba/boardColumnDefs";
-import { browserStorage, clearColumnPreference, defaultSelection, loadColumnPreference, saveColumnPreference, visibleColumns, withColumn, type ColumnId } from "@/lib/nba/props/boardColumns";
+import { browserStorage, clearColumnPreference, defaultSelection, loadColumnPreference, saveColumnPreference, visibleColumns, withColumn, withFixedColumns, type ColumnId } from "@/lib/nba/props/boardColumns";
 import { DVP_POSITIONS, PRIOR_LED_BELOW_GAMES, type DvpPosition } from "@/lib/nba/props/dvp";
 import { appliedMinutes, clearAllDrafts, clearDraft, setDraft, type MinutesDrafts } from "@/lib/nba/props/minutesOverride";
 import {
@@ -54,7 +54,7 @@ export default function PropsBoardView({ board }: { board: PropsBoardArtifact })
   const [direction, setDirection] = useState<SortDirection>("desc");
   const [drafts, setDrafts] = useState<MinutesDrafts>(clearAllDrafts);
   // Only the list of column ids is ever remembered (see boardColumns.ts); nothing about a player or a projection is stored.
-  const [selected, setSelected] = useState<ReadonlySet<ColumnId>>(() => loadColumnPreference(browserStorage) ?? defaultSelection());
+  const [selected, setSelected] = useState<ReadonlySet<ColumnId>>(() => withFixedColumns(loadColumnPreference(browserStorage) ?? defaultSelection()));
   const teams = useMemo(() => boardTeams(board), [board]);
   const applied = useMemo(() => appliedMinutes(drafts), [drafts]);
   const showSeason = useMemo(() => board.entries.some((e) => e.seasonStats !== undefined), [board]);

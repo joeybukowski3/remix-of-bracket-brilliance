@@ -22,7 +22,7 @@ afterEach(() => {
 });
 
 /** The columns the table showed by default before the last-ten redesign: tests of L5 and Opp allows select them explicitly. */
-const DEFAULT_HEADERS = ["Player", "MPG", "PPG", "PTS/MIN", "L10 PTS", "Opp L10 PTS", "Matchup", "JKB proj"];
+const DEFAULT_HEADERS = ["Player", "MPG", "PPG", "PTS/MIN", "L10 PTS", "Opp L10 PTS", "Matchup", "Vegas Line", "JKB proj"];
 const LEGACY_COLUMNS = ["mpg", "perGame", "perMinute", "last5", "dvpAllowed", "matchup", "jkbProjection"];
 const renderWith = (columns: readonly string[], b: PropsBoardArtifact = buildDemoBoard()) => {
   localStorage.setItem(COLUMN_PREFERENCE_KEY, JSON.stringify({ version: 1, columns }));
@@ -69,7 +69,7 @@ const withoutLastWindows: PropsBoardArtifact = { ...board, entries: board.entrie
 const publicLike: PropsBoardArtifact = { ...board, entries: board.entries.map(({ seasonStats: _removed, ...entry }) => entry) };
 
 describe("the compact default table", () => {
-  it("shows player, MPG, PPG, PTS/MIN, player L10, opponent L10 allowed, matchup and JKB projection, in that order, and nothing else", () => {
+  it("shows player, MPG, PPG, PTS/MIN, player L10, opponent L10 allowed, matchup, Vegas Line and JKB projection, in that order, and nothing else", () => {
     render(<PropsBoardView board={board} />);
     expect(headers()).toEqual(DEFAULT_HEADERS);
   });
@@ -77,15 +77,15 @@ describe("the compact default table", () => {
   it("uses the selected market's own per-game, per-minute, L10 and opponent labels", () => {
     render(<PropsBoardView board={board} />);
     showMarket("Rebounds");
-    expect(headers()).toEqual(["Player", "MPG", "RPG", "REB/MIN", "L10 REB", "Opp L10 REB", "Matchup", "JKB proj"]);
+    expect(headers()).toEqual(["Player", "MPG", "RPG", "REB/MIN", "L10 REB", "Opp L10 REB", "Matchup", "Vegas Line", "JKB proj"]);
     showMarket("Assists");
-    expect(headers()).toEqual(["Player", "MPG", "APG", "AST/MIN", "L10 AST", "Opp L10 AST", "Matchup", "JKB proj"]);
+    expect(headers()).toEqual(["Player", "MPG", "APG", "AST/MIN", "L10 AST", "Opp L10 AST", "Matchup", "Vegas Line", "JKB proj"]);
   });
 
   it("keeps every optional field out of the default view", () => {
     render(<PropsBoardView board={board} />);
     const h = headers().join("|");
-    for (const absent of ["Line", "O / U", "JKB min", "Your min", "Adj proj", "Adj − line", "JKB − line", "L5", "Opp allows", "DvP", "Sample", "Season-rate", "Source"]) expect(h, absent).not.toContain(absent);
+    for (const absent of ["O / U", "JKB min", "Your min", "Adj proj", "Adj − line", "JKB − line", "L5", "Opp allows", "DvP", "Sample", "Season-rate", "Source"]) expect(h, absent).not.toContain(absent);
   });
 
   it("computes each cell from the player's own figures for the selected market", () => {
@@ -123,11 +123,13 @@ describe("the compact default table", () => {
     expect(screen.getByTestId("head-jkbProjection")).toHaveAttribute("aria-sort", "descending");
   });
 
-  it("keeps only L10, opponent L10, matchup and projection as table columns on a phone: the rest are hidden below the md breakpoint", () => {
+  it("keeps only matchup, Vegas Line and the projection as table columns on a phone: the rest, L10 included, are hidden below the md breakpoint", () => {
     render(<PropsBoardView board={board} />);
-    const onPhone = ["last10", "oppLast10", "matchup", "jkbProjection"];
-    for (const id of ["mpg", "perGame", "perMinute", "last10", "oppLast10", "matchup", "jkbProjection"]) {
-      const hidden = /\bhidden\b/.test(screen.getByTestId(`head-${id}`).className) && /\bmd:table-cell\b/.test(screen.getByTestId(`head-${id}`).className);
+    const onPhone = ["matchup", "line", "jkbProjection"];
+    for (const id of ["mpg", "perGame", "perMinute", "last10", "oppLast10", "matchup", "line", "jkbProjection"]) {
+      // A tablet shows every default column but PTS/MIN (it arrives at lg); the expanded row carries it.
+      const arrives = id === "perMinute" ? /\blg:table-cell\b/ : /\bmd:table-cell\b/;
+      const hidden = /\bhidden\b/.test(screen.getByTestId(`head-${id}`).className) && arrives.test(screen.getByTestId(`head-${id}`).className);
       expect(hidden, id).toBe(!onPhone.includes(id));
       expect(/\bhidden\b/.test(col("Demo Guard One", id).className), `${id} cell`).toBe(!onPhone.includes(id));
     }
@@ -140,7 +142,7 @@ describe("the compact default table", () => {
 
   it("hides the season columns on a board without season statistics, as on any public board", () => {
     render(<PropsBoardView board={publicLike} />);
-    expect(headers()).toEqual(["Player", "Matchup", "JKB proj"]);
+    expect(headers()).toEqual(["Player", "Matchup", "Vegas Line", "JKB proj"]);
     expect(screen.queryByText(/completed games this season/)).toBeNull();
   });
 });
@@ -276,23 +278,22 @@ describe("the Columns menu", () => {
   it("lists every optional field, with the defaults checked and the rest unchecked", () => {
     render(<PropsBoardView board={board} />);
     openColumns();
-    for (const id of ["mpg", "perGame", "perMinute", "last10", "oppLast10", "matchup", "jkbProjection"]) expect(screen.getByTestId(`column-toggle-${id}`), id).toBeChecked();
-    for (const id of ["line", "overUnder", "jkbMinutes", "userMinutes", "adjustedProjection", "modelEdge", "last5", "dvpAllowed", "dvpPrior", "dvpCurrent", "seasonRateEstimate", "seasonSample", "lastSeason"]) expect(screen.getByTestId(`column-toggle-${id}`), id).not.toBeChecked();
+    for (const id of ["mpg", "perGame", "perMinute", "last10", "oppLast10", "matchup", "line", "jkbProjection"]) expect(screen.getByTestId(`column-toggle-${id}`), id).toBeChecked();
+    for (const id of ["overUnder", "jkbMinutes", "userMinutes", "adjustedProjection", "modelEdge", "last5", "dvpAllowed", "dvpPrior", "dvpCurrent", "seasonRateEstimate", "seasonSample", "lastSeason"]) expect(screen.getByTestId(`column-toggle-${id}`), id).not.toBeChecked();
   });
 
   it("adds an optional column, in its registry position, and removes it again", () => {
     render(<PropsBoardView board={board} />);
     openColumns();
     toggleColumn("last5");
-    toggleColumn("line");
     toggleColumn("overUnder");
-    expect(headers()).toEqual(["Player", "MPG", "PPG", "PTS/MIN", "L5 PTS", "L10 PTS", "Opp L10 PTS", "Matchup", "Line", "O / U", "JKB proj"]);
+    expect(headers()).toEqual(["Player", "MPG", "PPG", "PTS/MIN", "L5 PTS", "L10 PTS", "Opp L10 PTS", "Matchup", "Vegas Line", "JKB proj", "O / U"]);
     expect(col("Demo Guard One", "last5").textContent).toBe("28.6");
     expect(col("Demo Guard One", "last10").textContent).toBe("26.8");
     expect(col("Demo Guard One", "line").textContent).toBe("24.5");
     expect(col("Demo Guard One", "overUnder").textContent).toBe("-115 / -105");
-    toggleColumn("line");
-    expect(headers()).not.toContain("Line");
+    toggleColumn("overUnder");
+    expect(headers()).not.toContain("O / U");
   });
 
   it("offers the 2025–26 and 2026–27 DvP, JKB minutes, the edge and the season comparison fields", () => {
@@ -324,17 +325,19 @@ describe("the Columns menu", () => {
     // They are not shown, so they are not drawn as ticked.
     expect(screen.getByTestId("column-toggle-mpg")).not.toBeChecked();
     for (const id of ["mpg", "last5", "last10", "oppLast10", "seasonSample"]) expect(screen.getByTestId(`column-toggle-${id}`), id).toBeDisabled();
-    expect(screen.getByTestId("column-toggle-line")).toBeEnabled();
+    // Vegas Line is on every board, public or private, and cannot be switched off.
+    expect(screen.getByTestId("column-toggle-line")).toBeChecked();
+    expect(screen.getByTestId("column-toggle-line")).toBeDisabled();
   });
 
   it("returns to the default columns, and reports the shown count", () => {
     render(<PropsBoardView board={board} />);
     openColumns();
-    expect(screen.getByTestId("columns-menu-trigger").textContent).toContain("(7)");
+    expect(screen.getByTestId("columns-menu-trigger").textContent).toContain("(8)");
     expect(screen.getByTestId("columns-reset")).toBeDisabled();
-    toggleColumn("line");
+    toggleColumn("dvpAllowed");
     toggleColumn("mpg");
-    expect(screen.getByTestId("columns-menu-trigger").textContent).toContain("(7)");
+    expect(screen.getByTestId("columns-menu-trigger").textContent).toContain("(8)");
     expect(screen.getByTestId("columns-reset")).toBeEnabled();
     fireEvent.click(screen.getByTestId("columns-reset"));
     expect(headers()).toEqual(DEFAULT_HEADERS);
@@ -355,7 +358,7 @@ describe("the Columns menu", () => {
   it("applies the same rule to a saved selection that hides the default sort column", () => {
     localStorage.setItem(COLUMN_PREFERENCE_KEY, JSON.stringify({ version: 1, columns: ["last5", "matchup"] }));
     render(<PropsBoardView board={board} />);
-    expect(headers()).toEqual(["Player", "L5 PTS", "Matchup"]);
+    expect(headers()).toEqual(["Player", "L5 PTS", "Matchup", "Vegas Line"]);
     expect(screen.getByTestId("head-last5")).toHaveAttribute("aria-sort", "descending");
     expect(screen.getByTestId("head-matchup")).toHaveAttribute("aria-sort", "none");
   });
@@ -376,14 +379,14 @@ describe("remembering the column choice", () => {
     const first = render(<PropsBoardView board={board} />);
     expect(setItem).not.toHaveBeenCalled();
     openColumns();
-    toggleColumn("line");
+    toggleColumn("dvpAllowed");
     expect(setItem).toHaveBeenCalledTimes(1);
     const [key, value] = setItem.mock.calls[0];
     expect(key).toBe(COLUMN_PREFERENCE_KEY);
-    expect(JSON.parse(String(value))).toEqual({ version: 1, columns: ["mpg", "perGame", "perMinute", "last10", "oppLast10", "matchup", "line", "jkbProjection"] });
+    expect(JSON.parse(String(value))).toEqual({ version: 1, columns: ["mpg", "perGame", "perMinute", "last10", "oppLast10", "dvpAllowed", "matchup", "line", "jkbProjection"] });
     first.unmount();
     render(<PropsBoardView board={board} />);
-    expect(headers()).toContain("Line");
+    expect(headers()).toContain("Opp allows");
     setItem.mockRestore();
   });
 
@@ -401,7 +404,7 @@ describe("remembering the column choice", () => {
   it("clears the stored choice with the Default button", () => {
     render(<PropsBoardView board={board} />);
     openColumns();
-    toggleColumn("line");
+    toggleColumn("dvpAllowed");
     expect(localStorage.getItem(COLUMN_PREFERENCE_KEY)).not.toBeNull();
     fireEvent.click(screen.getByTestId("columns-reset"));
     expect(localStorage.getItem(COLUMN_PREFERENCE_KEY)).toBeNull();
@@ -414,7 +417,8 @@ describe("remembering the column choice", () => {
     first.unmount();
     localStorage.setItem(COLUMN_PREFERENCE_KEY, JSON.stringify({ columns: ["last10", "Demo Guard One", "jkbProjection"] }));
     render(<PropsBoardView board={board} />);
-    expect(headers()).toEqual(["Player", "L10 PTS", "JKB proj"]);
+    // The Vegas Line is fixed, so it shows even though this saved choice never named it.
+    expect(headers()).toEqual(["Player", "L10 PTS", "Vegas Line", "JKB proj"]);
   });
 
   it("works when the browser blocks storage", () => {
@@ -427,8 +431,8 @@ describe("remembering the column choice", () => {
     render(<PropsBoardView board={board} />);
     expect(headers()).toContain("MPG");
     openColumns();
-    toggleColumn("line");
-    expect(headers()).toContain("Line");
+    toggleColumn("dvpAllowed");
+    expect(headers()).toContain("Opp allows");
     get.mockRestore();
     set.mockRestore();
   });

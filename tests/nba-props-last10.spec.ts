@@ -60,8 +60,8 @@ test.describe("team identity, hierarchy and last-ten charts", () => {
 
       // The default set, and the phone subset.
       const phone = viewport.width < 768;
-      for (const id of ["last10", "oppLast10", "matchup", "jkbProjection"]) await expect(page.getByTestId(`col-${id}`).first()).toBeVisible();
-      for (const id of ["mpg", "perGame", "perMinute"]) {
+      for (const id of ["matchup", "line", "jkbProjection"]) await expect(page.getByTestId(`col-${id}`).first()).toBeVisible();
+      for (const id of ["mpg", "perGame", "last10", "oppLast10"]) {
         if (phone) await expect(page.getByTestId(`col-${id}`).first()).toBeHidden();
         else await expect(page.getByTestId(`col-${id}`).first()).toBeVisible();
       }

@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { FIXTURE_BUILD_AT, FIXTURE_GAME_KEY, fixtureImportFile, fixturePositionsFile, fixtureRows, fixtureSlateFile } from "../__fixtures__/v1Fixtures";
+import { buildDvpRows, DVP_POSITIONS } from "../dvp";
 import { assembleBoard } from "../pipeline/boardBuild";
 import { normalizePlayerName } from "../pipeline/contracts";
 import { SOURCE_LICENSES } from "../sources/licenses";
 import type { NbaSourceId, SourceLicense } from "../sources/types";
 import type { NbaPlayerGame } from "../types";
+import type { GameScores } from "./gameResults";
 import { parsePlayerGameImport } from "./playerGameImport";
 import { buildEstimateSet } from "./positionEstimates";
 import { buildPrivatePreviewBoard } from "./privatePreview";
@@ -211,11 +213,38 @@ describe("season statistics in the V1 build and the private preview", () => {
     expect(built.opponentRecent[`${FIXTURE_GAME_KEY}|BOS|C`]).toBeDefined();
   });
 
+  it("reconciles to the DvP rows built from the same import: summed over every game, the listed players are the DvP numerator", () => {
+    const dvp = buildDvpRows(built.dvp?.lines ?? []).rows;
+    for (const team of ["NYK", "BOS"]) {
+      const games = built.opponentBoxScores[`${FIXTURE_GAME_KEY}|${team}`];
+      for (const position of DVP_POSITIONS) {
+        for (const [statistic, key] of [["PTS", "pts"], ["REB", "reb"], ["AST", "ast"]] as const) {
+          const row = dvp.find((r) => r.season === "2026-27" && r.opponentTeam === team && r.position === position && r.statistic === statistic);
+          // Every completed game of the season is in the window here, so the two cover the same games.
+          expect(row?.gamesSampled, `${team} games`).toBe(games.length);
+          const listed = games.flatMap((g) => g.players).filter((p) => p.position === position).reduce((sum, p) => sum + p[key], 0);
+          expect(listed, `${team} ${position} ${statistic}`).toBeCloseTo((row?.allowedPerGame ?? NaN) * (row?.gamesSampled ?? NaN), 6);
+        }
+      }
+    }
+  });
+
   it("puts the opponent windows on the private preview board, even when empty, and only there", () => {
     const withWindows = buildPrivatePreviewBoard({ generatedAtUtc: FIXTURE_BUILD_AT, projections: built.projections, roster: built.roster, dvp: built.dvp, opponentRecent: built.opponentRecent });
     expect(Object.keys(withWindows.artifact.opponentRecent ?? {})).toEqual(Object.keys(built.opponentRecent));
     expect(buildPrivatePreviewBoard({ generatedAtUtc: FIXTURE_BUILD_AT, projections: built.projections, roster: built.roster, dvp: built.dvp, opponentRecent: {} }).artifact.opponentRecent).toEqual({});
     expect("opponentRecent" in buildPrivatePreviewBoard({ generatedAtUtc: FIXTURE_BUILD_AT, projections: built.projections, roster: built.roster, dvp: built.dvp }).artifact).toBe(false);
+  });
+
+  it("builds the opposing players behind those windows from the same import, and puts them on the private board only", () => {
+    const boxes = built.opponentBoxScores[`${FIXTURE_GAME_KEY}|NYK`];
+    expect(boxes).toHaveLength(2);
+    // The defense is NYK, so the listed players belong to whoever NYK played, never to NYK itself.
+    expect(boxes.every((g) => g.versus !== "NYK" && g.players.length > 0)).toBe(true);
+    expect(boxes.map((g) => g.date)).toEqual(built.opponentRecent[`${FIXTURE_GAME_KEY}|NYK|PG`].games.map((g) => g.date));
+    const withBoxes = buildPrivatePreviewBoard({ generatedAtUtc: FIXTURE_BUILD_AT, projections: built.projections, roster: built.roster, dvp: built.dvp, opponentBoxScores: built.opponentBoxScores });
+    expect(Object.keys(withBoxes.artifact.opponentBoxScores ?? {})).toEqual(Object.keys(built.opponentBoxScores));
+    expect("opponentBoxScores" in buildPrivatePreviewBoard({ generatedAtUtc: FIXTURE_BUILD_AT, projections: built.projections, roster: built.roster, dvp: built.dvp }).artifact).toBe(false);
   });
 
   it("adds nothing when no season statistics are supplied", () => {
@@ -243,11 +272,30 @@ describe("the public board never carries season statistics", () => {
     expect(JSON.stringify(artifact)).not.toContain("seasonStats");
     expect(JSON.stringify(artifact)).not.toContain("recentGames");
     expect(JSON.stringify(artifact)).not.toContain("opponentRecent");
+    expect(JSON.stringify(artifact)).not.toContain("opponentBoxScores");
     expect(artifact.entries.some((e) => "seasonStats" in e)).toBe(false);
   });
 
   it("does not put season statistics in the projection records the public builder receives", () => {
     const licensed = inputs("balldontlie");
     expect(JSON.stringify(licensed.projections)).not.toContain("seasonStats");
+  });
+});
+
+describe("seasonStatsFor: the final score on each of the player's ten games", () => {
+  const scores: GameScores = new Map([
+    ["2026-27|2026-27-2026-10-22", { BOS: 110, NYK: 101 }],
+    ["2026-27|2026-27-2026-10-25", { BOS: 99, NYK: 105 }],
+  ]);
+  const history = [game("2026-27", "2026-10-22"), game("2026-27", "2026-10-25"), game("2026-27", "2026-10-28")];
+
+  it("attaches the result from the player's side where the score is known, and leaves it off where it is not", () => {
+    const games = seasonStatsFor(history, target, scores).recentGames ?? [];
+    expect(games.map((g) => g.result)).toEqual([{ won: true, teamPts: 110, opponentPts: 101 }, { won: false, teamPts: 99, opponentPts: 105 }, undefined]);
+    expect("result" in games[2]).toBe(false);
+  });
+
+  it("is unchanged when no scores are supplied", () => {
+    expect(seasonStatsFor(history, target).recentGames?.every((g) => !("result" in g))).toBe(true);
   });
 });

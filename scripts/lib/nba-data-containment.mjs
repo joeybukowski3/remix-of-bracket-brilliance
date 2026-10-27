@@ -76,7 +76,7 @@ export const CONTENT_RULES = [
   },
   {
     id: "nba-v1-private-record",
-    test: (text) => /"schemaVersion"\s*:\s*"jkb-(player-games-import|hoopr-manifest|position-estimates|player-features|position-proposals|v1-backtest-report|v1-validation-report)-v1"/.test(text) || /"privatePreview"\s*:\s*\{/.test(text),
+    test: (text) => /"schemaVersion"\s*:\s*"jkb-(player-games-import|hoopr-manifest|position-estimates|player-features|position-proposals|v1-backtest-report|v1-validation-report)-v1"/.test(text) || /"privatePreview"\s*:\s*\{/.test(text) || /"opponentBoxScores"\s*:\s*\{/.test(text),
   },
   { id: "nba-model-output", test: (text) => /"modelVersion"\s*:\s*"nba-(props-baseline|minutes)-/.test(text) },
   { id: "restricted-report-marker", test: (text) => text.includes(RESTRICTED_REPORT_MARKER) },

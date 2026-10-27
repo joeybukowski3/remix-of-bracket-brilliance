@@ -23,7 +23,7 @@ export function MinutesEditor({ name, draft, placeholder, disabledReason, onChan
   const errorId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   return (
-    <div className="flex flex-col items-end gap-0.5">
+    <div className="flex flex-col items-center gap-0.5">
       <div className="flex items-center gap-1">
         <input
           type="text"
@@ -40,7 +40,7 @@ export function MinutesEditor({ name, draft, placeholder, disabledReason, onChan
           title={disabledReason ?? `Your minutes (${MIN_USER_MINUTES}-${MAX_USER_MINUTES}, one decimal). Leave blank to use the JKB minutes.`}
           onChange={(e) => onChange(e.target.value)}
           onBlur={() => setTouched(true)}
-          className={cn("h-8 w-16 rounded border px-1.5 text-right text-[12px] tabular-nums focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500 disabled:cursor-not-allowed disabled:bg-slate-50", invalid ? "border-red-400 bg-red-50 text-red-800" : "border-slate-300 bg-white text-slate-900")}
+          className={cn("h-8 w-16 rounded border px-1.5 text-center text-[12px] tabular-nums focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500 disabled:cursor-not-allowed disabled:bg-slate-50", invalid ? "border-red-400 bg-red-50 text-red-800" : "border-slate-300 bg-white text-slate-900")}
         />
         <button
           type="button"
@@ -59,7 +59,7 @@ export function MinutesEditor({ name, draft, placeholder, disabledReason, onChan
         </button>
       </div>
       {invalid ? (
-        <span id={errorId} role="alert" className="max-w-[9rem] text-right text-[10px] font-semibold text-red-700">
+        <span id={errorId} role="alert" className="max-w-[9rem] text-center text-[10px] font-semibold text-red-700">
           {parsed.kind === "invalid" ? parsed.reason : null}
         </span>
       ) : null}

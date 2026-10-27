@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { fixturePositionsFile } from "../__fixtures__/v1Fixtures";
-import { opponentRecentKey } from "../recentForm";
+import { opponentBoxKey, opponentRecentKey } from "../recentForm";
 import type { ImportedPlayerGame } from "./playerGameImport";
-import { buildOpponentRecent } from "./opponentRecentBuild";
+import { buildOpponentBoxScores, buildOpponentRecent } from "./opponentRecentBuild";
 import { buildEstimateSet } from "./positionEstimates";
 
 const positions = buildEstimateSet([fixturePositionsFile("2025-26"), fixturePositionsFile("2026-27")]);
@@ -99,5 +99,72 @@ describe("buildOpponentRecent: the defense's own ten games", () => {
   it("does not depend on row order", () => {
     const rows = bostonGames(12);
     expect(pg([...rows].reverse())).toEqual(pg(rows));
+  });
+});
+
+describe("buildOpponentBoxScores: the individual opposing players behind each game", () => {
+  const boxes = (rows: ImportedPlayerGame[]) => buildOpponentBoxScores(rows, positions, [upcoming], SEASON)[opponentBoxKey(upcoming.gameKey, "BOS")];
+
+  it("lists every opposing player who played, once per defense game, with the position DvP uses", () => {
+    const first = boxes(bostonGames(3))[0];
+    expect(first).toMatchObject({ gameId: "g01", date: "2026-10-20", versus: "NYK", defenseIsHome: true });
+    expect(first.players.map((p) => [p.name, p.position, p.minutes, p.pts])).toEqual([
+      ["NYK-1", "PG", 30, 10],
+      ["NYK-2", "SG", 30, 50],
+      ["NYK-6", "PG", 10, 1],
+    ]);
+  });
+
+  it("uses the same ten games, in the same order, as the opponent sequences", () => {
+    const rows = bostonGames(12);
+    const dates = boxes(rows).map((g) => g.date);
+    expect(dates).toEqual(pg(rows).games.map((g) => g.date));
+    expect(dates).toHaveLength(10);
+  });
+
+  it("reconciles to the sequences: per position, the listed players' totals are the bar for that game, minutes included", () => {
+    const rows = [
+      ...bostonGames(6),
+      line({ playerId: "NYK-99", gameId: "g02", gameDate: "2026-10-21", pts: 40, minutes: 12 }),
+      line({ playerId: "NYK-5", gameId: "g04", gameDate: "2026-10-23", pts: 7, reb: 11, ast: 1 }),
+    ];
+    const all = build(rows);
+    for (const position of ["PG", "SG", "SF", "PF", "C"] as const) {
+      const sequence = all[opponentRecentKey(upcoming.gameKey, "BOS", position)];
+      boxes(rows).forEach((game, i) => {
+        const at = game.players.filter((p) => p.position === position);
+        const attributed = game.players.filter((p) => p.position !== null).reduce((sum, p) => sum + p.minutes, 0);
+        const bar = sequence.games[i];
+        expect(bar.date).toBe(game.date);
+        expect(bar.attributedMinutes).toBe(attributed);
+        expect(bar.totalMinutes).toBe(game.players.reduce((sum, p) => sum + p.minutes, 0));
+        expect(bar.pts).toBe(attributed > 0 ? at.reduce((sum, p) => sum + p.pts, 0) : null);
+        expect(bar.reb).toBe(attributed > 0 ? at.reduce((sum, p) => sum + p.reb, 0) : null);
+        expect(bar.ast).toBe(attributed > 0 ? at.reduce((sum, p) => sum + p.ast, 0) : null);
+      });
+    }
+  });
+
+  it("keeps a player with no estimate in the list with a null position, so the gap is visible and counted nowhere", () => {
+    const rows = [...bostonGames(2), line({ playerId: "NYK-99", gameId: "g01", gameDate: "2026-10-20", pts: 40, minutes: 12 })];
+    expect(boxes(rows)[0].players.filter((p) => p.position === null)).toEqual([{ name: "NYK-99", minutes: 12, pts: 40, reb: 4, ast: 2, position: null }]);
+  });
+
+  it("applies the same gates as the sequences: this season, regular season, strictly before the game, played minutes only", () => {
+    const rows = [
+      ...bostonGames(2),
+      line({ playerId: "NYK-1", gameId: "same", gameDate: "2026-11-20", pts: 99 }),
+      line({ playerId: "NYK-1", gameId: "pre", gameDate: "2026-10-05", seasonType: "preseason", pts: 99 }),
+      line({ season: "2025-26", playerId: "NYK-1", gameId: "old", gameDate: "2026-03-01", pts: 99 }),
+      line({ playerId: "NYK-1", gameId: "dnp", gameDate: "2026-11-01", minutes: 0, pts: 99 }),
+    ];
+    const games = boxes(rows);
+    expect(games.map((g) => g.gameId)).toEqual(["g01", "g02"]);
+    expect(games.flatMap((g) => g.players).every((p) => p.pts !== 99 && p.minutes > 0)).toBe(true);
+  });
+
+  it("gives a defense with no completed game no entry, and does not depend on row order", () => {
+    expect(buildOpponentBoxScores([], positions, [upcoming], SEASON)).toEqual({});
+    expect(boxes([...bostonGames(12)].reverse())).toEqual(boxes(bostonGames(12)));
   });
 });

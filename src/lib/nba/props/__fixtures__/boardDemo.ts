@@ -6,7 +6,7 @@
 import { CANONICAL_TEAM_CODES } from "../canonical";
 import { buildDvpRows, DVP_POSITIONS, type DvpPlayerGameLine, type DvpSeason } from "../dvp";
 import { BOARD_SCHEMA_VERSION, type BoardEntry, type PropsBoardArtifact } from "../propsBoard";
-import { opponentRecentKey, type OpponentRecentGame, type OpponentRecentSequence, type PlayerRecentGame } from "../recentForm";
+import { opponentBoxKey, opponentRecentKey, type OpponentBoxScoreGame, type OpponentBoxScores, type OpponentRecentGame, type OpponentRecentSequence, type OpposingPlayerLine, type PlayerRecentGame, type GameResult } from "../recentForm";
 import type { RecentTotals, SeasonStatsView, SeasonTotals } from "../seasonStats";
 
 const SOURCE = { sourceId: "synthetic-box", sourceUpdatedAtUtc: "2026-11-09T12:00:00Z" } as const;
@@ -95,34 +95,79 @@ function demoGames(n: number, mpg: number, ppg: number, rpg: number, apg: number
     pts: tenth(ppg + offset),
     reb: tenth(rpg + offset * 0.4),
     ast: tenth(apg + offset * 0.2),
+    // One game in each window has no known final score, so the table's "no result" state is exercised too.
+    ...(i === 4 ? {} : { result: demoResult(i) }),
   }));
 }
 
-/** Invented opponent games for one position; every figure is a fixed formula of the game number. Not real data. */
-function demoOpponentGames(defense: string, position: number, games: number, gapGame: number | null): OpponentRecentGame[] {
-  return Array.from({ length: games }, (_, i) => {
-    const total = 240;
-    const gap = gapGame === i;
-    return {
-      date: dayBefore((games - i) * 2),
-      versus: RECENT_OPPONENTS[(i + position) % RECENT_OPPONENTS.length],
-      defenseIsHome: i % 2 === 1,
-      attributedMinutes: gap ? 0 : total - 24 - ((i * 7 + position * 5) % 30),
-      totalMinutes: total,
-      pts: gap ? null : tenth(STAT_BASE.pts[position] + wobble(defense === "BOS" ? 3 : 8, position, i)),
-      reb: gap ? null : tenth(STAT_BASE.reb[position] + wobble(defense === "BOS" ? 3 : 8, position, i + 1) / 2),
-      ast: gap ? null : tenth(STAT_BASE.ast[position] + wobble(defense === "BOS" ? 3 : 8, position, i + 2) / 2),
-    };
-  });
+/** An invented final score from the player's side: lost every third game. */
+function demoResult(i: number): GameResult {
+  const won = i % 3 !== 1;
+  return { won, teamPts: won ? 112 + i : 101 + i, opponentPts: won ? 104 + i : 109 + i };
 }
 
-/** BOS has played ten games (a full window, with one gap for the centers); NYK only four, so its window is a small sample. */
-function demoOpponentRecent(): Record<string, OpponentRecentSequence> {
-  const sequences: Record<string, OpponentRecentSequence> = {};
-  for (const [defense, count, seasonGames] of [["BOS", 10, 14], ["NYK", 4, 4]] as const) {
-    DVP_POSITIONS.forEach((position, p) => {
-      sequences[opponentRecentKey(GAME_KEY, defense, position)] = { team: defense, position, season: CURRENT, seasonGames, games: demoOpponentGames(defense, p, count, defense === "BOS" && position === "C" ? 4 : null) };
+/** Starting and bench minutes by position (PG, SG, SF, PF, C), and an invented base line for each. Not real data. */
+const STARTER_MINUTES = [34, 33, 31, 29, 27] as const;
+const BENCH_MINUTES = [14, 12, 13, 15, 11] as const;
+/** In a fully attributed game the benches are longer, so the opposing minutes add to 240 with nobody left unmatched. */
+const FULL_BENCH_MINUTES = [20, 18, 16, 18, 14] as const;
+const TEAM_MINUTES = 240;
+
+const integer = (n: number): number => Math.max(0, Math.round(n));
+
+/** Invented opposing players for one defense game: every figure is a fixed formula of the game number. Not real data. */
+function demoOpposingPlayers(defense: string, versus: string, i: number, isGap: boolean): OpposingPlayerLine[] {
+  const unmatched = (minutes: number, label: string, pts: number): OpposingPlayerLine => ({ name: `Demo ${versus} ${label}`, minutes, pts, reb: 2, ast: 1, position: null });
+  // A gap game is one where no opposing minute could be given a position (a missing position file), for every position at once.
+  if (isGap) return [unmatched(130, "Reserve A", 41), unmatched(110, "Reserve B", 33)];
+  const isFull = i % 5 === 2;
+  const team = defense === "BOS" ? 3 : 8;
+  const lines: OpposingPlayerLine[] = [];
+  DVP_POSITIONS.forEach((position, p) => {
+    const pts = integer(STAT_BASE.pts[p] + wobble(team, p, i));
+    const reb = integer(STAT_BASE.reb[p] + wobble(team, p, i + 1) / 2);
+    const ast = integer(STAT_BASE.ast[p] + wobble(team, p, i + 2) / 2);
+    const hasBench = isFull || (i + p) % 3 !== 0;
+    const share = hasBench ? 0.7 : 1;
+    lines.push({ name: `Demo ${versus} ${position} Starter`, minutes: STARTER_MINUTES[p], pts: integer(pts * share), reb: integer(reb * share), ast: integer(ast * share), position });
+    if (hasBench) lines.push({ name: `Demo ${versus} ${position} Bench`, minutes: isFull ? FULL_BENCH_MINUTES[p] : BENCH_MINUTES[p], pts: pts - integer(pts * share), reb: reb - integer(reb * share), ast: ast - integer(ast * share), position });
+  });
+  const left = TEAM_MINUTES - lines.reduce((sum, l) => sum + l.minutes, 0);
+  if (left > 0) lines.push(unmatched(Math.ceil(left / 2), "Reserve A", 6), unmatched(Math.floor(left / 2), "Reserve B", 3));
+  return lines.filter((l) => l.minutes > 0);
+}
+
+/** BOS has played ten games (a full window, with one game that has no positions at all); NYK only four, so its window is a small sample. */
+function demoOpponentBoxScores(): OpponentBoxScores {
+  const boxes: OpponentBoxScores = {};
+  for (const [defense, count] of [["BOS", 10], ["NYK", 4]] as const) {
+    boxes[opponentBoxKey(GAME_KEY, defense)] = Array.from({ length: count }, (_, i): OpponentBoxScoreGame => {
+      const versus = RECENT_OPPONENTS[i % RECENT_OPPONENTS.length];
+      return { gameId: `demo-${defense}-${i}`, date: dayBefore((count - i) * 2), versus, defenseIsHome: i % 2 === 1, players: demoOpposingPlayers(defense, versus, i, defense === "BOS" && i === 4) };
     });
+  }
+  return boxes;
+}
+
+/** The sequences, derived from the boxes by the same rule as the real builder (v1/opponentRecentBuild.ts), so the two reconcile. */
+function demoOpponentRecent(boxes: OpponentBoxScores): Record<string, OpponentRecentSequence> {
+  const sequences: Record<string, OpponentRecentSequence> = {};
+  for (const [defense, seasonGames] of [["BOS", 14], ["NYK", 4]] as const) {
+    const games = boxes[opponentBoxKey(GAME_KEY, defense)];
+    for (const position of DVP_POSITIONS) {
+      sequences[opponentRecentKey(GAME_KEY, defense, position)] = {
+        team: defense,
+        position,
+        season: CURRENT,
+        seasonGames,
+        games: games.map((g): OpponentRecentGame => {
+          const attributedMinutes = g.players.reduce((sum, l) => sum + (l.position === null ? 0 : l.minutes), 0);
+          const at = g.players.filter((l) => l.position === position);
+          const sum = (field: "pts" | "reb" | "ast") => (attributedMinutes > 0 ? at.reduce((total, l) => total + l[field], 0) : null);
+          return { date: g.date, versus: g.versus, defenseIsHome: g.defenseIsHome, attributedMinutes, totalMinutes: g.players.reduce((total, l) => total + l.minutes, 0), pts: sum("pts"), reb: sum("reb"), ast: sum("ast") };
+        }),
+      };
+    }
   }
   return sequences;
 }
@@ -164,6 +209,7 @@ function entryFor(player: DemoPlayer, market: "pts" | "reb" | "ast"): BoardEntry
 
 export function buildDemoBoard(): PropsBoardArtifact {
   const { rows } = buildDvpRows([...demoLines("2025-26", 4), ...demoLines("2026-27", 3)]);
+  const boxes = demoOpponentBoxScores();
   return {
     schemaVersion: BOARD_SCHEMA_VERSION,
     generatedAtUtc: "2026-11-09T22:00:00Z",
@@ -171,6 +217,7 @@ export function buildDemoBoard(): PropsBoardArtifact {
     sources: { lines: ["synthetic-odds"], dvp: "synthetic-box", dvpUpdatedUtc: SOURCE.sourceUpdatedAtUtc },
     entries: PLAYERS.flatMap((player) => (["pts", "reb", "ast"] as const).map((market) => entryFor(player, market))),
     dvpRows: rows,
-    opponentRecent: demoOpponentRecent(),
+    opponentRecent: demoOpponentRecent(boxes),
+    opponentBoxScores: boxes,
   };
 }

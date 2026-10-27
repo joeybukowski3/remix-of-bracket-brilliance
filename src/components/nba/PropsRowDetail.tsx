@@ -5,6 +5,8 @@ import { needsSeasonStats } from "@/lib/nba/props/boardColumns";
 import { MAX_USER_MINUTES, MIN_USER_MINUTES } from "@/lib/nba/props/minutesOverride";
 import { COLUMN_DEFS, minutesEditorInfo, type CellContext } from "@/components/nba/boardColumnDefs";
 import { MinutesEditor } from "@/components/nba/MinutesEditor";
+import OpponentLastTenTable from "@/components/nba/OpponentLastTenTable";
+import PlayerLastTenTable from "@/components/nba/PlayerLastTenTable";
 import RecentFormPanel from "@/components/nba/RecentFormPanel";
 
 /** Season and matchup lines shown for every player, on a phone because the table has no room for them. */
@@ -76,6 +78,14 @@ export default function PropsRowDetail({ ctx, minutesInTable, hasSeasonStats }: 
       {hasSeasonStats ? (
         <Section title="Last 10 games" className="sm:order-last sm:col-span-2 lg:col-span-4">
           <RecentFormPanel row={row} market={market} />
+        </Section>
+      ) : null}
+      {hasSeasonStats ? (
+        <Section title="Last 10 box scores" className="sm:order-last sm:col-span-2 lg:col-span-4">
+          <div className="grid gap-3" data-testid="box-scores">
+            <PlayerLastTenTable row={row} market={market} />
+            <OpponentLastTenTable key={`${row.entry.entryKey}`} row={row} market={market} />
+          </div>
         </Section>
       ) : null}
       {hasSeasonStats ? (

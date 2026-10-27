@@ -12,6 +12,7 @@ const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:8080";
 const DEMO = `${BASE_URL}/nba/props?demo=synthetic`;
 const VIEWPORTS = [
   { name: "mobile 320", width: 320, height: 700 },
+  { name: "mobile 360", width: 360, height: 780 },
   { name: "mobile 390", width: 390, height: 844 },
   { name: "tablet 768", width: 768, height: 900 },
   { name: "desktop 1280", width: 1280, height: 900 },
@@ -43,18 +44,26 @@ test.describe("compact props table", () => {
       await expect(page.getByTestId("props-board-table")).toBeVisible();
       await expect.poll(() => pageOverflow(page)).toBeLessThanOrEqual(1);
       // The table's own scroll region has nothing to scroll: that is the point of the compact set.
-      if (viewport.width >= 390) expect(await regionOverflow(page)).toBeLessThanOrEqual(1);
-      for (const id of ["last10", "oppLast10", "matchup", "jkbProjection"]) await expect(page.getByTestId(`col-${id}`).first()).toBeVisible();
-      for (const id of ["mpg", "perGame", "perMinute"]) {
+      if (viewport.width >= 360) expect(await regionOverflow(page)).toBeLessThanOrEqual(1);
+      // Matchup, Vegas Line and the projection are on every screen; the season columns arrive with the tablet width, and PTS/MIN with the desktop's.
+      for (const id of ["matchup", "line", "jkbProjection"]) await expect(page.getByTestId(`col-${id}`).first()).toBeVisible();
+      for (const id of ["mpg", "perGame", "last10", "oppLast10"]) {
         if (viewport.width >= 768) await expect(page.getByTestId(`col-${id}`).first()).toBeVisible();
         else await expect(page.getByTestId(`col-${id}`).first()).toBeHidden();
       }
+      if (viewport.width >= 1024) await expect(page.getByTestId("col-perMinute").first()).toBeVisible();
+      else await expect(page.getByTestId("col-perMinute").first()).toBeHidden();
+      // Vegas Line is immediately before the JKB projection, and its header and value are centered.
+      const heads = await page.locator("thead th:visible").allTextContents();
+      const trimmed = heads.map((h) => h.replace(/\s+/g, " ").trim());
+      expect(trimmed[trimmed.indexOf("JKB proj") - 1]).toBe("Vegas Line");
     });
   }
 
-  test("a 390px phone shows player, L10, opponent L10, matchup and projection, and the expanded row carries the rest", async ({ page }) => {
+  test("a 390px phone shows player, matchup, Vegas Line and projection, and the expanded row carries the rest, L10 included", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(DEMO, { waitUntil: "networkidle" });
+    for (const id of ["last10", "oppLast10"]) await expect(page.getByTestId(`col-${id}`).first()).toBeHidden();
     const detail = await openRow(page, "Demo Guard One");
     for (const id of ["mpg", "perGame", "perMinute", "last5", "last10", "oppLast10", "dvpAllowed", "dvpPrior", "dvpCurrent", "line", "jkbMinutes"]) await expect(detail.getByTestId(`detail-${id}`)).toBeVisible();
     const input = detail.getByLabel(/Your projected minutes for Demo Guard One/);
@@ -158,8 +167,8 @@ test.describe("compact props table", () => {
     await expect(mainRow(page, "Demo Bench Seven").getByTestId("col-matchup")).toHaveText("N/A");
   });
 
-  test("is operable by keyboard: the row button expands, the minutes field takes focus and reset follows", async ({ page }) => {
-    await page.getByRole("button", { name: /Show details and minutes for Demo Guard One/ }).focus();
+  test("is operable by keyboard: the row expands with Enter, the minutes field takes focus and reset follows", async ({ page }) => {
+    await mainRow(page, "Demo Guard One").focus();
     await page.keyboard.press("Enter");
     const input = page.getByLabel(/Your projected minutes for Demo Guard One/);
     await expect(input).toBeVisible();

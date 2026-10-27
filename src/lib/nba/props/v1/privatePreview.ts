@@ -17,7 +17,7 @@ import { buildDvpRows } from "../dvp";
 import { normalizePlayerName } from "../pipeline/contracts";
 import type { DvpInput, ProjectionRecord, RosterRecord } from "../pipeline/boardBuild";
 import { BOARD_MARKETS, BOARD_SCHEMA_VERSION, type BoardEntry, type PropsBoardArtifact } from "../propsBoard";
-import type { OpponentRecentSequence } from "../recentForm";
+import type { OpponentBoxScores, OpponentRecentSequence } from "../recentForm";
 import type { SeasonStatsView } from "../seasonStats";
 import { SOURCE_LICENSES } from "../sources/licenses";
 import { effectivePermittedUses } from "../sources/registry";
@@ -38,6 +38,8 @@ export interface PrivatePreviewInput {
   seasonStats?: Readonly<Record<string, SeasonStatsView>>;
   /** Opponent last-ten allowed sequences by `gameKey|team|position` (v1/opponentRecentBuild.ts); shown only because this board is private. */
   opponentRecent?: Readonly<Record<string, OpponentRecentSequence>>;
+  /** The individual opposing players behind those sequences by `gameKey|team` (v1/opponentRecentBuild.ts); shown only because this board is private. */
+  opponentBoxScores?: Readonly<OpponentBoxScores>;
   /** Rights records; defaults to the repository registry. A test seam. */
   licenses?: Readonly<Record<NbaSourceId, SourceLicense>>;
 }
@@ -139,6 +141,7 @@ export function buildPrivatePreviewBoard(input: PrivatePreviewInput): { artifact
     dvpRows: dvp.rows,
     // Present even when empty (early season: no completed games yet) so the page can tell "no games" from "built before this existed".
     ...(input.opponentRecent ? { opponentRecent: { ...input.opponentRecent } } : {}),
+    ...(input.opponentBoxScores ? { opponentBoxScores: { ...input.opponentBoxScores } } : {}),
     privatePreview: { notice: noticeFor(sources), attribution: attributionFor(sources) },
   };
   return {

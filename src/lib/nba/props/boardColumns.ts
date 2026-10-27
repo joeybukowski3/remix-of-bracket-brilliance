@@ -21,9 +21,9 @@ export const COLUMN_IDS = [
   "dvpGames",
   "matchup",
   "line",
-  "overUnder",
   "jkbProjection",
   "modelEdge",
+  "overUnder",
   "jkbMinutes",
   "userMinutes",
   "adjustedProjection",
@@ -36,9 +36,16 @@ export type ColumnId = (typeof COLUMN_IDS)[number];
 
 /**
  * The compact table: MPG, per game, per minute, the player's last ten, what the opponent allowed over its last ten, matchup,
- * JKB projection (the player column is always shown). Last five and the season-long Opp allows stay one click away.
+ * Vegas Line, JKB projection (the player column is always shown). Last five and the season-long Opp allows stay one click away.
  */
-export const DEFAULT_COLUMNS: readonly ColumnId[] = Object.freeze(["mpg", "perGame", "perMinute", "last10", "oppLast10", "matchup", "jkbProjection"] as const);
+export const DEFAULT_COLUMNS: readonly ColumnId[] = Object.freeze(["mpg", "perGame", "perMinute", "last10", "oppLast10", "matchup", "line", "jkbProjection"] as const);
+
+/**
+ * Columns that cannot be hidden. Vegas Line sits immediately before JKB Projection and is always there, because a projection
+ * is read against the line; it shows N/A where no permitted line exists.
+ */
+export const FIXED_COLUMNS: readonly ColumnId[] = Object.freeze(["line"] as const);
+export const isFixedColumn = (id: ColumnId): boolean => FIXED_COLUMNS.includes(id);
 
 /** Columns that exist only where the board carries season statistics (a private preview board). */
 const SEASON_ONLY: ReadonlySet<ColumnId> = new Set(["seasonSample", "mpg", "perGame", "perMinute", "last5", "last10", "lastSeason", "oppLast10", "seasonRateEstimate"]);
@@ -46,15 +53,19 @@ export const needsSeasonStats = (id: ColumnId): boolean => SEASON_ONLY.has(id);
 
 export const isColumnId = (value: unknown): value is ColumnId => typeof value === "string" && (COLUMN_IDS as readonly string[]).includes(value);
 
-/** The chosen ids that can be shown on this board, in display order. */
+/** The chosen ids plus the fixed ones, as a new set: an older saved choice that predates a fixed column still shows it. */
+export const withFixedColumns = (selected: ReadonlySet<ColumnId>): Set<ColumnId> => new Set([...selected, ...FIXED_COLUMNS]);
+
+/** The chosen ids that can be shown on this board, in display order. Fixed columns are always included. */
 export function visibleColumns(selected: ReadonlySet<ColumnId>, hasSeasonStats: boolean): ColumnId[] {
-  return COLUMN_IDS.filter((id) => selected.has(id) && (hasSeasonStats || !needsSeasonStats(id)));
+  const chosen = withFixedColumns(selected);
+  return COLUMN_IDS.filter((id) => chosen.has(id) && (hasSeasonStats || !needsSeasonStats(id)));
 }
 
-/** A new selection with one column switched on or off; the input is not modified. */
+/** A new selection with one column switched on or off; the input is not modified. A fixed column cannot be switched off. */
 export function withColumn(selected: ReadonlySet<ColumnId>, id: ColumnId, on: boolean): Set<ColumnId> {
   const next = new Set(selected);
-  if (on) next.add(id);
+  if (on || isFixedColumn(id)) next.add(id);
   else next.delete(id);
   return next;
 }

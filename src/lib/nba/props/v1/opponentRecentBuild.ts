@@ -11,10 +11,13 @@
  * did-not-play and zero-minute rows never count. A game in which no opposing minutes could be attributed to any position
  * carries no figure (null), not a zero: the data does not say what that position allowed.
  *
+ * buildOpponentBoxScores returns the same games with the individual opposing players (name, minutes, stats, estimated position),
+ * collected in the same pass over the same rows, so a position's subtotal there is exactly the bar here.
+ *
  * Display context only. Nothing here changes a projection, a DvP row or a rank.
  */
 import { DVP_POSITIONS, classifyRosterLabel, type DvpPosition } from "../dvpPositions";
-import { L10_GAMES, opponentRecentKey, type OpponentRecentGame, type OpponentRecentSequence } from "../recentForm";
+import { L10_GAMES, opponentBoxKey, opponentRecentKey, type OpponentBoxScoreGame, type OpponentBoxScores, type OpponentRecentGame, type OpponentRecentSequence, type OpposingPlayerLine } from "../recentForm";
 import type { ImportedPlayerGame } from "./playerGameImport";
 import { dvpLabelFor, type PositionEstimateSet } from "./positionEstimates";
 
@@ -35,6 +38,7 @@ interface DefenseGame {
   totalMinutes: number;
   attributedMinutes: number;
   allowed: Record<DvpPosition, { pts: number; reb: number; ast: number }>;
+  players: OpposingPlayerLine[];
 }
 
 const emptyAllowed = (): DefenseGame["allowed"] => Object.fromEntries(DVP_POSITIONS.map((p) => [p, { pts: 0, reb: 0, ast: 0 }])) as DefenseGame["allowed"];
@@ -45,10 +49,11 @@ function defenseGames(rows: readonly ImportedPlayerGame[], positions: PositionEs
   for (const r of rows) {
     if (r.season !== season || r.seasonType !== "regular" || !(Number.isFinite(r.minutes) && r.minutes > 0)) continue;
     const key = `${r.opponent}|${r.gameId}`;
-    const game = games.get(key) ?? { gameId: r.gameId, date: r.gameDate, versus: r.team, defenseIsHome: !r.isHome, totalMinutes: 0, attributedMinutes: 0, allowed: emptyAllowed() };
+    const game = games.get(key) ?? { gameId: r.gameId, date: r.gameDate, versus: r.team, defenseIsHome: !r.isHome, totalMinutes: 0, attributedMinutes: 0, allowed: emptyAllowed(), players: [] };
     games.set(key, game);
     game.totalMinutes += r.minutes;
     const position = classifyRosterLabel(dvpLabelFor(positions, r.season, r.playerId));
+    game.players.push({ name: r.playerName, minutes: r.minutes, pts: r.pts, reb: r.reb, ast: r.ast, position: position.ok ? position.primary : null });
     if (position.ok === false) continue;
     game.attributedMinutes += r.minutes;
     for (const [pos, weight] of Object.entries(position.weights) as [DvpPosition, number][]) {
@@ -80,18 +85,41 @@ const toGame = (game: DefenseGame, position: DvpPosition): OpponentRecentGame =>
   };
 };
 
+/** The defense's completed games strictly before the upcoming game, oldest to newest: the one rule both outputs share. */
+const completedBefore = (byTeam: ReadonlyMap<string, DefenseGame[]>, team: string, upcoming: UpcomingGame): DefenseGame[] =>
+  (byTeam.get(team) ?? []).filter((g) => g.date < upcoming.date).sort((a, b) => a.date.localeCompare(b.date) || a.gameId.localeCompare(b.gameId));
+
 /** One sequence per upcoming game, defending team and position, keyed by opponentRecentKey. A defense with no completed game gets none. */
 export function buildOpponentRecent(rows: readonly ImportedPlayerGame[], positions: PositionEstimateSet, slate: readonly UpcomingGame[], season: string): Record<string, OpponentRecentSequence> {
   const byTeam = defenseGames(rows, positions, season);
   const out: Record<string, OpponentRecentSequence> = {};
   for (const upcoming of slate) {
     for (const team of [upcoming.away, upcoming.home]) {
-      const completed = (byTeam.get(team) ?? []).filter((g) => g.date < upcoming.date).sort((a, b) => a.date.localeCompare(b.date) || a.gameId.localeCompare(b.gameId));
+      const completed = completedBefore(byTeam, team, upcoming);
       if (completed.length === 0) continue;
       const window = completed.slice(-L10_GAMES);
       for (const position of DVP_POSITIONS) {
         out[opponentRecentKey(upcoming.gameKey, team, position)] = { team, position, season, seasonGames: completed.length, games: window.map((g) => toGame(g, position)) };
       }
+    }
+  }
+  return out;
+}
+
+const toBoxGame = (game: DefenseGame): OpponentBoxScoreGame => ({ gameId: game.gameId, date: game.date, versus: game.versus, defenseIsHome: game.defenseIsHome, players: [...game.players].sort((a, b) => a.name.localeCompare(b.name) || b.minutes - a.minutes) });
+
+/**
+ * The same last-ten window as buildOpponentRecent, with every opposing player who played, keyed by opponentBoxKey (one list per
+ * upcoming game and defending team; the position is chosen when the table is read, from the player's own estimate).
+ */
+export function buildOpponentBoxScores(rows: readonly ImportedPlayerGame[], positions: PositionEstimateSet, slate: readonly UpcomingGame[], season: string): OpponentBoxScores {
+  const byTeam = defenseGames(rows, positions, season);
+  const out: OpponentBoxScores = {};
+  for (const upcoming of slate) {
+    for (const team of [upcoming.away, upcoming.home]) {
+      const completed = completedBefore(byTeam, team, upcoming);
+      if (completed.length === 0) continue;
+      out[opponentBoxKey(upcoming.gameKey, team)] = completed.slice(-L10_GAMES).map(toBoxGame);
     }
   }
   return out;

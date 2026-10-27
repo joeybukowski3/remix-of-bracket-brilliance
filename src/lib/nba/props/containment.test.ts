@@ -79,6 +79,9 @@ describe("containment rules", () => {
       expect(classifyContent(`{"schemaVersion":"${schema}","rows":[]}`), schema).toEqual(["nba-v1-private-record"]);
     }
     expect(classifyContent('{"privatePreview": {"notice": "x"}}')).toEqual(["nba-v1-private-record"]);
+    // Individual opposing-player box scores are caught by their own key too, even if the notice was stripped from a copy.
+    expect(classifyContent('{"entries":[],"opponentBoxScores":{"2026-11-09|NYK@BOS|BOS":[]}}')).toEqual(["nba-v1-private-record"]);
+    expect(classifyContent("const key = 'opponentBoxScores'")).toEqual([]);
     // Source code and prose that merely name the schema are not records.
     expect(classifyContent('const x = { schemaVersion: "jkb-player-games-import-v1" }')).toEqual([]);
   });

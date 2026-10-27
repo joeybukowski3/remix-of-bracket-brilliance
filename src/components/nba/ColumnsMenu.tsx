@@ -1,7 +1,7 @@
 import { Columns3 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { COLUMN_IDS, DEFAULT_COLUMNS, needsSeasonStats, type ColumnId } from "@/lib/nba/props/boardColumns";
+import { COLUMN_IDS, DEFAULT_COLUMNS, isFixedColumn, needsSeasonStats, withFixedColumns, type ColumnId } from "@/lib/nba/props/boardColumns";
 import type { BoardMarket } from "@/lib/nba/props/propsBoard";
 import { COLUMN_DEFS, COLUMN_GROUP_LABEL, type ColumnGroup } from "@/components/nba/boardColumnDefs";
 
@@ -17,8 +17,9 @@ interface ColumnsMenuProps {
 
 /** Checkbox list of the optional table columns. It changes what is shown, never a number. */
 export default function ColumnsMenu({ market, selected, hasSeasonStats, onToggle, onReset }: ColumnsMenuProps) {
-  const shown = COLUMN_IDS.filter((id) => selected.has(id) && (hasSeasonStats || !needsSeasonStats(id))).length;
-  const isDefault = DEFAULT_COLUMNS.length === selected.size && DEFAULT_COLUMNS.every((id) => selected.has(id));
+  const chosen = withFixedColumns(selected);
+  const shown = COLUMN_IDS.filter((id) => chosen.has(id) && (hasSeasonStats || !needsSeasonStats(id))).length;
+  const isDefault = DEFAULT_COLUMNS.length === chosen.size && DEFAULT_COLUMNS.every((id) => chosen.has(id));
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -34,7 +35,7 @@ export default function ColumnsMenu({ market, selected, hasSeasonStats, onToggle
       </PopoverTrigger>
       <PopoverContent align="end" className="max-h-[min(70vh,var(--radix-popover-content-available-height))] w-72 overflow-y-auto p-3" aria-label="Choose table columns">
         <div className="mb-2 flex items-center justify-between gap-2">
-          <p className="text-[11px] text-slate-600">The player column is always shown. Your choice stays in this browser.</p>
+          <p className="text-[11px] text-slate-600">The player and Vegas Line columns are always shown. Your choice stays in this browser.</p>
           <button
             type="button"
             data-testid="columns-reset"
@@ -51,13 +52,14 @@ export default function ColumnsMenu({ market, selected, hasSeasonStats, onToggle
             <fieldset key={group} className="mb-2 min-w-0 border-0 p-0">
               <legend className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">{COLUMN_GROUP_LABEL[group]}</legend>
               {ids.map((id) => {
+                const fixed = isFixedColumn(id);
                 const disabled = !hasSeasonStats && needsSeasonStats(id);
                 const def = COLUMN_DEFS[id];
                 return (
-                  <label key={id} title={disabled ? "Needs season statistics, which this board does not carry" : def.title(market)} className={cn("flex cursor-pointer items-center gap-2 rounded px-1 py-0.5 text-[12px] text-slate-800 hover:bg-slate-50", disabled && "cursor-not-allowed opacity-40")}>
-                    <input type="checkbox" checked={selected.has(id) && !disabled} disabled={disabled} onChange={(e) => onToggle(id, e.target.checked)} data-testid={`column-toggle-${id}`} />
+                  <label key={id} title={fixed ? "Always shown, immediately before JKB projection" : disabled ? "Needs season statistics, which this board does not carry" : def.title(market)} className={cn("flex items-center gap-2 rounded px-1 py-0.5 text-[12px] text-slate-800", fixed ? "cursor-default" : "cursor-pointer hover:bg-slate-50", disabled && "cursor-not-allowed opacity-40")}>
+                    <input type="checkbox" checked={fixed || (selected.has(id) && !disabled)} disabled={disabled || fixed} onChange={(e) => onToggle(id, e.target.checked)} data-testid={`column-toggle-${id}`} />
                     {def.label(market)}
-                    {DEFAULT_COLUMNS.includes(id) ? <span className="text-[10px] text-slate-400">default</span> : null}
+                    {fixed ? <span className="text-[10px] text-slate-400">always shown</span> : DEFAULT_COLUMNS.includes(id) ? <span className="text-[10px] text-slate-400">default</span> : null}
                   </label>
                 );
               })}

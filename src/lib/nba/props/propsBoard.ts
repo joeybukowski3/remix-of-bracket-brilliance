@@ -9,7 +9,8 @@
 import { compareDvp, DVP_SEASONS, type DvpComparison, type DvpRow, type DvpSeason, type DvpStat } from "./dvp";
 import { classifyRosterLabel, type DvpPosition, type PositionClassification } from "./dvpPositions";
 import { NO_OVERRIDE, overrideView, playerOverrideKey, type OverrideView } from "./minutesOverride";
-import { opponentLastTen, opponentLastTenUnavailable, opponentRecentKey, playerLastTen, type OpponentLastTen, type OpponentRecentSequence, type PlayerLastTen } from "./recentForm";
+import { opponentBoxTable, playerBoxTable, type OpponentBoxTable, type PlayerBoxTable } from "./boxScoreTables";
+import { opponentLastTen, opponentLastTenUnavailable, opponentRecentKey, playerLastTen, type OpponentBoxScores, type OpponentLastTen, type OpponentRecentSequence, type PlayerLastTen } from "./recentForm";
 import { marketRates, recentPerGame, seasonColumns, type SeasonColumns, type SeasonStatsView } from "./seasonStats";
 
 export const BOARD_SCHEMA_VERSION = "nba-props-board-v1";
@@ -78,6 +79,11 @@ export interface PropsBoardArtifact {
    */
   opponentRecent?: Record<string, OpponentRecentSequence>;
   /**
+   * The individual opposing players behind each of those games, by `gameKey|team` (recentForm.ts). Private preview only, like
+   * `opponentRecent`, which it reconciles with exactly: a position's subtotal here is that position's bar there.
+   */
+  opponentBoxScores?: OpponentBoxScores;
+  /**
    * Present only on a board built for local, private preview from a source whose rights allow private research but
    * not publication (v1/privatePreview.ts). The page must show the notice. Such a board is never written under public/.
    */
@@ -104,6 +110,9 @@ export interface BoardRow {
   playerL10: PlayerLastTen;
   /** The opponent's last ten games allowed to the player's estimated position in this market. */
   opponentL10: OpponentLastTen;
+  /** The same ten games as box-score tables: the player's own lines, and the individual opposing players at the estimated position. */
+  playerBox: PlayerBoxTable;
+  opponentBox: OpponentBoxTable;
   /** The viewer's minutes override applied to this row (all null while none is active). The JKB values above stay as they were. */
   override: OverrideView;
   jkbTriple: JkbTriple;
@@ -152,13 +161,16 @@ export function buildBoardRows(artifact: PropsBoardArtifact, market: BoardMarket
     .map((entry) => {
       const key = playerOverrideKey(entry);
       const season = seasonColumns(entry.seasonStats);
+      const playerL10 = playerLastTen(entry.seasonStats?.recentGames, entry.market);
       return {
         entry,
         difference: entry.line && entry.projection ? entry.projection.value - entry.line.line : null,
         dvp: dvpStateFor(entry, artifact.dvpRows),
         season,
-        playerL10: playerLastTen(entry.seasonStats?.recentGames, entry.market),
+        playerL10,
         opponentL10: opponentL10For(entry, artifact),
+        playerBox: playerBoxTable(playerL10, entry.market),
+        opponentBox: opponentBoxTable(entry, artifact),
         override: minutes.has(key)
           ? overrideView({ jkbProjection: entry.projection?.value ?? null, jkbMinutes: entry.projection?.minutes ?? null, line: entry.line?.line ?? null, seasonPerMinute: marketRates(season?.current ?? null, market).perMinute, userMinutes: minutes.get(key) ?? null })
           : NO_OVERRIDE,
@@ -172,7 +184,7 @@ export function buildBoardRows(artifact: PropsBoardArtifact, market: BoardMarket
  * public page refuses such a board at run time, so a private file copied into the published data folder cannot be shown.
  */
 export const containsPrivateData = (board: PropsBoardArtifact): boolean =>
-  board.privatePreview !== undefined || board.opponentRecent !== undefined || board.entries.some((e) => e.seasonStats !== undefined);
+  board.privatePreview !== undefined || board.opponentRecent !== undefined || board.opponentBoxScores !== undefined || board.entries.some((e) => e.seasonStats !== undefined);
 
 export const BOARD_SORT_KEYS = [
   "player",

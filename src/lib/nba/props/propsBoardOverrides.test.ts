@@ -154,7 +154,7 @@ describe("sorting by the new columns", () => {
 describe("containsPrivateData: what the public page refuses at run time", () => {
   it("flags a board with season statistics or a private-preview notice, and passes a plain board", () => {
     expect(containsPrivateData(board)).toBe(true);
-    const { opponentRecent: _windows, ...withoutWindows } = board;
+    const { opponentRecent: _windows, opponentBoxScores: _boxes, ...withoutWindows } = board;
     const noStats: PropsBoardArtifact = { ...withoutWindows, entries: board.entries.map(({ seasonStats: _removed, ...entry }) => entry) };
     expect(containsPrivateData(noStats)).toBe(false);
     expect(containsPrivateData({ ...noStats, privatePreview: { notice: "PRIVATE PREVIEW", attribution: "Data: hoopR" } })).toBe(true);
@@ -167,6 +167,9 @@ describe("containsPrivateData: what the public page refuses at run time", () => 
     // The opponent last-ten sequences are hoopR/ESPN-derived too, even on a board with no season statistics at all.
     expect(containsPrivateData({ ...noStats, opponentRecent: {} })).toBe(true);
     expect(containsPrivateData({ ...noStats, opponentRecent: board.opponentRecent })).toBe(true);
+    // So are the individual opposing players behind them.
+    expect(containsPrivateData({ ...noStats, opponentBoxScores: {} })).toBe(true);
+    expect(containsPrivateData({ ...noStats, opponentBoxScores: board.opponentBoxScores })).toBe(true);
     // Game-by-game results alone are refused as well.
     const gamesOnly: PropsBoardArtifact = { ...noStats, entries: noStats.entries.map((e, i) => (i === 0 ? { ...e, seasonStats: { current: null, previous: null, recentGames: [] } } : e)) };
     expect(containsPrivateData(gamesOnly)).toBe(true);

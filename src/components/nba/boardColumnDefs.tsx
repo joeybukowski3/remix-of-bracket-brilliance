@@ -36,7 +36,10 @@ export interface ColumnDef {
   sortKey?: BoardSortKey;
   /** Still a table column on a phone. The others appear there in the expanded row. */
   mobile?: boolean;
-  align?: "left" | "right" | "center";
+  /** Shown from the lg breakpoint (1024px) up instead of md: a tablet has no room for every default column, and the expanded row carries this one. */
+  fromLarge?: boolean;
+  /** Player identity and free text read left; every numeric column is centered, header and values alike. */
+  align?: "left" | "center";
   headClass?: string;
   cellClass?: (ctx: CellContext) => string;
   render: (ctx: CellContext) => ReactNode;
@@ -80,7 +83,7 @@ function OpponentL10Cell({ row, market }: { row: BoardRow; market: BoardMarket }
   if (l10.status === "none" || l10.average === null) return <span className="text-slate-500" title={`${opponent} has no completed game this season with opposing minutes attributed to a position`}>—</span>;
   const position = row.dvp.kind === "ok" ? row.dvp.position : "this position";
   return (
-    <span className="inline-flex flex-col items-end md:inline md:flex-none" title={opponentTitle(l10, opponent, position, market)}>
+    <span className="inline-flex flex-col items-center md:inline md:flex-none" title={opponentTitle(l10, opponent, position, market)}>
       {l10.average.toFixed(1)}
       {l10.isSmallSample ? <LowSample why={`Only ${gamesLabel(l10.games)} of ${opponent}'s season so far`} games={l10.games} className="max-md:ml-0" /> : null}
     </span>
@@ -126,7 +129,7 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     label: () => "MPG",
     title: () => "Minutes per game this season, completed games only",
     sortKey: "seasonMpg",
-    align: "right",
+    align: "center",
     render: ({ row }) => {
       const { season } = row;
       if (!season) return <NA why={NO_SEASON} />;
@@ -146,7 +149,7 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     label: (m) => PER_GAME[m],
     title: (m) => `${STAT_WORD[m][0].toUpperCase()}${STAT_WORD[m].slice(1)} per game this season`,
     sortKey: "seasonStatPerGame",
-    align: "right",
+    align: "center",
     render: ({ row, market }) => {
       if (!row.season) return <NA why={NO_SEASON} />;
       const value = marketRates(row.season.current, market).perGame;
@@ -158,8 +161,9 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     group: "season",
     label: (m) => `${STAT[m]}/MIN`,
     title: (m) => `${STAT_WORD[m][0].toUpperCase()}${STAT_WORD[m].slice(1)} per minute played this season`,
+    fromLarge: true,
     sortKey: "seasonStatPerMinute",
-    align: "right",
+    align: "center",
     render: ({ row, market }) => {
       if (!row.season) return <NA why={NO_SEASON} />;
       const value = marketRates(row.season.current, market).perMinute;
@@ -172,7 +176,7 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     label: (m) => `L5 ${STAT[m]}`,
     title: (m) => `${STAT_WORD[m][0].toUpperCase()}${STAT_WORD[m].slice(1)} per game over the last five completed games this season`,
     sortKey: "lastFive",
-    align: "right",
+    align: "center",
     render: ({ row }) => <RecentCell row={row} window="last5" />,
   },
   last10: {
@@ -181,8 +185,7 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     label: (m) => `L10 ${STAT[m]}`,
     title: (m) => `${STAT_WORD[m][0].toUpperCase()}${STAT_WORD[m].slice(1)} per game over the last ten completed games this season`,
     sortKey: "lastTen",
-    mobile: true,
-    align: "right",
+    align: "center",
     render: ({ row }) => <RecentCell row={row} window="last10" />,
   },
   oppLast10: {
@@ -191,8 +194,7 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     label: (m) => `Opp L10 ${STAT[m]}`,
     title: (m) => `${STAT_WORD[m][0].toUpperCase()}${STAT_WORD[m].slice(1)} the opponent allowed per game to the player's estimated position over the opponent's last ten completed games this season. Ten opponent games, not ten player-games.`,
     sortKey: "oppLastTen",
-    mobile: true,
-    align: "right",
+    align: "center",
     // No green/red wash here: the tier is the season-long blended rank, which this ten-game figure may disagree with. The Matchup column carries it, with a word, an arrow and the rank.
     render: ({ row, market }) => <OpponentL10Cell row={row} market={market} />,
   },
@@ -201,7 +203,7 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     group: "season",
     label: (m) => `${PREVIOUS} ${PER_GAME[m]}`,
     title: () => "Last regular season, shown on its own and never blended into this season",
-    align: "right",
+    align: "center",
     render: ({ row, market }) => {
       const previous = row.season?.previous;
       if (!row.season) return <NA why={NO_SEASON} />;
@@ -221,7 +223,7 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     label: () => "Opp allows",
     title: (m) => `${STAT[m]} the opponent allows per game to the player's estimated primary position, with its rank (1 = allows the most). Estimated positions cover only part of the league's minutes.`,
     sortKey: "dvpAllowed",
-    align: "right",
+    align: "center",
     cellClass: ({ row }) => {
       const tier = tierOf(row);
       return tier ? TIER_CELL[tier] : "";
@@ -244,7 +246,7 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     group: "matchup",
     label: () => `${SEASON_LABEL[PREVIOUS]} DvP`,
     title: () => `${PREVIOUS} allowed per game and rank, estimated primary position`,
-    align: "right",
+    align: "center",
     render: ({ row }) => <DvpSeasonCell row={row.dvp.kind === "ok" ? row.dvp.comparison.prior : null} why={dvpWhy(row.dvp)} />,
   },
   dvpCurrent: {
@@ -252,7 +254,7 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     group: "matchup",
     label: () => `${SEASON_LABEL[CURRENT]} DvP`,
     title: () => `${CURRENT} allowed per game and rank, estimated primary position`,
-    align: "right",
+    align: "center",
     render: ({ row }) => <DvpSeasonCell row={row.dvp.kind === "ok" ? row.dvp.comparison.current : null} why={row.dvp.kind === "ok" ? "No games sampled this season yet" : dvpWhy(row.dvp)} />,
   },
   dvpGames: {
@@ -260,7 +262,7 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     group: "matchup",
     label: () => `GP ${SEASON_LABEL[PREVIOUS].slice(2)}/${SEASON_LABEL[CURRENT].slice(2)}`,
     title: () => "Opponent games sampled: last season / this season",
-    align: "right",
+    align: "center",
     render: ({ row }) => (row.dvp.kind === "ok" ? <>{`${row.dvp.comparison.prior?.gamesSampled ?? 0}/${row.dvp.comparison.current?.gamesSampled ?? 0}`}</> : <NA why={dvpWhy(row.dvp)} />),
   },
   matchup: {
@@ -294,18 +296,28 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
   line: {
     id: "line",
     group: "jkb",
-    label: () => "Line",
-    title: () => "The posted sportsbook line",
+    label: () => "Vegas Line",
+    title: (m) => `The posted sportsbook line for ${STAT_WORD[m]}, when a permitted, current line is available; N/A otherwise. Never invented or carried over from another market.`,
     sortKey: "line",
-    align: "right",
-    render: ({ row }) => (row.entry.line ? <span className="font-semibold text-slate-900">{row.entry.line.line.toFixed(1)}</span> : <NA why={row.entry.lineWithheldReason ?? "No line"} />),
+    mobile: true,
+    align: "center",
+    render: ({ row }) => {
+      const { line } = row.entry;
+      if (!line) return <NA why={row.entry.lineWithheldReason ?? "No line"} />;
+      return (
+        <span className="font-semibold text-slate-900" data-testid="vegas-line-value" title={`${line.sportsbook}, ${line.line.toFixed(1)}`}>
+          {line.line.toFixed(1)}
+          {line.freshness === "stale" ? <LowSample why="This line is stale" /> : null}
+        </span>
+      );
+    },
   },
   overUnder: {
     id: "overUnder",
     group: "jkb",
     label: () => "O / U",
     title: () => "Over and Under prices at the posted line",
-    align: "right",
+    align: "center",
     render: ({ row }) => (row.entry.line ? <span className="whitespace-nowrap">{formatAmerican(row.entry.line.overPrice)} / {formatAmerican(row.entry.line.underPrice)}</span> : <NA why={row.entry.lineWithheldReason ?? "No line"} />),
   },
   jkbProjection: {
@@ -315,7 +327,7 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     title: () => "The JKB model's projection for this market. Never changed by your minutes.",
     sortKey: "projection",
     mobile: true,
-    align: "right",
+    align: "center",
     headClass: "border-b-blue-400 bg-blue-900 text-white",
     cellClass: () => "border-x border-blue-200 bg-blue-50",
     render: ({ row }) => (row.entry.projection ? <span className="inline-block min-w-[2.5rem] rounded bg-blue-900 px-1.5 py-0.5 text-center font-bold tabular-nums text-white md:min-w-[2.75rem] md:px-2" data-testid="jkb-value">{row.entry.projection.value.toFixed(1)}</span> : <NA why={row.entry.projectionUnavailableReason ?? "No projection"} />),
@@ -326,7 +338,7 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     label: () => "JKB − line",
     title: () => "JKB projection minus the posted line; positive leans Over",
     sortKey: "difference",
-    align: "right",
+    align: "center",
     render: ({ row }) => (row.difference === null ? <NA why="Needs both a line and a projection" /> : <span className={cn("font-semibold", diffClass(row.difference))}>{signed(row.difference)}</span>),
   },
   jkbMinutes: {
@@ -335,7 +347,7 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     label: () => "JKB min",
     title: () => "The minutes behind the JKB projection",
     sortKey: "jkbMinutes",
-    align: "right",
+    align: "center",
     render: ({ row }) => {
       const minutes = row.entry.projection?.minutes ?? null;
       return minutes !== null ? <>{minutes.toFixed(1)}</> : <NA why="The model gave no minutes for this projection" />;
@@ -347,7 +359,7 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     label: () => "Your min",
     title: () => `Type your own projected minutes, 0-48`,
     sortKey: "userMinutes",
-    align: "right",
+    align: "center",
     headClass: "bg-indigo-50",
     cellClass: () => "bg-indigo-50/40",
     render: ({ row, market, draft, onDraftChange, onReset }) => {
@@ -361,7 +373,7 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     label: () => "Adj proj",
     title: () => "JKB projection × your minutes ÷ JKB minutes: the model's own rate at your minutes",
     sortKey: "adjustedProjection",
-    align: "right",
+    align: "center",
     headClass: "bg-indigo-50",
     cellClass: () => "bg-indigo-50/40",
     render: ({ row }) => {
@@ -383,7 +395,7 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     label: () => "Adj − line",
     title: () => "Adjusted projection minus the posted line",
     sortKey: "adjustedDifference",
-    align: "right",
+    align: "center",
     headClass: "bg-indigo-50",
     cellClass: () => "bg-indigo-50/40",
     render: ({ row }) => {
@@ -398,7 +410,7 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     label: () => "Season-rate est",
     title: () => "Your minutes × this season's stat per minute. Not the JKB model: a plain season-rate estimate.",
     sortKey: "seasonRateEstimate",
-    align: "right",
+    align: "center",
     headClass: "bg-teal-50 text-teal-900",
     cellClass: () => "bg-teal-50/60",
     render: ({ row }) => {
@@ -425,7 +437,7 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     group: "jkb",
     label: () => "JKB PTS/REB/AST",
     title: () => "The JKB projection in each market for this game",
-    align: "right",
+    align: "center",
     render: ({ row, market }) => (
       <span className="whitespace-nowrap text-slate-600">
         {(["pts", "reb", "ast"] as const).map((m, i) => (
@@ -455,4 +467,5 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
   },
 };
 
-export const ALIGN_CLASS = { left: "text-left", right: "text-right tabular-nums", center: "text-center" } as const;
+/** Tabular numerals keep decimals lined up even though the columns are centered. */
+export const ALIGN_CLASS = { left: "text-left", center: "text-center tabular-nums" } as const;

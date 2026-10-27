@@ -8,6 +8,10 @@
  *
  * A short sample is reported as it is: three games is "3 games", never padded to ten, and a game the data does not hold is
  * never invented.
+ *
+ * The box-score tables in the expanded row (the player's ten games, and the individual opposing players behind each
+ * opponent game) read the same records as the charts, so the two can never disagree: the per-game subtotals here are the
+ * bars there.
  */
 import type { DvpPosition } from "./dvpPositions";
 import type { BoardMarket } from "./propsBoard";
@@ -27,6 +31,15 @@ export interface PlayerRecentGame {
   pts: number;
   reb: number;
   ast: number;
+  /** The final score, present only when it is reliably known (see v1/gameResults.ts); absent, never guessed, otherwise. */
+  result?: GameResult;
+}
+
+/** A completed game's outcome from the player's team's side. */
+export interface GameResult {
+  won: boolean;
+  teamPts: number;
+  opponentPts: number;
 }
 
 /** One game of the defense, summed over the opposing players attributed to one estimated position. */
@@ -59,6 +72,31 @@ export interface OpponentRecentSequence {
 /** Key of a sequence on the board: the upcoming game, the defending team and the estimated position. */
 export const opponentRecentKey = (gameKey: string, team: string, position: DvpPosition): string => `${gameKey}|${team}|${position}`;
 
+/** One opposing player's line in a defense's game. Did-not-play and zero-minute rows are never included. */
+export interface OpposingPlayerLine {
+  name: string;
+  minutes: number;
+  pts: number;
+  reb: number;
+  ast: number;
+  /** The estimated primary position DvP uses for this player and season; null when the player has no estimate (not counted anywhere). */
+  position: DvpPosition | null;
+}
+
+/** One game of a defense with every opposing player who played, so a subtotal can be traced to the people behind it. */
+export interface OpponentBoxScoreGame {
+  gameId: string;
+  date: string;
+  /** The team that faced this defense, i.e. the team the players belong to. */
+  versus: string;
+  defenseIsHome: boolean;
+  players: OpposingPlayerLine[];
+}
+
+/** The defense's last ten games (oldest to newest) before an upcoming game, by `gameKey|team`. */
+export type OpponentBoxScores = Record<string, OpponentBoxScoreGame[]>;
+export const opponentBoxKey = (gameKey: string, team: string): string => `${gameKey}|${team}`;
+
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
 
 /** "2026-10-24" as "Oct 24", read from the text so no time zone can move the day. */
@@ -89,6 +127,8 @@ export interface PlayerLastTen {
   status: "ok" | "none" | "stale";
   /** Oldest to newest. */
   points: RecentPoint[];
+  /** The same window's full lines, oldest to newest, for the box-score table. */
+  recent: PlayerRecentGame[];
   games: number;
   average: number | null;
   /** True when fewer than ten games exist, so the average rests on a shorter window. */
@@ -98,10 +138,10 @@ export interface PlayerLastTen {
 const venue = (isHome: boolean, team: string): string => `${isHome ? "vs" : "@"} ${team}`;
 
 export function playerLastTen(games: readonly PlayerRecentGame[] | undefined, market: BoardMarket): PlayerLastTen {
-  if (games === undefined) return { status: "stale", points: [], games: 0, average: null, isSmallSample: false };
+  if (games === undefined) return { status: "stale", points: [], recent: [], games: 0, average: null, isSmallSample: false };
   const window = games.slice(-L10_GAMES);
   const points: RecentPoint[] = window.map((g) => ({ date: g.date, versus: venue(g.isHome, g.opponent), value: g[market], detail: `${g.minutes.toFixed(0)} min` }));
-  return { status: window.length === 0 ? "none" : "ok", points, games: window.length, average: mean(window.map((g) => g[market])), isSmallSample: window.length > 0 && window.length < SMALL_SAMPLE_BELOW };
+  return { status: window.length === 0 ? "none" : "ok", points, recent: window, games: window.length, average: mean(window.map((g) => g[market])), isSmallSample: window.length > 0 && window.length < SMALL_SAMPLE_BELOW };
 }
 
 export interface OpponentLastTen {
