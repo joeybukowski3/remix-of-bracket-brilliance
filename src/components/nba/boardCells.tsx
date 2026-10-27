@@ -6,13 +6,19 @@ import type { SeasonColumns } from "@/lib/nba/props/seasonStats";
 /** Shared pieces of the props table cells: neutral N/A, signed numbers, the matchup chip and the small-sample marker. */
 
 export const TIER_LABEL: Record<MatchupTier, string> = { favorable: "Favorable", neutral: "Neutral", tough: "Tough" };
-/** Chip colors; the number beside it always carries the meaning, the color only reinforces it. */
+/**
+ * Chip colors: solid green for a favorable matchup, solid red for a tough one. The word, the arrow and the rank always say the
+ * same thing, so the color only reinforces it (and never carries it alone for a color-blind reader).
+ */
 export const TIER_CHIP: Record<MatchupTier, string> = {
-  favorable: "bg-emerald-100 text-emerald-900 ring-1 ring-inset ring-emerald-300",
-  neutral: "bg-slate-100 text-slate-700 ring-1 ring-inset ring-slate-300",
-  tough: "bg-rose-100 text-rose-900 ring-1 ring-inset ring-rose-300",
+  favorable: "bg-emerald-700 text-white ring-1 ring-inset ring-emerald-900/30",
+  neutral: "bg-slate-200 text-slate-800 ring-1 ring-inset ring-slate-400/60",
+  tough: "bg-rose-700 text-white ring-1 ring-inset ring-rose-900/30",
 };
-export const TIER_CELL: Record<MatchupTier, string> = { favorable: "bg-emerald-50", neutral: "bg-slate-50", tough: "bg-rose-50" };
+/** Arrows are text, so they read the same in any color vision: up = the opponent allows a lot, down = it allows little. */
+export const TIER_GLYPH: Record<MatchupTier, string> = { favorable: "▲", neutral: "●", tough: "▼" };
+/** Soft wash behind the Opp L10 and Matchup cells: visible at a glance, never a bright block across the row. */
+export const TIER_CELL: Record<MatchupTier, string> = { favorable: "bg-emerald-100", neutral: "bg-slate-50", tough: "bg-rose-100" };
 export const BASIS_LABEL: Record<SampleBasis, string> = {
   none: "no sample",
   "prior-led": "mostly last season",
@@ -29,9 +35,9 @@ export function NA({ why }: { why: string }) {
 }
 
 /** Restrained amber marker for a small sample, with the game count written out so touch and color-blind readers get it too. */
-export function LowSample({ why, games }: { why: string; games?: number }) {
+export function LowSample({ why, games, className }: { why: string; games?: number; className?: string }) {
   return (
-    <span className="ml-1 whitespace-nowrap text-[10px] font-semibold text-amber-700">
+    <span className={cn("ml-1 whitespace-nowrap text-[10px] font-semibold text-amber-700", className)}>
       <span role="img" aria-label={why} title={why} className="mr-0.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-500 align-middle" />
       {games === undefined ? null : `${games}g`}
     </span>

@@ -5,7 +5,8 @@ import { formatAmerican, type BoardMarket, type BoardRow, type BoardSortKey } fr
 import { RECENT_WINDOWS, EARLY_SEASON_GAMES, marketRates, recentPerGame, type RecentAverages } from "@/lib/nba/props/seasonStats";
 import type { ColumnId } from "@/lib/nba/props/boardColumns";
 import { MinutesEditor, MinutesScale } from "@/components/nba/MinutesEditor";
-import { BASIS_LABEL, DvpSeasonCell, LowSample, NA, SeasonSampleCell, TIER_CELL, TIER_CHIP, TIER_LABEL, diffClass, dvpWhy, etTime, gamesLabel, signed } from "@/components/nba/boardCells";
+import { BASIS_LABEL, DvpSeasonCell, LowSample, NA, SeasonSampleCell, TIER_CELL, TIER_CHIP, TIER_GLYPH, TIER_LABEL, diffClass, dvpWhy, etTime, gamesLabel, signed } from "@/components/nba/boardCells";
+import { shortDate, type OpponentLastTen, type PlayerLastTen } from "@/lib/nba/props/recentForm";
 
 /**
  * The props table's columns. Each cell renderer returns only the value, so the same renderer fills a table cell and a
@@ -49,6 +50,7 @@ const CURRENT = DVP_SEASONS[1];
 
 const NO_SEASON = "No season statistics for this player on this board";
 const NO_GAMES = "No games this season yet";
+const STALE_OPPONENT_BOARD = "This board was built before opponent last-ten sequences existed; rebuild the private preview board to add them";
 const STALE_BOARD = "This board was built before last-five averages existed; rebuild the private preview board to add them";
 
 const tierOf = (row: BoardRow) => (row.dvp.kind === "ok" ? row.dvp.comparison.tier : null);
@@ -61,6 +63,36 @@ export function minutesEditorInfo(row: BoardRow, market: BoardMarket): { jkbMinu
   return { jkbMinutes, canEdit, placeholder: jkbMinutes !== null ? jkbMinutes.toFixed(1) : "min" };
 }
 
+const fmtResult = (value: number | null): string => (value === null ? "–" : Number.isInteger(value) ? String(value) : value.toFixed(1));
+
+/** ". Oldest to newest: Oct 12 vs NYK 21, ..." for a hover; empty when the board carries no game-by-game results. */
+function resultsTitle(view: PlayerLastTen, market: BoardMarket): string {
+  if (view.status !== "ok") return "";
+  return `. ${STAT[market]} by game, oldest to newest: ${view.points.map((p) => `${shortDate(p.date)} ${p.versus} ${fmtResult(p.value)}`).join("; ")}`;
+}
+
+function OpponentL10Cell({ row, market }: { row: BoardRow; market: BoardMarket }) {
+  const l10 = row.opponentL10;
+  const opponent = row.entry.opponent ?? "The opponent";
+  if (l10.status === "stale") return <NA why={STALE_OPPONENT_BOARD} />;
+  if (l10.status === "no-position") return <NA why="No estimated position for this player, so there is no opponent-vs-position window" />;
+  if (l10.status === "no-opponent") return <NA why="Opponent unknown" />;
+  if (l10.status === "none" || l10.average === null) return <span className="text-slate-500" title={`${opponent} has no completed game this season with opposing minutes attributed to a position`}>—</span>;
+  const position = row.dvp.kind === "ok" ? row.dvp.position : "this position";
+  return (
+    <span className="inline-flex flex-col items-end md:inline md:flex-none" title={opponentTitle(l10, opponent, position, market)}>
+      {l10.average.toFixed(1)}
+      {l10.isSmallSample ? <LowSample why={`Only ${gamesLabel(l10.games)} of ${opponent}'s season so far`} games={l10.games} className="max-md:ml-0" /> : null}
+    </span>
+  );
+}
+
+/** The plain-language reading of the Opp L10 figure, for a hover and for the detail panel's caption. */
+export function opponentTitle(l10: OpponentLastTen, opponent: string, position: string, market: BoardMarket): string {
+  const coverage = l10.coverage === null ? "" : ` ${Math.round(l10.coverage * 100)}% of opposing minutes were attributed to a position.`;
+  return `${opponent} allowed ${l10.average?.toFixed(1) ?? "—"} ${STAT[market]} per game to ${position} (estimated position) over its last ${gamesLabel(l10.games)}, one opposing game at a time.${coverage}`;
+}
+
 function RecentCell({ row, window }: { row: BoardRow; window: keyof typeof RECENT_WINDOWS }) {
   const { season, entry } = row;
   if (!season) return <NA why={NO_SEASON} />;
@@ -70,8 +102,9 @@ function RecentCell({ row, window }: { row: BoardRow; window: keyof typeof RECEN
   if (averages === null || value === null) return <span className="text-slate-500" title={NO_GAMES}>—</span>;
   const size = RECENT_WINDOWS[window];
   const short = averages.games < size;
+  const results = window === "last10" ? resultsTitle(row.playerL10, entry.market) : "";
   return (
-    <span title={`Last ${size} completed games this season: ${gamesLabel(averages.games)}, did-not-play and zero-minute games excluded`}>
+    <span title={`Last ${size} completed games this season: ${gamesLabel(averages.games)}, did-not-play and zero-minute games excluded${results}`}>
       {value.toFixed(1)}
       {short ? <LowSample why={`Only ${gamesLabel(averages.games)} so far this season`} games={averages.games} /> : null}
     </span>
@@ -139,7 +172,6 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     label: (m) => `L5 ${STAT[m]}`,
     title: (m) => `${STAT_WORD[m][0].toUpperCase()}${STAT_WORD[m].slice(1)} per game over the last five completed games this season`,
     sortKey: "lastFive",
-    mobile: true,
     align: "right",
     render: ({ row }) => <RecentCell row={row} window="last5" />,
   },
@@ -149,8 +181,20 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     label: (m) => `L10 ${STAT[m]}`,
     title: (m) => `${STAT_WORD[m][0].toUpperCase()}${STAT_WORD[m].slice(1)} per game over the last ten completed games this season`,
     sortKey: "lastTen",
+    mobile: true,
     align: "right",
     render: ({ row }) => <RecentCell row={row} window="last10" />,
+  },
+  oppLast10: {
+    id: "oppLast10",
+    group: "matchup",
+    label: (m) => `Opp L10 ${STAT[m]}`,
+    title: (m) => `${STAT_WORD[m][0].toUpperCase()}${STAT_WORD[m].slice(1)} the opponent allowed per game to the player's estimated position over the opponent's last ten completed games this season. Ten opponent games, not ten player-games.`,
+    sortKey: "oppLastTen",
+    mobile: true,
+    align: "right",
+    // No green/red wash here: the tier is the season-long blended rank, which this ten-game figure may disagree with. The Matchup column carries it, with a word, an arrow and the rank.
+    render: ({ row, market }) => <OpponentL10Cell row={row} market={market} />,
   },
   lastSeason: {
     id: "lastSeason",
@@ -238,8 +282,11 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
       const blended = dvp.comparison.blended;
       if (!tier || !blended) return <NA why="No rank yet: needs Defense vs. Position data for all 30 teams" />;
       return (
-        <span className={cn("inline-block whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-semibold", TIER_CHIP[tier])} title={`Rank ${blended.rank} of 30 in allowing this stat to ${dvp.position}. ${BASIS_LABEL[dvp.comparison.sampleBasis]}.`}>
-          {TIER_LABEL[tier]}
+        <span className={cn("inline-block whitespace-nowrap rounded px-1.5 py-0.5 text-[10px] font-bold", TIER_CHIP[tier])} title={`Rank ${blended.rank} of 30 in allowing this stat to ${dvp.position}. ${BASIS_LABEL[dvp.comparison.sampleBasis]}.`}>
+          <span aria-hidden>{TIER_GLYPH[tier]} </span>
+          {/* On a phone the arrow and rank carry the reading and the word is for screen readers: the table has no room for both. */}
+          <span className="max-md:sr-only">{TIER_LABEL[tier]}</span>
+          {blended.rank === null ? "" : <span>{` #${blended.rank}`}</span>}
         </span>
       );
     },
@@ -269,9 +316,9 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     sortKey: "projection",
     mobile: true,
     align: "right",
-    headClass: "bg-blue-100 text-blue-900",
-    cellClass: () => "bg-blue-50",
-    render: ({ row }) => (row.entry.projection ? <span className="font-bold text-blue-900">{row.entry.projection.value.toFixed(1)}</span> : <NA why={row.entry.projectionUnavailableReason ?? "No projection"} />),
+    headClass: "border-b-blue-400 bg-blue-900 text-white",
+    cellClass: () => "border-x border-blue-200 bg-blue-50",
+    render: ({ row }) => (row.entry.projection ? <span className="inline-block min-w-[2.5rem] rounded bg-blue-900 px-1.5 py-0.5 text-center font-bold tabular-nums text-white md:min-w-[2.75rem] md:px-2" data-testid="jkb-value">{row.entry.projection.value.toFixed(1)}</span> : <NA why={row.entry.projectionUnavailableReason ?? "No projection"} />),
   },
   modelEdge: {
     id: "modelEdge",
@@ -352,8 +399,8 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     title: () => "Your minutes × this season's stat per minute. Not the JKB model: a plain season-rate estimate.",
     sortKey: "seasonRateEstimate",
     align: "right",
-    headClass: "bg-amber-50",
-    cellClass: () => "bg-amber-50/40",
+    headClass: "bg-teal-50 text-teal-900",
+    cellClass: () => "bg-teal-50/60",
     render: ({ row }) => {
       const { override, season } = row;
       if (override.userMinutes === null) return <span className="text-slate-400">—</span>;
@@ -362,7 +409,7 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
       const small = games !== null && games < EARLY_SEASON_GAMES;
       return (
         <>
-          <div className="font-semibold text-amber-900">{override.seasonRateEstimate.toFixed(1)}</div>
+          <div className="font-semibold text-teal-900">{override.seasonRateEstimate.toFixed(1)}</div>
           {games !== null ? (
             <div className="whitespace-nowrap text-[10px] font-normal text-slate-500" title={`Per-minute rate from ${gamesLabel(games)} of ${season?.current?.season}${small ? ": a small sample" : ""}`}>
               on {games} g{small ? " · small sample" : ""}

@@ -24,6 +24,8 @@ import type { ImportedPlayerGame, PlayerGameImport } from "./playerGameImport";
 import type { DvpPosition } from "../dvpPositions";
 import { dvpLabelFor, type PositionEstimateSet } from "./positionEstimates";
 import type { SeasonStatsView } from "../seasonStats";
+import type { OpponentRecentSequence } from "../recentForm";
+import { buildOpponentRecent } from "./opponentRecentBuild";
 import { seasonStatsFor } from "./seasonStatsBuild";
 
 export const SLATE_SEASON = "2026-27";
@@ -92,6 +94,8 @@ export interface V1Inputs {
    * ProjectionRecord: the public board builder never receives it.
    */
   seasonStats: Record<string, SeasonStatsView>;
+  /** What each opponent allowed to each estimated position over its last ten games, by `gameKey|team|position`; private preview only. */
+  opponentRecent: Record<string, OpponentRecentSequence>;
   roster: Record<string, RosterRecord>;
   dvp: DvpInput | null;
   report: V1Report;
@@ -320,5 +324,5 @@ export function buildV1Inputs(args: V1BuildArgs): V1Inputs {
   const unlabeled = Object.values(report.dvp.linesWithoutPosition).reduce((a, b) => a + b, 0);
   if (report.dvp.teamSeasonsWithoutAnyPosition.length > 0) warnings.push(`${report.dvp.teamSeasonsWithoutAnyPosition.length} team-season(s) have no position estimate for any opposing player and are left out of DvP (no ranks are invented): ${report.dvp.teamSeasonsWithoutAnyPosition.slice(0, 6).join(", ")}${report.dvp.teamSeasonsWithoutAnyPosition.length > 6 ? ", ..." : ""}`);
   if (unlabeled > 0) warnings.push(`${unlabeled} regular-season player-games have no position estimate for their season; they are excluded from DvP, not guessed`);
-  return { projections, seasonStats, roster: buildRoster(slatePlayers, warnings), dvp, report };
+  return { projections, seasonStats, opponentRecent: buildOpponentRecent(imported.rows, positions, slate, SLATE_SEASON), roster: buildRoster(slatePlayers, warnings), dvp, report };
 }

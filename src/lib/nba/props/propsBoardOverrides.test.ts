@@ -154,7 +154,8 @@ describe("sorting by the new columns", () => {
 describe("containsPrivateData: what the public page refuses at run time", () => {
   it("flags a board with season statistics or a private-preview notice, and passes a plain board", () => {
     expect(containsPrivateData(board)).toBe(true);
-    const noStats: PropsBoardArtifact = { ...board, entries: board.entries.map(({ seasonStats: _removed, ...entry }) => entry) };
+    const { opponentRecent: _windows, ...withoutWindows } = board;
+    const noStats: PropsBoardArtifact = { ...withoutWindows, entries: board.entries.map(({ seasonStats: _removed, ...entry }) => entry) };
     expect(containsPrivateData(noStats)).toBe(false);
     expect(containsPrivateData({ ...noStats, privatePreview: { notice: "PRIVATE PREVIEW", attribution: "Data: hoopR" } })).toBe(true);
     const oneEntry: PropsBoardArtifact = { ...noStats, entries: noStats.entries.map((e, i) => (i === 0 ? { ...e, seasonStats: { current: null, previous: null } } : e)) };
@@ -163,5 +164,11 @@ describe("containsPrivateData: what the public page refuses at run time", () => 
     // The last-five and last-ten windows are season statistics too: a board carrying only them is refused.
     const recentOnly: PropsBoardArtifact = { ...noStats, entries: noStats.entries.map((e, i) => (i === 0 ? { ...e, seasonStats: { current: null, previous: null, last5: { games: 5, minutes: 150, pts: 100, reb: 25, ast: 10 }, last10: null } } : e)) };
     expect(containsPrivateData(recentOnly)).toBe(true);
+    // The opponent last-ten sequences are hoopR/ESPN-derived too, even on a board with no season statistics at all.
+    expect(containsPrivateData({ ...noStats, opponentRecent: {} })).toBe(true);
+    expect(containsPrivateData({ ...noStats, opponentRecent: board.opponentRecent })).toBe(true);
+    // Game-by-game results alone are refused as well.
+    const gamesOnly: PropsBoardArtifact = { ...noStats, entries: noStats.entries.map((e, i) => (i === 0 ? { ...e, seasonStats: { current: null, previous: null, recentGames: [] } } : e)) };
+    expect(containsPrivateData(gamesOnly)).toBe(true);
   });
 });

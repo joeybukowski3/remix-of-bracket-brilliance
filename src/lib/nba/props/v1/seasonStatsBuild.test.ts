@@ -67,7 +67,7 @@ describe("seasonStatsFor: completed games before the matchup", () => {
   it("has no current figures before the player's first game, and no previous ones for a newcomer", () => {
     expect(seasonStatsFor([game("2025-26", "2026-03-01")], target)).toMatchObject({ current: null, previous: { games: 1 } });
     expect(seasonStatsFor([game("2026-27", "2026-10-22")], target)).toMatchObject({ current: { games: 1 }, previous: null });
-    expect(seasonStatsFor([], target)).toEqual({ current: null, previous: null, last5: null, last10: null });
+    expect(seasonStatsFor([], target)).toEqual({ current: null, previous: null, last5: null, last10: null, recentGames: [] });
   });
 
   it("is unchanged when later games are rewritten or deleted", () => {
@@ -133,6 +133,39 @@ describe("seasonStatsFor: last five and last ten completed games", () => {
   });
 });
 
+describe("seasonStatsFor: the last ten games one by one", () => {
+  const run = (n: number, over: Partial<NbaPlayerGame> = {}): NbaPlayerGame[] =>
+    Array.from({ length: n }, (_, i) => game("2026-27", `2026-10-${String(10 + i).padStart(2, "0")}`, { pts: 10 + i, reb: 2 + i, ast: 1 + i, opponentAbbr: i % 2 ? "MIA" : "NYK", isHome: i % 2 === 0, ...over }));
+
+  it("lists the ten most recent games oldest to newest, each with its own result, date, opponent and venue", () => {
+    const { recentGames } = seasonStatsFor([...run(12)].reverse(), target);
+    expect(recentGames).toHaveLength(10);
+    expect(recentGames?.map((g) => g.pts)).toEqual([12, 13, 14, 15, 16, 17, 18, 19, 20, 21]);
+    expect(recentGames?.[0]).toEqual({ date: "2026-10-12", opponent: "NYK", isHome: true, minutes: 30, pts: 12, reb: 4, ast: 3 });
+    expect(recentGames?.[1]).toMatchObject({ opponent: "MIA", isHome: false });
+  });
+
+  it("agrees with the last-ten totals it sits beside", () => {
+    const stats = seasonStatsFor(run(12), target);
+    expect(stats.recentGames?.reduce((sum, g) => sum + g.pts, 0)).toBe(stats.last10?.pts);
+    expect(stats.recentGames?.reduce((sum, g) => sum + g.minutes, 0)).toBe(stats.last10?.minutes);
+  });
+
+  it("shows the real sample when fewer than ten games exist, without reaching into last season", () => {
+    const stats = seasonStatsFor([...run(3), game("2025-26", "2026-03-01", { pts: 99 })], target);
+    expect(stats.recentGames?.map((g) => g.pts)).toEqual([10, 11, 12]);
+  });
+
+  it("uses only games before the matchup and skips did-not-play and zero-minute games", () => {
+    const history = [...run(4), game("2026-27", "2026-10-30", { minutes: 0, pts: 0 }), game("2026-27", "2026-11-10", { pts: 99 }), game("2026-27", "2026-11-11", { pts: 99 }), game("2026-27", "2026-11-03", { gameId: "target", pts: 99 })];
+    expect(seasonStatsFor(history, target).recentGames?.map((g) => g.pts)).toEqual([10, 11, 12, 13]);
+  });
+
+  it("is an empty list, not missing, for a player with no game this season", () => {
+    expect(seasonStatsFor([game("2025-26", "2026-03-01")], target).recentGames).toEqual([]);
+  });
+});
+
 /** The fixture league labelled as hoopR/ESPN data, which the registry allows for private research only. */
 const inputs = (sourceId: string) =>
   buildV1Inputs({
@@ -166,6 +199,25 @@ describe("season statistics in the V1 build and the private preview", () => {
     expect(artifact.entries.every((e) => e.line === null)).toBe(true);
   });
 
+  it("builds each projected player's ten game-by-game results and the opponent windows from the same import", () => {
+    const bos1 = built.seasonStats[keyFor("Demo Player BOS 1")];
+    const own = fixtureRows().filter((r) => r.playerId === "BOS-1" && r.season === "2026-27");
+    expect(bos1.recentGames).toHaveLength(own.length);
+    expect(bos1.recentGames?.map((g) => g.date)).toEqual(own.map((r) => r.gameDate).sort());
+    // The opponent's window counts the defense's own games: BOS-1 faces NYK, and NYK has played this season's rounds.
+    const sequence = built.opponentRecent[`${FIXTURE_GAME_KEY}|NYK|PG`];
+    expect(sequence).toMatchObject({ team: "NYK", position: "PG", season: "2026-27", seasonGames: 2 });
+    expect(sequence.games).toHaveLength(2);
+    expect(built.opponentRecent[`${FIXTURE_GAME_KEY}|BOS|C`]).toBeDefined();
+  });
+
+  it("puts the opponent windows on the private preview board, even when empty, and only there", () => {
+    const withWindows = buildPrivatePreviewBoard({ generatedAtUtc: FIXTURE_BUILD_AT, projections: built.projections, roster: built.roster, dvp: built.dvp, opponentRecent: built.opponentRecent });
+    expect(Object.keys(withWindows.artifact.opponentRecent ?? {})).toEqual(Object.keys(built.opponentRecent));
+    expect(buildPrivatePreviewBoard({ generatedAtUtc: FIXTURE_BUILD_AT, projections: built.projections, roster: built.roster, dvp: built.dvp, opponentRecent: {} }).artifact.opponentRecent).toEqual({});
+    expect("opponentRecent" in buildPrivatePreviewBoard({ generatedAtUtc: FIXTURE_BUILD_AT, projections: built.projections, roster: built.roster, dvp: built.dvp }).artifact).toBe(false);
+  });
+
   it("adds nothing when no season statistics are supplied", () => {
     const { artifact } = buildPrivatePreviewBoard({ generatedAtUtc: FIXTURE_BUILD_AT, projections: built.projections, roster: built.roster, dvp: built.dvp });
     expect(artifact.entries.some((e) => "seasonStats" in e)).toBe(false);
@@ -189,6 +241,8 @@ describe("the public board never carries season statistics", () => {
     const { artifact } = assembleBoard({ generatedAtUtc: FIXTURE_BUILD_AT, snapshots: [], projections: licensed.projections, roster: licensed.roster, dvp: licensed.dvp, sourceLicenses: LICENSED });
     expect(artifact.entries.length).toBeGreaterThan(0);
     expect(JSON.stringify(artifact)).not.toContain("seasonStats");
+    expect(JSON.stringify(artifact)).not.toContain("recentGames");
+    expect(JSON.stringify(artifact)).not.toContain("opponentRecent");
     expect(artifact.entries.some((e) => "seasonStats" in e)).toBe(false);
   });
 

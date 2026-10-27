@@ -14,6 +14,7 @@ export const COLUMN_IDS = [
   "last5",
   "last10",
   "lastSeason",
+  "oppLast10",
   "dvpAllowed",
   "dvpPrior",
   "dvpCurrent",
@@ -33,11 +34,14 @@ export const COLUMN_IDS = [
 ] as const;
 export type ColumnId = (typeof COLUMN_IDS)[number];
 
-/** The compact table: MPG, per game, per minute, last five, opponent allowed, matchup, JKB projection (the player column is always shown). */
-export const DEFAULT_COLUMNS: readonly ColumnId[] = Object.freeze(["mpg", "perGame", "perMinute", "last5", "dvpAllowed", "matchup", "jkbProjection"] as const);
+/**
+ * The compact table: MPG, per game, per minute, the player's last ten, what the opponent allowed over its last ten, matchup,
+ * JKB projection (the player column is always shown). Last five and the season-long Opp allows stay one click away.
+ */
+export const DEFAULT_COLUMNS: readonly ColumnId[] = Object.freeze(["mpg", "perGame", "perMinute", "last10", "oppLast10", "matchup", "jkbProjection"] as const);
 
 /** Columns that exist only where the board carries season statistics (a private preview board). */
-const SEASON_ONLY: ReadonlySet<ColumnId> = new Set(["seasonSample", "mpg", "perGame", "perMinute", "last5", "last10", "lastSeason", "seasonRateEstimate"]);
+const SEASON_ONLY: ReadonlySet<ColumnId> = new Set(["seasonSample", "mpg", "perGame", "perMinute", "last5", "last10", "lastSeason", "oppLast10", "seasonRateEstimate"]);
 export const needsSeasonStats = (id: ColumnId): boolean => SEASON_ONLY.has(id);
 
 export const isColumnId = (value: unknown): value is ColumnId => typeof value === "string" && (COLUMN_IDS as readonly string[]).includes(value);

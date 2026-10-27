@@ -8,6 +8,7 @@
  * Two seasons are kept apart and never blended: `current` is this season to date, `previous` is last regular season. Early
  * in a season the previous one is shown separately, as its own labelled basis.
  */
+import type { PlayerRecentGame } from "./recentForm";
 import type { BoardMarket } from "./propsBoard";
 
 export interface SeasonTotals {
@@ -44,6 +45,11 @@ export interface SeasonStatsView {
   last5?: RecentTotals | null;
   /** The same window for the last ten games. */
   last10?: RecentTotals | null;
+  /**
+   * The same last ten games one by one, oldest to newest (the chart's order). Absent on a board built before this field
+   * existed: the page then says the board must be rebuilt, instead of drawing a chart it cannot support.
+   */
+  recentGames?: PlayerRecentGame[];
 }
 
 /** Window sizes behind `last5` and `last10`. */

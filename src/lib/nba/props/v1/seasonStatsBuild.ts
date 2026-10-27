@@ -15,6 +15,7 @@
 import { selectPriorGames } from "../features";
 import { previousSeason } from "../seasonType";
 import { RECENT_WINDOWS, type RecentTotals, type SeasonStatsView, type SeasonTotals } from "../seasonStats";
+import { L10_GAMES, type PlayerRecentGame } from "../recentForm";
 import type { NbaPlayerGame } from "../types";
 
 function totalsOf(season: string, rows: readonly NbaPlayerGame[]): SeasonTotals | null {
@@ -37,6 +38,14 @@ function recentTotals(newestFirst: readonly NbaPlayerGame[], size: number): Rece
   return totals;
 }
 
+/** The player's last ten played games this season, oldest to newest: each game's own result, never a season total. */
+function recentGamesOf(newestFirst: readonly NbaPlayerGame[]): PlayerRecentGame[] {
+  return newestFirst
+    .slice(0, L10_GAMES)
+    .map((r) => ({ date: r.gameDate, opponent: r.opponentAbbr, isHome: r.isHome, minutes: r.minutes, pts: r.pts, reb: r.reb, ast: r.ast }))
+    .reverse();
+}
+
 export function seasonStatsFor(history: readonly NbaPlayerGame[], target: { gameId: string; cutoffDate: string; season: string }): SeasonStatsView {
   const played = selectPriorGames(history, { ...target, teamId: 0 }).filter((r) => Number.isFinite(r.minutes) && r.minutes > 0);
   const previous = previousSeason(target.season);
@@ -46,5 +55,6 @@ export function seasonStatsFor(history: readonly NbaPlayerGame[], target: { game
     previous: totalsOf(previous, played.filter((r) => r.season === previous && r.seasonType === "regular")),
     last5: recentTotals(currentRows, RECENT_WINDOWS.last5),
     last10: recentTotals(currentRows, RECENT_WINDOWS.last10),
+    recentGames: recentGamesOf(currentRows),
   };
 }

@@ -152,7 +152,7 @@ export function runV1PrivatePreview(options: Omit<V1RunOptions, "outFile" | "sou
   const target = path.join(dir, PRIVATE_PREVIEW_FILE);
   inside(root, target, [DATA_DIR], "the private preview file");
   const { built, files } = prepare(options, true);
-  const { artifact, report } = buildPrivatePreviewBoard({ generatedAtUtc: options.generatedAtUtc, projections: built.projections, roster: built.roster, dvp: built.dvp, seasonStats: built.seasonStats, licenses: options.licenses });
+  const { artifact, report } = buildPrivatePreviewBoard({ generatedAtUtc: options.generatedAtUtc, projections: built.projections, roster: built.roster, dvp: built.dvp, seasonStats: built.seasonStats, opponentRecent: built.opponentRecent, licenses: options.licenses });
   // Last line of defense: a private board is never written anywhere that is deployed.
   if (artifact.privatePreview === undefined || artifact.entries.some((e) => e.line !== null)) throw new Error("refusing to write a private preview without its notice, or with sportsbook lines");
   writeAtomically(inside(root, target, [DATA_DIR], "the private preview file"), `${JSON.stringify(artifact)}\n`);

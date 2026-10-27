@@ -1,21 +1,35 @@
 import { Fragment, useId, useState } from "react";
 import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
-import { DENSE_TABLE_HEAD_ROW, DENSE_TABLE_ROW, DenseTableScroller, frozenDenseColumn } from "@/components/ui/dense-table";
+import { DenseTableScroller, frozenDenseColumn } from "@/components/ui/dense-table";
 import { cn } from "@/lib/utils";
 import { playerOverrideKey, type MinutesDrafts } from "@/lib/nba/props/minutesOverride";
 import type { BoardMarket, BoardRow, BoardSortKey, SortDirection } from "@/lib/nba/props/propsBoard";
 import type { ColumnId } from "@/lib/nba/props/boardColumns";
 import { ALIGN_CLASS, COLUMN_DEFS, type CellContext, type ColumnDef } from "@/components/nba/boardColumnDefs";
 import PropsRowDetail from "@/components/nba/PropsRowDetail";
+import TeamLogo from "@/components/nba/TeamLogo";
+import { PLAYER_WASH_AMOUNT, brandFor, tintOnWhite } from "@/lib/nba/props/teamBrand";
+
+/** "L10 PTS" is "L10" and "JKB proj" is "JKB" on a phone: the market chips above already say which stat, and the header would not fit otherwise. */
+function HeaderLabel({ label }: { label: string }) {
+  const match = /^(.+?) (PTS|REB|AST|proj)$/.exec(label);
+  return match ? (
+    <>
+      {match[1]} <span className="max-md:sr-only">{match[2]}</span>
+    </>
+  ) : (
+    <>{label}</>
+  );
+}
 
 function HeaderButton({ label, sortKey, active, direction, onSort, align }: { label: string; sortKey: BoardSortKey; active: boolean; direction: SortDirection; onSort: (key: BoardSortKey) => void; align: ColumnDef["align"] }) {
   return (
     <button
       type="button"
       onClick={() => onSort(sortKey)}
-      className={cn("inline-flex items-center gap-1 whitespace-nowrap uppercase tracking-wider hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500", align === "right" && "w-full justify-end", align === "center" && "w-full justify-center")}
+      className={cn("inline-flex items-center gap-1 whitespace-nowrap uppercase tracking-wider hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-300", align === "right" && "w-full justify-end", align === "center" && "w-full justify-center")}
     >
-      {label}
+      <HeaderLabel label={label} />
       {active ? direction === "asc" ? <ArrowUp size={10} aria-hidden /> : <ArrowDown size={10} aria-hidden /> : null}
     </button>
   );
@@ -39,15 +53,22 @@ export interface PropsBoardTableProps {
   isWide: boolean;
 }
 
-const HEADER = "border-b border-slate-300 px-2.5 py-2 font-bold text-slate-700";
+const HEADER = "border-b-2 border-slate-950 px-1.5 py-2.5 font-bold md:px-2 lg:px-2.5";
+/** Header row: dark navy-slate with white lettering, so it stays separate from the pale rows beneath at any scroll position. */
+const HEAD_ROW = "bg-slate-900 text-[10px] font-semibold uppercase tracking-wider text-white";
+/** Body rows: a visible hairline between rows, and a hover wash that does not hide the team color. */
+const BODY_ROW = "border-t border-slate-200 transition-colors hover:bg-sky-50/60";
 const hiddenOnPhone = (def: ColumnDef): string => (def.mobile ? "" : "hidden md:table-cell");
 
 function PlayerCell({ row, expanded, detailId, onToggle }: { row: BoardRow; expanded: boolean; detailId: string; onToggle: () => void }) {
   const { entry, dvp } = row;
   const multi = dvp.kind === "ok" && dvp.isMultiPosition;
+  const brand = brandFor(entry.team);
+  // The wash is opaque (tinted white, not transparent) so the frozen column never shows what scrolls beneath it.
+  const style = { backgroundImage: `linear-gradient(90deg, ${tintOnWhite(brand.primary, PLAYER_WASH_AMOUNT)} 0%, #FFFFFF 100%)`, borderLeft: `5px solid ${brand.primary}` };
   return (
-    <th scope="row" className={frozenDenseColumn({ surface: "bg-white", className: "border-r border-slate-200 px-2 py-2 text-left font-medium text-slate-900" })}>
-      <div className="flex items-start gap-1">
+    <th scope="row" style={style} data-testid="player-cell" className={frozenDenseColumn({ className: "border-r border-slate-200 py-1.5 pl-1 pr-1.5 text-left font-medium text-slate-900 md:pr-2" })}>
+      <div className="flex items-center gap-1 md:gap-1.5">
         <button
           type="button"
           onClick={onToggle}
@@ -55,12 +76,13 @@ function PlayerCell({ row, expanded, detailId, onToggle }: { row: BoardRow; expa
           aria-controls={expanded ? detailId : undefined}
           aria-label={`${expanded ? "Hide" : "Show"} details and minutes for ${entry.playerName}`}
           data-testid="row-toggle"
-          className="-ml-1 inline-flex h-8 w-7 shrink-0 items-center justify-center rounded text-slate-600 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500"
+          className="inline-flex h-8 w-5 shrink-0 items-center justify-center rounded text-slate-700 md:w-6 hover:bg-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500"
         >
           <ChevronRight size={15} aria-hidden className={cn("transition-transform", expanded && "rotate-90")} />
         </button>
-        <div className="min-w-0 pt-0.5">
-          <div className="md:whitespace-nowrap">
+        <TeamLogo team={entry.team} className="h-9 w-9 md:h-10 md:w-10" />
+        <div className="min-w-0">
+          <div className="text-[13px] font-bold leading-tight text-slate-950 md:whitespace-nowrap md:text-[14px]">
             <span data-testid="player-name">{entry.playerName}</span>
             {row.override.userMinutes !== null ? (
               <span data-testid="override-chip" className="ml-1.5 rounded bg-indigo-100 px-1 py-0.5 text-[10px] font-semibold text-indigo-900" title="Your minutes are applied to this player. Open the row to see the adjusted projection.">
@@ -68,15 +90,16 @@ function PlayerCell({ row, expanded, detailId, onToggle }: { row: BoardRow; expa
               </span>
             ) : null}
           </div>
-          <div className="text-[10px] font-normal text-slate-600 md:whitespace-nowrap">
-            {entry.team ?? "—"} {entry.opponent ? `vs ${entry.opponent}` : ""} ·{" "}
+          <div className="text-[10px] font-normal leading-tight text-slate-700 md:whitespace-nowrap">
+            <strong className="font-bold text-slate-900">{entry.team ?? "—"}</strong> {entry.opponent ? `vs ${entry.opponent}` : ""}
+            <span className="max-md:hidden"> · </span>
             {entry.positionLabel ? (
-              <span title={multi ? `Multi-position label; DvP uses ${dvp.kind === "ok" ? dvp.position : ""}. Estimated, not verified minutes at a position.` : "Estimated position from depth charts and rotation roles, not verified minutes at a position."}>
+              <span className="max-md:block" title={multi ? `Multi-position label; DvP uses ${dvp.kind === "ok" ? dvp.position : ""}. Estimated, not verified minutes at a position.` : "Estimated position from depth charts and rotation roles, not verified minutes at a position."}>
                 {entry.positionLabel}
                 {multi && dvp.kind === "ok" ? ` → ${dvp.position}` : ""} <span className="text-slate-500">(est.)</span>
               </span>
             ) : (
-              <span title="No estimated position for this player">pos N/A</span>
+              <span className="max-md:block" title="No estimated position for this player">pos N/A</span>
             )}
           </div>
         </div>
@@ -98,16 +121,16 @@ export default function PropsBoardTable({ rows, sortKey, direction, onSort, mark
   const minutesInTable = isWide && columns.includes("userMinutes");
   const ariaSort = (key: BoardSortKey) => (sortKey === key ? (direction === "asc" ? "ascending" : "descending") : "none");
   return (
-    <DenseTableScroller label={`${marketLabel} player props: recent form, opponent defense vs. position and JKB projections`} className="rounded-lg border border-slate-200 bg-white">
+    <DenseTableScroller label={`${marketLabel} player props: recent form, opponent defense vs. position and JKB projections`} className="rounded-lg border border-slate-300 bg-white shadow-sm">
       <table className="w-full border-separate border-spacing-0 text-[11px] md:text-[12px]" data-testid="props-board-table">
         <thead>
-          <tr className={DENSE_TABLE_HEAD_ROW}>
-            <th scope="col" aria-sort={ariaSort("player")} className={frozenDenseColumn({ isHeader: true, surface: "bg-slate-100", className: `${HEADER} border-r border-slate-300 text-left` })}>
+          <tr className={HEAD_ROW}>
+            <th scope="col" aria-sort={ariaSort("player")} className={frozenDenseColumn({ isHeader: true, surface: "bg-slate-900", className: `${HEADER} border-r border-slate-700 text-left` })}>
               <HeaderButton label="Player" sortKey="player" active={sortKey === "player"} direction={direction} onSort={onSort} align="left" />
             </th>
             {defs.map((def) => (
               <th key={def.id} scope="col" aria-sort={def.sortKey ? ariaSort(def.sortKey) : undefined} title={def.title(market)} data-testid={`head-${def.id}`} className={cn(HEADER, ALIGN_CLASS[def.align ?? "right"], hiddenOnPhone(def), def.headClass)}>
-                {def.sortKey ? <HeaderButton label={def.label(market)} sortKey={def.sortKey} active={sortKey === def.sortKey} direction={direction} onSort={onSort} align={def.align ?? "right"} /> : <span className="whitespace-nowrap uppercase tracking-wider">{def.label(market)}</span>}
+                {def.sortKey ? <HeaderButton label={def.label(market)} sortKey={def.sortKey} active={sortKey === def.sortKey} direction={direction} onSort={onSort} align={def.align ?? "right"} /> : <span className="whitespace-nowrap uppercase tracking-wider"><HeaderLabel label={def.label(market)} /></span>}
               </th>
             ))}
           </tr>
@@ -128,10 +151,10 @@ export default function PropsBoardTable({ rows, sortKey, direction, onSort, mark
             const ctx: CellContext = { row, market, draft: drafts[key] ?? "", onDraftChange: (text) => onDraftChange(key, text), onReset: () => onReset(key) };
             return (
               <Fragment key={entry.entryKey}>
-                <tr className={DENSE_TABLE_ROW}>
+                <tr className={BODY_ROW}>
                   <PlayerCell row={row} expanded={open} detailId={detailId} onToggle={() => toggle(entry.entryKey)} />
                   {defs.map((def) => (
-                    <td key={def.id} data-testid={`col-${def.id}`} className={cn("px-2.5 py-2", ALIGN_CLASS[def.align ?? "right"], hiddenOnPhone(def), def.cellClass?.(ctx))}>
+                    <td key={def.id} data-testid={`col-${def.id}`} className={cn("px-1.5 py-2 md:px-2 lg:px-2.5", ALIGN_CLASS[def.align ?? "right"], hiddenOnPhone(def), def.cellClass?.(ctx))}>
                       {def.render(ctx)}
                     </td>
                   ))}

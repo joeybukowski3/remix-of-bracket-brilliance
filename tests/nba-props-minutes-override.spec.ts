@@ -44,19 +44,19 @@ test.describe("compact props table", () => {
       await expect.poll(() => pageOverflow(page)).toBeLessThanOrEqual(1);
       // The table's own scroll region has nothing to scroll: that is the point of the compact set.
       if (viewport.width >= 390) expect(await regionOverflow(page)).toBeLessThanOrEqual(1);
-      for (const id of ["last5", "matchup", "jkbProjection"]) await expect(page.getByTestId(`col-${id}`).first()).toBeVisible();
-      for (const id of ["mpg", "perGame", "perMinute", "dvpAllowed"]) {
+      for (const id of ["last10", "oppLast10", "matchup", "jkbProjection"]) await expect(page.getByTestId(`col-${id}`).first()).toBeVisible();
+      for (const id of ["mpg", "perGame", "perMinute"]) {
         if (viewport.width >= 768) await expect(page.getByTestId(`col-${id}`).first()).toBeVisible();
         else await expect(page.getByTestId(`col-${id}`).first()).toBeHidden();
       }
     });
   }
 
-  test("a 390px phone shows player, last five, matchup and projection, and the expanded row carries the rest", async ({ page }) => {
+  test("a 390px phone shows player, L10, opponent L10, matchup and projection, and the expanded row carries the rest", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(DEMO, { waitUntil: "networkidle" });
     const detail = await openRow(page, "Demo Guard One");
-    for (const id of ["mpg", "perGame", "perMinute", "last5", "last10", "dvpAllowed", "dvpPrior", "dvpCurrent", "line", "jkbMinutes"]) await expect(detail.getByTestId(`detail-${id}`)).toBeVisible();
+    for (const id of ["mpg", "perGame", "perMinute", "last5", "last10", "oppLast10", "dvpAllowed", "dvpPrior", "dvpCurrent", "line", "jkbMinutes"]) await expect(detail.getByTestId(`detail-${id}`)).toBeVisible();
     const input = detail.getByLabel(/Your projected minutes for Demo Guard One/);
     await expect(input).toBeVisible();
     await expect.poll(() => pageOverflow(page)).toBeLessThanOrEqual(1);
@@ -103,7 +103,7 @@ test.describe("compact props table", () => {
     await page.setViewportSize({ width: 768, height: 900 });
     await page.goto(DEMO, { waitUntil: "networkidle" });
     await page.getByTestId("columns-menu-trigger").click();
-    for (const id of ["last10", "dvpPrior", "dvpCurrent", "dvpGames", "line", "overUnder", "jkbMinutes", "modelEdge", "jkbTriple", "source"]) await page.getByTestId(`column-toggle-${id}`).check();
+    for (const id of ["last5", "dvpAllowed", "dvpPrior", "dvpCurrent", "dvpGames", "line", "overUnder", "jkbMinutes", "modelEdge", "jkbTriple", "source"]) await page.getByTestId(`column-toggle-${id}`).check();
     await page.keyboard.press("Escape");
     expect(await regionOverflow(page)).toBeGreaterThan(0);
     await expect.poll(() => pageOverflow(page)).toBeLessThanOrEqual(1);
@@ -121,7 +121,7 @@ test.describe("compact props table", () => {
     await expect(detail.getByTestId("detail-adjustedProjection")).toContainText(((26.1 * 36) / 34).toFixed(1));
     await expect(mainRow(page, "Demo Guard One").getByTestId("col-jkbProjection")).toHaveText("26.1");
     await page.getByRole("button", { name: "Rebounds" }).click();
-    await expect(page.getByTestId("head-last5")).toContainText("L5 REB");
+    await expect(page.getByTestId("head-last10")).toContainText("L10 REB");
     const again = await openRow(page, "Demo Guard One");
     await expect(again.getByLabel(/Your projected minutes for Demo Guard One/)).toHaveValue("36");
     await expect(again.getByTestId("detail-adjustedProjection")).toContainText(((3.8 * 36) / 34).toFixed(1));
@@ -152,9 +152,9 @@ test.describe("compact props table", () => {
   });
 
   test("shows early-season and no-games players honestly", async ({ page }) => {
-    await expect(mainRow(page, "Demo Wing Two").getByTestId("col-last5")).toContainText("15.3");
-    await expect(mainRow(page, "Demo Wing Two").getByTestId("col-last5").getByRole("img", { name: /Only 3 games/ })).toBeVisible();
-    await expect(mainRow(page, "Demo Wing Six").getByTestId("col-last5")).toHaveText("—");
+    await expect(mainRow(page, "Demo Wing Two").getByTestId("col-last10")).toContainText("15.3");
+    await expect(mainRow(page, "Demo Wing Two").getByTestId("col-last10").getByRole("img", { name: /Only 3 games/ })).toBeVisible();
+    await expect(mainRow(page, "Demo Wing Six").getByTestId("col-last10")).toHaveText("—");
     await expect(mainRow(page, "Demo Bench Seven").getByTestId("col-matchup")).toHaveText("N/A");
   });
 

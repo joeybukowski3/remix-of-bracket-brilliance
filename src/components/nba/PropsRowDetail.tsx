@@ -5,10 +5,11 @@ import { needsSeasonStats } from "@/lib/nba/props/boardColumns";
 import { MAX_USER_MINUTES, MIN_USER_MINUTES } from "@/lib/nba/props/minutesOverride";
 import { COLUMN_DEFS, minutesEditorInfo, type CellContext } from "@/components/nba/boardColumnDefs";
 import { MinutesEditor } from "@/components/nba/MinutesEditor";
+import RecentFormPanel from "@/components/nba/RecentFormPanel";
 
 /** Season and matchup lines shown for every player, on a phone because the table has no room for them. */
 const SEASON_LINES: readonly ColumnId[] = ["seasonSample", "mpg", "perGame", "perMinute", "last5", "last10", "lastSeason"];
-const MATCHUP_LINES: readonly ColumnId[] = ["dvpAllowed", "dvpPrior", "dvpCurrent", "matchup"];
+const MATCHUP_LINES: readonly ColumnId[] = ["oppLast10", "dvpAllowed", "dvpPrior", "dvpCurrent", "matchup"];
 const LINE_LINES: readonly ColumnId[] = ["line", "overUnder", "jkbProjection", "modelEdge", "jkbMinutes", "jkbTriple", "source"];
 const RESULT_LINES: readonly ColumnId[] = ["adjustedProjection", "adjustedDifference", "seasonRateEstimate"];
 
@@ -37,7 +38,7 @@ function Lines({ ids, ctx, hasSeasonStats }: { ids: readonly ColumnId[]; ctx: Ce
 function Section({ title, className, children }: { title: string; className?: string; children: ReactNode }) {
   return (
     <section role="group" aria-label={title} className={cn("min-w-0 rounded-md border border-slate-200 bg-white px-3 py-2", className)}>
-      <h4 className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">{title}</h4>
+      <h4 className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">{title}</h4>
       {children}
     </section>
   );
@@ -72,6 +73,11 @@ export default function PropsRowDetail({ ctx, minutesInTable, hasSeasonStats }: 
         )}
         <Lines ids={RESULT_LINES} ctx={ctx} hasSeasonStats={hasSeasonStats} />
       </Section>
+      {hasSeasonStats ? (
+        <Section title="Last 10 games" className="sm:order-last sm:col-span-2 lg:col-span-4">
+          <RecentFormPanel row={row} market={market} />
+        </Section>
+      ) : null}
       {hasSeasonStats ? (
         <Section title="This season">
           <Lines ids={SEASON_LINES} ctx={ctx} hasSeasonStats={hasSeasonStats} />

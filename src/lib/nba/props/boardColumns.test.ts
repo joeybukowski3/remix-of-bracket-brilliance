@@ -25,8 +25,8 @@ function memoryStorage(initial: Record<string, string> = {}) {
 }
 
 describe("default columns", () => {
-  it("are, in order: MPG, per game, per minute, last five, opponent allowed, matchup, JKB projection", () => {
-    expect([...DEFAULT_COLUMNS]).toEqual(["mpg", "perGame", "perMinute", "last5", "dvpAllowed", "matchup", "jkbProjection"]);
+  it("are, in order: MPG, per game, per minute, player L10, opponent L10 allowed, matchup, JKB projection", () => {
+    expect([...DEFAULT_COLUMNS]).toEqual(["mpg", "perGame", "perMinute", "last10", "oppLast10", "matchup", "jkbProjection"]);
   });
 
   it("are all registered columns, and display in registry order whatever order they were chosen in", () => {
@@ -37,7 +37,7 @@ describe("default columns", () => {
 
   it("leave the sportsbook line, prices, JKB minutes, your minutes, adjusted values and the edge as optional columns", () => {
     const optional = COLUMN_IDS.filter((id) => !DEFAULT_COLUMNS.includes(id));
-    for (const id of ["line", "overUnder", "jkbMinutes", "userMinutes", "adjustedProjection", "adjustedDifference", "modelEdge", "last10", "dvpPrior", "dvpCurrent", "seasonRateEstimate", "seasonSample", "lastSeason"] as const) {
+    for (const id of ["line", "overUnder", "jkbMinutes", "userMinutes", "adjustedProjection", "adjustedDifference", "modelEdge", "last5", "dvpAllowed", "dvpPrior", "dvpCurrent", "seasonRateEstimate", "seasonSample", "lastSeason"] as const) {
       expect(optional).toContain(id);
     }
   });
