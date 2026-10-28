@@ -6,10 +6,12 @@
  * code may import it. Every missing input becomes an explicit state, never a
  * blank or an invented number.
  */
-import { compareDvp, type DvpComparison, type DvpRow, type DvpStat } from "./dvp";
+import { compareDvp, DVP_SEASONS, type DvpComparison, type DvpRow, type DvpSeason, type DvpStat } from "./dvp";
 import { classifyRosterLabel, type DvpPosition, type PositionClassification } from "./dvpPositions";
 import { NO_OVERRIDE, overrideView, playerOverrideKey, type OverrideView } from "./minutesOverride";
-import { marketRates, seasonColumns, type SeasonColumns, type SeasonStatsView } from "./seasonStats";
+import { opponentBoxTable, playerBoxTable, type OpponentBoxTable, type PlayerBoxTable } from "./boxScoreTables";
+import { opponentLastTen, opponentLastTenUnavailable, opponentRecentKey, playerLastTen, type OpponentBoxScores, type OpponentLastTen, type OpponentRecentSequence, type PlayerLastTen } from "./recentForm";
+import { marketRates, recentPerGame, seasonColumns, type SeasonColumns, type SeasonStatsView } from "./seasonStats";
 
 export const BOARD_SCHEMA_VERSION = "nba-props-board-v1";
 export const BOARD_MARKETS = ["pts", "reb", "ast"] as const;
@@ -72,6 +74,16 @@ export interface PropsBoardArtifact {
   entries: BoardEntry[];
   dvpRows: DvpRow[];
   /**
+   * What each opponent allowed to each estimated position over its last ten completed games, by `gameKey|team|position`
+   * (recentForm.ts). Present only on a private preview board; the public board builder never sets it.
+   */
+  opponentRecent?: Record<string, OpponentRecentSequence>;
+  /**
+   * The individual opposing players behind each of those games, by `gameKey|team` (recentForm.ts). Private preview only, like
+   * `opponentRecent`, which it reconciles with exactly: a position's subtotal here is that position's bar there.
+   */
+  opponentBoxScores?: OpponentBoxScores;
+  /**
    * Present only on a board built for local, private preview from a source whose rights allow private research but
    * not publication (v1/privatePreview.ts). The page must show the notice. Such a board is never written under public/.
    */
@@ -94,6 +106,13 @@ export interface BoardRow {
   dvp: DvpState;
   /** Season-to-date columns for this market, or null when the board carries no season statistics for the player. */
   season: SeasonColumns | null;
+  /** The player's last ten games in this market (oldest to newest) with their average. */
+  playerL10: PlayerLastTen;
+  /** The opponent's last ten games allowed to the player's estimated position in this market. */
+  opponentL10: OpponentLastTen;
+  /** The same ten games as box-score tables: the player's own lines, and the individual opposing players at the estimated position. */
+  playerBox: PlayerBoxTable;
+  opponentBox: OpponentBoxTable;
   /** The viewer's minutes override applied to this row (all null while none is active). The JKB values above stay as they were. */
   override: OverrideView;
   jkbTriple: JkbTriple;
@@ -109,6 +128,15 @@ export function dvpStateFor(entry: BoardEntry, rows: readonly DvpRow[]): DvpStat
   const stat = MARKET_STAT[entry.market];
   if (!hasDvpData(rows, entry.opponent, position.primary, stat)) return { kind: "no-dvp-data", position: position.primary };
   return { kind: "ok", position: position.primary, isMultiPosition: position.isMultiPosition, comparison: compareDvp(rows, entry.opponent, position.primary, stat) };
+}
+
+/** The opponent's last-ten window for this row: the board's sequence for the opponent and the player's primary estimated position. */
+export function opponentL10For(entry: BoardEntry, artifact: Pick<PropsBoardArtifact, "opponentRecent">): OpponentLastTen {
+  if (artifact.opponentRecent === undefined) return opponentLastTenUnavailable("stale");
+  const position = classifyRosterLabel(entry.positionLabel);
+  if (position.ok === false) return opponentLastTenUnavailable("no-position");
+  if (!entry.opponent) return opponentLastTenUnavailable("no-opponent");
+  return opponentLastTen(artifact.opponentRecent[opponentRecentKey(entry.gameKey, entry.opponent, position.primary)], entry.market);
 }
 
 /** Each player's JKB projection by market, keyed like the minutes override. */
@@ -133,11 +161,16 @@ export function buildBoardRows(artifact: PropsBoardArtifact, market: BoardMarket
     .map((entry) => {
       const key = playerOverrideKey(entry);
       const season = seasonColumns(entry.seasonStats);
+      const playerL10 = playerLastTen(entry.seasonStats?.recentGames, entry.market);
       return {
         entry,
         difference: entry.line && entry.projection ? entry.projection.value - entry.line.line : null,
         dvp: dvpStateFor(entry, artifact.dvpRows),
         season,
+        playerL10,
+        opponentL10: opponentL10For(entry, artifact),
+        playerBox: playerBoxTable(playerL10, entry.market),
+        opponentBox: opponentBoxTable(entry, artifact),
         override: minutes.has(key)
           ? overrideView({ jkbProjection: entry.projection?.value ?? null, jkbMinutes: entry.projection?.minutes ?? null, line: entry.line?.line ?? null, seasonPerMinute: marketRates(season?.current ?? null, market).perMinute, userMinutes: minutes.get(key) ?? null })
           : NO_OVERRIDE,
@@ -150,7 +183,8 @@ export function buildBoardRows(artifact: PropsBoardArtifact, market: BoardMarket
  * True when a board carries anything that may only exist on a private preview: its notice or any season statistics. The
  * public page refuses such a board at run time, so a private file copied into the published data folder cannot be shown.
  */
-export const containsPrivateData = (board: PropsBoardArtifact): boolean => board.privatePreview !== undefined || board.entries.some((e) => e.seasonStats !== undefined);
+export const containsPrivateData = (board: PropsBoardArtifact): boolean =>
+  board.privatePreview !== undefined || board.opponentRecent !== undefined || board.opponentBoxScores !== undefined || board.entries.some((e) => e.seasonStats !== undefined);
 
 export const BOARD_SORT_KEYS = [
   "player",
@@ -165,10 +199,12 @@ export const BOARD_SORT_KEYS = [
   "adjustedDifference",
   "seasonRateEstimate",
   "seasonMpg",
-  "seasonPpg",
-  "seasonPtsPerMinute",
   "seasonStatPerGame",
   "seasonStatPerMinute",
+  "lastFive",
+  "lastTen",
+  "oppLastTen",
+  "dvpAllowed",
 ] as const;
 export type BoardSortKey = (typeof BOARD_SORT_KEYS)[number];
 export type SortDirection = "asc" | "desc";
@@ -224,14 +260,18 @@ const sortValue = (row: BoardRow, key: BoardSortKey): number | string | null => 
       return row.override.seasonRateEstimate;
     case "seasonMpg":
       return row.season?.current?.mpg ?? null;
-    case "seasonPpg":
-      return row.season?.current?.ppg ?? null;
-    case "seasonPtsPerMinute":
-      return row.season?.current?.ptsPerMinute ?? null;
     case "seasonStatPerGame":
       return marketRates(row.season?.current ?? null, row.entry.market).perGame;
     case "seasonStatPerMinute":
       return marketRates(row.season?.current ?? null, row.entry.market).perMinute;
+    case "lastFive":
+      return recentPerGame(row.season?.last5 ?? null, row.entry.market);
+    case "lastTen":
+      return recentPerGame(row.season?.last10 ?? null, row.entry.market);
+    case "oppLastTen":
+      return row.opponentL10.average;
+    case "dvpAllowed":
+      return row.dvp.kind === "ok" ? row.dvp.comparison.blended?.allowedPerGame ?? null : null;
   }
 };
 
@@ -247,6 +287,27 @@ export function sortBoardRows(rows: readonly BoardRow[], key: BoardSortKey, dire
     const cmp = typeof av === "string" || typeof bv === "string" ? String(av).localeCompare(String(bv)) : av - bv;
     return cmp !== 0 ? sign * cmp : a.entry.entryKey.localeCompare(b.entry.entryKey);
   });
+}
+
+/**
+ * How much of each season's opponent minutes could be attributed to an estimated position (0-1, averaged over the rows of
+ * that season). The remainder is left out of DvP, so DvP describes only part of what opponents allowed. Seasons with no rows
+ * are omitted rather than shown as zero.
+ */
+export function dvpPositionCoverage(rows: readonly DvpRow[]): Array<{ season: DvpSeason; coverage: number }> {
+  return DVP_SEASONS.flatMap((season) => {
+    const own = rows.filter((r) => r.season === season && Number.isFinite(r.minutesCoverage));
+    return own.length === 0 ? [] : [{ season, coverage: own.reduce((sum, r) => sum + r.minutesCoverage, 0) / own.length }];
+  });
+}
+
+/**
+ * Fewest and most games any team has sampled this season in the DvP rows, or null when there are none. When the most is
+ * below the prior-led threshold, every Opp allows / Matchup reading leans on last season, which the page says once.
+ */
+export function dvpCurrentSampleRange(rows: readonly DvpRow[]): { min: number; max: number } | null {
+  const games = rows.filter((r) => r.season === DVP_SEASONS[1]).map((r) => r.gamesSampled);
+  return games.length === 0 ? null : { min: Math.min(...games), max: Math.max(...games) };
 }
 
 export function boardTeams(artifact: PropsBoardArtifact): string[] {

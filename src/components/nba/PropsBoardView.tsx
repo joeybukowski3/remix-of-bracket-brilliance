@@ -1,15 +1,22 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
+import { LowSample } from "@/components/nba/boardCells";
 import { MARKET_LABEL } from "@/components/nba/boardLabels";
 import { Chip, fieldClass } from "@/components/nba/Chip";
+import ColumnsMenu from "@/components/nba/ColumnsMenu";
 import PropsBoardTable from "@/components/nba/PropsBoardTable";
-import { DVP_POSITIONS, type DvpPosition } from "@/lib/nba/props/dvp";
+import { useIsWide } from "@/components/nba/useIsWide";
+import { COLUMN_DEFS } from "@/components/nba/boardColumnDefs";
+import { browserStorage, clearColumnPreference, defaultSelection, loadColumnPreference, saveColumnPreference, visibleColumns, withColumn, withFixedColumns, type ColumnId } from "@/lib/nba/props/boardColumns";
+import { DVP_POSITIONS, PRIOR_LED_BELOW_GAMES, type DvpPosition } from "@/lib/nba/props/dvp";
 import { appliedMinutes, clearAllDrafts, clearDraft, setDraft, type MinutesDrafts } from "@/lib/nba/props/minutesOverride";
 import {
   BOARD_MARKETS,
   DEFAULT_FILTERS,
   boardTeams,
   buildBoardRows,
+  dvpCurrentSampleRange,
+  dvpPositionCoverage,
   filterBoardRows,
   sortBoardRows,
   type BoardFilters,
@@ -20,6 +27,20 @@ import {
 } from "@/lib/nba/props/propsBoard";
 
 const TEXT_SORT_KEYS: readonly BoardSortKey[] = ["player", "team", "dvpRank"];
+/** Without a posted line there is no edge to sort by, and most boards have none: start from the model's own projection. */
+const DEFAULT_SORT: BoardSortKey = "projection";
+
+/**
+ * The sort actually applied. Sorting by a column that is not shown would order rows by something invisible, so then the
+ * projection (or the first shown sortable column, or the player name) takes over. The stored sort is left alone: showing
+ * the column again brings it back.
+ */
+function resolveSort(key: BoardSortKey, direction: SortDirection, shown: readonly ColumnId[]): { key: BoardSortKey; direction: SortDirection } {
+  const owner = Object.values(COLUMN_DEFS).find((def) => def.sortKey === key);
+  if (!owner || shown.includes(owner.id)) return { key, direction };
+  const fallback = shown.includes("jkbProjection") ? DEFAULT_SORT : shown.map((id) => COLUMN_DEFS[id].sortKey).find((k) => k !== undefined) ?? "player";
+  return { key: fallback, direction: TEXT_SORT_KEYS.includes(fallback) ? "asc" : "desc" };
+}
 
 /**
  * The props table with its controls. Minutes overrides live in this component's state only: they are never written to
@@ -29,17 +50,39 @@ const TEXT_SORT_KEYS: readonly BoardSortKey[] = ["player", "team", "dvpRank"];
 export default function PropsBoardView({ board }: { board: PropsBoardArtifact }) {
   const [market, setMarket] = useState<BoardMarket>("pts");
   const [filters, setFilters] = useState<BoardFilters>(DEFAULT_FILTERS);
-  const [sortKey, setSortKey] = useState<BoardSortKey>("difference");
+  const [sortKey, setSortKey] = useState<BoardSortKey>(DEFAULT_SORT);
   const [direction, setDirection] = useState<SortDirection>("desc");
   const [drafts, setDrafts] = useState<MinutesDrafts>(clearAllDrafts);
+  // Only the list of column ids is ever remembered (see boardColumns.ts); nothing about a player or a projection is stored.
+  const [selected, setSelected] = useState<ReadonlySet<ColumnId>>(() => withFixedColumns(loadColumnPreference(browserStorage) ?? defaultSelection()));
   const teams = useMemo(() => boardTeams(board), [board]);
   const applied = useMemo(() => appliedMinutes(drafts), [drafts]);
   const showSeason = useMemo(() => board.entries.some((e) => e.seasonStats !== undefined), [board]);
-  const rows = useMemo(() => sortBoardRows(filterBoardRows(buildBoardRows(board, market, applied), filters), sortKey, direction), [board, market, applied, filters, sortKey, direction]);
+  const columns = useMemo(() => visibleColumns(selected, showSeason), [selected, showSeason]);
+  const isWide = useIsWide();
+  const sort = useMemo(() => resolveSort(sortKey, direction, columns), [sortKey, direction, columns]);
+  const rows = useMemo(() => sortBoardRows(filterBoardRows(buildBoardRows(board, market, applied), filters), sort.key, sort.direction), [board, market, applied, filters, sort]);
   const draftCount = Object.keys(drafts).length;
+  const coverage = useMemo(() => dvpPositionCoverage(board.dvpRows), [board]);
+  const dvpSample = useMemo(() => dvpCurrentSampleRange(board.dvpRows), [board]);
+  const dvpPriorLed = dvpSample !== null && dvpSample.max < PRIOR_LED_BELOW_GAMES;
+  const onToggleColumn = useCallback(
+    (id: ColumnId, on: boolean) => {
+      const next = withColumn(selected, id, on);
+      setSelected(next);
+      saveColumnPreference(browserStorage, next);
+    },
+    [selected],
+  );
+  const onResetColumns = useCallback(() => {
+    setSelected(defaultSelection());
+    clearColumnPreference(browserStorage);
+  }, []);
   const onSort = (key: BoardSortKey) => {
-    if (key === sortKey) setDirection((d) => (d === "asc" ? "desc" : "asc"));
-    else {
+    if (key === sort.key) {
+      setSortKey(sort.key);
+      setDirection(sort.direction === "asc" ? "desc" : "asc");
+    } else {
       setSortKey(key);
       setDirection(TEXT_SORT_KEYS.includes(key) ? "asc" : "desc");
     }
@@ -90,6 +133,9 @@ export default function PropsBoardView({ board }: { board: PropsBoardArtifact })
         <span className="pb-1" aria-live="polite">
           {rows.length} {rows.length === 1 ? "prop" : "props"}
         </span>
+        <div className="ml-auto hidden md:block">
+          <ColumnsMenu market={market} selected={selected} hasSeasonStats={showSeason} onToggle={onToggleColumn} onReset={onResetColumns} />
+        </div>
         <button
           type="button"
           data-testid="reset-all-minutes"
@@ -97,15 +143,21 @@ export default function PropsBoardView({ board }: { board: PropsBoardArtifact })
             if (draftCount > 0) setDrafts(clearAllDrafts());
           }}
           aria-disabled={draftCount === 0}
-          className={cn("ml-auto rounded border border-slate-300 bg-white px-2.5 py-1 text-[12px] font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500", draftCount === 0 && "cursor-not-allowed opacity-40")}
+          className={cn("max-md:ml-auto rounded border border-slate-300 bg-white px-2.5 py-1 text-[12px] font-semibold text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500", draftCount === 0 && "cursor-not-allowed opacity-40")}
         >
           Reset all minutes{draftCount > 0 ? ` (${draftCount})` : ""}
         </button>
       </div>
+      {dvpPriorLed && dvpSample ? (
+        <p className="mb-2 text-[11px] text-slate-600" data-testid="dvp-sample-note">
+          <LowSample why="Small current-season DvP sample" />
+          Small sample: this season's DvP rests on {dvpSample.min === dvpSample.max ? `${dvpSample.max}` : `${dvpSample.min}–${dvpSample.max}`} {dvpSample.max === 1 ? "game" : "games"} per team, so Opp allows and Matchup lean mostly on last season.
+        </p>
+      ) : null}
       <PropsBoardTable
         rows={rows}
-        sortKey={sortKey}
-        direction={direction}
+        sortKey={sort.key}
+        direction={sort.direction}
         onSort={onSort}
         market={market}
         marketLabel={MARKET_LABEL[market]}
@@ -113,19 +165,22 @@ export default function PropsBoardView({ board }: { board: PropsBoardArtifact })
         onDraftChange={(key, text) => setDrafts((current) => setDraft(current, key, text))}
         onReset={(key) => setDrafts((current) => clearDraft(current, key))}
         showSeason={showSeason}
+        columns={columns}
+        isWide={isWide}
       />
-      <div className="mt-2 space-y-1.5 text-[11px] text-slate-500">
+      <div className="mt-2 space-y-1.5 text-[11px] text-slate-600">
         <p>
-          <strong className="font-semibold text-slate-700">JKB proj</strong> and <strong className="font-semibold text-slate-700">JKB − line</strong> are the model's own and never change. Type minutes in <strong className="font-semibold text-slate-700">Your min</strong> (0–48, one decimal) to see two separate estimates:{" "}
-          <strong className="font-semibold text-indigo-900">Adj proj</strong> is the JKB projection × your minutes ÷ the JKB minutes (the model's rate at your minutes), and <strong className="font-semibold text-amber-900">Season-rate est</strong> is your minutes × this season's stat per minute (no model involved). Both are compared with the line. Your minutes stay in this page only: they are not saved, shared or sent anywhere, and reloading clears them.
+          <strong className="font-semibold text-slate-800">JKB proj</strong> and <strong className="font-semibold text-slate-800">JKB − line</strong> are the model's own and never change. Open a row (the arrow beside the player) to type your own minutes (0–48, one decimal) and see two separate estimates:{" "}
+          <strong className="font-semibold text-indigo-900">Adj proj</strong> is the JKB projection × your minutes ÷ the JKB minutes (the model's rate at your minutes), and <strong className="font-semibold text-teal-900">Season-rate est</strong> is your minutes × this season's stat per minute (no model involved). Both are compared with the line. Your minutes stay in this page only: they are not saved, shared or sent anywhere, and reloading clears them.
         </p>
         {showSeason ? (
           <p>
-            Season figures cover completed games before the matchup, with did-not-play and zero-minute appearances excluded; the sample column names the season and the number of games. Early in a season, last season is shown beside this season in small type, separately and never blended. A player with no games this season yet shows a dash, not a guess.
+            MPG, per-game and per-minute figures are this season to date. <strong className="font-semibold text-slate-800">L10</strong> is the average over the player's last ten completed games this season (L5, the last five, is an optional column), all strictly before this game, with did-not-play and zero-minute games left out; early in the season the window is shorter and says so. <strong className="font-semibold text-slate-800">Opp L10</strong> is what the opponent allowed per game to the player's estimated position over the opponent's own last ten completed games, summed one opposing game at a time: ten opponent games, never ten player-games. Open a row for both ten-game charts (oldest to newest; hover, focus or tap a bar for the exact game), the sample size and how much of the opposing minutes had an estimated position. A small amber dot marks a small sample (under 15 games, or fewer games than the window). Last season is shown on its own and never blended into this season. A player with no games yet shows a dash, not a guess. These figures are context: they do not change the JKB projection.
           </p>
         ) : null}
         <p>
-          Proj − line is the JKB projection minus the posted line; positive leans Over. N/A means the input is missing (hover for the reason), not zero. Positions are estimates from depth charts and rotation roles, not verified minutes at a position. DvP is the estimated primary-position view (each player's box score counts toward one estimated position, not minutes played at it); the matchup label reads the blended rank and says how much of it is last season. A projection is shown even when a line or DvP is missing. DvP is context only and does not change the projection.
+          <strong className="font-semibold text-slate-800">Opp allows</strong> (optional column) is the estimated primary-position Defense vs. Position (DvP): what the opponent gives up per game in this stat to players at the player's estimated position, with its rank (1 = allows the most), blended with last season early in the year. Position coverage is incomplete
+          {coverage.length > 0 ? ` (${coverage.map((c) => `${Math.round(c.coverage * 100)}% of minutes in ${c.season}`).join(", ")})` : ""}: each player counts toward one estimated position, not the minutes actually played there, and a player with no estimated position shows N/A. <strong className="font-semibold text-slate-800">Matchup</strong> reads that rank: Favorable 1–10, Neutral 11–20, Tough 21–30. DvP is context only and does not change the projection. N/A means the input is missing (hover for the reason), not zero. A projection is shown even when a line or DvP is missing.
         </p>
       </div>
     </>

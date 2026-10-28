@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { basisFor, EARLY_SEASON_GAMES, marketRates, ratio, seasonColumns, type SeasonTotals } from "./seasonStats";
+import { basisFor, EARLY_SEASON_GAMES, marketRates, ratio, recentAverages, recentPerGame, seasonColumns, type SeasonTotals } from "./seasonStats";
 
 const totals = (season: string, games: number, minutes: number, pts: number, reb: number, ast: number): SeasonTotals => ({ season, games, minutes, pts, reb, ast });
 
@@ -82,5 +82,34 @@ describe("marketRates", () => {
 
   it("is null for a missing basis", () => {
     expect(marketRates(null, "reb")).toEqual({ perGame: null, perMinute: null });
+  });
+});
+
+describe("last-N windows", () => {
+  const current = totals("2026-27", 20, 600, 400, 180, 120);
+
+  it("averages the window's own games, not the season's", () => {
+    const averages = recentAverages({ games: 5, minutes: 170, pts: 130, reb: 20, ast: 35 });
+    expect(averages).toEqual({ games: 5, mpg: 34, ppg: 26, rpg: 4, apg: 7 });
+    expect(recentPerGame(averages, "pts")).toBe(26);
+    expect(recentPerGame(averages, "reb")).toBe(4);
+    expect(recentPerGame(averages, "ast")).toBe(7);
+  });
+
+  it("is null for no window or an empty one: no zero is invented", () => {
+    expect(recentAverages(null)).toBeNull();
+    expect(recentAverages(undefined)).toBeNull();
+    expect(recentAverages({ games: 0, minutes: 0, pts: 0, reb: 0, ast: 0 })).toBeNull();
+    expect(recentPerGame(null, "pts")).toBeNull();
+  });
+
+  it("tells a board built before the windows existed apart from a player with no games", () => {
+    expect(seasonColumns({ current, previous: null })).toMatchObject({ hasRecent: false, last5: null, last10: null });
+    expect(seasonColumns({ current, previous: null, last5: null, last10: null })).toMatchObject({ hasRecent: true, last5: null, last10: null });
+    expect(seasonColumns({ current, previous: null, last5: { games: 5, minutes: 150, pts: 100, reb: 25, ast: 10 }, last10: { games: 10, minutes: 300, pts: 190, reb: 50, ast: 20 } })).toMatchObject({
+      hasRecent: true,
+      last5: { games: 5, ppg: 20 },
+      last10: { games: 10, ppg: 19 },
+    });
   });
 });

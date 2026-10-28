@@ -8,6 +8,7 @@
  * Two seasons are kept apart and never blended: `current` is this season to date, `previous` is last regular season. Early
  * in a season the previous one is shown separately, as its own labelled basis.
  */
+import type { PlayerRecentGame } from "./recentForm";
 import type { BoardMarket } from "./propsBoard";
 
 export interface SeasonTotals {
@@ -21,12 +22,38 @@ export interface SeasonTotals {
   ast: number;
 }
 
+/** Totals over a player's most recent completed games this season (a last-N window). */
+export interface RecentTotals {
+  /** Games in the window: at most the window size, fewer early in the season. */
+  games: number;
+  minutes: number;
+  pts: number;
+  reb: number;
+  ast: number;
+}
+
 export interface SeasonStatsView {
   /** This season to date, or null before the player's first game. */
   current: SeasonTotals | null;
   /** The previous regular season, or null when the player has none in the data. */
   previous: SeasonTotals | null;
+  /**
+   * The last five completed games this season, strictly before the matchup, did-not-play and zero-minute games excluded.
+   * Null before the player's first game. Absent (undefined) on a board built before this field existed: the page then says
+   * the board must be rebuilt, instead of showing a number it cannot support.
+   */
+  last5?: RecentTotals | null;
+  /** The same window for the last ten games. */
+  last10?: RecentTotals | null;
+  /**
+   * The same last ten games one by one, oldest to newest (the chart's order). Absent on a board built before this field
+   * existed: the page then says the board must be rebuilt, instead of drawing a chart it cannot support.
+   */
+  recentGames?: PlayerRecentGame[];
 }
+
+/** Window sizes behind `last5` and `last10`. */
+export const RECENT_WINDOWS = { last5: 5, last10: 10 } as const;
 
 /** Below this many games in the current season, the previous season is shown beside it. */
 export const EARLY_SEASON_GAMES = 15;
@@ -63,11 +90,35 @@ export function basisFor(totals: SeasonTotals | null): SeasonBasis | null {
   };
 }
 
+/** Per-game figures over a last-N window. */
+export interface RecentAverages {
+  games: number;
+  mpg: number | null;
+  ppg: number | null;
+  rpg: number | null;
+  apg: number | null;
+}
+
+export function recentAverages(totals: RecentTotals | null | undefined): RecentAverages | null {
+  if (!totals || !(totals.games > 0)) return null;
+  return { games: totals.games, mpg: ratio(totals.minutes, totals.games), ppg: ratio(totals.pts, totals.games), rpg: ratio(totals.reb, totals.games), apg: ratio(totals.ast, totals.games) };
+}
+
+/** The market's own per-game figure over a window. */
+export function recentPerGame(averages: RecentAverages | null, market: BoardMarket): number | null {
+  if (!averages) return null;
+  return market === "pts" ? averages.ppg : market === "reb" ? averages.rpg : averages.apg;
+}
+
 export interface SeasonColumns {
   current: SeasonBasis | null;
   previous: SeasonBasis | null;
   /** True when the previous season is shown beside the current one (early in the season, or no current games yet). */
   showPrevious: boolean;
+  /** False when the board carries no last-N windows at all (built before they existed): the page must not call that "no games". */
+  hasRecent: boolean;
+  last5: RecentAverages | null;
+  last10: RecentAverages | null;
 }
 
 export function seasonColumns(view: SeasonStatsView | undefined | null): SeasonColumns | null {
@@ -75,7 +126,14 @@ export function seasonColumns(view: SeasonStatsView | undefined | null): SeasonC
   const current = basisFor(view.current);
   const previous = basisFor(view.previous);
   if (!current && !previous) return null;
-  return { current, previous, showPrevious: previous !== null && (current === null || current.games < EARLY_SEASON_GAMES) };
+  return {
+    current,
+    previous,
+    showPrevious: previous !== null && (current === null || current.games < EARLY_SEASON_GAMES),
+    hasRecent: view.last5 !== undefined && view.last10 !== undefined,
+    last5: recentAverages(view.last5),
+    last10: recentAverages(view.last10),
+  };
 }
 
 /** The market's own per-game and per-minute figures from one basis. */
