@@ -14,6 +14,7 @@ import {
   findMissingSource,
   LOCAL_ONLY_RETRIEVAL_TOOLS,
   findViolations,
+  PRIVATE_AUDIT_MARKER,
   RESTRICTED_REPORT_MARKER,
   vercelIgnoreProtects,
 } from "../../../../scripts/lib/nba-data-containment.mjs";
@@ -50,6 +51,24 @@ describe("containment rules", () => {
       expect(classifySourceContent(text)).toEqual([]);
     }
     expect(findViolations({ paths: ["src/x.ts"], readText: () => tuned[0], scope: "git" })).toEqual([{ path: "src/x.ts", rules: ["nba-tuned-v0-params"] }]);
+  });
+
+  it("recognizes the odds-capture and postgame-audit artifacts by name and content wherever they are copied", () => {
+    for (const copied of [
+      "docs/odds-captures/2026-10-28T20-43-31-138Z_x_2a15951c.json",
+      "public/data/board-inputs/projections.json",
+      "docs/postgame-audit/pregame/MANIFEST.sha256",
+      "exports/postgame-2026-10-28_DEN@NOP.md",
+      "public/postgame-2026-10-28_DEN@NOP.json",
+    ]) expect(classifyPath(copied), copied).toContain("nba-odds-or-audit-artifact");
+    expect(classifyPath("scripts/nba-postgame-audit.ts")).toEqual([]);
+    expect(classifyPath("src/lib/nba/props/v1/postgameAudit.ts")).toEqual([]);
+    expect(classifyPath("docs/nba-evaluation-protocol.md")).toEqual([]);
+    expect(classifyContent('{"schemaVersion":"nba-odds-line-capture-v1","lines":[]}')).toEqual(["nba-odds-capture-record"]);
+    expect(classifyContent('{"entries":[{"lineDetail":{"selection":"x"}}]}')).toEqual(["nba-private-line-detail"]);
+    expect(classifyContent(`# report
+<!-- ${PRIVATE_AUDIT_MARKER} -->`)).toEqual(["private-postgame-audit-marker"]);
+    expect(classifyContent("the lineDetail field and the audit report are described here")).toEqual([]);
   });
 
   it("recognizes restricted content shapes", () => {

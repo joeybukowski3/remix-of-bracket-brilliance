@@ -7,7 +7,8 @@
  *  - every source behind an input must carry an effective private-research right in the registry, must not be
  *    synthetic, and must NOT already be publicly licensed (a source that may be published goes through the public
  *    builder, not this one);
- *  - the artifact carries `privatePreview` with a notice and an attribution the page must show, and no sportsbook line;
+ *  - the artifact carries `privatePreview` with a notice and an attribution the page must show, and a sportsbook line only
+ *    from a stored odds capture whose rights include private research (v1/privateLines.ts);
  *  - the runner writes it only under data/nba/ (gitignored, excluded from deployment), never under public/;
  *  - nothing here reads the network, a secret or a sportsbook.
  * The owner's decision to use the data privately is not the upstream owner's permission, and the notice says so.
@@ -16,12 +17,14 @@ import { canonicalTeamCode } from "../canonical";
 import { buildDvpRows } from "../dvp";
 import { normalizePlayerName } from "../pipeline/contracts";
 import type { DvpInput, ProjectionRecord, RosterRecord } from "../pipeline/boardBuild";
+import type { NbaLineCapture } from "../pipeline/lineCapture";
 import { BOARD_MARKETS, BOARD_SCHEMA_VERSION, type BoardEntry, type PropsBoardArtifact } from "../propsBoard";
 import type { OpponentBoxScores, OpponentRecentSequence } from "../recentForm";
 import type { SeasonStatsView } from "../seasonStats";
 import { SOURCE_LICENSES } from "../sources/licenses";
 import { effectivePermittedUses } from "../sources/registry";
 import type { NbaSourceId, SourceLicense } from "../sources/types";
+import { attachPrivateLines, type PrivateLineReport } from "./privateLines";
 
 const ISO_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,3})?Z$/;
 const GAME_KEY = /^(\d{4}-\d{2}-\d{2})\|([A-Z]{3})@([A-Z]{3})$/;
@@ -40,6 +43,8 @@ export interface PrivatePreviewInput {
   opponentRecent?: Readonly<Record<string, OpponentRecentSequence>>;
   /** The individual opposing players behind those sequences by `gameKey|team` (v1/opponentRecentBuild.ts); shown only because this board is private. */
   opponentBoxScores?: Readonly<OpponentBoxScores>;
+  /** Stored odds captures (pipeline/lineCapture.ts) whose lines are joined to the entries; none means no lines (v1/privateLines.ts). */
+  captures?: readonly NbaLineCapture[];
   /** Rights records; defaults to the repository registry. A test seam. */
   licenses?: Readonly<Record<NbaSourceId, SourceLicense>>;
 }
@@ -48,11 +53,16 @@ export interface PrivatePreviewReport {
   sources: string[];
   projections: { supplied: number; shown: number; rejected: Array<{ player: string; market: string; reason: string }> };
   dvp: { rows: number; excludedPlayerGames: number };
+  /** What happened to every captured line; null when no capture was supplied. */
+  lines: PrivateLineReport | null;
   entries: number;
 }
 
-const attributionFor = (sources: readonly string[]): string =>
-  sources.map((id) => (id === "hoopr-espn" ? "Data: hoopR (sportsdataverse, CC BY 4.0), derived from ESPN; columns selected and non-playing rows excluded" : `Data: ${id}`)).join("; ");
+const attributionFor = (sources: readonly string[], lineSources: readonly string[]): string =>
+  [
+    ...sources.map((id) => (id === "hoopr-espn" ? "Data: hoopR (sportsdataverse, CC BY 4.0), derived from ESPN; columns selected and non-playing rows excluded" : `Data: ${id}`)),
+    ...(lineSources.length > 0 ? [`Lines: ${lineSources.map((id) => (id === "the-odds-api" ? "The Odds API" : id)).join(", ")}, for private research only; raw odds are not redistributed`] : []),
+  ].join("; ");
 
 const noticeFor = (sources: readonly string[]): string =>
   `PRIVATE PREVIEW. Built from ${sources.join(", ")} data under the owner's decision to use it for private analysis. The upstream owner's commercial and public reuse terms are unresolved, and this decision is not their permission. Not licensed for publication: do not publish, share or deploy this board.`;
@@ -129,23 +139,27 @@ export function buildPrivatePreviewBoard(input: PrivatePreviewInput): { artifact
   const stray = input.dvp?.lines.find((l) => l.sourceId !== input.dvp?.sourceId);
   if (stray) throw new Error(`box-score line ${stray.gameId}/${stray.playerId} names source ${stray.sourceId}, not ${input.dvp?.sourceId}`);
   const dvp = input.dvp ? buildDvpRows(input.dvp.lines) : { rows: [], excluded: [] };
-  const entries = [...slots.values()]
+  const projected = [...slots.values()]
     .map((p) => entryFor(p, input.roster, input.seasonStats))
     .sort((a, b) => a.gameKey.localeCompare(b.gameKey) || a.playerName.localeCompare(b.playerName) || a.market.localeCompare(b.market));
+  const captures = input.captures ?? [];
+  const attached = captures.length > 0 ? attachPrivateLines(projected, captures) : null;
+  const entries = attached?.entries ?? projected;
+  const lineSources = attached?.report.sources ?? [];
   const artifact: PropsBoardArtifact = {
     schemaVersion: BOARD_SCHEMA_VERSION,
     generatedAtUtc: input.generatedAtUtc,
     isSynthetic: false,
-    sources: { lines: [], dvp: dvp.rows.length > 0 && input.dvp ? input.dvp.sourceId : null, dvpUpdatedUtc: dvp.rows.length > 0 ? dvp.rows.map((r) => r.lastUpdatedUtc).sort().at(-1) ?? null : null },
+    sources: { lines: lineSources, dvp: dvp.rows.length > 0 && input.dvp ? input.dvp.sourceId : null, dvpUpdatedUtc: dvp.rows.length > 0 ? dvp.rows.map((r) => r.lastUpdatedUtc).sort().at(-1) ?? null : null },
     entries,
     dvpRows: dvp.rows,
     // Present even when empty (early season: no completed games yet) so the page can tell "no games" from "built before this existed".
     ...(input.opponentRecent ? { opponentRecent: { ...input.opponentRecent } } : {}),
     ...(input.opponentBoxScores ? { opponentBoxScores: { ...input.opponentBoxScores } } : {}),
-    privatePreview: { notice: noticeFor(sources), attribution: attributionFor(sources) },
+    privatePreview: { notice: noticeFor(sources), attribution: attributionFor(sources, lineSources) },
   };
   return {
     artifact,
-    report: { sources, projections: { supplied: input.projections.length, shown: slots.size, rejected }, dvp: { rows: dvp.rows.length, excludedPlayerGames: dvp.excluded.length }, entries: entries.length },
+    report: { sources, projections: { supplied: input.projections.length, shown: slots.size, rejected }, dvp: { rows: dvp.rows.length, excludedPlayerGames: dvp.excluded.length }, lines: attached?.report ?? null, entries: entries.length },
   };
 }

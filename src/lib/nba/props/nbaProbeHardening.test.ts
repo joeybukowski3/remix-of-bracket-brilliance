@@ -10,7 +10,7 @@ import { parseIncompleteProviderEvidence, parsePendingProviderEvidence, verified
 import { ODDS_SOURCE_LICENSES } from "./pipeline/oddsSources";
 import { fileProbeClaim } from "./pipeline/probeClaim";
 import { createTheOddsApiNbaProvider, parseNbaUsageHeaders, parseTheOddsApiNbaEvent } from "./pipeline/theOddsApiNba";
-import { discoverNbaEventsOnce } from "./pipeline/theOddsApiNbaEvents";
+import { discoverNbaEventsOnce, EVENTS_ENDPOINT_CONTRACT } from "./pipeline/theOddsApiNbaEvents";
 import { oneCreditNbaProbe } from "./pipeline/theOddsApiNbaProbe";
 import { quotaRequestGate } from "./pipeline/budget";
 import type { PropsProvider } from "./pipeline/pregameJob";
@@ -172,6 +172,16 @@ describe("NBA probe hardening", () => {
     await manager.recordProviderUsage(account.accountId, [{ window: "month", observedAt: "2026-10-20T11:00:00Z", used: 234, remaining: 266, limit: 500 }]);
     expect(await manager.reserve(account.accountId, { priority: "nonessential", attribution: { sport: "nba", workflow: "probe", endpoint: "/events/{id}/odds" } }, { units: 1, basis: "test" })).toMatchObject({ allowed: false, code: "NOT_APPROVED" });
     expect(account.liveApproval).toBeNull();
+  });
+
+  it("records the provider's zero-cost contract for exactly the route discovery calls", async () => {
+    expect(EVENTS_ENDPOINT_CONTRACT).toMatchObject({ method: "GET", path: "/v4/sports/{sport}/events", quotaCost: 0, quote: "This endpoint does not count against the usage quota.", source: "https://the-odds-api.com/liveapi/guides/v4/", reviewedOn: "2026-10-28" });
+    const fetchImpl = vi.fn(async (_input: Parameters<typeof fetch>[0]) => new Response("[]", { headers: { "x-requests-used": "308", "x-requests-remaining": "192", "x-requests-last": "0" } }));
+    await discoverNbaEventsOnce({ apiKey: "PRIVATE_TEST_TOKEN", approvalId: "discovery-contract", gate: { accountId: "the-odds-api:unverified-pool", enforcesNbaAllowance: true, reserve: async () => ({ ok: true as const, settle: async () => undefined }) }, claim: tempClaims(), fetchImpl });
+    const url = new URL(String(fetchImpl.mock.calls[0][0]));
+    expect(url.pathname).toBe(EVENTS_ENDPOINT_CONTRACT.path.replace("{sport}", "basketball_nba"));
+    // The priced parameters of the odds endpoints are not part of this route's contract and are never sent.
+    for (const priced of ["markets", "regions", "bookmakers", "eventIds"]) expect(url.searchParams.has(priced)).toBe(false);
   });
 
   it("discovery requests only the zero-market NBA events route", async () => {

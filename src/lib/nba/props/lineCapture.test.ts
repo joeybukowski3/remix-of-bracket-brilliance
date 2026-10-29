@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { at, captureDeps, makeGame, memoryCaptureSink, mockProps, okLines, line, TIPOFF } from "./__fixtures__/pipelineFixtures";
-import { buildLineCapture, fileLineCaptureSink, readLineCaptures, snapshotsFromCapture, teamCodeFromName, type LineCaptureSink, type NbaLineCapture } from "./pipeline/lineCapture";
+import { assertCaptureDirWritable, buildLineCapture, fileLineCaptureSink, readLineCaptures, snapshotsFromCapture, teamCodeFromName, type LineCaptureSink, type NbaLineCapture } from "./pipeline/lineCapture";
 import { ODDS_SOURCE_LICENSES } from "./pipeline/oddsSources";
 import { fileProbeClaim } from "./pipeline/probeClaim";
 import { runPregameCapture, type ProviderPropLine, type PropsFetchResult, type PropsProvider } from "./pipeline/pregameJob";
@@ -73,6 +73,24 @@ describe("line capture record", () => {
     const late = snapshotsFromCapture(capture({ capturedAtUtc: "2026-11-09T23:50:00Z" }));
     expect(late.snapshots).toEqual([]);
     expect(late.rejected[0].reason).toMatch(/45 minutes/);
+  });
+});
+
+describe("ledger readiness before any request", () => {
+  it("creates the directory, proves a file can be written, and leaves nothing the ledger would read", async () => {
+    const dir = path.join(tempDir(), "data", "odds-captures");
+    assertCaptureDirWritable(dir);
+    expect(readdirSync(dir)).toEqual([]);
+    expect(readLineCaptures(dir)).toEqual([]);
+    expect((await fileLineCaptureSink(dir)(capture())).status).toBe("stored");
+    assertCaptureDirWritable(dir); // an existing ledger is untouched
+    expect(readLineCaptures(dir)).toHaveLength(1);
+  });
+
+  it("fails, naming the directory, when it cannot hold a file", () => {
+    const blocker = path.join(tempDir(), "not-a-directory");
+    writeFileSync(blocker, "x");
+    expect(() => assertCaptureDirWritable(blocker)).toThrow(/capture ledger .*not-a-directory.* cannot be written/);
   });
 });
 

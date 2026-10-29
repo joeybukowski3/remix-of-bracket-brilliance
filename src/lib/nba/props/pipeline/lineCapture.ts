@@ -12,7 +12,7 @@
  * Captures are restricted research data: keep the directory under the gitignored
  * data/nba/. Turning a capture into pregame snapshots is `snapshotsFromCapture`.
  */
-import { chmodSync, closeSync, existsSync, fsyncSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, writeSync } from "node:fs";
+import { chmodSync, closeSync, existsSync, fsyncSync, lstatSync, mkdirSync, openSync, readdirSync, readFileSync, unlinkSync, writeSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { sha256Json } from "../canonicalJson";
@@ -146,6 +146,28 @@ const safeName = (s: string): string => s.replace(/[^A-Za-z0-9_-]/g, "_").slice(
 
 export function captureFileName(capture: NbaLineCapture): string {
   return `${capture.capturedAtUtc.replace(/[:.]/g, "-")}_${safeName(capture.event.sourceEventId)}_${capture.captureId.slice(4, 12)}.json`;
+}
+
+/**
+ * Run before any request is made: a response with nowhere to go must never be bought. Creates the directory and proves a
+ * file can be created in it, then removes only that check file (a dotted name without .json, which the ledger never reads).
+ * Captures themselves are still never deleted or overwritten.
+ */
+export function assertCaptureDirWritable(dir: string): void {
+  const check = path.join(dir, `.write-check-${process.pid}-${Date.now()}`);
+  try {
+    mkdirSync(dir, { recursive: true });
+    const fd = openSync(check, "wx", 0o600);
+    try {
+      writeSync(fd, "ok");
+      fsyncSync(fd);
+    } finally {
+      closeSync(fd);
+      unlinkSync(check);
+    }
+  } catch (error) {
+    throw new Error(`the capture ledger ${dir} cannot be written: ${error instanceof Error ? error.message.slice(0, 120) : "unknown error"}`);
+  }
 }
 
 /** Write-once file ledger. Exclusive create, fsync, then read-only; never overwrites, never removes. */

@@ -4,6 +4,7 @@ import path from "node:path";
 import { z } from "zod";
 import type { ProviderAccountConfig, LiveApproval } from "../../../api-quota/types";
 import type { QuotaManager } from "../../../api-quota/manager";
+import { CAPTURE_BOUNDS } from "./contracts";
 import { parsePendingProviderEvidence, verifiedEvidenceSnapshot } from "./providerEvidence";
 
 export const ODDS_ACCOUNT_ID = "the-odds-api:unverified-pool";
@@ -39,4 +40,25 @@ export async function recordCurrentOddsUsage(manager: QuotaManager, account: Pro
   const evidence = parsePendingProviderEvidence(JSON.parse(readFileSync(file, "utf8")), now);
   if (evidence.limit !== 500) throw new Error("NBA usage reading must match the 500-credit Starter account");
   await manager.recordProviderUsage(account.accountId, [verifiedEvidenceSnapshot(account, evidence)]);
+}
+
+const FULL_INSTANT = /^\d{4}-\d{2}-\d{2}T[\d:.]+(Z|[+-]\d{2}:?\d{2})$/i;
+
+/** The line is stamped when the response arrives, a little after this check, so the check stops short of the 45-minute floor. */
+const WINDOW_FLOOR_MARGIN_MINUTES = 2;
+
+/**
+ * Throws, before any credit is spent, unless `now` is 45 (plus a 2-minute margin) to 240 minutes before tipoff. A line captured outside that window is
+ * stored in the ledger but can never become a pregame snapshot, so the board would show none of it. Returns the minutes to tipoff.
+ */
+export function assertInPregameWindow(tipoffUtc: string, now: Date): number {
+  const tipoff = Date.parse(tipoffUtc);
+  if (!FULL_INSTANT.test(tipoffUtc) || Number.isNaN(tipoff)) throw new Error(`tipoff must be a full ISO instant with an explicit UTC offset, got "${tipoffUtc}"`);
+  const minutes = (tipoff - now.getTime()) / 60_000;
+  const opens = new Date(tipoff - CAPTURE_BOUNDS.earliestMinutes * 60_000).toISOString();
+  const latest = CAPTURE_BOUNDS.floorMinutes + WINDOW_FLOOR_MARGIN_MINUTES;
+  const closes = new Date(tipoff - latest * 60_000).toISOString();
+  if (minutes > CAPTURE_BOUNDS.earliestMinutes) throw new Error(`too early: tipoff is ${Math.round(minutes)} minutes away; the capture window runs from ${opens} to ${closes}`);
+  if (minutes < latest) throw new Error(`too late: tipoff is ${Math.round(minutes)} minutes away; the capture window ran from ${opens} to ${closes}`);
+  return minutes;
 }

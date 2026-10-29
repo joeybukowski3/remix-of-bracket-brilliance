@@ -79,6 +79,73 @@ describe("limits", () => {
     expect(code(await nearLimit.manager.reserve(id, ESSENTIAL, one))).toBe("QUOTA_HARD_STOP");
   });
 
+  describe("scoped zero-credit NBA discovery above the ordinary cap", () => {
+    const DISCOVERY_SCOPE = "NBA events discovery one request";
+    const base = PROVIDER_ACCOUNTS.find((account) => account.accountId === "the-odds-api:unverified-pool")!;
+    const approval = (scope: string, maxUnits: number, expiresAt: string | null = null) => ({ id: "nba-disc", approvedBy: "test", approvedOn: START, scope, maxUnits, expiresAt });
+    const discovery = { priority: "nonessential", attribution: { sport: "nba", workflow: "events-discovery", endpoint: "/events" } } as const;
+    const zero = { units: 0, basis: "test" };
+    /** A fresh manager with the provider counter at `used` of 500, so reservations never leak between cases. */
+    async function at(used: number, liveApproval: ProviderAccountConfig["liveApproval"]) {
+      const { manager, id } = setup({ ...base, liveApproval });
+      await manager.recordProviderUsage(id, [{ window: "month", observedAt: START, used, remaining: 500 - used, limit: 500 }]);
+      return { manager, id };
+    }
+
+    it("admits the exact discovery request at 308 used / 192 remaining while ordinary NBA requests stay blocked", async () => {
+      const { manager, id } = await at(308, approval(DISCOVERY_SCOPE, 0));
+      expect((await manager.reserve(id, discovery, zero)).allowed).toBe(true);
+      const ordinary = await at(308, approval("NBA ordinary request test", 5));
+      expect(code(await ordinary.manager.reserve(ordinary.id, NBA_PROBE, one))).toBe("QUOTA_HARD_STOP");
+      expect(code(await ordinary.manager.reserve(ordinary.id, discovery, zero))).toBe("QUOTA_HARD_STOP");
+    });
+
+    it("admits nothing else under the discovery approval: another endpoint, workflow, sport or any units", async () => {
+      const other = (attribution: { sport: string; workflow: string; endpoint: string }) => ({ priority: "nonessential", attribution }) as const;
+      for (const consumer of [
+        other({ sport: "nba", workflow: "events-discovery", endpoint: "/events/{id}/odds" }),
+        other({ sport: "nba", workflow: "events-discovery", endpoint: "/events/{id}/markets" }),
+        other({ sport: "nba", workflow: "pregame-capture", endpoint: "/events" }),
+        other({ sport: "nba", workflow: "one-credit-probe", endpoint: "/events" }),
+        other({ sport: "nfl", workflow: "events-discovery", endpoint: "/events" }),
+      ]) {
+        const { manager, id } = await at(308, approval(DISCOVERY_SCOPE, 0));
+        expect(code(await manager.reserve(id, consumer, zero)), JSON.stringify(consumer.attribution)).toBe("QUOTA_HARD_STOP");
+      }
+      const { manager, id } = await at(308, approval(DISCOVERY_SCOPE, 0));
+      expect(code(await manager.reserve(id, discovery, one))).toBe("APPROVAL_BUDGET_EXHAUSTED");
+    });
+
+    it("needs the exact scope with a zero-unit approval that is current", async () => {
+      for (const liveApproval of [approval(DISCOVERY_SCOPE, 1), approval("NBA one-event player_points one-credit probe", 1), approval("some other scope", 0)]) {
+        const { manager, id } = await at(308, liveApproval);
+        expect(code(await manager.reserve(id, discovery, zero)), liveApproval.scope).toBe("QUOTA_HARD_STOP");
+      }
+      const expired = await at(308, approval(DISCOVERY_SCOPE, 0, "2026-10-13T11:00:00Z"));
+      expect(code(await expired.manager.reserve(expired.id, discovery, zero))).toBe("NOT_APPROVED");
+      const none = await at(308, null);
+      expect(code(await none.manager.reserve(none.id, discovery, zero))).toBe("NOT_APPROVED");
+    });
+
+    it("is single-use in the policy itself, and tied to the shared odds account", async () => {
+      const { manager, id } = await at(308, approval(DISCOVERY_SCOPE, 0));
+      expect((await manager.reserve(id, discovery, zero)).allowed).toBe(true);
+      // The same approval already funded an attempt: a caller that skips the NBA gate gets the ordinary cap back.
+      expect(code(await manager.reserve(id, discovery, zero))).toBe("QUOTA_HARD_STOP");
+      const elsewhere = setup({ ...base, accountId: "some-other-odds-pool", liveApproval: approval(DISCOVERY_SCOPE, 0) });
+      await elsewhere.manager.recordProviderUsage(elsewhere.id, [{ window: "month", observedAt: START, used: 308, remaining: 192, limit: 500 }]);
+      expect(code(await elsewhere.manager.reserve(elsewhere.id, discovery, zero))).toBe("QUOTA_HARD_STOP");
+    });
+
+    it("still stops at the account's own hard reserve, and leaves the one-credit probe exception as it was", async () => {
+      const over = await at(460, approval(DISCOVERY_SCOPE, 0));
+      expect(code(await over.manager.reserve(over.id, discovery, zero))).toBe("QUOTA_HARD_STOP");
+      const probe = { priority: "nonessential", attribution: { sport: "nba", workflow: "one-credit-probe", endpoint: "/events/{id}/odds" } } as const;
+      const probing = await at(308, approval("NBA one-event player_points one-credit probe", 1));
+      expect((await probing.manager.reserve(probing.id, probe, one)).allowed).toBe(true);
+    });
+  });
+
   it("stops nonessential consumers at the ratio cap and essential consumers at limit minus reserve", async () => {
     const { manager, id, time } = setup(testAccount({ windows: [{ kind: "day", limit: 100, source: "provider-docs" }] }));
     await knownUsage(manager, id, 89);

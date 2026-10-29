@@ -29,6 +29,35 @@ export interface BoardLine {
   ageMinutes: number | null;
 }
 
+/** One book's line for a player and market, as it was captured. Private preview only (see BoardEntry.lineDetail). */
+export interface BookLineView {
+  sportsbook: string;
+  line: number;
+  overPrice: number;
+  underPrice: number;
+  /** The provider's own update time for this book's prices; null when it gave none. */
+  sourceLastUpdateUtc: string | null;
+  capturedAtUtc: string;
+  freshness: LineFreshness;
+  ageMinutes: number | null;
+  /** shown: the book whose line and prices appear on the entry; voted: counted in the consensus; unknown-age: not counted. */
+  role: "shown" | "voted" | "unknown-age";
+}
+
+/** A book kept out of the vote, with every line it posted. */
+export interface ExcludedBookView {
+  sportsbook: string;
+  lines: number[];
+  reason: string;
+}
+
+export interface LineDetail {
+  /** How the displayed line was chosen, or why none was. */
+  selection: string;
+  books: BookLineView[];
+  excluded: ExcludedBookView[];
+}
+
 export interface BoardProjection {
   value: number;
   minutes: number | null;
@@ -55,6 +84,11 @@ export interface BoardEntry {
    * for publication); the public board builder never sets it. See seasonStats.ts.
    */
   seasonStats?: SeasonStatsView;
+  /**
+   * Every book's own line, prices and timestamps behind the displayed line, the selection rationale, and the books kept out
+   * of the vote. Private preview only (it carries raw sportsbook prices); the public board builder never sets it.
+   */
+  lineDetail?: LineDetail;
 }
 
 export interface BoardSources {
@@ -180,11 +214,11 @@ export function buildBoardRows(artifact: PropsBoardArtifact, market: BoardMarket
 }
 
 /**
- * True when a board carries anything that may only exist on a private preview: its notice or any season statistics. The
+ * True when a board carries anything that may only exist on a private preview: its notice, any season statistics or any per-book line detail. The
  * public page refuses such a board at run time, so a private file copied into the published data folder cannot be shown.
  */
 export const containsPrivateData = (board: PropsBoardArtifact): boolean =>
-  board.privatePreview !== undefined || board.opponentRecent !== undefined || board.opponentBoxScores !== undefined || board.entries.some((e) => e.seasonStats !== undefined);
+  board.privatePreview !== undefined || board.opponentRecent !== undefined || board.opponentBoxScores !== undefined || board.entries.some((e) => e.seasonStats !== undefined || e.lineDetail !== undefined);
 
 export const BOARD_SORT_KEYS = [
   "player",
