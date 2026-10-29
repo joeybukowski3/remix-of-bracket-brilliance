@@ -5,7 +5,7 @@
 // cannot spend provider quota; the only upstream read is the snapshot row, cached here briefly and at the CDN.
 // Every failure answers with a short fixed body: no credential, stack or stored data ever appears in a response.
 import { PUBLIC_TEXT, serveableEnvelope, type HostedSnapshotEnvelope } from "../../../src/lib/nba/props/hosted/redact.js";
-import type { SnapshotStore } from "./snapshotStore";
+import type { SnapshotStore } from "./snapshotStore.js";
 
 /** How long one function instance reuses its read of the snapshot row. */
 export const SNAPSHOT_MEMORY_TTL_MS = 30_000;
