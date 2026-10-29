@@ -1,6 +1,6 @@
 # Hosted private NBA props (`/nba/props` on joeknowsball.com)
 
-Status 2026-10-29: **built, tested, not deployed, not configured.** The mechanism is complete and fails closed. Today it can legally host **sportsbook lines only** (11 DEN/NOP props from the one authorized capture); the projections, season statistics, last-10 tables and Defense vs. Position cannot be hosted until a rights decision is recorded. This is an engineering assessment, not legal advice.
+Status 2026-10-29: **built, tested, not deployed, not configured.** The mechanism is complete and fails closed. Today it can host **sportsbook lines only** (11 DEN/NOP props from the one authorized capture), under the owner's 2026-10-29 acceptance of The Odds API's terms; the projections, season statistics, last-10 tables and Defense vs. Position cannot be hosted until their source is cleared (hoopR/ESPN is not; BALLDONTLIE is being evaluated, see `nba-balldontlie-evaluation.md`). This is an engineering assessment, not legal advice.
 
 ## 1. What was inspected
 
@@ -19,11 +19,11 @@ Logging in does not change what a source permits. Hosting copies the data onto t
 
 | Data on the board | Source | Recorded uses | May be hosted behind the owner login? |
 |---|---|---|---|
-| Sportsbook line, price and per-book detail | The Odds API captures | `private-research`, `model-development`, `public-display` (owner decision 2026-10-20; `raw-redistribution` absent) | **Yes, as lines.** Storage of captured odds is expressly decided; an owner-only view is narrower than the public derived display already granted; nothing is resold, fed or bulk-downloadable. This is my reading of that decision; confirm it (section 6, item 2). |
+| Sportsbook line, price and per-book detail | The Odds API captures | `private-research`, `private-hosted`, `model-development`, `public-display` (owner decisions 2026-10-20 and 2026-10-29; `raw-redistribution` absent) | **Yes, as lines.** The owner accepted the provider's current terms for displaying captured lines in the dashboard, subject to their restrictions: no resale, repackaging or redistribution as a standalone data product, feed or API. The hosted board keeps each line's bookmaker and capture time and every book's provider timestamp (tests assert it), and nothing in it calls the provider or touches quota. |
 | JKB projection, minutes, season stats, last-5/last-10, opponent box scores, DvP, roster position estimates | hoopR/ESPN (`hoopr-espn`, origin `espn`) | `private-research` only (owner decision 2026-10-23, "NOT ESPN's permission"; effective rights are capped by the ESPN record) | **No.** Raw per-game rows and every derived value are from this source. Disney Terms of Use 2.A allow personal, noncommercial use; 2.B.viii and 3.H bar commercial use. The registry says "local and private analysis", and it explicitly leaves `public-display` and `raw-redistribution` closed. `private-research` does not extend to a copy on a third-party host. |
 | Team names, logos, tip-off times | Odds API event / existing site assets | n/a | Names and times travel with the lines. Logos are existing site assets, not data. |
 
-A new data use, `private-hosted`, now exists in the license vocabulary (`sources/types.ts`). **No record grants it.** hoopR/ESPN stay `private-research`; the Odds API record is unchanged (a test asserts both).
+A data use, `private-hosted`, exists in the license vocabulary (`sources/types.ts`). **Only the Odds API record grants it** (owner decision 2026-10-29). hoopR/ESPN stay `private-research`, and no statistics source records `private-hosted` (a test asserts it). The gate needs the explicit use for lines too; `private-research` plus `public-display` no longer stands in for it.
 
 ### Smallest way to unblock the ESPN-derived data (any one)
 
@@ -47,7 +47,7 @@ browser: /nba/props  (public app shell, contains no data)
                                                  200 -> board (tier, publishedAtUtc, board)
 ```
 
-- **Tiers.** `lines-only` keeps entries that have a line, with line and per-book detail; everything else is rebuilt as null or empty, not copied. `full` keeps the whole private board and needs `private-hosted` on the statistics source (effective, including origins) and on the line source. Unknown source ids, no line source, or no statistics source fail closed (no tier, or lines-only).
+- **Tiers.** `lines-only` keeps entries that have a line, with line and per-book detail (bookmaker, prices, capture and provider timestamps, freshness, excluded-book notes); everything else is rebuilt as null or empty, not copied. `full` keeps the whole private board and needs `private-hosted` on the statistics source (effective, including origins) and on the line source. Unknown source ids, no line source, or no statistics source fail closed (no tier, or lines-only).
 - **Allowlists on both sides.** The publish script projects the board to its tier before upload. The function re-projects on every read (`serveableEnvelope`), so a tampered or stale row cannot serve more than its tier. The function imports only `hosted/redact.ts` (type-only imports otherwise); `isolation.test.ts` fails if API code imports any other NBA module, so no model, ingest or license code is in the function bundle.
 - **Auth.** One owner, one passphrase (16+ characters) stored only as an scrypt hash (`NBA_PRIVATE_PASSWORD_HASH`). Sign-in sets `__Host-jkb-nba`: HMAC-SHA256 signed with `NBA_PRIVATE_SESSION_SECRET` (32+ characters), `HttpOnly; Secure; SameSite=Strict; Path=/`, host-only, 7-day expiry. Missing or weak configuration answers 503 to everyone. Sign-in and sign-out require a same-origin request. To end every session at once (lost device, shared computer), rotate `NBA_PRIVATE_SESSION_SECRET` and redeploy; to change the passphrase, replace the hash. Failed sign-ins are limited to 5 per 15 minutes per client IP per function instance; instances do not share memory, so also add a Vercel Firewall rate-limit rule on `/api/nba/props-board` (not something this PR can configure).
 - **Storage.** `supabase/migrations/20261029_nba_private_snapshots.sql`: RLS enabled, no policy, `anon` and `authenticated` revoked. The anon key in the browser bundle can neither read nor write. **The migration is included but not applied.**
@@ -85,9 +85,11 @@ browser: /nba/props  (public app shell, contains no data)
 ## 6. What remains for a populated hosted dashboard
 
 1. **Rights decision for hoopR/ESPN-derived data** (section 2): without it the hosted board stays lines-only (11 props today, no projections, stats, last-10 or DvP).
-2. **Confirm the lines reading:** that the 2026-10-20 Odds API decision covers an owner-only hosted view of captured lines. If not, record `private-hosted` explicitly for `the-odds-api`, or the gate publishes nothing.
+2. **Statistics source:** BALLDONTLIE ALL-STAR is the candidate; see `nba-balldontlie-evaluation.md` for coverage, gaps and the next step. The hoopR/ESPN records are unchanged.
 3. **Infrastructure and secrets:** the migration, the two environment variables, the Firewall rule, and deployment approval (section 5).
 4. **A fresh private board** built locally with the existing builders; the hosted snapshot is only as current as the last manual publish.
 5. **Optional:** an authorization to automate refreshes. Not requested and not built.
+
+Superseded item: the earlier "confirm the lines reading" step is closed by the owner's 2026-10-29 decision, now recorded in `oddsSources.ts`.
 
 Pre-existing, unrelated: `tsc -p tsconfig.app.json` fails on a syntax error in `src/lib/mlb/mlbPitcherRegression.ts` and reports type errors in `pipeline/contracts.ts`; neither file was touched.

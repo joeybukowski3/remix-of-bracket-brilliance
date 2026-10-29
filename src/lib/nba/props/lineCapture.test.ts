@@ -43,7 +43,7 @@ describe("line capture record", () => {
     expect(c.lines[0]).toMatchObject({ playerName: "Demo Guard One", bookmaker: "demobook", market: "pts", line: 24.5, overPrice: -115, underPrice: -105, sourceLastUpdateUtc: "2026-11-09T21:20:00Z" });
     expect(c.lines[0].rawProviderRef).toMatchObject({ bookmakerKey: "demobook", marketKey: "player_points" });
     expect(c).toMatchObject({ approvalId: "nba-odds-points-test0001", requestRef: "basketball_nba/events/evt-nyk-bos/odds", creditsCharged: 1, source: { sourceId: "the-odds-api", method: "api" } });
-    expect(c.license).toMatchObject({ status: "restricted", reviewedOn: "2026-10-20" });
+    expect(c.license).toMatchObject({ status: "restricted", reviewedOn: "2026-10-29" });
     expect(c.license.permittedUses).not.toContain("raw-redistribution");
     expect(c.diagnostics).toEqual({ unmatched: ["demobook/player_points/3: malformed outcome"], unmatchedCount: 1, lineCount: 2, usageIssue: null });
   });

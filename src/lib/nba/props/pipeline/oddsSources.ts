@@ -30,10 +30,10 @@ export const ODDS_SOURCE_PROFILES: Readonly<Record<OddsSourceId, OddsSourceProfi
 export const ODDS_SOURCE_LICENSES: Readonly<Record<OddsSourceId, SourceLicense>> = Object.freeze({
   "the-odds-api": {
     status: "restricted",
-    permittedUses: ["private-research", "model-development", "public-display"],
+    permittedUses: ["private-research", "private-hosted", "model-development", "public-display"],
     basis:
-      "Owner decision 2026-10-20, based on The Odds API Terms and Conditions (updated 2026-08-31, https://the-odds-api.com/terms-and-conditions.html): captured current odds may be stored indefinitely for private research, model development and prediction evaluation; derived statistics and projections may be displayed publicly. Raw-data resale, standalone feeds/APIs and downloadable raw odds remain prohibited. This source-use decision does not approve any live request or change the blocked shared quota account. The free Starter plan does not include the provider's historical odds API.",
-    reviewedOn: "2026-10-20",
+      "Owner decisions 2026-10-20 and 2026-10-29, based on The Odds API Terms and Conditions (last updated 31 August 2026, re-read 2026-10-29, https://the-odds-api.com/terms-and-conditions.html). 2026-10-20: captured current odds may be stored indefinitely for private research, model development and prediction evaluation; derived statistics and projections may be displayed publicly. 2026-10-29: the owner accepted the provider's current terms for displaying captured sportsbook lines in the JoeKnowsBall dashboard (the terms list 'Displaying our data in a UI, website, or mobile app, including for commercial use' and 'Storing our data and retaining it indefinitely' as permitted), recorded as private-hosted for the owner-only hosted board, subject to the provider's restrictions: no reselling, repackaging or redistributing the data as a standalone data product, feed or API, and the data may not be the primary product sold (so raw-redistribution stays absent); the API key stays private. Conditions kept in code: every displayed line keeps its bookmaker and its capture and provider timestamps, and no code path in the hosted board calls the provider. The provider says the user must independently verify accuracy. These decisions do not approve any live request or change the blocked shared quota account. The free Starter plan does not include the provider's historical odds API.",
+    reviewedOn: "2026-10-29",
   },
   parlayapi: {
     status: "restricted",

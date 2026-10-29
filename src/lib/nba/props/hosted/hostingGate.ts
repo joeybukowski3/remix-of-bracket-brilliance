@@ -8,9 +8,9 @@
  *    include every origin's record (registry.ts), must contain `private-hosted`. This is stricter than the lines rule because
  *    the full board serves raw per-game rows, which `public-display` (derived outputs only) never covered. hoopR/ESPN holds
  *    `private-research` alone today, so this is closed until the owner records a decision or ESPN grants permission.
- *  - Lines (The Odds API): `private-hosted`, or both `private-research` and `public-display`. The owner's 2026-10-20 decision
- *    permits storing captured odds and displaying derived outputs publicly; an owner-only view is strictly narrower than that,
- *    and `raw-redistribution` is not involved because nothing is resold, fed or bulk-downloadable.
+ *  - Lines (The Odds API): `private-hosted` too. The owner recorded it on 2026-10-29 after accepting the provider's current terms
+ *    for displaying captured lines in the dashboard; `raw-redistribution` stays absent because nothing is resold, fed or
+ *    bulk-downloadable. No other use stands in for it.
  *
  * Unknown source ids, a missing statistics source and a board with no line source all fail closed.
  */
@@ -41,13 +41,13 @@ export interface GateLicenses {
   odds?: Readonly<Record<string, SourceLicense>>;
 }
 
-const linesHostable = (uses: readonly DataUse[]): boolean => uses.includes("private-hosted") || (uses.includes("private-research") && uses.includes("public-display"));
+const linesHostable = (uses: readonly DataUse[]): boolean => uses.includes("private-hosted");
 
 function lineVerdict(sourceId: string, odds: Readonly<Record<string, SourceLicense>>): SourceVerdict {
   const license = odds[sourceId];
   if (!license) return { sourceId, role: "lines", hostable: false, permittedUses: [], why: "no license record for this line source" };
   const hostable = linesHostable(license.permittedUses);
-  return { sourceId, role: "lines", hostable, permittedUses: license.permittedUses, why: hostable ? "private-hosted, or private-research with public-display, is recorded" : "neither private-hosted nor private-research with public-display is recorded" };
+  return { sourceId, role: "lines", hostable, permittedUses: license.permittedUses, why: hostable ? "private-hosted is recorded" : "private-hosted is not recorded" };
 }
 
 function statisticsVerdict(sourceId: string | null, licenses: Readonly<Record<NbaSourceId, SourceLicense>>): SourceVerdict {

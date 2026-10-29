@@ -149,7 +149,7 @@ describe("NBA probe hardening", () => {
     expect(() => parseIncompleteProviderEvidence({ ...input, remaining: 265 }, now)).toThrow();
     expect(() => parseIncompleteProviderEvidence({ ...input, resetHourUtc: undefined }, now)).toThrow();
     expect(() => parseIncompleteProviderEvidence({ ...input, observedDate: "2026-10-17" }, now)).toThrow();
-    expect(ODDS_SOURCE_LICENSES["the-odds-api"].permittedUses).toEqual(["private-research", "model-development", "public-display"]);
+    expect(ODDS_SOURCE_LICENSES["the-odds-api"].permittedUses).toEqual(["private-research", "private-hosted", "model-development", "public-display"]);
   });
 
   it("appends only validated pending dashboard metadata through the normal intake path", () => {

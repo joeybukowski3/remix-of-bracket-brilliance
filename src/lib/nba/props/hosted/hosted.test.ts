@@ -1,3 +1,5 @@
+import { readFileSync, readdirSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildDemoBoard } from "../__fixtures__/boardDemo";
 import { ODDS_SOURCE_LICENSES } from "../pipeline/oddsSources";
@@ -144,8 +146,17 @@ describe("decideHosting with hypothetical records", () => {
     expect(decideHosting({ ...privateBoard(), sources: { lines: ["the-odds-api"], dvp: "constructor", dvpUpdatedUtc: null } }, { stats: statsWith(["private-hosted"]) }).tier).toBe("lines-only");
   });
 
-  it("the Odds API record is unchanged by this feature", () => {
-    expect(ODDS_SOURCE_LICENSES["the-odds-api"].permittedUses).toEqual(["private-research", "model-development", "public-display"]);
+  it("the Odds API record carries the owner's 2026-10-29 hosting decision and still refuses raw redistribution", () => {
+    const record = ODDS_SOURCE_LICENSES["the-odds-api"];
+    expect(record.permittedUses).toEqual(["private-research", "private-hosted", "model-development", "public-display"]);
+    expect(record.permittedUses).not.toContain("raw-redistribution");
+    expect(record.basis).toContain("2026-10-29");
+    expect(record.basis).toContain("standalone data product");
+  });
+
+  it("no longer lets private-research with public-display stand in for an explicit private-hosted on the line source", () => {
+    expect(decideHosting(privateBoard(), { odds: { "the-odds-api": grant(["private-research", "model-development", "public-display"]) } }).tier).toBeNull();
+    expect(decideHosting(privateBoard(), { odds: { "the-odds-api": grant(["private-hosted"]) } }).tier).toBe("lines-only");
   });
 });
 
@@ -165,5 +176,54 @@ describe("planPublish", () => {
     const blocked = planPublish(privateBoard(), NOW, { odds: { "the-odds-api": grant([]) } });
     expect(blocked.ok).toBe(false);
     expect(blocked.envelope).toBeNull();
+  });
+});
+
+describe("Odds API conditions kept in the hosted board", () => {
+  const detail = {
+    selection: "consensus of fresh books",
+    books: [
+      { sportsbook: "fanduel", line: 20.5, overPrice: -112, underPrice: -108, sourceLastUpdateUtc: "2026-10-29T14:58:03Z", capturedAtUtc: "2026-10-29T14:59:00Z", freshness: "fresh" as const, ageMinutes: 1, role: "shown" as const },
+      { sportsbook: "draftkings", line: 20.5, overPrice: -110, underPrice: -110, sourceLastUpdateUtc: null, capturedAtUtc: "2026-10-29T14:59:00Z", freshness: "unknown" as const, ageMinutes: null, role: "unknown-age" as const },
+    ],
+    excluded: [{ sportsbook: "bovada", lines: [14.5, 20.5, 25.5], reason: "alternate-line ladder" }],
+  };
+
+  it("keeps the displayed line's bookmaker, prices and capture time, and every book's provider timestamp, byte for byte", () => {
+    const board = privateBoard();
+    const line = { sportsbook: "fanduel", line: 20.5, overPrice: -112, underPrice: -108, capturedAtUtc: "2026-10-29T14:59:00Z", freshness: "fresh" as const, ageMinutes: 1 };
+    const withDetail: PropsBoardArtifact = { ...board, entries: board.entries.map((entry, index) => (index === 0 ? { ...entry, line, lineDetail: detail } : entry)) };
+    const original = withDetail.entries[0];
+    const out = projectBoardForTier(withDetail, "lines-only").entries.find((entry) => entry.entryKey === original.entryKey);
+    expect(out?.line).toEqual(line);
+    expect(out?.lineDetail).toEqual(detail);
+    expect(out?.lineDetail?.books.map((book) => [book.sportsbook, book.sourceLastUpdateUtc, book.capturedAtUtc])).toEqual([
+      ["fanduel", "2026-10-29T14:58:03Z", "2026-10-29T14:59:00Z"],
+      ["draftkings", null, "2026-10-29T14:59:00Z"],
+    ]);
+    expect(out?.lineDetail?.excluded).toEqual(detail.excluded);
+  });
+
+  it("keeps the line freshness that the page uses to flag stale prices", () => {
+    const board = privateBoard();
+    const stale = { sportsbook: "caesars", line: 9.5, overPrice: -105, underPrice: -115, capturedAtUtc: "2026-10-29T10:00:00Z", freshness: "stale" as const, ageMinutes: 300 };
+    const out = projectBoardForTier({ ...board, entries: board.entries.map((entry, index) => (index === 0 ? { ...entry, line: stale } : entry)) }, "lines-only");
+    expect(out.entries.find((entry) => entry.line?.sportsbook === "caesars")?.line).toEqual(stale);
+  });
+
+  it("makes no provider request and touches no quota or credential: the hosted modules mention neither", () => {
+    const dir = path.resolve(__dirname);
+    const apiDir = path.resolve(__dirname, "../../../../../api");
+    const sources = [
+      ...readdirSync(dir).filter((name) => name.endsWith(".ts") && !name.endsWith(".test.ts")).map((name) => path.join(dir, name)),
+      path.join(apiDir, "nba", "props-board.ts"),
+      ...readdirSync(path.join(apiDir, "_lib", "nbaPrivate")).filter((name) => name.endsWith(".ts") && !name.endsWith(".test.ts")).map((name) => path.join(apiDir, "_lib", "nbaPrivate", name)),
+      path.resolve(__dirname, "../../../../../scripts/nba-private-snapshot-publish.ts"),
+    ];
+    expect(sources.length).toBeGreaterThan(6);
+    for (const file of sources) {
+      const text = readFileSync(file, "utf8");
+      expect(text, file).not.toMatch(/the-odds-api\.com|THE_ODDS_API_KEY|ODDS_API_KEY|api-quota|quotaAccount|liveApproval|probe/i);
+    }
   });
 });
