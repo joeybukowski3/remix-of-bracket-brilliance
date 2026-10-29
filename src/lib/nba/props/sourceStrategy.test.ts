@@ -24,14 +24,16 @@ describe("source license records", () => {
     expect(SOURCE_LICENSES.synthetic.permittedUses).toEqual([...DATA_USES]);
   });
 
-  it("records hoopR/ESPN as private-research only, as an owner decision that is not ESPN's permission", () => {
+  it("records hoopR/ESPN as private-research plus private-hosted, as owner-provided authorization that is not ESPN's or SportsDataverse's license", () => {
     for (const id of ["espn", "hoopr-espn"] as const) {
-      expect(SOURCE_LICENSES[id].permittedUses).toEqual(["private-research"]);
+      expect(SOURCE_LICENSES[id].permittedUses).toEqual(["private-research", "private-hosted"]);
       expect(SOURCE_LICENSES[id].status).toBe("unlicensed");
       expect(SOURCE_LICENSES[id].basis).toMatch(/OWNER DECISION 2026-10-23/);
-      expect(SOURCE_LICENSES[id].basis).toMatch(/NOT ESPN's permission/);
+      expect(SOURCE_LICENSES[id].basis).toMatch(/OWNER AUTHORIZATION 2026-10-29/);
+      expect(SOURCE_LICENSES[id].basis).toMatch(/owner-provided/);
+      expect(SOURCE_LICENSES[id].basis).toMatch(/no ESPN or SportsDataverse license/);
     }
-    expect(effectivePermittedUses("hoopr-espn").permittedUses).toEqual(["private-research"]);
+    expect(effectivePermittedUses("hoopr-espn").permittedUses).toEqual(["private-research", "private-hosted"]);
     for (const use of ["model-development", "public-display", "raw-redistribution"] as const) expect(effectivePermittedUses("hoopr-espn").permittedUses).not.toContain(use);
   });
 
@@ -43,7 +45,7 @@ describe("source license records", () => {
   it("caps a mirror at what its origin permits, however the mirror is licensed", () => {
     const licenses = { ...SOURCE_LICENSES, "hoopr-espn": grant(["private-research", "model-development", "public-display"]) };
     expect(effectivePermittedUses("hoopr-espn", licenses)).toEqual({ permittedUses: ["private-research"], chain: ["hoopr-espn", "espn"] });
-    expect(effectivePermittedUses("hoopr-espn").permittedUses).toEqual(["private-research"]);
+    expect(effectivePermittedUses("hoopr-espn").permittedUses).toEqual(["private-research", "private-hosted"]);
     expect(effectivePermittedUses("llimllib-nba-data", { ...SOURCE_LICENSES, "llimllib-nba-data": grant(["model-development"]) }).permittedUses).toEqual([]);
   });
 

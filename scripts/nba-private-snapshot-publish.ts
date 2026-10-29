@@ -1,22 +1,29 @@
 /**
  * Publish the owner's private NBA board to the hosted store behind /nba/props. One manual run, one row replaced.
  *
- *   npx tsx scripts/nba-private-snapshot-publish.ts [--board=data/nba/props-v1/private-preview-board.json]            # dry run
- *   JKB_NBA_HOSTED_PUBLISH_APPROVED=1 SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \
- *     npx tsx scripts/nba-private-snapshot-publish.ts --write                                                       # uploads
+ *   npm run nba:publish-snapshot                                   # dry run of data/nba/props-v1/private-preview-board.json
+ *   npm run nba:publish-snapshot -- --board=<file>                 # dry run of another file
+ *   npx tsx --env-file=.env.nba-publish.local scripts/nba-private-snapshot-publish.ts --write   # uploads
+ *
+ * The credentials live in .env.nba-publish.local (ignored by Git through the *.local rule): SUPABASE_URL,
+ * SUPABASE_SERVICE_ROLE_KEY and JKB_NBA_HOSTED_PUBLISH_APPROVED=1.
  *
  * The dry run (default) reads the local file only and prints the hosting decision: which sources are cleared, which tier
- * results, and how many entries would leave this computer. --write additionally needs the approval variable and the
- * service-role credentials in the environment; it makes exactly one request to the owner's database and never calls a
- * sportsbook or stats provider. It prints counts and source ids, never board content or credentials. No schedule runs it.
+ * results, how many entries would leave this computer, and the same staleness warnings the page shows. --write additionally
+ * needs the approval variable and the service-role credentials; it replaces the one snapshot row, reads it back and checks it,
+ * and never calls a sportsbook or stats provider. It prints counts and source ids, never board content or credentials.
+ * No schedule runs it.
  */
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { serveableEnvelope } from "../src/lib/nba/props/hosted/redact";
 import { planPublish } from "../src/lib/nba/props/hosted/publishPlan";
+import { LINES_STALE_AFTER_HOURS, SNAPSHOT_STALE_AFTER_HOURS, snapshotFreshness } from "../src/lib/nba/props/hostedClient";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const arg = (name: string): string | undefined => process.argv.slice(2).find((value) => value.startsWith(`--${name}=`))?.slice(name.length + 3);
+const MS_PER_HOUR = 3_600_000;
 
 async function main(): Promise<number> {
   const boardPath = path.resolve(root, arg("board") ?? "data/nba/props-v1/private-preview-board.json");
@@ -37,6 +44,13 @@ async function main(): Promise<number> {
   }
   console.log(`Tier ${plan.envelope.tier}: ${plan.decision?.reason}`);
   console.log(`Entries ${plan.counts.entriesIn} -> ${plan.counts.entriesOut}, DvP rows ${plan.counts.dvpRowsOut}, ${plan.counts.envelopeBytes} bytes`);
+
+  const freshness = snapshotFreshness(plan.envelope.board, plan.envelope.publishedAtUtc, Date.now());
+  const builtHoursAgo = (Date.now() - Date.parse(plan.envelope.board.generatedAtUtc)) / MS_PER_HOUR;
+  console.log(`Board built ${plan.envelope.board.generatedAtUtc} (${builtHoursAgo.toFixed(1)} h ago); statistics retrieved ${freshness.statisticsRetrievedUtc ?? "unknown"}; newest sportsbook line ${freshness.newestLineCaptureUtc ?? "none"}`);
+  if (builtHoursAgo > SNAPSHOT_STALE_AFTER_HOURS) console.warn(`WARNING: the local board was built more than ${SNAPSHOT_STALE_AFTER_HOURS} hours ago; rebuild it (npx tsx scripts/nba-props-v1-build.ts --private-preview) before publishing.`);
+  if (freshness.lineAgeHours !== null && freshness.lineAgeHours > LINES_STALE_AFTER_HOURS) console.warn(`WARNING: the newest sportsbook line was captured ${freshness.lineAgeHours.toFixed(1)} h ago, so the page will flag this snapshot as stale.`);
+
   if (!process.argv.includes("--write")) {
     console.log("Dry run: nothing was uploaded. Add --write (with the approval variable and credentials) to publish.");
     return 0;
@@ -47,8 +61,14 @@ async function main(): Promise<number> {
   }
   // Imported late so a dry run never loads the credential-reading module.
   const { createSupabaseSnapshotStore } = await import("../api/_lib/nbaPrivate/snapshotStore");
-  await createSupabaseSnapshotStore().write(plan.envelope);
-  console.log("Uploaded 1 snapshot row.");
+  const store = createSupabaseSnapshotStore();
+  await store.write(plan.envelope);
+  const stored = serveableEnvelope(await store.read());
+  if (!stored.ok || stored.envelope.tier !== plan.envelope.tier || stored.envelope.publishedAtUtc !== plan.envelope.publishedAtUtc || stored.envelope.board.entries.length !== plan.counts.entriesOut) {
+    console.error("Read-back check FAILED: the stored snapshot does not match what was uploaded.");
+    return 4;
+  }
+  console.log(`Uploaded and verified 1 snapshot row (${stored.envelope.tier}, ${stored.envelope.board.entries.length} entries, published ${stored.envelope.publishedAtUtc}).`);
   return 0;
 }
 

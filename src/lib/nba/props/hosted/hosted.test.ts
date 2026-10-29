@@ -8,7 +8,7 @@ import { SOURCE_LICENSES } from "../sources/licenses";
 import type { NbaSourceId, SourceLicense } from "../sources/types";
 import { decideHosting } from "./hostingGate";
 import { planPublish } from "./publishPlan";
-import { HOSTED_BOARD_SCHEMA, HOSTED_SNAPSHOT_SCHEMA, LINES_ONLY_ATTRIBUTION, LINES_ONLY_NOTICE, buildEnvelope, projectBoardForTier, serveableEnvelope } from "./redact";
+import { FULL_NOTICE, HOSTED_BOARD_SCHEMA, HOSTED_SNAPSHOT_SCHEMA, LINES_ONLY_ATTRIBUTION, LINES_ONLY_NOTICE, buildEnvelope, projectBoardForTier, serveableEnvelope } from "./redact";
 
 const NOW = "2026-10-29T15:00:00Z";
 const lineDetail = { selection: "test", books: [], excluded: [] };
@@ -72,13 +72,19 @@ describe("projectBoardForTier", () => {
     expect(JSON.stringify(board)).toBe(before);
   });
 
-  it("full keeps the statistics and tables but still drops unknown top-level fields and always carries the private notice", () => {
-    const board = { ...privateBoard(), privatePreview: undefined } as unknown as PropsBoardArtifact;
+  it("full keeps every statistic, table and line, drops only unknown top-level fields, and replaces the local notice with the hosted one", () => {
+    const board = privateBoard();
     const out = projectBoardForTier(board, "full");
-    expect(out.dvpRows.length).toBeGreaterThan(0);
-    expect(out.opponentRecent).toBeDefined();
+    expect(out.entries).toEqual(board.entries);
+    expect(out.dvpRows).toEqual(board.dvpRows);
+    expect(out.opponentRecent).toEqual(board.opponentRecent);
+    expect(out.opponentBoxScores).toEqual(board.opponentBoxScores);
+    expect(out.sources).toEqual(board.sources);
     expect(JSON.stringify(out)).not.toContain("unknownTopLevel");
-    expect(out.privatePreview?.notice).toMatch(/owner/i);
+    expect(out.privatePreview).toEqual({ notice: FULL_NOTICE, attribution: board.privatePreview?.attribution });
+    expect(FULL_NOTICE).toMatch(/owner-provided/);
+    expect(FULL_NOTICE).toMatch(/no ESPN or SportsDataverse license/);
+    expect(FULL_NOTICE).not.toMatch(/do not (publish|share|deploy)/i);
   });
 });
 
@@ -105,27 +111,33 @@ describe("serveableEnvelope", () => {
 });
 
 describe("decideHosting against the real license records", () => {
-  it("today: hoopR/ESPN statistics are blocked, so only the Odds API lines are cleared", () => {
+  it("today: the Odds API lines and the owner-authorized hoopR/ESPN statistics are both cleared, so the full board is hosted", () => {
     const decision = decideHosting(privateBoard());
-    expect(decision.tier).toBe("lines-only");
-    const stats = decision.verdicts.find((v) => v.role === "statistics");
-    expect(stats).toMatchObject({ sourceId: "hoopr-espn", hostable: false });
-    expect(stats?.permittedUses).toEqual(["private-research"]);
+    expect(decision.tier).toBe("full");
+    expect(decision.verdicts.find((v) => v.role === "statistics")).toMatchObject({ sourceId: "hoopr-espn", hostable: true });
     expect(decision.verdicts.find((v) => v.role === "lines")).toMatchObject({ sourceId: "the-odds-api", hostable: true });
   });
 
-  it("records no private-hosted right for any real NBA statistics source", () => {
-    for (const license of Object.values(SOURCE_LICENSES)) {
+  it("grants private-hosted only to the hoopR/ESPN pair, never publication or redistribution", () => {
+    for (const [id, license] of Object.entries(SOURCE_LICENSES)) {
       if (license.status === "synthetic") continue;
-      expect(license.permittedUses).not.toContain("private-hosted");
+      expect(license.permittedUses.includes("private-hosted"), id).toBe(id === "espn" || id === "hoopr-espn");
     }
+    for (const id of ["espn", "hoopr-espn"] as const) {
+      for (const use of ["public-display", "raw-redistribution", "model-development"] as const) expect(SOURCE_LICENSES[id].permittedUses).not.toContain(use);
+    }
+  });
+
+  it("falls back to lines-only if either the box-score source or its ESPN origin loses the grant", () => {
+    expect(decideHosting(privateBoard(), { stats: { ...SOURCE_LICENSES, espn: grant(["private-research"]) } }).tier).toBe("lines-only");
+    expect(decideHosting(privateBoard(), { stats: { ...SOURCE_LICENSES, "hoopr-espn": grant(["private-research"]) } }).tier).toBe("lines-only");
   });
 });
 
 describe("decideHosting with hypothetical records", () => {
   it("opens the full tier only when both the box-score source and its ESPN origin record private-hosted", () => {
     expect(decideHosting(privateBoard(), { stats: statsWith(["private-research", "private-hosted"]) }).tier).toBe("full");
-    const originClosed = { ...SOURCE_LICENSES, "hoopr-espn": grant(["private-research", "private-hosted"]) };
+    const originClosed = { ...SOURCE_LICENSES, espn: grant(["private-research"]), "hoopr-espn": grant(["private-research", "private-hosted"]) };
     expect(decideHosting(privateBoard(), { stats: originClosed }).tier).toBe("lines-only");
   });
 
@@ -156,18 +168,25 @@ describe("decideHosting with hypothetical records", () => {
 
   it("no longer lets private-research with public-display stand in for an explicit private-hosted on the line source", () => {
     expect(decideHosting(privateBoard(), { odds: { "the-odds-api": grant(["private-research", "model-development", "public-display"]) } }).tier).toBeNull();
-    expect(decideHosting(privateBoard(), { odds: { "the-odds-api": grant(["private-hosted"]) } }).tier).toBe("lines-only");
+    expect(decideHosting(privateBoard(), { odds: { "the-odds-api": grant(["private-hosted"]) } }).tier).toBe("full");
   });
 });
 
 describe("planPublish", () => {
-  it("builds a lines-only envelope from the real records and reports counts", () => {
+  it("builds a full envelope from the real records and reports counts", () => {
     const plan = planPublish(privateBoard(), NOW);
     expect(plan.ok).toBe(true);
+    expect(plan.envelope?.tier).toBe("full");
+    expect(plan.counts.entriesOut).toBe(plan.counts.entriesIn);
+    expect(plan.counts.dvpRowsOut).toBeGreaterThan(0);
+    expect(plan.envelope).toEqual(buildEnvelope(privateBoard(), "full", NOW));
+  });
+
+  it("builds a lines-only envelope when the statistics grant is withdrawn", () => {
+    const plan = planPublish(privateBoard(), NOW, { stats: { ...SOURCE_LICENSES, espn: grant(["private-research"]) } });
     expect(plan.envelope?.tier).toBe("lines-only");
     expect(plan.counts.entriesOut).toBeLessThan(plan.counts.entriesIn);
     expect(plan.counts.dvpRowsOut).toBe(0);
-    expect(plan.envelope).toEqual(buildEnvelope(privateBoard(), "lines-only", NOW));
   });
 
   it("refuses files that are not private boards and boards whose lines are not cleared", () => {

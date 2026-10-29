@@ -7,6 +7,38 @@ import { BOARD_SCHEMA_VERSION, type PropsBoardArtifact } from "./propsBoard";
 export const HOSTED_BOARD_URL = "/api/nba/props-board";
 export const NO_SNAPSHOT_REASON = "No private NBA snapshot has been published yet.";
 
+/** A snapshot published longer ago than this, or lines captured longer ago than this, are shown as stale. */
+export const SNAPSHOT_STALE_AFTER_HOURS = 12;
+export const LINES_STALE_AFTER_HOURS = 3;
+const MS_PER_HOUR = 3_600_000;
+
+export interface SnapshotFreshness {
+  publishedAtUtc: string;
+  publishedAgeHours: number;
+  /** When the statistics were retrieved from their source, as the board records it. */
+  statisticsRetrievedUtc: string | null;
+  /** The most recent sportsbook capture on any displayed line; null when the board has no line. */
+  newestLineCaptureUtc: string | null;
+  lineAgeHours: number | null;
+  staleReasons: string[];
+  isStale: boolean;
+}
+
+const ageHours = (iso: string, nowMs: number): number => Math.max(0, (nowMs - Date.parse(iso)) / MS_PER_HOUR);
+
+/** Evaluated when the page renders, never when the board was built, so the indicator cannot go out of date. */
+export function snapshotFreshness(board: PropsBoardArtifact, publishedAtUtc: string, nowMs: number): SnapshotFreshness {
+  const captures = board.entries.flatMap((entry) => (entry.line ? [Date.parse(entry.line.capturedAtUtc)] : [])).filter((ms) => Number.isFinite(ms));
+  const newestLineCaptureUtc = captures.length > 0 ? new Date(Math.max(...captures)).toISOString().replace(/\.\d{3}Z$/, "Z") : null;
+  const publishedAgeHours = ageHours(publishedAtUtc, nowMs);
+  const lineAgeHours = newestLineCaptureUtc ? ageHours(newestLineCaptureUtc, nowMs) : null;
+  const staleReasons = [
+    ...(publishedAgeHours > SNAPSHOT_STALE_AFTER_HOURS ? [`published more than ${SNAPSHOT_STALE_AFTER_HOURS} hours ago`] : []),
+    ...(lineAgeHours !== null && lineAgeHours > LINES_STALE_AFTER_HOURS ? [`sportsbook lines captured more than ${LINES_STALE_AFTER_HOURS} hours ago`] : []),
+  ];
+  return { publishedAtUtc, publishedAgeHours, statisticsRetrievedUtc: board.sources.dvpUpdatedUtc, newestLineCaptureUtc, lineAgeHours, staleReasons, isStale: staleReasons.length > 0 };
+}
+
 export type HostedLoad =
   | { kind: "ready"; board: PropsBoardArtifact; tier: "full" | "lines-only"; publishedAtUtc: string }
   | { kind: "login" }

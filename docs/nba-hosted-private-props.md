@@ -1,95 +1,82 @@
 # Hosted private NBA props (`/nba/props` on joeknowsball.com)
 
-Status 2026-10-29: **built, tested, not deployed, not configured.** The mechanism is complete and fails closed. Today it can host **sportsbook lines only** (11 DEN/NOP props from the one authorized capture), under the owner's 2026-10-29 acceptance of The Odds API's terms; the projections, season statistics, last-10 tables and Defense vs. Position cannot be hosted until their source is cleared (hoopR/ESPN is not; BALLDONTLIE is being evaluated, see `nba-balldontlie-evaluation.md`). This is an engineering assessment, not legal advice.
+Status 2026-10-29: **built, tested, not deployed, not configured.** The full existing dashboard (projections, season and per-minute stats, L5/L10 and box scores, opponent L10, five-position DvP, logos and colors, minutes adjustments, Vegas Line and per-book detail, JKB - Line and adjusted comparisons) loads automatically for the signed-in owner at `/nba/props`, from a snapshot published from the local research pipeline. Nothing is public: the board is served only by an authenticated function.
 
-## 1. What was inspected
+## 1. Rights basis (as recorded, no more)
 
-| Question | Evidence | Result |
+| Source | Recorded uses | Basis |
 |---|---|---|
-| Where does production run? | `curl -I https://www.joeknowsball.com/` on 2026-10-29 returns `Server: Vercel` and an `X-Vercel-Id`. | Vercel serves the site, which is the evidence `docs/DECISIONS.md` OPEN-001 asks for. This document does not close OPEN-001; the GitHub Pages workflow still exists and a static host could not run this feature. |
-| Is there user authentication? | None. `api/_lib/auth.ts` is a shared-secret check for bracket sync (and accepts `?token=`, which this feature deliberately does not reuse). `src/integrations/supabase` is a browser client with no sign-in flow. | New owner-only gate needed. |
-| Is the data already public? | `GET /data/nba-props-board.json` on production returns the HTML app shell, so nothing is published. The repository is public, so no data can be committed. | Data must be served from a server-side store, never from `public/`, `dist/` or git. |
-| Existing server-side storage | `api/_lib/supabase.ts` already uses `SUPABASE_SERVICE_ROLE_KEY` server-side (bracket data). | One new table, same credential, no new vendor. |
-| Existing containment | `scripts/lib/nba-data-containment.mjs`, `.vercelignore`, the postbuild `--deployable=dist` scan, `isolation.test.ts`. | Kept and extended; all still pass. |
-| Merged pipelines | PR #444 (compact table) and #445 (private Vegas Line, postgame audit). The board artifact is `data/nba/props-v1/private-preview-board.json` (1.5 MB, 978 entries, gitignored). | Reused unchanged; the model and the dashboard layout are untouched. |
+| hoopR/ESPN (`hoopr-espn`, origin `espn`) | `private-research`, **`private-hosted`** | **Owner-provided authorization, 2026-10-29:** the owner states they have permission to use the existing hoopR/ESPN-derived NBA statistics for their JoeKnowsBall hosted dashboard. No ESPN or SportsDataverse license, written permission or other document is on file and none is claimed. `model-development`, `public-display` and `raw-redistribution` stay unrecorded. |
+| The Odds API | `private-research`, `private-hosted`, `model-development`, `public-display` | Owner decisions 2026-10-20 and 2026-10-29 on the provider's current terms (re-read 2026-10-29); no reselling or redistribution as a standalone product, feed or API, so `raw-redistribution` stays absent. |
 
-## 2. Rights: what may be hosted
+`private-hosted` means: stored on the owner's Supabase project and served by the owner's Vercel deployment to the authenticated owner alone. It is not publication. Both hoopR/ESPN records carry it because the effective right is capped by the origin record. Attribution to hoopR (CC BY 4.0) and ESPN as the upstream source stays on the board.
 
-Logging in does not change what a source permits. Hosting copies the data onto third-party servers (Supabase, Vercel), which is a different act from the owner's local `private-research` use. Each data class, by source:
+The hosting gate (`hosted/hostingGate.ts`) reads these records at publish time and fails closed: it needs `private-hosted` on the line source and on the effective statistics source, otherwise it publishes lines only, or nothing. Tests pin the records, so any widening shows up in review.
 
-| Data on the board | Source | Recorded uses | May be hosted behind the owner login? |
-|---|---|---|---|
-| Sportsbook line, price and per-book detail | The Odds API captures | `private-research`, `private-hosted`, `model-development`, `public-display` (owner decisions 2026-10-20 and 2026-10-29; `raw-redistribution` absent) | **Yes, as lines.** The owner accepted the provider's current terms for displaying captured lines in the dashboard, subject to their restrictions: no resale, repackaging or redistribution as a standalone data product, feed or API. The hosted board keeps each line's bookmaker and capture time and every book's provider timestamp (tests assert it), and nothing in it calls the provider or touches quota. |
-| JKB projection, minutes, season stats, last-5/last-10, opponent box scores, DvP, roster position estimates | hoopR/ESPN (`hoopr-espn`, origin `espn`) | `private-research` only (owner decision 2026-10-23, "NOT ESPN's permission"; effective rights are capped by the ESPN record) | **No.** Raw per-game rows and every derived value are from this source. Disney Terms of Use 2.A allow personal, noncommercial use; 2.B.viii and 3.H bar commercial use. The registry says "local and private analysis", and it explicitly leaves `public-display` and `raw-redistribution` closed. `private-research` does not extend to a copy on a third-party host. |
-| Team names, logos, tip-off times | Odds API event / existing site assets | n/a | Names and times travel with the lines. Logos are existing site assets, not data. |
-
-A data use, `private-hosted`, exists in the license vocabulary (`sources/types.ts`). **Only the Odds API record grants it** (owner decision 2026-10-29). hoopR/ESPN stay `private-research`, and no statistics source records `private-hosted` (a test asserts it). The gate needs the explicit use for lines too; `private-research` plus `public-display` no longer stands in for it.
-
-### Smallest way to unblock the ESPN-derived data (any one)
-
-1. **Owner decision plus accepted risk:** record `private-hosted` on both `espn` and `hoopr-espn` in `licenses.ts` with a dated basis. It is the owner's decision to host a private copy; it is not ESPN's permission and leaves the commercial-site risk in `nba-espn-upstream-rights-review.md` open. Both records are needed because the origin cap applies.
-2. **Written permission** from SportsDataverse (documenting what ESPN allowed them) or from ESPN/Disney, as already listed in the rights review. hoopR-nba-data issue 24 has no reply.
-3. **Replace the source for the rows that matter.** BALLDONTLIE ALL-STAR ($9.99/month) is already assessed: its terms permit analytics, wagering products and ML use and forbid only reselling raw data. That needs a subscription, a recorded license decision, and an adapter feeding the existing `NbaPlayerGame` schema. It is the only option that removes the ESPN question instead of accepting it.
-
-Until one happens, those fields stay on the owner's computer and the existing local `?private=1` picker keeps working in development.
-
-## 3. Design
+## 2. Design
 
 ```
-local:   private-preview-board.json
+local:   data/nba/...  ->  existing builders  ->  private-preview-board.json
            -> scripts/nba-private-snapshot-publish.ts   (dry run by default)
-                decideHosting()  reads the license records
-                buildEnvelope()  allowlist projection to the cleared tier
-           -> ONE upsert into Supabase table nba_private_snapshots  (service role)
+                decideHosting()   license records -> tier (full | lines-only | none)
+                buildEnvelope()   allowlist projection to the tier
+           -> ONE upsert into Supabase table nba_private_snapshots (service role), then a read-back check
 
 browser: /nba/props  (public app shell, contains no data)
-           GET /api/nba/props-board  --cookie--> 401 -> sign-in form
-                                                 200 -> board (tier, publishedAtUtc, board)
+           GET /api/nba/props-board  --session cookie-->  401 -> sign-in form
+                                                          200 -> { tier, publishedAtUtc, board }
 ```
 
-- **Tiers.** `lines-only` keeps entries that have a line, with line and per-book detail (bookmaker, prices, capture and provider timestamps, freshness, excluded-book notes); everything else is rebuilt as null or empty, not copied. `full` keeps the whole private board and needs `private-hosted` on the statistics source (effective, including origins) and on the line source. Unknown source ids, no line source, or no statistics source fail closed (no tier, or lines-only).
-- **Allowlists on both sides.** The publish script projects the board to its tier before upload. The function re-projects on every read (`serveableEnvelope`), so a tampered or stale row cannot serve more than its tier. The function imports only `hosted/redact.ts` (type-only imports otherwise); `isolation.test.ts` fails if API code imports any other NBA module, so no model, ingest or license code is in the function bundle.
-- **Auth.** One owner, one passphrase (16+ characters) stored only as an scrypt hash (`NBA_PRIVATE_PASSWORD_HASH`). Sign-in sets `__Host-jkb-nba`: HMAC-SHA256 signed with `NBA_PRIVATE_SESSION_SECRET` (32+ characters), `HttpOnly; Secure; SameSite=Strict; Path=/`, host-only, 7-day expiry. Missing or weak configuration answers 503 to everyone. Sign-in and sign-out require a same-origin request. To end every session at once (lost device, shared computer), rotate `NBA_PRIVATE_SESSION_SECRET` and redeploy; to change the passphrase, replace the hash. Failed sign-ins are limited to 5 per 15 minutes per client IP per function instance; instances do not share memory, so also add a Vercel Firewall rate-limit rule on `/api/nba/props-board` (not something this PR can configure).
-- **Storage.** `supabase/migrations/20261029_nba_private_snapshots.sql`: RLS enabled, no policy, `anon` and `authenticated` revoked. The anon key in the browser bundle can neither read nor write. **The migration is included but not applied.**
-- **Caching.** Every API response, errors included, carries `Cache-Control: private, no-store, max-age=0`, `Vary: Cookie, Origin`, `X-Robots-Tag: noindex, nofollow`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`. `vercel.json` is untouched (production-sensitive). The client fetches with `cache: "no-store"` and keeps nothing in `localStorage`.
-- **No secrets in assets.** The browser code contains no key or token. Verified on a production build: 0 source maps, and none of `NBA_PRIVATE`, `SERVICE_ROLE`, `scrypt`, `nba_private_snapshots` appear in `dist/`; the postbuild containment scan passes.
-- **Single function.** One new serverless function (`api/nba/props-board.ts`, GET/POST/DELETE). Helpers and tests live under `api/_lib/` because Vercel deploys every other file under `api/`. If the Vercel plan limits the function count, confirm headroom before deploying.
-- **Page behavior.** A public board, if one is ever published, is still tried first and unchanged. Otherwise the page asks the API: 401 shows the sign-in form; 200 shows the board with its notice and a Sign out link; 404/503/network or non-JSON (for example the dev server or GitHub Pages) shows the existing empty state.
-- **Preserved.** PTS/REB/AST, last-10 tables, DvP, minutes override and sportsbook comparison are the same components; a `full` snapshot renders all of them, and a `lines-only` snapshot renders the lines with `N/A` projections (verified in a browser with the real 11-prop board).
-- **No live requests, no schedule.** Nothing here calls The Odds API, ESPN or any provider; there is no cron or workflow. Refreshing the hosted board is a manual publish.
+- **Unchanged:** baseline-v0 and the V1 builders, weights, positions and DvP logic, and the dashboard components. The hosted board is the builder's own artifact, passed through.
+- **Tiers.** `full` keeps the whole private board (every entry, season stat with recent games, opponent tables, DvP rows, lines and per-book detail); only unknown top-level fields are dropped, and the builder's local notice ("do not publish, share or deploy") is replaced by the hosted notice. `lines-only` is the fallback if a statistics grant is ever withdrawn. Applied at publish and again on every read, so a tampered row cannot serve more than its tier.
+- **Auth.** One owner passphrase (16+ characters) stored only as an scrypt hash. Sign-in sets `__Host-jkb-nba`: HMAC-signed, `HttpOnly; Secure; SameSite=Strict`, host-only, 7 days. Missing or weak configuration answers 503 to everyone. Sign-in and sign-out require a same-origin request. Failed sign-ins: 5 per 15 minutes per client IP per function instance (instances do not share memory; add the Firewall rule below). To end every session, rotate `NBA_PRIVATE_SESSION_SECRET` and redeploy.
+- **Storage.** `supabase/migrations/20261029_nba_private_snapshots.sql`: RLS on, no policy, `anon` and `authenticated` revoked. The anon key in the browser bundle can neither read nor write.
+- **Caching.** Every API response is `private, no-store, max-age=0`, `Vary: Cookie, Origin`, noindex, nosniff, no-referrer. The client fetches with `cache: "no-store"` and stores nothing. `vercel.json` is untouched.
+- **Stale-data indicator.** The page shows three source timestamps (published, statistics retrieved, newest sportsbook line) and a prominent `STALE SNAPSHOT` banner when the snapshot was published more than 12 hours ago or the newest line was captured more than 3 hours ago. It is computed when the page loads, not when the board was built, so it cannot go out of date (`hostedClient.ts`: `SNAPSHOT_STALE_AFTER_HOURS`, `LINES_STALE_AFTER_HOURS`). The existing per-line freshness chips are unchanged. The publish script prints the same warnings before it uploads.
+- **Odds API protections retained.** The hosted code makes no provider request and touches no quota account or credential (a test fails if any hosted module mentions the provider URL, an API key name, a quota account or a probe). Captured lines keep bookmaker, capture time and the provider's own update time byte for byte (tests). Quota management, probe gates and the capture ledger are untouched.
+- **Single function.** `api/nba/props-board.ts` (GET, POST, DELETE). Helpers and tests live in `api/_lib/nbaPrivate/` because Vercel deploys every other file under `api/`. The function imports only `hosted/redact.ts` from `src/lib/nba`; `isolation.test.ts` fails otherwise.
+- **Not in static assets.** No data, key or token is in `dist/` or `public/`; the postbuild scan (`check-nba-data-containment.mjs --deployable=dist`) and the git-scope scan pass.
 
-## 4. Tests
+## 3. Tests and verification (2026-10-29)
 
-| Concern | Where |
-|---|---|
-| Unauthorized access: no cookie, garbage, wrong-secret, tampered payload, wrong cookie name, expired; store never read | `api/_lib/nbaPrivate/handlers.test.ts` |
-| Fail closed when env is missing, weak or the hash is not scrypt (valid cookie still gets 503) | same |
-| Data containment: tier re-applied on read, unknown fields dropped, malformed or foreign rows refused, no stack or credential text in errors, no secret in any response | same, `src/lib/nba/props/hosted/hosted.test.ts` |
-| Caching and indexing headers on 200, 401, 404 and error responses | same |
-| Cookie flags, same-origin enforcement, body limits, rate limit and reset | same |
-| License gate against the real records (today: lines-only; ESPN blocked; no real record grants `private-hosted`; public-display is not a substitute for statistics) | `hosted.test.ts` |
-| Migration has RLS, no policy, no grants | `handlers.test.ts` |
-| Browser client states; sign-in form; sign-in, sign-out and lines-only render in a real browser | `hostedClient.test.ts`, `PrivateAccess.test.tsx`, `tests/nba-private-hosted.spec.ts` |
-| NBA code stays out of the app and out of the function bundle | `isolation.test.ts` |
+| What | Where | Result |
+|---|---|---|
+| 978-entry board through plan, store, authorization and serialization: entries, DvP, opponent tables, sources identical; 401 leaks nothing; no-store headers | `api/_lib/nbaPrivate/fullBoard.test.ts` | pass |
+| Same pathway on the real private board (rebuilt with the current builder, local only): 978/978 identical, 978 projections and season stats with recent games, 11 lines with 11 per-book details, 621 positions, 900 DvP rows, 120 opponent sequences, 24 opponent box-score groups; response 1.54 MB (Vercel limit 4.5 MB) | local run, not committed | pass |
+| Unauthorized: no cookie, garbage, wrong secret, tampered payload, wrong name, expired, missing or weak configuration (503), cross-origin, oversize, rate limit | `handlers.test.ts` | pass |
+| Gate and tiers against the real records; notices; Odds conditions | `hosted/hosted.test.ts` | pass |
+| Stale and fresh indicator | `hostedClient.test.ts`, `SnapshotStatus.test.tsx`, `tests/nba-private-hosted.spec.ts` | pass |
+| Browser: sign-in gate, full board with Vegas Line, JKB - Line, L5/L10, opponent L10, DvP tab, minutes override with adjusted comparison (no request, nothing stored) | `tests/nba-private-hosted.spec.ts` | pass |
+| Real full board in a browser (logos, colors, stats, DvP, lines, override, charts) | local run | no page errors |
+| Build, containment, no private data in `dist/` | `npm run build`, `check-nba-data-containment.mjs` | pass |
 
-## 5. Operating it (each step needs the owner's approval; none was taken)
+## 4. Configure Supabase and Vercel, and publish the first snapshot
 
-1. Decide the rights question in section 2 (or accept lines-only for now).
-2. Apply `supabase/migrations/20261029_nba_private_snapshots.sql` to the project.
-3. Create a passphrase and secrets locally, without putting them in a command line or history: `node -e "process.stdout.write(require('crypto').randomBytes(48).toString('base64url'))"` for the session secret; `npx tsx scripts/nba-private-hash-passphrase.ts < file` for the hash (the passphrase is read from stdin).
-4. Add `NBA_PRIVATE_PASSWORD_HASH` and `NBA_PRIVATE_SESSION_SECRET` to the Vercel **Production** scope only (not Preview, so preview URLs stay at 503). Confirm `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` already exist there.
-5. Add a Firewall rate-limit rule for `/api/nba/props-board`.
-6. Review and merge the PR; deploy.
-7. `npx tsx scripts/nba-private-snapshot-publish.ts` (dry run: prints the decision and counts), then `JKB_NBA_HOSTED_PUBLISH_APPROVED=1 SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... npx tsx scripts/nba-private-snapshot-publish.ts --write`.
+Each step is yours to approve and run; none has been done. Do not commit any value below.
 
-## 6. What remains for a populated hosted dashboard
+### Supabase (existing project, the one behind `SUPABASE_URL`)
+1. **SQL editor:** paste the contents of `supabase/migrations/20261029_nba_private_snapshots.sql` and run it. (Do not run `supabase db push` unless you have checked it will apply only this file.)
+2. **Check:** Table editor shows `nba_private_snapshots` with RLS **enabled** and no policies. Optionally confirm the anon key is refused: `curl -s -H "apikey: <anon key>" "<SUPABASE_URL>/rest/v1/nba_private_snapshots?select=id"` returns `[]` or a permission error, never a row.
+3. **Credentials for publishing:** the project URL and the `service_role` key (Project Settings, API). They are the same values the bracket functions already use in Vercel.
 
-1. **Rights decision for hoopR/ESPN-derived data** (section 2): without it the hosted board stays lines-only (11 props today, no projections, stats, last-10 or DvP).
-2. **Statistics source:** BALLDONTLIE ALL-STAR is the candidate; see `nba-balldontlie-evaluation.md` for coverage, gaps and the next step. The hoopR/ESPN records are unchanged.
-3. **Infrastructure and secrets:** the migration, the two environment variables, the Firewall rule, and deployment approval (section 5).
-4. **A fresh private board** built locally with the existing builders; the hosted snapshot is only as current as the last manual publish.
-5. **Optional:** an authorization to automate refreshes. Not requested and not built.
+### Vercel (Project Settings, Environment Variables, **Production** scope only)
+4. Generate the session secret: `node -e "process.stdout.write(require('crypto').randomBytes(48).toString('base64url'))"` and add it as `NBA_PRIVATE_SESSION_SECRET`.
+5. Choose a passphrase of 16+ characters and hash it without putting it in history: in Git Bash, `read -rs P; printf %s "$P" | npx tsx scripts/nba-private-hash-passphrase.ts`. Add the printed `scrypt$...$...` value as `NBA_PRIVATE_PASSWORD_HASH`. It contains `$`: paste it into the dashboard as is, and single-quote it anywhere a shell reads it. Keep the passphrase in your password manager.
+6. Confirm `SUPABASE_URL` (or `VITE_SUPABASE_URL`) and `SUPABASE_SERVICE_ROLE_KEY` exist for Production.
+7. **Firewall:** add a rate-limit rule for path `/api/nba/props-board` (for example 10 requests per minute per IP).
+8. **Function count:** the new function is the 12th under `api/` (the historical Hobby plan cap); check the deployment log if you are on Hobby.
+9. Review the PR, then merge and deploy when you decide. Preview deployments have no private variables on purpose and answer 503; add the two variables to the Preview scope temporarily if you want to test before merging.
 
-Superseded item: the earlier "confirm the lines reading" step is closed by the owner's 2026-10-29 decision, now recorded in `oddsSources.ts`.
+### Publish the first snapshot (local)
+10. **Build the board** with the existing pipeline in the checkout that holds `data/nba/` (today `C:\tmp\jkb-nba-vegas-line`, whose code predates per-book line detail; use a checkout of this branch, copying `data/nba/` into it, since it is gitignored). Refresh the slate and inputs per `docs/nba-props-v1.md`, then `npx tsx scripts/nba-props-v1-build.ts --private-preview`. Lines come from stored Odds API captures only; **new captures need a separately authorized live request, and none was made.** Without a current capture the board has no Vegas Line and the page says "none on this board".
+11. **Dry run:** `npm run nba:publish-snapshot` (or add `-- --board=<path>`). Expect `CLEARED` for both sources, `Tier full`, and the entry and DvP counts. Heed the staleness warnings.
+12. **Credentials file** `.env.nba-publish.local` in the repo root (ignored by Git through the `*.local` rule): `SUPABASE_URL=...`, `SUPABASE_SERVICE_ROLE_KEY=...`, `JKB_NBA_HOSTED_PUBLISH_APPROVED=1`.
+13. **Publish:** `npx tsx --env-file=.env.nba-publish.local scripts/nba-private-snapshot-publish.ts --write`. It uploads one row, reads it back and prints `Uploaded and verified 1 snapshot row (full, N entries, ...)`.
+14. **Open** `https://www.joeknowsball.com/nba/props`, sign in, and check the timestamps strip. Sign out ends the session; a page without the cookie shows only the sign-in form.
 
-Pre-existing, unrelated: `tsc -p tsconfig.app.json` fails on a syntax error in `src/lib/mlb/mlbPitcherRegression.ts` and reports type errors in `pipeline/contracts.ts`; neither file was touched.
+A smoke test that needs no new data: publish the existing board first. It will show the `STALE SNAPSHOT` banner (its lines are from 2026-10-28), which proves the whole path and the indicator before the first fresh publish.
+
+Refreshing later is the same steps 10 to 13; automatic refresh is not built and needs its own authorization.
+
+## 5. Not covered
+Public access to any of this (not enabled), new provider requests (none made), and the unrelated pre-existing `tsc -p tsconfig.app.json` failures in `src/lib/mlb/mlbPitcherRegression.ts` and `pipeline/contracts.ts`.

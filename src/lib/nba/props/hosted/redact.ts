@@ -22,8 +22,12 @@ export const WITHHELD_PROJECTION_REASON = "Withheld from the hosted board: the s
 /** Fixed text for a lines-only board: the carried-over notice describes hoopR/ESPN statistics, which this tier does not contain. */
 export const LINES_ONLY_NOTICE = "Private hosted board for the owner only. Not for publication. Lines-only view: projections, statistics and Defense vs. Position stay on the owner's computer until their source rights allow hosting.";
 export const LINES_ONLY_ATTRIBUTION = "Lines: The Odds API, for private research only; raw odds are not redistributed.";
-const DEFAULT_NOTICE = "Private hosted board for the owner only. Not for publication.";
-const DEFAULT_ATTRIBUTION = "Sportsbook lines: The Odds API";
+/**
+ * Fixed text for a full board. The local builder's notice says "do not publish, share or deploy", which is not what this
+ * owner-authenticated deployment is; this one states the actual basis without claiming an ESPN or SportsDataverse license.
+ */
+export const FULL_NOTICE = "Private hosted board for the owner only: not for publication or redistribution. hoopR/ESPN statistics are used under the owner's own authorization (owner-provided; no ESPN or SportsDataverse license or written permission is on file).";
+const DEFAULT_ATTRIBUTION = "Data: hoopR (sportsdataverse, CC BY 4.0), derived from ESPN; Lines: The Odds API, for private research only; raw odds are not redistributed.";
 
 export interface HostedSnapshotEnvelope {
   schemaVersion: typeof HOSTED_SNAPSHOT_SCHEMA;
@@ -57,7 +61,6 @@ function linesOnlyEntry(entry: BoardEntry): BoardEntry {
 /** Applies a tier to a board. Idempotent: projecting an already projected board changes nothing. */
 export function projectBoardForTier(board: PropsBoardArtifact, tier: HostedTier): PropsBoardArtifact {
   if (tier === "full") {
-    const notice = board.privatePreview?.notice ?? DEFAULT_NOTICE;
     const attribution = board.privatePreview?.attribution ?? DEFAULT_ATTRIBUTION;
     return {
       schemaVersion: board.schemaVersion,
@@ -68,7 +71,7 @@ export function projectBoardForTier(board: PropsBoardArtifact, tier: HostedTier)
       dvpRows: board.dvpRows,
       ...(board.opponentRecent ? { opponentRecent: board.opponentRecent } : {}),
       ...(board.opponentBoxScores ? { opponentBoxScores: board.opponentBoxScores } : {}),
-      privatePreview: { notice, attribution },
+      privatePreview: { notice: FULL_NOTICE, attribution },
     };
   }
   return {

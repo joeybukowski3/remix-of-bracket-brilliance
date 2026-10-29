@@ -4,12 +4,13 @@ import DvpMatrix from "@/components/nba/DvpMatrix";
 import { DVP_VIEWS, viewLabel } from "@/components/nba/dvpViews";
 import { Chip } from "@/components/nba/Chip";
 import PrivateAccess from "@/components/nba/PrivateAccess";
+import SnapshotStatus from "@/components/nba/SnapshotStatus";
 import PropsBoardView from "@/components/nba/PropsBoardView";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { cn } from "@/lib/utils";
 import { DVP_POSITIONS, DVP_STATS, type DvpPosition, type DvpStat, type DvpView } from "@/lib/nba/props/dvp";
 import { BOARD_SCHEMA_VERSION, containsPrivateData, type PropsBoardArtifact } from "@/lib/nba/props/propsBoard";
-import { fetchHostedBoard, signOut } from "@/lib/nba/props/hostedClient";
+import { fetchHostedBoard, signOut, snapshotFreshness } from "@/lib/nba/props/hostedClient";
 
 const BOARD_URL = `${import.meta.env.BASE_URL}data/nba-props-board.json`;
 const DEMO_QUERY = "demo=synthetic";
@@ -18,7 +19,7 @@ type LoadState =
   | { status: "loading" }
   | { status: "empty"; reason: string }
   | { status: "login" }
-  | { status: "ready"; board: PropsBoardArtifact; hosted?: boolean };
+  | { status: "ready"; board: PropsBoardArtifact; hosted?: { publishedAtUtc: string; loadedAtMs: number } };
 
 const isBoard = (value: unknown): value is PropsBoardArtifact =>
   typeof value === "object" && value !== null && (value as { schemaVersion?: unknown }).schemaVersion === BOARD_SCHEMA_VERSION && Array.isArray((value as PropsBoardArtifact).entries) && Array.isArray((value as PropsBoardArtifact).dvpRows);
@@ -26,7 +27,7 @@ const isBoard = (value: unknown): value is PropsBoardArtifact =>
 /** The owner's signed-in board from the server. A public board, when one exists, is always tried first. */
 async function loadHostedBoard(publicState: LoadState): Promise<LoadState> {
   const hosted = await fetchHostedBoard();
-  if (hosted.kind === "ready") return { status: "ready", board: hosted.board, hosted: true };
+  if (hosted.kind === "ready") return { status: "ready", board: hosted.board, hosted: { publishedAtUtc: hosted.publishedAtUtc, loadedAtMs: Date.now() } };
   if (hosted.kind === "login") return { status: "login" };
   return hosted.snapshotMissing ? { status: "empty", reason: hosted.reason } : publicState;
 }
@@ -197,9 +198,12 @@ export default function NbaPlayerProps() {
           <>
             <Banners board={state.board} />
             {state.hosted ? (
-              <p className="mb-3 text-right text-[11px]">
-                <button type="button" onClick={leave} className="font-semibold text-slate-500 underline hover:text-slate-800">Sign out</button>
-              </p>
+              <>
+                <SnapshotStatus freshness={snapshotFreshness(state.board, state.hosted.publishedAtUtc, state.hosted.loadedAtMs)} />
+                <p className="mb-3 text-right text-[11px]">
+                  <button type="button" onClick={leave} className="font-semibold text-slate-500 underline hover:text-slate-800">Sign out</button>
+                </p>
+              </>
             ) : null}
             <div className="mb-4 flex gap-4 border-b border-slate-200" role="tablist" aria-label="NBA props views">
               {(["board", "matrix"] as const).map((t) => (

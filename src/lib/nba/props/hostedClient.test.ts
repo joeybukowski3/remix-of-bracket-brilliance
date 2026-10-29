@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildDemoBoard } from "./__fixtures__/boardDemo";
-import { HOSTED_BOARD_URL, NO_SNAPSHOT_REASON, fetchHostedBoard, signIn, signOut } from "./hostedClient";
+import { HOSTED_BOARD_URL, LINES_STALE_AFTER_HOURS, NO_SNAPSHOT_REASON, SNAPSHOT_STALE_AFTER_HOURS, fetchHostedBoard, signIn, signOut, snapshotFreshness } from "./hostedClient";
 
 const json = (status: number, body: unknown) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 
@@ -49,5 +49,38 @@ describe("signIn / signOut", () => {
     await signOut(async (_url, init) => ((method = init?.method ?? ""), json(200, { ok: true })));
     expect(method).toBe("DELETE");
     await expect(signOut(async () => { throw new TypeError("offline"); })).resolves.toBeUndefined();
+  });
+});
+
+describe("snapshotFreshness", () => {
+  const NOW = Date.parse("2026-10-29T18:00:00Z");
+  const withLines = (...captured: string[]) => {
+    const board = buildDemoBoard();
+    return { ...board, sources: { ...board.sources, dvpUpdatedUtc: "2026-10-28T12:00:00Z" }, entries: board.entries.map((entry, i) => ({ ...entry, line: captured[i] ? { sportsbook: "book", line: 10.5, overPrice: -110, underPrice: -110, capturedAtUtc: captured[i], freshness: "fresh" as const, ageMinutes: 1 } : null })) };
+  };
+
+  it("is fresh when the snapshot and the newest line are recent, and reports the newest capture across all entries", () => {
+    const f = snapshotFreshness(withLines("2026-10-29T15:30:00Z", "2026-10-29T17:00:00Z", "2026-10-29T16:00:00Z"), "2026-10-29T17:30:00Z", NOW);
+    expect(f.isStale).toBe(false);
+    expect(f.newestLineCaptureUtc).toBe("2026-10-29T17:00:00Z");
+    expect(f.statisticsRetrievedUtc).toBe("2026-10-28T12:00:00Z");
+    expect(f.publishedAgeHours).toBeCloseTo(0.5);
+  });
+
+  it("flags an old snapshot and old lines separately, each with its reason", () => {
+    const oldSnapshot = snapshotFreshness(withLines("2026-10-29T17:30:00Z"), "2026-10-29T04:00:00Z", NOW);
+    expect(oldSnapshot.isStale).toBe(true);
+    expect(oldSnapshot.staleReasons).toEqual([`published more than ${SNAPSHOT_STALE_AFTER_HOURS} hours ago`]);
+    const oldLines = snapshotFreshness(withLines("2026-10-29T10:00:00Z"), "2026-10-29T17:50:00Z", NOW);
+    expect(oldLines.staleReasons).toEqual([`sportsbook lines captured more than ${LINES_STALE_AFTER_HOURS} hours ago`]);
+    expect(snapshotFreshness(withLines("2026-10-28T10:00:00Z"), "2026-10-28T10:30:00Z", NOW).staleReasons).toHaveLength(2);
+  });
+
+  it("does not call a board without lines stale for that reason, and never reports a negative age", () => {
+    const f = snapshotFreshness(withLines(), "2026-10-29T19:00:00Z", NOW);
+    expect(f.newestLineCaptureUtc).toBeNull();
+    expect(f.lineAgeHours).toBeNull();
+    expect(f.publishedAgeHours).toBe(0);
+    expect(f.isStale).toBe(false);
   });
 });
