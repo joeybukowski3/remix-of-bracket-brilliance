@@ -16,6 +16,7 @@ import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import { inside, resolveBoardOutFile, runBoardBuild, writeAtomically, type BoardRunResult } from "../pipeline/boardBuildRun";
+import { readLineCaptures } from "../pipeline/lineCapture";
 import { SOURCE_LICENSES } from "../sources/licenses";
 import { effectivePermittedUses } from "../sources/registry";
 import type { NbaSourceId, SourceLicense } from "../sources/types";
@@ -132,6 +133,8 @@ export async function runV1Build(options: V1RunOptions): Promise<V1RunResult> {
 }
 
 export const PRIVATE_PREVIEW_FILE = "private-preview-board.json";
+/** Where approved odds requests leave their write-once captures (pipeline/lineCapture.ts). */
+export const DEFAULT_CAPTURES_DIR = path.join(DATA_DIR, "odds-captures");
 
 export interface V1PrivatePreviewResult {
   /** Project-relative path of the private board, always under data/nba. */
@@ -145,16 +148,22 @@ export interface V1PrivatePreviewResult {
  * Builds the private preview board (v1/privatePreview.ts) from the same local inputs. The public board builder is not
  * called and its gates are untouched. The file is written only under data/nba (a path anywhere else, including
  * public/, is refused), and only if every source behind it has a private-research right and no public one.
+ *
+ * Sportsbook lines come only from the local capture ledger (`capturesDir`, default data/nba/odds-captures): reading it makes
+ * no request and spends no credit, and an altered capture fails the build instead of being skipped. With no ledger the
+ * board has no lines, as before.
  */
-export function runV1PrivatePreview(options: Omit<V1RunOptions, "outFile" | "sourceLicenses"> & { licenses?: Readonly<Record<NbaSourceId, SourceLicense>> }): V1PrivatePreviewResult {
+export function runV1PrivatePreview(options: Omit<V1RunOptions, "outFile" | "sourceLicenses"> & { licenses?: Readonly<Record<NbaSourceId, SourceLicense>>; capturesDir?: string }): V1PrivatePreviewResult {
   const { root } = options;
   const dir = options.inputDir ?? DEFAULT_V1_DIR;
   const target = path.join(dir, PRIVATE_PREVIEW_FILE);
   inside(root, target, [DATA_DIR], "the private preview file");
+  const captures = readLineCaptures(inside(root, options.capturesDir ?? DEFAULT_CAPTURES_DIR, [DATA_DIR], "the captures directory"));
   const { built, files } = prepare(options, true);
-  const { artifact, report } = buildPrivatePreviewBoard({ generatedAtUtc: options.generatedAtUtc, projections: built.projections, roster: built.roster, dvp: built.dvp, seasonStats: built.seasonStats, opponentRecent: built.opponentRecent, opponentBoxScores: built.opponentBoxScores, licenses: options.licenses });
-  // Last line of defense: a private board is never written anywhere that is deployed.
-  if (artifact.privatePreview === undefined || artifact.entries.some((e) => e.line !== null)) throw new Error("refusing to write a private preview without its notice, or with sportsbook lines");
+  const { artifact, report } = buildPrivatePreviewBoard({ generatedAtUtc: options.generatedAtUtc, projections: built.projections, roster: built.roster, dvp: built.dvp, seasonStats: built.seasonStats, opponentRecent: built.opponentRecent, opponentBoxScores: built.opponentBoxScores, captures, licenses: options.licenses });
+  // Last line of defense: a private board is never written anywhere that is deployed, and a line on it must be credited to its provider.
+  if (artifact.privatePreview === undefined) throw new Error("refusing to write a private preview without its notice");
+  if (artifact.entries.some((e) => e.line !== null) && artifact.sources.lines.length === 0) throw new Error("refusing to write sportsbook lines that are not credited to a provider");
   writeAtomically(inside(root, target, [DATA_DIR], "the private preview file"), `${JSON.stringify(artifact)}\n`);
   return { outFile: target, preview: report, v1: built.report, files };
 }

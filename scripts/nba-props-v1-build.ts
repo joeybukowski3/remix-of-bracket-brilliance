@@ -31,6 +31,12 @@ function privatePreview(): void {
 PRIVATE PREVIEW board: wrote ${result.outFile} (never under public/; do not publish)`);
   console.log(`  projections shown ${preview.projections.shown} of ${preview.projections.supplied} (${v1.projections.playersProjected} players); DvP rows ${preview.dvp.rows}; entries ${preview.entries}`);
   for (const r of preview.projections.rejected.slice(0, 5)) console.log(`  REJECTED ${r.player} ${r.market}: ${r.reason}`);
+  if (preview.lines) {
+    const { lines } = preview;
+    console.log(`  sportsbook lines: ${lines.captures} capture(s), ${lines.linesRetrieved} retrieved, ${lines.matched} matched, ${lines.unmatched.length} unmatched, ${lines.displayed} shown on the board${lines.withheld ? `, ${lines.withheld} withheld (age unknown)` : ""}`);
+    for (const [reason, count] of groupReasons(lines.unmatched)) console.log(`  UNMATCHED ${count} line(s): ${reason}`);
+    for (const u of lines.unmatched.slice(0, 10)) console.log(`    ${u.player} ${u.market} @ ${u.bookmaker}: ${u.reason}`);
+  } else console.log("  sportsbook lines: no capture ledger found, so the board shows none");
   for (const w of v1.warnings) console.log(`  WARNING: ${w}`);
 }
 
