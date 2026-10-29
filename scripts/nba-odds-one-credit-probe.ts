@@ -9,9 +9,9 @@ import { quotaRequestGate } from "../src/lib/nba/props/pipeline/budget";
 import { ODDS_SOURCE_LICENSES } from "../src/lib/nba/props/pipeline/oddsSources";
 import { createTheOddsApiNbaProvider } from "../src/lib/nba/props/pipeline/theOddsApiNba";
 import { oneCreditNbaProbe } from "../src/lib/nba/props/pipeline/theOddsApiNbaProbe";
-import { fileLineCaptureSink } from "../src/lib/nba/props/pipeline/lineCapture";
+import { assertCaptureDirWritable, fileLineCaptureSink } from "../src/lib/nba/props/pipeline/lineCapture";
 import { fileProbeClaim } from "../src/lib/nba/props/pipeline/probeClaim";
-import { accountWithOddsApproval, activationDir, ODDS_ACCOUNT_ID, PROBE_SCOPE, readOddsApproval, recordCurrentOddsUsage } from "../src/lib/nba/props/pipeline/oddsActivation";
+import { accountWithOddsApproval, activationDir, assertInPregameWindow, ODDS_ACCOUNT_ID, PROBE_SCOPE, readOddsApproval, recordCurrentOddsUsage } from "../src/lib/nba/props/pipeline/oddsActivation";
 
 async function main(): Promise<void> {
   if (!process.argv.includes("--execute-one-credit")) throw new Error("probe is inert; a separate approved execution must use --execute-one-credit");
@@ -22,6 +22,14 @@ async function main(): Promise<void> {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
   const dir = activationDir(root);
   const now = new Date();
+  // Everything below runs before the approval is read or claimed and before any credit is reserved: a request that could not be
+  // used (wrong time, no credential) or whose response could not be stored must not be made at all.
+  const tipoffUtc = process.argv.find((arg) => arg.startsWith("--tipoff-utc="))?.slice("--tipoff-utc=".length) ?? "";
+  const minutesToTipoff = assertInPregameWindow(tipoffUtc, now);
+  if (!process.env.THE_ODDS_API_KEY?.trim()) throw new Error("THE_ODDS_API_KEY is not set in this shell; nothing was claimed or requested");
+  const capturesDir = path.join(root, "data", "nba", "odds-captures");
+  assertCaptureDirWritable(capturesDir);
+  console.error(JSON.stringify({ preflight: "passed", eventId, tipoffUtc, minutesToTipoff: Math.round(minutesToTipoff), captureDestination: path.relative(root, capturesDir) }));
   const approval = readOddsApproval(path.join(dir, "one-credit-approval.json"), PROBE_SCOPE, now);
   const accounts = accountWithOddsApproval(PROVIDER_ACCOUNTS, approval);
   const account = accounts.find((item) => item.accountId === ODDS_ACCOUNT_ID)!;
@@ -29,7 +37,7 @@ async function main(): Promise<void> {
   await recordCurrentOddsUsage(manager, account, path.join(dir, "current-usage.json"), now);
   const gate = quotaRequestGate(manager, ODDS_ACCOUNT_ID, "one-credit-probe", nbaAllowance(now));
   const provider = createTheOddsApiNbaProvider({ apiKey: process.env.THE_ODDS_API_KEY });
-  const result = await oneCreditNbaProbe({ eventId, gate, provider, claim: fileProbeClaim(path.join(dir, "claims")), approvalId: approval.id, captureSink: fileLineCaptureSink(path.join(root, "data", "nba", "odds-captures")) })();
+  const result = await oneCreditNbaProbe({ eventId, gate, provider, claim: fileProbeClaim(path.join(dir, "claims")), approvalId: approval.id, captureSink: fileLineCaptureSink(capturesDir) })();
   if (result.status === "error") throw new Error(result.message);
   console.log(JSON.stringify({ eventId, market: "player_points", regions: "us", requests: 1, creditsCharged: result.creditsCharged, lines: result.lines.length, unmatched: result.unmatched ?? [], capture: result.capture ?? null }));
   // The credit is spent either way; a missing capture must not look like success.

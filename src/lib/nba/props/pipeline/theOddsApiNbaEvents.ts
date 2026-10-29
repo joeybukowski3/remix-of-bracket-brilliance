@@ -5,6 +5,20 @@ import type { ProbeClaim } from "./probeClaim";
 import { parseNbaUsageHeaders } from "./theOddsApiNba";
 
 const discoveryEvent = z.object({ id: z.string().min(1), sport_key: z.literal("basketball_nba"), commence_time: z.string(), home_team: z.string(), away_team: z.string() }).passthrough();
+/**
+ * The provider's contract for the one route discovery calls, read from its v4 documentation on the review date. The quota policy
+ * admits discovery past the ordinary cap only because of this record; the event-odds route is priced per market and region and
+ * is not covered by it. The actual charge is still read from `x-requests-last` and anything above zero is settled as a breach.
+ */
+export const EVENTS_ENDPOINT_CONTRACT = Object.freeze({
+  method: "GET",
+  path: "/v4/sports/{sport}/events",
+  quotaCost: 0,
+  quote: "This endpoint does not count against the usage quota.",
+  source: "https://the-odds-api.com/liveapi/guides/v4/",
+  reviewedOn: "2026-10-28",
+});
+
 export type NbaDiscoveredEvent = { id: string; commenceTimeUtc: string; homeTeam: string; awayTeam: string };
 
 export interface NbaEventsDiscoveryDeps {
@@ -22,7 +36,7 @@ export async function discoverNbaEventsOnce(deps: NbaEventsDiscoveryDeps): Promi
   if (!(await deps.claim.claim(deps.approvalId, "NBA events discovery one request", null))) throw new Error("NBA discovery approval already claimed");
   const reservation = await deps.gate.reserve(0, "/events");
   if (reservation.ok === false) throw new Error(`NBA discovery quota denied: ${reservation.code}`);
-  const url = new URL("https://api.the-odds-api.com/v4/sports/basketball_nba/events");
+  const url = new URL(`https://api.the-odds-api.com${EVENTS_ENDPOINT_CONTRACT.path.replace("{sport}", "basketball_nba")}`);
   url.searchParams.set("apiKey", deps.apiKey);
   let cost: number | null = null;
   let issue: string | null = null;

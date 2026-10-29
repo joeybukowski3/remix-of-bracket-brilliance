@@ -48,7 +48,7 @@ function checkNonessentialGates(account: ProviderAccountConfig, state: AccountUs
   return null;
 }
 
-function capFor(account: ProviderAccountConfig, usage: WindowUsage, consumer: Consumer, estimate: CostEstimate): number {
+function capFor(account: ProviderAccountConfig, usage: WindowUsage, consumer: Consumer, estimate: CostEstimate, state: AccountUsageState): number {
   const limit = usage.limit as number;
   if (usage.bounds.kind === "minute") return limit;
   const reserveCap = limit - account.safetyReserve;
@@ -63,13 +63,25 @@ function capFor(account: ProviderAccountConfig, usage: WindowUsage, consumer: Co
     && account.liveApproval?.scope === "NBA one-event player_points one-credit probe"
     && account.liveApproval.maxUnits === 1
     && estimate.units === 1;
-  return nbaProbe ? reserveCap : Math.min(reserveCap, Math.floor(limit * account.nonessentialMaxRatio));
+  // The provider documents GET /events as outside the usage quota (theOddsApiNbaEvents.ts records the contract), so one scoped
+  // discovery with a zero-unit approval may run past the ordinary cap. The exact workflow and endpoint are required, so no priced
+  // endpoint and no credit can use it, an approval that already funded an attempt gets the ordinary cap back, and the account's own
+  // reserve cap above still applies.
+  const nbaDiscovery = account.accountId === "the-odds-api:unverified-pool"
+    && consumer.attribution.sport === "nba"
+    && consumer.attribution.workflow === "events-discovery"
+    && consumer.attribution.endpoint === "/events"
+    && account.liveApproval?.scope === "NBA events discovery one request"
+    && account.liveApproval.maxUnits === 0
+    && estimate.units === 0
+    && !state.entries.some((entry) => entry.approvalId === account.liveApproval?.id);
+  return nbaProbe || nbaDiscovery ? reserveCap : Math.min(reserveCap, Math.floor(limit * account.nonessentialMaxRatio));
 }
 
 function checkLimits(account: ProviderAccountConfig, consumer: Consumer, estimate: CostEstimate, usages: WindowUsage[], state: AccountUsageState, nowMs: number): Denial | null {
   for (const usage of usages) {
     if (usage.limit === null) continue;
-    const cap = capFor(account, usage, consumer, estimate);
+    const cap = capFor(account, usage, consumer, estimate, state);
     if (usage.effectiveUsed + estimate.units <= cap) continue;
     if (usage.bounds.kind === "minute") {
       const oldest = state.entries
