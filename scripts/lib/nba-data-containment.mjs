@@ -13,6 +13,9 @@
 /** Restricted-report marker; assembled so this file does not itself match. */
 export const RESTRICTED_REPORT_MARKER = `${["JKB", "RESTRICTED"].join("-")}: NBA.com-derived`;
 
+/** Marker written into every postgame audit report (hoopR/ESPN stats plus sportsbook prices); assembled so this file does not itself match. */
+export const PRIVATE_AUDIT_MARKER = ["jkb", "private", "postgame", "audit"].join("-");
+
 /** Files that define the rules and therefore contain the patterns. */
 const RULE_DEFINITION_FILES = new Set([
   "scripts/lib/nba-data-containment.mjs",
@@ -40,6 +43,11 @@ export const PATH_RULES = [
     test: (p) =>
       /(^|\/)(player-games\.json|hoopr-import-report\.json|position-map-report\.json|position-review-list\.(json|csv)|private-preview-board\.json|positions-20\d\d-\d\d\.json|player-features\.json|position-proposals\.(json|csv)|backtest-report\.json|validation-report\.json|manifest-prior-season\.json)$/.test(p) ||
       /(^|\/)props-v1\/raw\//.test(p),
+  },
+  // Sportsbook captures, board inputs and postgame audits (hoopR/ESPN stats + Odds API prices): private, caught by name wherever copied.
+  {
+    id: "nba-odds-or-audit-artifact",
+    test: (p) => /(^|\/)(odds-captures|board-inputs|postgame-audit)\//.test(p) || /(^|\/)postgame-[^/]*\.(json|md)$/.test(p),
   },
   { id: "nba-backtest-artifact", test: (p) => /nba[^/]*\/(backtest|canonical|reports)\//i.test(p) },
   { id: "nba-com-retrieval-tool", test: (p) => LOCAL_ONLY_RETRIEVAL_TOOLS.has(p) },
@@ -78,6 +86,9 @@ export const CONTENT_RULES = [
     id: "nba-v1-private-record",
     test: (text) => /"schemaVersion"\s*:\s*"jkb-(player-games-import|hoopr-manifest|position-estimates|player-features|position-proposals|v1-backtest-report|v1-validation-report)-v1"/.test(text) || /"privatePreview"\s*:\s*\{/.test(text) || /"opponentBoxScores"\s*:\s*\{/.test(text),
   },
+  { id: "nba-odds-capture-record", test: (text) => /"schemaVersion"\s*:\s*"nba-odds-line-capture-v1"/.test(text) },
+  { id: "nba-private-line-detail", test: (text) => /"lineDetail"\s*:\s*\{/.test(text) },
+  { id: "private-postgame-audit-marker", test: (text) => text.includes(PRIVATE_AUDIT_MARKER) },
   { id: "nba-model-output", test: (text) => /"modelVersion"\s*:\s*"nba-(props-baseline|minutes)-/.test(text) },
   { id: "restricted-report-marker", test: (text) => text.includes(RESTRICTED_REPORT_MARKER) },
 ];
