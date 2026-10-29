@@ -252,9 +252,9 @@ describe("season statistics in the V1 build and the private preview", () => {
     expect(artifact.entries.some((e) => "seasonStats" in e)).toBe(false);
   });
 
-  it("still refuses a source that may be published, so season statistics can never ride a public source into a private board", () => {
+  it("does not decide publication: a source with public rights still builds the local file, and the publish-time gate decides what is shown", () => {
     const publishable = inputs("balldontlie");
-    expect(() => buildPrivatePreviewBoard({ generatedAtUtc: FIXTURE_BUILD_AT, projections: publishable.projections, roster: publishable.roster, dvp: publishable.dvp, seasonStats: publishable.seasonStats, licenses: { ...SOURCE_LICENSES, balldontlie: { status: "commercial-licensed", permittedUses: ["private-research", "model-development", "public-display"], basis: "fictional test agreement", reviewedOn: "2026-10-23" } } })).toThrow(/may be published/);
+    expect(() => buildPrivatePreviewBoard({ generatedAtUtc: FIXTURE_BUILD_AT, projections: publishable.projections, roster: publishable.roster, dvp: publishable.dvp, seasonStats: publishable.seasonStats, licenses: { ...SOURCE_LICENSES, balldontlie: { status: "commercial-licensed", permittedUses: ["private-research", "model-development", "public-display"], basis: "fictional test agreement", reviewedOn: "2026-10-23" } } })).not.toThrow();
   });
 });
 

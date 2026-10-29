@@ -36,3 +36,8 @@ The exposed dashboard credential is rotation-pending. Do not paste it into a tic
 ## Status update (2026-10-21)
 
 The findings above describe the October 20 review. The current one-request activation state and local execution controls are in [First NBA odds capture](nba-first-odds-capture.md). Credential rotation remains recommended, but is not an adapter prerequisite. The historical October 20 balance remains unusable for spending.
+
+## Status update (2026-10-29): hosted display of captured lines
+
+The owner accepted The Odds API's current terms (last updated 31 August 2026, re-read 2026-10-29) for displaying captured sportsbook lines in the JoeKnowsBall dashboard, subject to the provider's restrictions. `private-hosted` is added to `ODDS_SOURCE_LICENSES["the-odds-api"].permittedUses`; `raw-redistribution` remains absent because the terms bar reselling, repackaging or redistributing the data as a standalone data product, feed or API. The owner then confirmed that the dashboard is intended to be publicly accessible, so the same acceptance covers showing captured lines (bookmaker, line, Over/Under prices, timestamps) to visitors of the NBA props page. The page's backing endpoint exists only to render that page and is not offered as a data feed. Conditions kept in code and tests: every displayed line keeps its bookmaker, capture time and the provider's own update time, stale lines are flagged, and the hosted board makes no provider request and touches no quota or credential. This decision does not approve any live request; the shared-quota blocks above are unchanged. See `docs/nba-hosted-props.md`.
+

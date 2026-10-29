@@ -382,7 +382,8 @@ describe("license gate and provenance", () => {
   const dataset = generateEvaluationLeague();
 
   it("refuses every real, license-blocked source, whatever its data looks like", () => {
-    for (const sourceId of ["api-sports-nba", "balldontlie", "hoopr-espn", "espn", "stats.nba.com"] as const) {
+    // hoopR/ESPN is not listed: the owner's 2026-10-29 statements record model-development for it (tests in sourceStrategy.test.ts).
+    for (const sourceId of ["api-sports-nba", "balldontlie", "stats.nba.com"] as const) {
       expect(() => runEvaluation({ dataset: { ...dataset, sourceId }, license: SOURCE_LICENSES[sourceId], config: config() })).toThrow(SourceUseNotPermittedError);
     }
   });

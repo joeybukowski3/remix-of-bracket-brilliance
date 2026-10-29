@@ -33,6 +33,8 @@ export default defineConfig({
       "scripts/lib/pga-best-bets-schema.test.mjs",
       "api/_lib/mlb-refresh-backup.test.ts",
       "api/_lib/odds-current.test.ts",
+      // Public hosted NBA board (docs/nba-hosted-props.md): containment, caching, no provider access.
+      "api/_lib/nbaBoard/*.test.ts",
       "scripts/lib/mlb-opponent-k-context.test.mjs",
       "scripts/lib/mlb-strikeout-reference-context.test.mjs",
       // MLB K probability/value shadow layer (informational, does not drive

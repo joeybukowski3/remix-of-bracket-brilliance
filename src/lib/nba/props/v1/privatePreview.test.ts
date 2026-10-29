@@ -49,9 +49,23 @@ describe("private preview from hoopR/ESPN (private-research only)", () => {
   });
 });
 
-describe("the public builder is unchanged and still withholds this source", () => {
-  it("rejects every hoopR/ESPN projection and all DvP when assembling the public board with the real registry", () => {
+describe("the public builder is unchanged and withholds this source whenever its records do not carry the public uses", () => {
+  // The registry as it stood before the owner's 2026-10-29 hoopR/ESPN statements: private research only.
+  const BEFORE_STATEMENTS: Record<NbaSourceId, SourceLicense> = {
+    ...SOURCE_LICENSES,
+    espn: { ...SOURCE_LICENSES.espn, permittedUses: ["private-research"] },
+    "hoopr-espn": { ...SOURCE_LICENSES["hoopr-espn"], permittedUses: ["private-research"] },
+  };
+
+  it("passes hoopR/ESPN projections and DvP through its own gate once the records carry them, and builds no private notice", () => {
     const { artifact, report } = assembleBoard({ generatedAtUtc: FIXTURE_BUILD_AT, snapshots: [], projections: hoopr.projections, roster: hoopr.roster, dvp: hoopr.dvp });
+    expect(artifact.privatePreview).toBeUndefined();
+    expect(report.dvp.status).not.toBe("withheld");
+    expect(artifact.dvpRows.length).toBeGreaterThan(0);
+  });
+
+  it("rejects every hoopR/ESPN projection and all DvP when the records are narrowed back to private research", () => {
+    const { artifact, report } = assembleBoard({ generatedAtUtc: FIXTURE_BUILD_AT, snapshots: [], projections: hoopr.projections, roster: hoopr.roster, dvp: hoopr.dvp, sourceLicenses: BEFORE_STATEMENTS });
     expect(artifact.entries).toEqual([]);
     expect(artifact.dvpRows).toEqual([]);
     expect(artifact.privatePreview).toBeUndefined();
@@ -75,9 +89,11 @@ describe("which sources may feed a private preview", () => {
     expect(() => assertPrivatePreviewSource("hoopr-espn", SOURCE_LICENSES)).not.toThrow();
   });
 
-  it("refuses a source that may be published: that goes through the public builder, not a private preview", () => {
+  it("does not decide publication: a source with public rights still builds the local file, and the publish-time gate decides what is shown", () => {
     const licensed: Record<NbaSourceId, SourceLicense> = { ...SOURCE_LICENSES, balldontlie: { status: "commercial-licensed", permittedUses: ["private-research", "model-development", "public-display"], basis: "test agreement", reviewedOn: "2026-10-23" } };
-    expect(() => assertPrivatePreviewSource("balldontlie", licensed)).toThrow(/build the public board/);
+    expect(() => assertPrivatePreviewSource("balldontlie", licensed)).not.toThrow();
+    const none: Record<NbaSourceId, SourceLicense> = { ...SOURCE_LICENSES, balldontlie: { ...SOURCE_LICENSES.balldontlie, permittedUses: ["public-display"] } };
+    expect(() => assertPrivatePreviewSource("balldontlie", none)).toThrow(/no effective private-research right/);
   });
 
   it("is capped by the origin: a hoopR record that grants more than ESPN's cannot widen it", () => {

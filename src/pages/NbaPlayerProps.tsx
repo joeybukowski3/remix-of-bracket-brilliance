@@ -3,19 +3,33 @@ import SiteShell from "@/components/layout/SiteShell";
 import DvpMatrix from "@/components/nba/DvpMatrix";
 import { DVP_VIEWS, viewLabel } from "@/components/nba/dvpViews";
 import { Chip } from "@/components/nba/Chip";
+import SnapshotStatus from "@/components/nba/SnapshotStatus";
 import PropsBoardView from "@/components/nba/PropsBoardView";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { cn } from "@/lib/utils";
 import { DVP_POSITIONS, DVP_STATS, type DvpPosition, type DvpStat, type DvpView } from "@/lib/nba/props/dvp";
 import { BOARD_SCHEMA_VERSION, containsPrivateData, type PropsBoardArtifact } from "@/lib/nba/props/propsBoard";
+import { fetchHostedBoard, snapshotFreshness } from "@/lib/nba/props/hostedClient";
 
 const BOARD_URL = `${import.meta.env.BASE_URL}data/nba-props-board.json`;
 const DEMO_QUERY = "demo=synthetic";
 type Tab = "board" | "matrix";
-type LoadState = { status: "loading" } | { status: "empty"; reason: string } | { status: "ready"; board: PropsBoardArtifact };
+type LoadState =
+  | { status: "loading" }
+  | { status: "empty"; reason: string }
+  | { status: "ready"; board: PropsBoardArtifact; hosted?: { publishedAtUtc: string; loadedAtMs: number; hasStatistics: boolean; attribution: string; notice: string | null } };
 
 const isBoard = (value: unknown): value is PropsBoardArtifact =>
   typeof value === "object" && value !== null && (value as { schemaVersion?: unknown }).schemaVersion === BOARD_SCHEMA_VERSION && Array.isArray((value as PropsBoardArtifact).entries) && Array.isArray((value as PropsBoardArtifact).dvpRows);
+
+/** The published snapshot from the server. A static public board, when one exists, is always tried first. */
+async function loadHostedBoard(): Promise<LoadState> {
+  const hosted = await fetchHostedBoard();
+  if (hosted.kind === "ready") {
+    return { status: "ready", board: hosted.board, hosted: { publishedAtUtc: hosted.publishedAtUtc, loadedAtMs: Date.now(), hasStatistics: hosted.tier === "full", attribution: hosted.attribution, notice: hosted.notice } };
+  }
+  return { status: "empty", reason: hosted.reason };
+}
 
 async function loadBoard(): Promise<LoadState> {
   // The invented demo board exists only on the dev server; production builds never ship it.
@@ -23,6 +37,11 @@ async function loadBoard(): Promise<LoadState> {
     const { buildDemoBoard } = await import("@/lib/nba/props/__fixtures__/boardDemo");
     return { status: "ready", board: buildDemoBoard() };
   }
+  const publicState = await loadPublicBoard();
+  return publicState.status === "ready" ? publicState : loadHostedBoard();
+}
+
+async function loadPublicBoard(): Promise<LoadState> {
   try {
     const response = await fetch(BOARD_URL, { headers: { accept: "application/json" } });
     if (!response.ok) return { status: "empty", reason: "No NBA props board has been published yet." };
@@ -167,6 +186,13 @@ export default function NbaPlayerProps() {
         {state.status === "ready" ? (
           <>
             <Banners board={state.board} />
+            {state.hosted ? (
+              <>
+                <SnapshotStatus freshness={snapshotFreshness(state.board, state.hosted.publishedAtUtc, state.hosted.loadedAtMs)} hasStatistics={state.hosted.hasStatistics} />
+                {state.hosted.notice ? <p role="note" data-testid="snapshot-notice" className="mb-3 rounded border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] text-slate-700">{state.hosted.notice}</p> : null}
+                <p data-testid="snapshot-attribution" className="mb-3 text-[11px] text-slate-500">{state.hosted.attribution}</p>
+              </>
+            ) : null}
             <div className="mb-4 flex gap-4 border-b border-slate-200" role="tablist" aria-label="NBA props views">
               {(["board", "matrix"] as const).map((t) => (
                 <button key={t} type="button" role="tab" aria-selected={tab === t} onClick={() => setTab(t)} className={cn("-mb-px border-b-2 px-1 pb-2 text-[13px] font-semibold", tab === t ? "border-slate-900 text-slate-900" : "border-transparent text-slate-500 hover:text-slate-800")}>

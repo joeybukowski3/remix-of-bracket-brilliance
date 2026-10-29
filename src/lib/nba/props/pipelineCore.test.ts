@@ -316,7 +316,7 @@ describe("capture window", () => {
 
 describe("odds-source records", () => {
   it("limits The Odds API to research, model development and display after the owner decision", () => {
-    expect(ODDS_SOURCE_LICENSES["the-odds-api"].permittedUses).toEqual(["private-research", "model-development", "public-display"]);
+    expect(ODDS_SOURCE_LICENSES["the-odds-api"].permittedUses).toEqual(["private-research", "private-hosted", "model-development", "public-display"]);
     for (const id of ["parlayapi", "manual-import"] as const) expect(ODDS_SOURCE_LICENSES[id].permittedUses).toEqual([]);
     expect(ODDS_SOURCE_LICENSES.parlayapi.status).toBe("restricted");
     expect(ODDS_SOURCE_LICENSES["synthetic-odds"].permittedUses).toEqual([...DATA_USES]);
