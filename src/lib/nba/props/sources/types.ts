@@ -32,12 +32,15 @@ export type NbaSourceId =
   | "synthetic";
 
 /**
- * private-research: evaluation by the owner only. model-development: training
- * and tuning. public-display: publishing DERIVED outputs (projections,
- * predictions). raw-redistribution: republishing or serving source rows; a
- * grant for the other uses never implies this one.
+ * private-research: evaluation by the owner only, on the owner's own machine.
+ * private-hosted: storing the data on, and serving it from, a third-party
+ * host (database, serverless function) to the authenticated owner alone;
+ * private-research never implies it, because the data leaves the owner's
+ * machine. model-development: training and tuning. public-display: publishing
+ * DERIVED outputs (projections, predictions). raw-redistribution: republishing
+ * or serving source rows; a grant for the other uses never implies this one.
  */
-export const DATA_USES = ["private-research", "model-development", "public-display", "raw-redistribution"] as const;
+export const DATA_USES = ["private-research", "private-hosted", "model-development", "public-display", "raw-redistribution"] as const;
 export type DataUse = (typeof DATA_USES)[number];
 
 export type LicenseStatus = "synthetic" | "restricted" | "unlicensed" | "commercial-licensed";

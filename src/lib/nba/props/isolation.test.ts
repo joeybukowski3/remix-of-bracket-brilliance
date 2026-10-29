@@ -11,6 +11,8 @@ import { describe, expect, it } from "vitest";
 const repoRoot = path.resolve(__dirname, "../../../..");
 /** The one application surface allowed to import NBA code: the unlisted, noindex /nba/props page. */
 const NBA_PROPS_PAGE_FILES = /^(src\/AppRoutes\.tsx|src\/pages\/NbaPlayerProps\.tsx|src\/components\/nba\/[^/]+\.tsx?)$/;
+/** The hosted private board's server side: one function plus its helpers (docs/nba-hosted-private-props.md). */
+const NBA_HOSTED_API_FILES = /^api\/(nba\/props-board|_lib\/nbaPrivate\/[^/]+)\.ts$/;
 const SOURCE_EXT =/\.(ts|tsx|mts|mjs|js)$/;
 /** Walking src/, scripts/ and api/ can exceed the 5 s default under a parallel run. */
 const WALK_TIMEOUT_MS = 60_000;
@@ -43,15 +45,22 @@ describe("NBA code isolation", () => {
 
   it("keeps NBA code out of the application and other sports", () => {
     const importers = files.filter((file) => importsOf(file).some((spec) => /lib\/nba\/|\/nba\/props\//.test(spec)));
-    const outside = importers.filter((file) => !file.startsWith("src/lib/nba/") && !/^scripts\/(nba-|lib\/nba-)/.test(file) && !NBA_PROPS_PAGE_FILES.test(file));
+    const outside = importers.filter((file) => !file.startsWith("src/lib/nba/") && !/^scripts\/(nba-|lib\/nba-)/.test(file) && !NBA_PROPS_PAGE_FILES.test(file) && !NBA_HOSTED_API_FILES.test(file));
     expect(outside).toEqual([]);
   }, WALK_TIMEOUT_MS);
 
   it("limits the /nba/props page to the browser-safe board and DvP modules", () => {
     const pageFiles = files.filter((file) => NBA_PROPS_PAGE_FILES.test(file) && file !== "src/AppRoutes.tsx");
     const nbaImports = pageFiles.flatMap((file) => importsOf(file).filter((spec) => /lib\/nba\//.test(spec)).map((spec) => `${file} -> ${spec}`));
-    const disallowed = nbaImports.filter((entry) => !/-> @\/lib\/nba\/props\/(propsBoard|dvp|dvpPositions|canonical|seasonStats|recentForm|boxScoreTables|teamBrand|minutesOverride|boardColumns|__fixtures__\/boardDemo)$/.test(entry));
+    const disallowed = nbaImports.filter((entry) => !/-> @\/lib\/nba\/props\/(propsBoard|dvp|dvpPositions|canonical|seasonStats|recentForm|boxScoreTables|teamBrand|minutesOverride|boardColumns|hostedClient|__fixtures__\/boardDemo)$/.test(entry));
     expect(disallowed).toEqual([]);
     expect(importsOf("src/AppRoutes.tsx").filter((spec) => /nba/i.test(spec))).toEqual(["./pages/NbaPlayerProps"]);
+  }, WALK_TIMEOUT_MS);
+
+  it("limits the hosted API to the pure redaction module, so no model, ingest or license code is in the function bundle", () => {
+    const apiFiles = files.filter((file) => NBA_HOSTED_API_FILES.test(file) && !file.endsWith(".test.ts"));
+    expect(apiFiles.length).toBeGreaterThan(0);
+    const nbaImports = apiFiles.flatMap((file) => importsOf(file).filter((spec) => /lib\/nba\//.test(spec)).map((spec) => `${file} -> ${spec}`));
+    expect(nbaImports.filter((entry) => !/-> (\.\.\/)+src\/lib\/nba\/props\/hosted\/redact(\.js)?$/.test(entry))).toEqual([]);
   }, WALK_TIMEOUT_MS);
 });

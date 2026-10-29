@@ -3,19 +3,33 @@ import SiteShell from "@/components/layout/SiteShell";
 import DvpMatrix from "@/components/nba/DvpMatrix";
 import { DVP_VIEWS, viewLabel } from "@/components/nba/dvpViews";
 import { Chip } from "@/components/nba/Chip";
+import PrivateAccess from "@/components/nba/PrivateAccess";
 import PropsBoardView from "@/components/nba/PropsBoardView";
 import { usePageSeo } from "@/hooks/usePageSeo";
 import { cn } from "@/lib/utils";
 import { DVP_POSITIONS, DVP_STATS, type DvpPosition, type DvpStat, type DvpView } from "@/lib/nba/props/dvp";
 import { BOARD_SCHEMA_VERSION, containsPrivateData, type PropsBoardArtifact } from "@/lib/nba/props/propsBoard";
+import { fetchHostedBoard, signOut } from "@/lib/nba/props/hostedClient";
 
 const BOARD_URL = `${import.meta.env.BASE_URL}data/nba-props-board.json`;
 const DEMO_QUERY = "demo=synthetic";
 type Tab = "board" | "matrix";
-type LoadState = { status: "loading" } | { status: "empty"; reason: string } | { status: "ready"; board: PropsBoardArtifact };
+type LoadState =
+  | { status: "loading" }
+  | { status: "empty"; reason: string }
+  | { status: "login" }
+  | { status: "ready"; board: PropsBoardArtifact; hosted?: boolean };
 
 const isBoard = (value: unknown): value is PropsBoardArtifact =>
   typeof value === "object" && value !== null && (value as { schemaVersion?: unknown }).schemaVersion === BOARD_SCHEMA_VERSION && Array.isArray((value as PropsBoardArtifact).entries) && Array.isArray((value as PropsBoardArtifact).dvpRows);
+
+/** The owner's signed-in board from the server. A public board, when one exists, is always tried first. */
+async function loadHostedBoard(publicState: LoadState): Promise<LoadState> {
+  const hosted = await fetchHostedBoard();
+  if (hosted.kind === "ready") return { status: "ready", board: hosted.board, hosted: true };
+  if (hosted.kind === "login") return { status: "login" };
+  return hosted.snapshotMissing ? { status: "empty", reason: hosted.reason } : publicState;
+}
 
 async function loadBoard(): Promise<LoadState> {
   // The invented demo board exists only on the dev server; production builds never ship it.
@@ -23,6 +37,11 @@ async function loadBoard(): Promise<LoadState> {
     const { buildDemoBoard } = await import("@/lib/nba/props/__fixtures__/boardDemo");
     return { status: "ready", board: buildDemoBoard() };
   }
+  const publicState = await loadPublicBoard();
+  return publicState.status === "ready" ? publicState : loadHostedBoard(publicState);
+}
+
+async function loadPublicBoard(): Promise<LoadState> {
   try {
     const response = await fetch(BOARD_URL, { headers: { accept: "application/json" } });
     if (!response.ok) return { status: "empty", reason: "No NBA props board has been published yet." };
@@ -145,6 +164,7 @@ export default function NbaPlayerProps() {
   });
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [tab, setTab] = useState<Tab>("board");
+  const [reloadKey, setReloadKey] = useState(0);
   useEffect(() => {
     let cancelled = false;
     void loadBoard().then((next) => {
@@ -153,7 +173,15 @@ export default function NbaPlayerProps() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [reloadKey]);
+  const reload = () => {
+    setState({ status: "loading" });
+    setReloadKey((key) => key + 1);
+  };
+  const leave = () => {
+    setState({ status: "loading" });
+    void signOut().then(() => setReloadKey((key) => key + 1));
+  };
   return (
     <SiteShell>
       <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">
@@ -164,9 +192,15 @@ export default function NbaPlayerProps() {
         {import.meta.env.DEV && window.location.search.includes("private=1") ? <PrivateBoardPicker onLoad={(board) => setState({ status: "ready", board })} /> : null}
         {state.status === "loading" ? <p className="text-[13px] text-slate-500">Loading…</p> : null}
         {state.status === "empty" ? <EmptyState reason={state.reason} /> : null}
+        {state.status === "login" ? <PrivateAccess onSignedIn={reload} /> : null}
         {state.status === "ready" ? (
           <>
             <Banners board={state.board} />
+            {state.hosted ? (
+              <p className="mb-3 text-right text-[11px]">
+                <button type="button" onClick={leave} className="font-semibold text-slate-500 underline hover:text-slate-800">Sign out</button>
+              </p>
+            ) : null}
             <div className="mb-4 flex gap-4 border-b border-slate-200" role="tablist" aria-label="NBA props views">
               {(["board", "matrix"] as const).map((t) => (
                 <button key={t} type="button" role="tab" aria-selected={tab === t} onClick={() => setTab(t)} className={cn("-mb-px border-b-2 px-1 pb-2 text-[13px] font-semibold", tab === t ? "border-slate-900 text-slate-900" : "border-transparent text-slate-500 hover:text-slate-800")}>
