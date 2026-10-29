@@ -14,6 +14,13 @@ import { SOURCE_LICENSES } from "../sources/licenses";
 import type { NbaSourceId, SourceLicense } from "../sources/types";
 import { runV1Build, runV1PrivatePreview } from "./run";
 
+/** The registry as it stood before the owner's hoopR/ESPN statements of 2026-10-29: private research only. */
+const BEFORE_STATEMENTS: Record<NbaSourceId, SourceLicense> = {
+  ...SOURCE_LICENSES,
+  espn: { ...SOURCE_LICENSES.espn, permittedUses: ["private-research"] },
+  "hoopr-espn": { ...SOURCE_LICENSES["hoopr-espn"], permittedUses: ["private-research"] },
+};
+
 const dirs: string[] = [];
 afterEach(() => {
   for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true });
@@ -92,10 +99,14 @@ describe("V1 with a licensed source (test-only agreement)", () => {
     const licensed = await runV1Build({ root: licensedRoot, generatedAtUtc: FIXTURE_BUILD_AT, sourceLicenses: LICENSED });
     const licensedRoster = JSON.parse(readFileSync(path.join(licensedRoot, licensed.files.roster), "utf8")) as { players: Record<string, unknown> };
     expect(Object.keys(licensedRoster.players)).toHaveLength(240 + 1);
-    // hoopR/ESPN has no public-display right, so its team and position labels never ride into a public build.
+    // Without a public-display right, hoopR/ESPN's team and position labels never ride into a public build...
     const hooprRoot = project({ sourceId: "hoopr-espn" });
-    const hoopr = await runV1Build({ root: hooprRoot, generatedAtUtc: FIXTURE_BUILD_AT });
+    const hoopr = await runV1Build({ root: hooprRoot, generatedAtUtc: FIXTURE_BUILD_AT, sourceLicenses: BEFORE_STATEMENTS });
     expect(JSON.parse(readFileSync(path.join(hooprRoot, hoopr.files.roster), "utf8"))).toEqual({ players: {} });
+    // ...and with the owner's recorded statements the unchanged rule lets them through.
+    const recordedRoot = project({ sourceId: "hoopr-espn" });
+    const recorded = await runV1Build({ root: recordedRoot, generatedAtUtc: FIXTURE_BUILD_AT });
+    expect(Object.keys((JSON.parse(readFileSync(path.join(recordedRoot, recorded.files.roster), "utf8")) as { players: Record<string, unknown> }).players).length).toBeGreaterThan(0);
   });
 
   it("accepts the same data as a CSV export plus a source record", async () => {
@@ -133,12 +144,22 @@ describe("V1 under the repository's real source rights (the blocker that holds t
     expect(text).not.toMatch(/Demo Player|BOS-|balldontlie/);
   });
 
-  it.each(["synthetic", "hoopr-espn", "stats.nba.com"] as const)("withholds data labelled as %s", async (sourceId) => {
+  it.each(["synthetic", "stats.nba.com"] as const)("withholds data labelled as %s", async (sourceId) => {
     const root = project({ sourceId });
     const result = await runV1Build({ root, generatedAtUtc: FIXTURE_BUILD_AT });
     expect(result.board.report.projections.accepted).toBe(0);
     expect(result.board.report.dvp.status).toBe("withheld");
     expect(readBoard(result.board.outFile).entries).toEqual([]);
+  });
+
+  it("withholds data labelled as hoopr-espn unless the records carry the owner's public statements, and the unchanged gate then lets it through", async () => {
+    const narrowed = await runV1Build({ root: project({ sourceId: "hoopr-espn" }), generatedAtUtc: FIXTURE_BUILD_AT, sourceLicenses: BEFORE_STATEMENTS });
+    expect(narrowed.board.report.projections.accepted).toBe(0);
+    expect(narrowed.board.report.dvp.status).toBe("withheld");
+    expect(readBoard(narrowed.board.outFile).entries).toEqual([]);
+    const recorded = await runV1Build({ root: project({ sourceId: "hoopr-espn" }), generatedAtUtc: FIXTURE_BUILD_AT });
+    expect(recorded.board.report.projections.accepted).toBeGreaterThan(0);
+    expect(recorded.board.report.dvp.status).not.toBe("withheld");
   });
 
   it("does not let a source id inside a CSV source record pick a more permissive license", async () => {
@@ -175,9 +196,9 @@ describe("V1 private preview through the runner (real registry)", () => {
     expect(() => runV1PrivatePreview({ root, generatedAtUtc: FIXTURE_BUILD_AT, inputDir: "public/data" })).toThrow(/must be under/);
   });
 
-  it("leaves the public path unchanged for the same data: the public run still withholds everything", async () => {
+  it("leaves the public path unchanged for the same data: with the records narrowed to private research the public run still withholds everything", async () => {
     const root = project({ sourceId: "hoopr-espn" });
-    const result = await runV1Build({ root, generatedAtUtc: FIXTURE_BUILD_AT });
+    const result = await runV1Build({ root, generatedAtUtc: FIXTURE_BUILD_AT, sourceLicenses: BEFORE_STATEMENTS });
     expect(result.board.report.projections.accepted).toBe(0);
     expect(result.board.report.dvp.status).toBe("withheld");
     expect(readBoard(result.board.outFile).entries).toEqual([]);

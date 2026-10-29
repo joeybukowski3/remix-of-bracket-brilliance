@@ -240,7 +240,7 @@ describe("gates", () => {
       projections: [
         projection({ inputSourceIds: ["stats.nba.com"] }),
         projection({ playerName: "Demo Big Four", market: "reb", inputSourceIds: [] }),
-        projection({ playerName: "Demo Stale Five", team: "BOS", inputSourceIds: ["hoopr-espn"] }),
+        projection({ playerName: "Demo Stale Five", team: "BOS", inputSourceIds: ["llimllib-nba-data"] }),
         projection({ playerName: "Demo Bench Six", market: "ast", inputSourceIds: ["synthetic"] }),
         projection({ playerName: "Demo Projected Only", team: "BOS", value: -3 }),
         projection({ playerName: "Demo Late", inputCutoffUtc: "2026-11-09T23:00:00Z" }),
@@ -250,7 +250,7 @@ describe("gates", () => {
     expect(report.projections.rejected.map((r) => r.reason)).toEqual([
       expect.stringContaining("stats.nba.com"),
       "does not name the data sources it was built from",
-      expect.stringContaining("hoopr-espn"),
+      expect.stringContaining("llimllib-nba-data"),
       "built from synthetic source synthetic",
       "projection value is not a non-negative number",
       "inputs postdate the build",
@@ -281,10 +281,17 @@ describe("gates", () => {
     expect(synthetic.report.dvp).toMatchObject({ status: "withheld", reason: expect.stringContaining("synthetic") });
   });
 
-  it("shows the real registry gives no DvP or projection a pass today", () => {
-    const { artifact, report } = assembleBoard({ generatedAtUtc: BUILD_AT, snapshots: snapshots(), projections: PROJECTIONS.records, roster: {}, dvp: { sourceId: "hoopr-espn", lines: boxScores().map((l) => ({ ...l, sourceId: "hoopr-espn" })) } });
-    expect(artifact.dvpRows).toEqual([]);
-    expect(artifact.entries.every((e) => e.projection === null && e.line === null)).toBe(true);
-    expect(report.projections.accepted).toBe(0);
+  it("passes hoopR/ESPN through the unchanged public gate only because both records carry the owner's 2026-10-29 statement", () => {
+    const input = { generatedAtUtc: BUILD_AT, snapshots: snapshots(), projections: PROJECTIONS.records.map((p) => ({ ...p, inputSourceIds: ["hoopr-espn"] })), roster: {}, dvp: { sourceId: "hoopr-espn" as const, lines: boxScores().map((l) => ({ ...l, sourceId: "hoopr-espn" as const })) } };
+    const recorded = assembleBoard(input);
+    expect(recorded.artifact.dvpRows.length).toBeGreaterThan(0);
+    expect(recorded.report.projections.accepted).toBeGreaterThan(0);
+    // The gate itself did not change: narrow the ESPN origin record, or the box-score source's own, and it closes again.
+    const narrowedOrigin = assembleBoard({ ...input, sourceLicenses: { ...SOURCE_LICENSES, espn: { ...SOURCE_LICENSES.espn, permittedUses: ["private-research", "private-hosted"] } } });
+    expect(narrowedOrigin.artifact.dvpRows).toEqual([]);
+    expect(narrowedOrigin.report.projections.accepted).toBe(0);
+    const narrowedSource = assembleBoard({ ...input, sourceLicenses: { ...SOURCE_LICENSES, "hoopr-espn": { ...SOURCE_LICENSES["hoopr-espn"], permittedUses: ["private-research", "private-hosted", "model-development"] } } });
+    expect(narrowedSource.artifact.dvpRows).toEqual([]);
+    expect(narrowedSource.report.projections.accepted).toBe(0);
   });
 });

@@ -11,8 +11,8 @@ import { describe, expect, it } from "vitest";
 const repoRoot = path.resolve(__dirname, "../../../..");
 /** The one application surface allowed to import NBA code: the unlisted, noindex /nba/props page. */
 const NBA_PROPS_PAGE_FILES = /^(src\/AppRoutes\.tsx|src\/pages\/NbaPlayerProps\.tsx|src\/components\/nba\/[^/]+\.tsx?)$/;
-/** The hosted private board's server side: one function plus its helpers (docs/nba-hosted-private-props.md). */
-const NBA_HOSTED_API_FILES = /^api\/(nba\/props-board|_lib\/nbaPrivate\/[^/]+)\.ts$/;
+/** The hosted private board's server side: one function plus its helpers (docs/nba-hosted-props.md). */
+const NBA_HOSTED_API_FILES = /^api\/(nba\/props-board|_lib\/nbaBoard\/[^/]+)\.ts$/;
 const SOURCE_EXT =/\.(ts|tsx|mts|mjs|js)$/;
 /** Walking src/, scripts/ and api/ can exceed the 5 s default under a parallel run. */
 const WALK_TIMEOUT_MS = 60_000;

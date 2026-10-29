@@ -1,14 +1,21 @@
 /**
- * Hosted private snapshot: what may leave the owner's computer, and the check that runs again when it is served.
+ * Public NBA snapshot: what may be stored in the hosted snapshot table and served to any visitor, and the check that runs
+ * again on every read.
  *
  * The publish script decides a tier from the source license records (hostingGate.ts) and stores the result as an envelope.
  * The serverless function imports ONLY this module (types erased), so it re-applies the tier on every read without loading
  * the license registry, the model or any ingest code. Both directions are allowlists: a field that is not named here never
- * reaches the hosted store or the browser, whatever the board builder adds later.
+ * reaches the snapshot table or the browser, whatever the board builder adds later.
  *
- *  - full: every field of the private board. Requires an explicit private-hosted right on the lines and statistics sources.
- *  - lines-only: sportsbook lines and per-book detail (The Odds API) only. Projections, season statistics, last-ten tables,
- *    Defense vs. Position and roster positions all derive from hoopR/ESPN and are removed.
+ *  - full: every field of the board: projections, season statistics with recent games, opponent tables, Defense vs. Position
+ *    and sportsbook lines with per-book detail. Requires the statistics source's public-display, model-development and
+ *    raw-redistribution rights (the last because the dashboard shows per-game rows) and the line source's public-display.
+ *  - lines-only: sportsbook lines and per-book detail only. Projections, season statistics, last-ten tables, Defense vs.
+ *    Position and roster positions all derive from hoopR/ESPN and are removed. This is what every visitor gets until the
+ *    statistics source's records allow more.
+ *
+ * Neither tier carries the builder's `privatePreview` notice ("do not publish, share or deploy"): this is the public board,
+ * and its source credit and any limitation are the fixed text below.
  */
 import type { BoardEntry, PropsBoardArtifact } from "../propsBoard";
 
@@ -18,16 +25,23 @@ export const HOSTED_BOARD_SCHEMA = "nba-props-board-v1";
 export const HOSTED_TIERS = ["full", "lines-only"] as const;
 export type HostedTier = (typeof HOSTED_TIERS)[number];
 
-export const WITHHELD_PROJECTION_REASON = "Withheld from the hosted board: the statistics source is not cleared for hosting.";
-/** Fixed text for a lines-only board: the carried-over notice describes hoopR/ESPN statistics, which this tier does not contain. */
-export const LINES_ONLY_NOTICE = "Private hosted board for the owner only. Not for publication. Lines-only view: projections, statistics and Defense vs. Position stay on the owner's computer until their source rights allow hosting.";
-export const LINES_ONLY_ATTRIBUTION = "Lines: The Odds API, for private research only; raw odds are not redistributed.";
-/**
- * Fixed text for a full board. The local builder's notice says "do not publish, share or deploy", which is not what this
- * owner-authenticated deployment is; this one states the actual basis without claiming an ESPN or SportsDataverse license.
- */
-export const FULL_NOTICE = "Private hosted board for the owner only: not for publication or redistribution. hoopR/ESPN statistics are used under the owner's own authorization (owner-provided; no ESPN or SportsDataverse license or written permission is on file).";
-const DEFAULT_ATTRIBUTION = "Data: hoopR (sportsdataverse, CC BY 4.0), derived from ESPN; Lines: The Odds API, for private research only; raw odds are not redistributed.";
+export const WITHHELD_PROJECTION_REASON = "Not shown yet: the statistics source is not cleared for public display.";
+
+/** Public text per tier. `notice` is a limitation the page states; null when there is none. */
+export interface PublicText {
+  attribution: string;
+  notice: string | null;
+}
+export const PUBLIC_TEXT: Readonly<Record<HostedTier, PublicText>> = Object.freeze({
+  full: {
+    attribution: "Statistics: hoopR (sportsdataverse, CC BY 4.0), derived from ESPN, columns selected and non-playing rows excluded. Sportsbook lines: The Odds API. Projections are JKB model estimates, not advice.",
+    notice: null,
+  },
+  "lines-only": {
+    attribution: "Sportsbook lines: The Odds API.",
+    notice: "Showing sportsbook lines only. JKB projections, season statistics, last-ten tables and Defense vs. Position are not shown on this page yet.",
+  },
+});
 
 export interface HostedSnapshotEnvelope {
   schemaVersion: typeof HOSTED_SNAPSHOT_SCHEMA;
@@ -61,7 +75,6 @@ function linesOnlyEntry(entry: BoardEntry): BoardEntry {
 /** Applies a tier to a board. Idempotent: projecting an already projected board changes nothing. */
 export function projectBoardForTier(board: PropsBoardArtifact, tier: HostedTier): PropsBoardArtifact {
   if (tier === "full") {
-    const attribution = board.privatePreview?.attribution ?? DEFAULT_ATTRIBUTION;
     return {
       schemaVersion: board.schemaVersion,
       generatedAtUtc: board.generatedAtUtc,
@@ -71,7 +84,6 @@ export function projectBoardForTier(board: PropsBoardArtifact, tier: HostedTier)
       dvpRows: board.dvpRows,
       ...(board.opponentRecent ? { opponentRecent: board.opponentRecent } : {}),
       ...(board.opponentBoxScores ? { opponentBoxScores: board.opponentBoxScores } : {}),
-      privatePreview: { notice: FULL_NOTICE, attribution },
     };
   }
   return {
@@ -81,7 +93,6 @@ export function projectBoardForTier(board: PropsBoardArtifact, tier: HostedTier)
     sources: { lines: [...board.sources.lines], dvp: null, dvpUpdatedUtc: null },
     entries: board.entries.filter((entry) => entry.line !== null).map(linesOnlyEntry),
     dvpRows: [],
-    privatePreview: { notice: LINES_ONLY_NOTICE, attribution: LINES_ONLY_ATTRIBUTION },
   };
 }
 

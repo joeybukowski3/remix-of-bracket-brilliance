@@ -4,9 +4,9 @@
  * (pipeline/boardBuild.ts), whose rights gates are not touched and still withhold everything from such a source.
  *
  * What keeps it private:
- *  - every source behind an input must carry an effective private-research right in the registry, must not be
- *    synthetic, and must NOT already be publicly licensed (a source that may be published goes through the public
- *    builder, not this one);
+ *  - every source behind an input must carry an effective private-research right in the registry and must not be
+ *    synthetic. This builder writes only the local file; what may leave the machine, and be shown to visitors, is decided
+ *    separately when a snapshot is published (hosted/hostingGate.ts), which is at least as strict as the public builder;
  *  - the artifact carries `privatePreview` with a notice and an attribution the page must show, and a sportsbook line only
  *    from a stored odds capture whose rights include private research (v1/privateLines.ts);
  *  - the runner writes it only under data/nba/ (gitignored, excluded from deployment), never under public/;
@@ -67,14 +67,13 @@ const attributionFor = (sources: readonly string[], lineSources: readonly string
 const noticeFor = (sources: readonly string[]): string =>
   `PRIVATE PREVIEW. Built from ${sources.join(", ")} data under the owner's decision to use it for private analysis. The upstream owner's commercial and public reuse terms are unresolved, and this decision is not their permission. Not licensed for publication: do not publish, share or deploy this board.`;
 
-/** Throws unless the source may feed a private preview and may not already be published through the public builder. */
+/** Throws unless the source may feed the local private file. It does not decide publication: the publish-time gate does. */
 export function assertPrivatePreviewSource(id: NbaSourceId, licenses: Readonly<Record<NbaSourceId, SourceLicense>>): void {
   const license = licenses[id];
   if (!license) throw new Error(`unknown source ${id}`);
   if (license.status === "synthetic") throw new Error(`source ${id} is synthetic; invented data never appears on the board`);
   const { permittedUses } = effectivePermittedUses(id, licenses);
   if (!permittedUses.includes("private-research")) throw new Error(`source ${id} has no effective private-research right in the registry, so no private preview may be built from it`);
-  if (permittedUses.includes("public-display")) throw new Error(`source ${id} may be published: build the public board instead of a private preview`);
 }
 
 const teamsOf = (gameKey: string): [string, string] | null => {

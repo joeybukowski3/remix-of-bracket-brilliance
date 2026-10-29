@@ -1,10 +1,10 @@
 // Hosted NBA snapshot storage: one row in a Supabase table that only the service role can reach.
 // Server-only. The table has row level security enabled and no policy, so the anon key shipped in the browser bundle
-// returns nothing (supabase/migrations/20261029_nba_private_snapshots.sql).
+// returns nothing (supabase/migrations/20261029_nba_board_snapshots.sql).
 import { supabaseAdminFetch } from "../supabase";
 
 export const SNAPSHOT_ROW_ID = "current";
-const TABLE_PATH = "/rest/v1/nba_private_snapshots";
+const TABLE_PATH = "/rest/v1/nba_board_snapshots";
 
 export interface SnapshotStore {
   /** The stored envelope exactly as saved (unvalidated), or null when nothing was published. */

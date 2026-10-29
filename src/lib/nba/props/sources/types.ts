@@ -33,10 +33,11 @@ export type NbaSourceId =
 
 /**
  * private-research: evaluation by the owner only, on the owner's own machine.
- * private-hosted: storing the data on, and serving it from, a third-party
- * host (database, serverless function) to the authenticated owner alone;
- * private-research never implies it, because the data leaves the owner's
- * machine. model-development: training and tuning. public-display: publishing
+ * private-hosted: storing the data on a third-party host (database) for the
+ * owner's own deployment; private-research never implies it, because the data
+ * leaves the owner's machine. It does NOT cover showing the data to visitors:
+ * that needs public-display, and per-game rows also raw-redistribution.
+ * model-development: training and tuning. public-display: publishing
  * DERIVED outputs (projections, predictions). raw-redistribution: republishing
  * or serving source rows; a grant for the other uses never implies this one.
  */

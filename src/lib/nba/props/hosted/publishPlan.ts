@@ -26,7 +26,7 @@ function isPrivateBoard(raw: unknown): raw is PropsBoardArtifact {
 
 export function planPublish(raw: unknown, publishedAtUtc: string, licenses?: GateLicenses): PublishPlan {
   if (!isPrivateBoard(raw)) return refuse("the file is not an NBA props board");
-  if (raw.privatePreview === undefined) return refuse("only private preview boards are published here; a public board goes to public/data through the public builder", null, raw.entries.length);
+  if (raw.privatePreview === undefined) return refuse("expected the board written by the local private-preview builder (it carries the source notice); a public builder board goes to public/data", null, raw.entries.length);
   const decision = decideHosting(raw, licenses);
   if (decision.tier === null) return refuse(decision.reason, decision, raw.entries.length);
   const envelope = buildEnvelope(raw, decision.tier, publishedAtUtc);

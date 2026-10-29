@@ -1,15 +1,18 @@
 /**
- * Publish the owner's private NBA board to the hosted store behind /nba/props. One manual run, one row replaced.
+ * Publish an NBA board snapshot to the table behind the PUBLIC /nba/props page. One manual run, one row replaced.
+ *
+ * WHAT YOU PUBLISH IS SHOWN TO EVERY VISITOR. The hosting gate limits it to what the license records allow for public display
+ * (today: sportsbook lines only); the rest never leaves this computer.
  *
  *   npm run nba:publish-snapshot                                   # dry run of data/nba/props-v1/private-preview-board.json
  *   npm run nba:publish-snapshot -- --board=<file>                 # dry run of another file
- *   npx tsx --env-file=.env.nba-publish.local scripts/nba-private-snapshot-publish.ts --write   # uploads
+ *   npx tsx --env-file=.env.nba-publish.local scripts/nba-snapshot-publish.ts --write   # uploads
  *
  * The credentials live in .env.nba-publish.local (ignored by Git through the *.local rule): SUPABASE_URL,
  * SUPABASE_SERVICE_ROLE_KEY and JKB_NBA_HOSTED_PUBLISH_APPROVED=1.
  *
- * The dry run (default) reads the local file only and prints the hosting decision: which sources are cleared, which tier
- * results, how many entries would leave this computer, and the same staleness warnings the page shows. --write additionally
+ * The dry run (default) reads the local file only and prints the public-display decision: which sources are cleared, which tier
+ * results, how many entries would be shown, and the same staleness warnings the page shows. --write additionally
  * needs the approval variable and the service-role credentials; it replaces the one snapshot row, reads it back and checks it,
  * and never calls a sportsbook or stats provider. It prints counts and source ids, never board content or credentials.
  * No schedule runs it.
@@ -42,7 +45,7 @@ async function main(): Promise<number> {
     console.error(`Nothing would be published: ${plan.problem}`);
     return 2;
   }
-  console.log(`Tier ${plan.envelope.tier}: ${plan.decision?.reason}`);
+  console.log(`Public tier ${plan.envelope.tier}: ${plan.decision?.reason}`);
   console.log(`Entries ${plan.counts.entriesIn} -> ${plan.counts.entriesOut}, DvP rows ${plan.counts.dvpRowsOut}, ${plan.counts.envelopeBytes} bytes`);
 
   const freshness = snapshotFreshness(plan.envelope.board, plan.envelope.publishedAtUtc, Date.now());
@@ -52,15 +55,15 @@ async function main(): Promise<number> {
   if (freshness.lineAgeHours !== null && freshness.lineAgeHours > LINES_STALE_AFTER_HOURS) console.warn(`WARNING: the newest sportsbook line was captured ${freshness.lineAgeHours.toFixed(1)} h ago, so the page will flag this snapshot as stale.`);
 
   if (!process.argv.includes("--write")) {
-    console.log("Dry run: nothing was uploaded. Add --write (with the approval variable and credentials) to publish.");
+    console.log("Dry run: nothing was uploaded. Add --write (with the approval variable and credentials) to publish; the result is public.");
     return 0;
   }
   if (process.env.JKB_NBA_HOSTED_PUBLISH_APPROVED !== "1") {
-    console.error("Refusing to upload: set JKB_NBA_HOSTED_PUBLISH_APPROVED=1 to confirm the owner approved this publish.");
+    console.error("Refusing to upload: set JKB_NBA_HOSTED_PUBLISH_APPROVED=1 to confirm the owner approved making this snapshot public.");
     return 3;
   }
   // Imported late so a dry run never loads the credential-reading module.
-  const { createSupabaseSnapshotStore } = await import("../api/_lib/nbaPrivate/snapshotStore");
+  const { createSupabaseSnapshotStore } = await import("../api/_lib/nbaBoard/snapshotStore");
   const store = createSupabaseSnapshotStore();
   await store.write(plan.envelope);
   const stored = serveableEnvelope(await store.read());

@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { PROVIDER_ACCOUNTS } from "../../api-quota/accounts";
 import { buildDataset, type NormalizedSnapshot } from "./dataset";
 import { canonicalGameKey, canonicalTeamCode, canonicalizePlayerGames, compareSources, etGameDate, linkPlayers, resolvePlayer, type PlayerLink } from "./canonical";
-import { SOURCE_LICENSES } from "./sources/licenses";
+import { SOURCE_LICENSES as RECORDED_LICENSES } from "./sources/licenses";
 import { effectivePermittedUses, SOURCE_PROFILES, validateSourceRegistry } from "./sources/registry";
 import { assessSourceQuality } from "./sources/qualityGate";
 import { planSourceCoverage } from "./sources/selection";
@@ -13,6 +13,18 @@ import { DATA_USES, type NbaSourceAdapter, type NbaSourceId, type SourceLicense 
 import { normalizePayloads, SourceUseNotPermittedError } from "./sources/ingest";
 import { syntheticSourceAdapter } from "./__fixtures__/syntheticSource";
 import type { NbaPlayerGame, NbaTeamGame } from "./types";
+
+/**
+ * The registry as it stood before the owner's hoopR/ESPN statements of 2026-10-29: private research only. The planner and
+ * ingest-gate tests below are about mechanics (origin caps, missing licenses), so they run against this fixed baseline; the
+ * current records are asserted separately in "source license records".
+ */
+const SOURCE_LICENSES: typeof RECORDED_LICENSES = {
+  ...RECORDED_LICENSES,
+  espn: { ...RECORDED_LICENSES.espn, permittedUses: ["private-research"] },
+  "hoopr-espn": { ...RECORDED_LICENSES["hoopr-espn"], permittedUses: ["private-research"] },
+};
+const RECORDED_USES = ["private-research", "private-hosted", "model-development", "public-display", "raw-redistribution"] as const;
 
 const ACCOUNT_IDS = new Set(PROVIDER_ACCOUNTS.map((a) => a.accountId));
 const grant = (uses: SourceLicense["permittedUses"]): SourceLicense => ({ status: "commercial-licensed", permittedUses: uses, basis: "synthetic test grant", reviewedOn: "2026-10-18" });
@@ -24,17 +36,25 @@ describe("source license records", () => {
     expect(SOURCE_LICENSES.synthetic.permittedUses).toEqual([...DATA_USES]);
   });
 
-  it("records hoopR/ESPN as private-research plus private-hosted, as owner-provided authorization that is not ESPN's or SportsDataverse's license", () => {
+  it("records hoopR/ESPN as the owner's own statements, never as an ESPN or SportsDataverse license", () => {
     for (const id of ["espn", "hoopr-espn"] as const) {
-      expect(SOURCE_LICENSES[id].permittedUses).toEqual(["private-research", "private-hosted"]);
-      expect(SOURCE_LICENSES[id].status).toBe("unlicensed");
-      expect(SOURCE_LICENSES[id].basis).toMatch(/OWNER DECISION 2026-10-23/);
-      expect(SOURCE_LICENSES[id].basis).toMatch(/OWNER AUTHORIZATION 2026-10-29/);
-      expect(SOURCE_LICENSES[id].basis).toMatch(/owner-provided/);
-      expect(SOURCE_LICENSES[id].basis).toMatch(/no ESPN or SportsDataverse license/);
+      expect(RECORDED_LICENSES[id].permittedUses).toEqual([...RECORDED_USES]);
+      expect(RECORDED_LICENSES[id].status).toBe("unlicensed");
+      expect(RECORDED_LICENSES[id].basis).toMatch(/OWNER DECISION 2026-10-23/);
+      expect(RECORDED_LICENSES[id].basis).toMatch(/OWNER AUTHORIZATION 2026-10-29/);
+      expect(RECORDED_LICENSES[id].basis).toMatch(/OWNER STATEMENT 2026-10-29/);
+      expect(RECORDED_LICENSES[id].basis).toMatch(/owner-provided/);
+      expect(RECORDED_LICENSES[id].basis).toMatch(/no ESPN or SportsDataverse license/);
+      expect(RECORDED_LICENSES[id].basis).toMatch(/none is claimed/);
+      expect(RECORDED_LICENSES[id].basis).toMatch(/does not cover offering the data as a feed, an API or a bulk download/);
     }
-    expect(effectivePermittedUses("hoopr-espn").permittedUses).toEqual(["private-research", "private-hosted"]);
-    for (const use of ["model-development", "public-display", "raw-redistribution"] as const) expect(effectivePermittedUses("hoopr-espn").permittedUses).not.toContain(use);
+    expect(effectivePermittedUses("hoopr-espn").permittedUses).toEqual([...RECORDED_USES]);
+    expect(effectivePermittedUses("hoopr-espn").chain).toEqual(["hoopr-espn", "espn"]);
+  });
+
+  it("the effective right is still the intersection with the ESPN origin: narrowing either record narrows the source", () => {
+    const narrowedOrigin = { ...RECORDED_LICENSES, espn: { ...RECORDED_LICENSES.espn, permittedUses: ["private-research"] as const } };
+    expect(effectivePermittedUses("hoopr-espn", narrowedOrigin as typeof RECORDED_LICENSES).permittedUses).toEqual(["private-research"]);
   });
 
   it("keeps raw redistribution a separate use from public derived display", () => {
@@ -45,7 +65,7 @@ describe("source license records", () => {
   it("caps a mirror at what its origin permits, however the mirror is licensed", () => {
     const licenses = { ...SOURCE_LICENSES, "hoopr-espn": grant(["private-research", "model-development", "public-display"]) };
     expect(effectivePermittedUses("hoopr-espn", licenses)).toEqual({ permittedUses: ["private-research"], chain: ["hoopr-espn", "espn"] });
-    expect(effectivePermittedUses("hoopr-espn").permittedUses).toEqual(["private-research", "private-hosted"]);
+    expect(effectivePermittedUses("hoopr-espn").permittedUses).toEqual([...RECORDED_USES]);
     expect(effectivePermittedUses("llimllib-nba-data", { ...SOURCE_LICENSES, "llimllib-nba-data": grant(["model-development"]) }).permittedUses).toEqual([]);
   });
 
@@ -67,15 +87,16 @@ describe("ingestion gate honors the origin cap", () => {
 
   it("refuses a redistributor whose own record grants a use its origin does not", () => {
     const adapter = mirror(grant(["private-research", "model-development", "public-display"]));
-    expect(() => normalizePayloads(adapter, [], "model-development")).toThrow(SourceUseNotPermittedError);
-    expect(() => normalizePayloads(adapter, [], "public-display")).toThrow(/hoopr-espn -> espn/);
-    expect(normalizePayloads(adapter, [], "private-research")).toEqual([]);
+    expect(() => normalizePayloads(adapter, [], "model-development", SOURCE_LICENSES)).toThrow(SourceUseNotPermittedError);
+    expect(() => normalizePayloads(adapter, [], "public-display", SOURCE_LICENSES)).toThrow(/hoopr-espn -> espn/);
+    expect(normalizePayloads(adapter, [], "private-research", SOURCE_LICENSES)).toEqual([]);
   });
 
-  it("permits only private-research for the recorded hoopR/ESPN adapter, and refuses every wider use", () => {
-    expect(normalizePayloads(mirror(SOURCE_LICENSES["hoopr-espn"]), [], "private-research")).toEqual([]);
+  it("permits the recorded hoopR/ESPN uses through the adapter, and still refuses a use neither record carries", () => {
+    for (const use of RECORDED_USES) expect(normalizePayloads(mirror(RECORDED_LICENSES["hoopr-espn"]), [], use)).toEqual([]);
+    // The baseline registry (before the statements) refuses the wider uses, so the origin cap is what lets them through now.
     for (const use of ["model-development", "public-display", "raw-redistribution"] as const) {
-      expect(() => normalizePayloads(mirror(SOURCE_LICENSES["hoopr-espn"]), [], use)).toThrow(SourceUseNotPermittedError);
+      expect(() => normalizePayloads(mirror(RECORDED_LICENSES["hoopr-espn"]), [], use, SOURCE_LICENSES)).toThrow(SourceUseNotPermittedError);
     }
   });
 
@@ -115,9 +136,9 @@ describe("source registry", () => {
 });
 
 describe("provider selection", () => {
-  const request = { use: "model-development", seasons: ["2022-23", "2024-25", "2026-27"], currentSeason: "2026-27", quotaAccountIds: ACCOUNT_IDS } as const;
+  const request = { use: "model-development", seasons: ["2022-23", "2024-25", "2026-27"], currentSeason: "2026-27", quotaAccountIds: ACCOUNT_IDS, licenses: SOURCE_LICENSES } as const;
 
-  it("selects nothing today: no real source has a verified grant", () => {
+  it("selects nothing from the pre-statement baseline: no real source had a verified grant", () => {
     const plan = planSourceCoverage(request);
     expect(plan.assignments.every((a) => a.chosen === null)).toBe(true);
     expect(plan.unmetSeasons).toEqual(["2022-23", "2024-25", "2026-27"]);
