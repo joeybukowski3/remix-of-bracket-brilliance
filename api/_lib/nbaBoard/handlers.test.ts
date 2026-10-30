@@ -8,7 +8,7 @@ import { HOSTED_SNAPSHOT_SCHEMA, buildEnvelope } from "../../../src/lib/nba/prop
 import { buildDemoBoard } from "../../../src/lib/nba/props/__fixtures__/boardDemo";
 import type { PropsBoardArtifact } from "../../../src/lib/nba/props/propsBoard";
 import { PUBLIC_CACHE_CONTROL, SNAPSHOT_MEMORY_TTL_MS, createHandlers, type HandlerDeps } from "./handlers";
-import { createSupabaseSnapshotStore, type SnapshotStore } from "./snapshotStore";
+import { SnapshotStoreError, createSupabaseSnapshotStore, type SnapshotStore } from "./snapshotStore";
 
 const URL_ = "https://www.joeknowsball.com/api/nba/props-board";
 const T0 = Date.UTC(2026, 9, 29, 15, 0, 0);
@@ -144,8 +144,16 @@ describe("GET: restricted fields stay out of public responses", () => {
     const text = await response.text();
     expect(response.status).toBe(502);
     expect(text).toBe(JSON.stringify({ error: "store-error" }));
-    expect(errors).toEqual(["nba-board: snapshot store read failed"]);
+    expect(errors).toEqual(["nba-board: snapshot store read failed (category=unclassified)"]);
     expect(text + errors.join("")).not.toMatch(/hunter2|FAKE_KEY|ECONNREFUSED/);
+  });
+
+  it("logs the HTTP status and code of a classified store failure, never the body", async () => {
+    const { handlers, errors } = setup(null, { store: () => ({ read: async () => { throw new SnapshotStoreError("forbidden", 403, "42501"); }, write: async () => undefined }) });
+    const response = await handlers.GET();
+    expect(response.status).toBe(502);
+    expect(await response.text()).toBe(JSON.stringify({ error: "store-error" }));
+    expect(errors).toEqual(["nba-board: snapshot store read failed (category=forbidden status=403 code=42501)"]);
   });
 });
 
