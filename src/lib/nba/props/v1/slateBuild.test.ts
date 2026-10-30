@@ -121,6 +121,36 @@ describe("projections (baseline v0, unchanged)", () => {
   });
 });
 
+describe("pregame team defense", () => {
+  it("is empty, not invented, when the import carries no possession inputs", () => {
+    const { teamDefense } = build();
+    expect(teamDefense.season).toBe("2026-27");
+    expect(teamDefense.usableGames).toBe(0);
+    expect(teamDefense.unusableGames).toBeGreaterThan(0);
+    expect(Object.keys(teamDefense.asOf)).toEqual([]);
+  });
+
+  it("rates teams from the games before each date when the import carries them, and never on a team's first date", () => {
+    // The invented league's teams total 192 minutes a game, which the completeness gate rightly refuses: a filler brings each to 240.
+    const base = fixtureRows();
+    const fillers = new Map(base.map((r) => [`${r.gameId}|${r.team}`, { ...r, playerId: `${r.team}-F`, playerName: `${r.team} Filler`, minutes: 48, pts: 0, reb: 0, ast: 0 }]));
+    const rows = [...base, ...fillers.values()].map((r) => ({ ...r, fga: 6, fta: 2, oreb: 1, tov: 1 }));
+    const { teamDefense } = build({ rows });
+    expect(teamDefense.unusableGames).toBe(0);
+    expect(teamDefense.usableGames).toBeGreaterThan(0);
+    const keys = Object.keys(teamDefense.asOf);
+    expect(keys.length).toBeGreaterThan(0);
+    const firstDate = rows.filter((r) => r.season === "2026-27" && r.seasonType === "regular").map((r) => r.gameDate).sort()[0];
+    expect(keys.some((k) => k.endsWith(`|${firstDate}`))).toBe(false);
+    expect(Object.values(teamDefense.asOf).every((e) => e.games >= 1 && e.rank >= 1 && e.rank <= e.rankedOf)).toBe(true);
+  });
+
+  it("does not change any projection", () => {
+    const withInputs = build({ rows: fixtureRows().map((r) => ({ ...r, fga: 6, fta: 2, oreb: 1, tov: 1 })) });
+    expect(withInputs.projections).toEqual(build().projections);
+  });
+});
+
 describe("roster", () => {
   it("maps each 2026-27 player to a team and the primary position, estimated", () => {
     const { roster } = build();

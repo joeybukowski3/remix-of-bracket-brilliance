@@ -6,7 +6,7 @@
 import { CANONICAL_TEAM_CODES } from "../canonical";
 import { buildDvpRows, DVP_POSITIONS, type DvpPlayerGameLine, type DvpSeason } from "../dvp";
 import { BOARD_SCHEMA_VERSION, type BoardEntry, type PropsBoardArtifact } from "../propsBoard";
-import { opponentBoxKey, opponentRecentKey, type OpponentBoxScoreGame, type OpponentBoxScores, type OpponentRecentGame, type OpponentRecentSequence, type OpposingPlayerLine, type PlayerRecentGame, type GameResult } from "../recentForm";
+import { opponentBoxKey, opponentRecentKey, teamDefenseKey, type OpponentBoxScoreGame, type OpponentBoxScores, type OpponentRecentGame, type OpponentRecentSequence, type OpposingPlayerLine, type PlayerRecentGame, type GameResult, type TeamDefenseEntry, type TeamDefenseTable } from "../recentForm";
 import type { RecentTotals, SeasonStatsView, SeasonTotals } from "../seasonStats";
 
 const SOURCE = { sourceId: "synthetic-box", sourceUpdatedAtUtc: "2026-11-09T12:00:00Z" } as const;
@@ -115,10 +115,27 @@ const TEAM_MINUTES = 240;
 
 const integer = (n: number): number => Math.max(0, Math.round(n));
 
+/** The estimated position of the starter listed at `position` in a defense's game; differs from it only in the ambiguous BOS games. */
+function estimatedPosition(defense: string, game: number, position: (typeof DVP_POSITIONS)[number]): (typeof DVP_POSITIONS)[number] | null {
+  if (defense !== "BOS") return position;
+  if (game === AMBIGUOUS_GAMES.twoGuards && position === "SG") return "PG";
+  if (game === AMBIGUOUS_GAMES.noPointGuard && position === "PG") return "SF";
+  if (game === AMBIGUOUS_GAMES.unclassifiedStarter && position === "C") return null;
+  return position;
+}
+
+/**
+ * Games of the BOS defense that exercise the starter rule. The flags are the source's; the positions are the estimates.
+ *   6: the SG starter is estimated at PG too, so PG has two starters and SG has none
+ *   7: the PG starter is estimated at SF, so PG has no starter and SF has two
+ *   8: the C starter has no position estimate, so who holds a position is unclear
+ */
+const AMBIGUOUS_GAMES = { twoGuards: 6, noPointGuard: 7, unclassifiedStarter: 8 } as const;
+
 /** Invented opposing players for one defense game: every figure is a fixed formula of the game number. Not real data. */
 function demoOpposingPlayers(defense: string, versus: string, i: number, isGap: boolean): OpposingPlayerLine[] {
-  const unmatched = (minutes: number, label: string, pts: number): OpposingPlayerLine => ({ name: `Demo ${versus} ${label}`, minutes, pts, reb: 2, ast: 1, position: null });
-  // A gap game is one where no opposing minute could be given a position (a missing position file), for every position at once.
+  const unmatched = (minutes: number, label: string, pts: number): OpposingPlayerLine => ({ name: `Demo ${versus} ${label}`, minutes, pts, reb: 2, ast: 1, position: null, starter: false });
+  // A gap game is a two-player box with no starter status the rule can trust (and no positions): it carries no starter figure.
   if (isGap) return [unmatched(130, "Reserve A", 41), unmatched(110, "Reserve B", 33)];
   const isFull = i % 5 === 2;
   const team = defense === "BOS" ? 3 : 8;
@@ -129,8 +146,9 @@ function demoOpposingPlayers(defense: string, versus: string, i: number, isGap: 
     const ast = integer(STAT_BASE.ast[p] + wobble(team, p, i + 2) / 2);
     const hasBench = isFull || (i + p) % 3 !== 0;
     const share = hasBench ? 0.7 : 1;
-    lines.push({ name: `Demo ${versus} ${position} Starter`, minutes: STARTER_MINUTES[p], pts: integer(pts * share), reb: integer(reb * share), ast: integer(ast * share), position });
-    if (hasBench) lines.push({ name: `Demo ${versus} ${position} Bench`, minutes: isFull ? FULL_BENCH_MINUTES[p] : BENCH_MINUTES[p], pts: pts - integer(pts * share), reb: reb - integer(reb * share), ast: ast - integer(ast * share), position });
+    const estimated = estimatedPosition(defense, i, position);
+    lines.push({ name: `Demo ${versus} ${position} Starter`, minutes: STARTER_MINUTES[p], pts: integer(pts * share), reb: integer(reb * share), ast: integer(ast * share), position: estimated, starter: true });
+    if (hasBench) lines.push({ name: `Demo ${versus} ${position} Bench`, minutes: isFull ? FULL_BENCH_MINUTES[p] : BENCH_MINUTES[p], pts: pts - integer(pts * share), reb: reb - integer(reb * share), ast: ast - integer(ast * share), position, starter: false });
   });
   const left = TEAM_MINUTES - lines.reduce((sum, l) => sum + l.minutes, 0);
   if (left > 0) lines.push(unmatched(Math.ceil(left / 2), "Reserve A", 6), unmatched(Math.floor(left / 2), "Reserve B", 3));
@@ -171,6 +189,24 @@ function demoOpponentRecent(boxes: OpponentBoxScores): Record<string, OpponentRe
   }
   return sequences;
 }
+
+/**
+ * Invented pregame defensive ratings for every opponent-and-date the demo players faced. Samples run from one to twelve games so the
+ * small-sample marker and every strength label appear; one pair is left out so the "no earlier game" state does too. Not real data.
+ */
+function demoTeamDefense(players: readonly DemoPlayer[]): TeamDefenseTable {
+  const pairs = [...new Set(players.flatMap((p) => (p.seasonStats?.recentGames ?? []).map((g) => teamDefenseKey(g.opponent, g.date))))].sort();
+  const asOf: Record<string, TeamDefenseEntry> = {};
+  pairs.forEach((key, idx) => {
+    if (key === NO_RATING_PAIR) return;
+    const rank = 1 + ((idx * 7) % 30);
+    asOf[key] = { rating: Math.round((104 + rank * 0.45) * 10) / 10, leagueRating: 112, rank, rankedOf: 30, games: 1 + ((idx * 5) % 12) };
+  });
+  return { season: CURRENT, asOf, usableGames: 200, unusableGames: 0 };
+}
+
+/** The first game of the three-game demo player: no earlier usable game for that opponent, so it has no rating. */
+const NO_RATING_PAIR = teamDefenseKey(RECENT_OPPONENTS[0], dayBefore(6));
 
 const PLAYERS: DemoPlayer[] = [
   // Full-sample veteran: this season and last, shown with a clear sample size.
@@ -219,5 +255,6 @@ export function buildDemoBoard(): PropsBoardArtifact {
     dvpRows: rows,
     opponentRecent: demoOpponentRecent(boxes),
     opponentBoxScores: boxes,
+    teamDefense: demoTeamDefense(PLAYERS),
   };
 }

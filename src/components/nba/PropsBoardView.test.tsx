@@ -105,7 +105,7 @@ describe("the compact default table", () => {
     expect(col("Demo Guard One", "last10").textContent).toBe("8.9");
   });
 
-  it("shows what the opponent allowed over its last ten games to the player's estimated position", () => {
+  it("shows what the opposing starter at the player's estimated position did over the opponent's last ten games", () => {
     render(<PropsBoardView board={board} />);
     for (const name of ["Demo Guard One", "Demo Big Four"]) {
       const l10 = rowsFor("pts").find((r) => r.entry.playerName === name)?.opponentL10;
@@ -1019,12 +1019,12 @@ describe("opponent last 10 vs. position", () => {
   const OPP = "Demo Guard One"; // NYK PG, opponent BOS: ten games on file
   const SHORT = "Demo Guard Five"; // BOS SG, opponent NYK: four games on file
 
-  it("shows the opponent's own ten games for the player's estimated position as one bar per game", () => {
+  it("shows the opponent's own ten games, one bar per game, for the opposing starter at the player's estimated position", () => {
     render(<PropsBoardView board={board} />);
     const panel = open(OPP);
     const chart = within(panel).getByTestId("opp-l10-chart");
     expect(within(chart).getAllByTestId("opp-l10-chart-bar")).toHaveLength(10);
-    expect(within(panel).getByTestId("opp-l10-panel").textContent).toContain("BOS last 10 · PTS allowed to PG");
+    expect(within(panel).getByTestId("opp-l10-panel").textContent).toContain("BOS last 10 · PTS by the PG starter");
     const row = rowsFor("pts").find((r) => r.entry.playerName === OPP);
     expect(within(panel).getByTestId("opp-l10-summary").textContent).toContain((row?.opponentL10.average ?? Number.NaN).toFixed(1));
   });
@@ -1037,12 +1037,25 @@ describe("opponent last 10 vs. position", () => {
     expect(bars[0].getAttribute("aria-label")).toMatch(/^Oct \d+, (vs|@) [A-Z]{3}: [\d.]+ PTS$/);
   });
 
-  it("shows the sample size, the attributed-minutes coverage and the method limits in the details", () => {
+  it("shows the sample size, which games carry no figure and why, and the method limits in the details", () => {
     render(<PropsBoardView board={board} />);
     const limits = within(open(OPP)).getByTestId("opp-l10-limits").textContent ?? "";
-    expect(limits).toMatch(/10 games of BOS's 14 completed this season/);
-    expect(limits).toMatch(/\d+% of opposing players' minutes had an estimated position/);
-    expect(limits).toMatch(/Estimated primary position, regular-season games only; context, not a projection input/);
+    expect(limits).toMatch(/Sample: 10 games, the most recent of BOS's completed regular-season games/);
+    expect(within(open(OPP)).getByTestId("opp-l10-gaps").textContent).toBe(
+      "4 games without exactly one identified PG starter shown as gaps and left out of the average: 1 game with several PG starters; 1 game with no PG starter; 1 game where a starter has no position estimate; 1 game without usable starter status.",
+    );
+    expect(limits).toMatch(/One opposing starter per game, by the source's starter flag and the estimated primary position; never several players added together\. Context, not a projection input/);
+  });
+
+  it("charts one starter's own line per game and never a sum of players", () => {
+    render(<PropsBoardView board={board} />);
+    open(OPP);
+    const row = rowsFor("pts").find((r) => r.entry.playerName === OPP);
+    const starters = (row?.opponentBox.games ?? []).flatMap((g) => (g.starter ? [g.starter.pts] : []));
+    expect(row?.opponentL10.points.flatMap((p) => (p.value === null ? [] : [p.value])).sort((a, b) => a - b)).toEqual([...starters].sort((a, b) => a - b));
+    expect(row?.opponentL10.gamesWithFigure).toBe(6);
+    const bars = within(screen.getByTestId("opp-l10-chart")).getAllByTestId("opp-l10-chart-bar");
+    expect(bars.filter((b) => /no figure/.test(b.getAttribute("aria-label") ?? ""))).toHaveLength(4);
   });
 
   it("shows the actual N with a small-sample warning when the opponent has fewer than ten games, and never pads", () => {
@@ -1056,33 +1069,36 @@ describe("opponent last 10 vs. position", () => {
     expect(within(panel).getByTestId("opp-l10-limits").textContent).toMatch(/a small sample, not padded to ten/);
   });
 
-  it("shows a game with no attributable minutes as a gap that is left out of the average, not a zero", () => {
+  it("shows a game with no identifiable starter as a gap with its reason, left out of the average, never a zero", () => {
     render(<PropsBoardView board={board} />);
-    const panel = open("Demo Big Four"); // NYK C, opponent BOS: its fifth game has no attributed minutes at C
+    const panel = open("Demo Big Four"); // NYK C, opponent BOS: game 4 has no usable starter status and game 8 a starter with no position estimate
     const bars = within(within(panel).getByTestId("opp-l10-chart")).getAllByTestId("opp-l10-chart-bar");
-    expect(bars.filter((b) => /no figure/.test(b.getAttribute("aria-label") ?? ""))).toHaveLength(1);
+    expect(bars.filter((b) => /no figure/.test(b.getAttribute("aria-label") ?? ""))).toHaveLength(2);
     expect(bars[4].getAttribute("aria-label")).toMatch(/no figure/);
-    expect(within(panel).getByTestId("opp-l10-summary").textContent).toMatch(/average of 9 of 10 games/);
-    expect(within(panel).getByTestId("opp-l10-limits").textContent).toMatch(/1 game with no attributed minutes shown as gaps and left out of the average/);
+    expect(bars[8].getAttribute("aria-label")).toMatch(/no figure/);
+    expect(within(panel).getByTestId("opp-l10-summary").textContent).toMatch(/average of 8 of 10 games/);
+    expect(within(panel).getByTestId("opp-l10-gaps").textContent).toMatch(/2 games without exactly one identified C starter shown as gaps and left out of the average: 1 game where a starter has no position estimate; 1 game without usable starter status/);
     const row = rowsFor("pts").find((r) => r.entry.playerName === "Demo Big Four");
-    expect(row?.opponentL10).toMatchObject({ games: 10, gamesWithFigure: 9 });
+    expect(row?.opponentL10).toMatchObject({ games: 10, gamesWithFigure: 8 });
+    expect(row?.opponentL10.points[4].detail).toMatch(/flagged 0 starters instead of five/);
+    expect(row?.opponentL10.points[8].detail).toMatch(/no position estimate/);
   });
 
-  it("explains N/A states instead of inventing a number: no position, no sequences on the board, no games", () => {
+  it("explains N/A states instead of inventing a number: no position, no box scores on the board, no games", () => {
     render(<PropsBoardView board={board} />);
     expect(col("Demo Bench Seven", "oppLast10").textContent).toBe("N/A");
     expect(col("Demo Bench Seven", "oppLast10").querySelector("[title]")?.getAttribute("title")).toMatch(/No estimated position/);
     expect(within(open("Demo Bench Seven")).getByTestId("opp-l10-note").textContent).toMatch(/No estimated position/);
     cleanup();
-    const { opponentRecent: _gone, ...old } = board;
+    const { opponentBoxScores: _gone, ...old } = board;
     render(<PropsBoardView board={old} />);
     expect(col("Demo Guard One", "oppLast10").textContent).toBe("N/A");
     expect(col("Demo Guard One", "oppLast10").querySelector("[title]")?.getAttribute("title")).toMatch(/rebuild the private preview board/);
     expect(within(open("Demo Guard One")).getByTestId("opp-l10-note").textContent).toMatch(/Rebuild the private preview board/);
     cleanup();
-    render(<PropsBoardView board={{ ...board, opponentRecent: {} }} />);
+    render(<PropsBoardView board={{ ...board, opponentBoxScores: {} }} />);
     expect(col("Demo Guard One", "oppLast10").textContent).toBe("—");
-    expect(within(open("Demo Guard One")).getByTestId("opp-l10-note").textContent).toMatch(/no completed game this season/);
+    expect(within(open("Demo Guard One")).getByTestId("opp-l10-note").textContent).toMatch(/no completed regular-season game this season yet/);
   });
 
   it("follows the selected market and sorts by the opponent's last-ten allowance", () => {
@@ -1092,14 +1108,15 @@ describe("opponent last 10 vs. position", () => {
     fireEvent.click(screen.getByRole("button", { name: "Opp L10 REB" }));
     const averages = rowsFor("reb")
       .filter((r) => r.opponentL10.average !== null)
-      .sort((a, b) => (b.opponentL10.average ?? 0) - (a.opponentL10.average ?? 0))
+      // Two players can share an average; the board then orders them by entry key, so the expectation does too.
+      .sort((a, b) => (b.opponentL10.average ?? 0) - (a.opponentL10.average ?? 0) || a.entry.entryKey.localeCompare(b.entry.entryKey))
       .map((r) => r.entry.playerName);
     expect(playerOrder().slice(0, averages.length)).toEqual(averages);
     expect(playerOrder().at(-1)).toBe("Demo Bench Seven");
   });
 
   it("never changes a JKB projection: the same numbers with and without the windows", () => {
-    const { opponentRecent: _gone, ...old } = board;
+    const { opponentRecent: _gone, opponentBoxScores: _boxes, teamDefense: _defense, ...old } = board;
     const strippedEntries = board.entries.map((e) => (e.seasonStats ? { ...e, seasonStats: { ...e.seasonStats, recentGames: undefined } } : e));
     const withWindows = buildBoardRows(board, "pts").map((r) => [r.entry.projection, r.difference, r.jkbTriple]);
     const without = buildBoardRows({ ...old, entries: strippedEntries }, "pts").map((r) => [r.entry.projection, r.difference, r.jkbTriple]);

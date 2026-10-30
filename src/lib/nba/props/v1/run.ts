@@ -160,7 +160,7 @@ export function runV1PrivatePreview(options: Omit<V1RunOptions, "outFile" | "sou
   inside(root, target, [DATA_DIR], "the private preview file");
   const captures = readLineCaptures(inside(root, options.capturesDir ?? DEFAULT_CAPTURES_DIR, [DATA_DIR], "the captures directory"));
   const { built, files } = prepare(options, true);
-  const { artifact, report } = buildPrivatePreviewBoard({ generatedAtUtc: options.generatedAtUtc, projections: built.projections, roster: built.roster, dvp: built.dvp, seasonStats: built.seasonStats, opponentRecent: built.opponentRecent, opponentBoxScores: built.opponentBoxScores, captures, licenses: options.licenses });
+  const { artifact, report } = buildPrivatePreviewBoard({ generatedAtUtc: options.generatedAtUtc, projections: built.projections, roster: built.roster, dvp: built.dvp, seasonStats: built.seasonStats, opponentRecent: built.opponentRecent, opponentBoxScores: built.opponentBoxScores, teamDefense: built.teamDefense, captures, licenses: options.licenses });
   // Last line of defense: a private board is never written anywhere that is deployed, and a line on it must be credited to its provider.
   if (artifact.privatePreview === undefined) throw new Error("refusing to write a private preview without its notice");
   if (artifact.entries.some((e) => e.line !== null) && artifact.sources.lines.length === 0) throw new Error("refusing to write sportsbook lines that are not credited to a provider");

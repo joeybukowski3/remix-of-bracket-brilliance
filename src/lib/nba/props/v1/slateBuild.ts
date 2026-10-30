@@ -24,10 +24,11 @@ import type { ImportedPlayerGame, PlayerGameImport } from "./playerGameImport";
 import type { DvpPosition } from "../dvpPositions";
 import { dvpLabelFor, type PositionEstimateSet } from "./positionEstimates";
 import type { SeasonStatsView } from "../seasonStats";
-import type { OpponentBoxScores, OpponentRecentSequence } from "../recentForm";
+import { teamDefenseKey, type OpponentBoxScores, type OpponentRecentSequence, type TeamDefenseTable } from "../recentForm";
 import { buildGameScores, type GameScores } from "./gameResults";
 import { buildOpponentBoxScores, buildOpponentRecent } from "./opponentRecentBuild";
 import { seasonStatsFor } from "./seasonStatsBuild";
+import { buildTeamDefense, restrictTeamDefense } from "./teamDefense";
 
 export const SLATE_SEASON = "2026-27";
 const ISO_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
@@ -97,8 +98,10 @@ export interface V1Inputs {
   seasonStats: Record<string, SeasonStatsView>;
   /** What each opponent allowed to each estimated position over its last ten games, by `gameKey|team|position`; private preview only. */
   opponentRecent: Record<string, OpponentRecentSequence>;
-  /** The individual opposing players behind those games, by `gameKey|team`; private preview only. */
+  /** The individual opposing players behind those games, with starter status when the import carries it, by `gameKey|team`; private preview only. */
   opponentBoxScores: OpponentBoxScores;
+  /** Each team's pregame defensive rating before each game it played this season (teamDefense.ts); private preview only. */
+  teamDefense: TeamDefenseTable;
   roster: Record<string, RosterRecord>;
   dvp: DvpInput | null;
   report: V1Report;
@@ -280,6 +283,10 @@ export interface V1BuildArgs {
   params?: BaselineParams;
 }
 
+/** The (opponent, date) pairs the player Last 10 tables read: one per game in each player's window. */
+const ratingsRead = (seasonStats: Readonly<Record<string, SeasonStatsView>>): ReadonlySet<string> =>
+  new Set(Object.values(seasonStats).flatMap((s) => (s.recentGames ?? []).map((g) => teamDefenseKey(g.opponent, g.date))));
+
 export function buildV1Inputs(args: V1BuildArgs): V1Inputs {
   const { imported, positions, slate } = args;
   const warnings: string[] = [];
@@ -330,5 +337,5 @@ export function buildV1Inputs(args: V1BuildArgs): V1Inputs {
   const unlabeled = Object.values(report.dvp.linesWithoutPosition).reduce((a, b) => a + b, 0);
   if (report.dvp.teamSeasonsWithoutAnyPosition.length > 0) warnings.push(`${report.dvp.teamSeasonsWithoutAnyPosition.length} team-season(s) have no position estimate for any opposing player and are left out of DvP (no ranks are invented): ${report.dvp.teamSeasonsWithoutAnyPosition.slice(0, 6).join(", ")}${report.dvp.teamSeasonsWithoutAnyPosition.length > 6 ? ", ..." : ""}`);
   if (unlabeled > 0) warnings.push(`${unlabeled} regular-season player-games have no position estimate for their season; they are excluded from DvP, not guessed`);
-  return { projections, seasonStats, opponentRecent: buildOpponentRecent(imported.rows, positions, slate, SLATE_SEASON), opponentBoxScores: buildOpponentBoxScores(imported.rows, positions, slate, SLATE_SEASON), roster: buildRoster(slatePlayers, warnings), dvp, report };
+  return { projections, seasonStats, opponentRecent: buildOpponentRecent(imported.rows, positions, slate, SLATE_SEASON), opponentBoxScores: buildOpponentBoxScores(imported.rows, positions, slate, SLATE_SEASON), teamDefense: restrictTeamDefense(buildTeamDefense(imported.rows, SLATE_SEASON), ratingsRead(seasonStats)), roster: buildRoster(slatePlayers, warnings), dvp, report };
 }

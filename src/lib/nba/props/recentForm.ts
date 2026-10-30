@@ -1,6 +1,6 @@
 /**
- * Last-ten-game sequences for the props board: a player's own ten most recent results, and what the opponent allowed to the
- * player's estimated position in the opponent's ten most recent games. Browser-safe types and arithmetic (no Node imports).
+ * Last-ten-game sequences for the props board: a player's own ten most recent results, and what the opposing team's starter at
+ * the player's estimated position scored in the opponent's ten most recent games. Browser-safe types and arithmetic (no Node imports).
  *
  * Both sequences are oldest to newest, current season only, and exist only on a private preview board: they are
  * hoopR/ESPN-derived and may not be published (containsPrivateData in propsBoard.ts refuses a public board that has them).
@@ -33,6 +33,49 @@ export interface PlayerRecentGame {
   ast: number;
   /** The final score, present only when it is reliably known (see v1/gameResults.ts); absent, never guessed, otherwise. */
   result?: GameResult;
+}
+
+/**
+ * A team's defensive rating as of one date: points allowed per 100 estimated possessions over its usable regular-season games dated
+ * strictly before that date (v1/teamDefense.ts). Lower is a stronger defense. Context only; never a projection input.
+ */
+export interface TeamDefenseEntry {
+  rating: number;
+  /** The league's pooled rating over the same cutoff, for reference. */
+  leagueRating: number;
+  /** 1 is the lowest rating (best defense) among the `rankedOf` teams with at least one usable game by that date. Ties share a rank. */
+  rank: number;
+  rankedOf: number;
+  /** Usable games behind the team's rating. */
+  games: number;
+}
+
+export interface TeamDefenseTable {
+  season: string;
+  /** Keyed by teamDefenseKey: the team's rating before the game it played on that date. A team with no usable prior game has no entry. */
+  asOf: Record<string, TeamDefenseEntry>;
+  /** Regular-season games of the season whose possession inputs were complete for both teams, and the ones that were not (left out of every rating). */
+  usableGames: number;
+  unusableGames: number;
+}
+
+export const teamDefenseKey = (team: string, date: string): string => `${team}|${date}`;
+
+/** Fewest prior games for which a strong / average / weak label is given. Below it the rating is shown with its sample size and no label. */
+export const MIN_GAMES_FOR_STRENGTH = 5;
+
+export type DefenseStrength = "strong" | "average" | "weak";
+
+/**
+ * League-relative label from the rank alone: the best third of the ranked teams is strong, the worst third weak, the rest average
+ * (30 teams: ranks 1-10, 11-20, 21-30). No threshold is tuned; null when the sample is under MIN_GAMES_FOR_STRENGTH games or fewer
+ * than three teams are ranked.
+ */
+export function defenseStrength(entry: TeamDefenseEntry | undefined | null): DefenseStrength | null {
+  if (!entry || entry.games < MIN_GAMES_FOR_STRENGTH || entry.rankedOf < 3) return null;
+  const third = entry.rankedOf / 3;
+  if (entry.rank <= third) return "strong";
+  return entry.rank > entry.rankedOf - third ? "weak" : "average";
 }
 
 /** A completed game's outcome from the player's team's side. */
@@ -81,6 +124,8 @@ export interface OpposingPlayerLine {
   ast: number;
   /** The estimated primary position DvP uses for this player and season; null when the player has no estimate (not counted anywhere). */
   position: DvpPosition | null;
+  /** The source's explicit starter status for this game. Absent on a board built before starters were carried, or when the source gives none. */
+  starter?: boolean;
 }
 
 /** One game of a defense with every opposing player who played, so a subtotal can be traced to the people behind it. */
@@ -109,8 +154,6 @@ export function shortDate(iso: string): string {
 export function mean(values: readonly number[]): number | null {
   return values.length === 0 ? null : values.reduce((sum, v) => sum + v, 0) / values.length;
 }
-
-const marketValue = <T extends { pts: number | null; reb: number | null; ast: number | null }>(game: T, market: BoardMarket): number | null => game[market];
 
 /** One bar of a chart. `value` is null when the game's figure is unknown (shown as a gap). */
 export interface RecentPoint {
@@ -144,51 +187,40 @@ export function playerLastTen(games: readonly PlayerRecentGame[] | undefined, ma
   return { status: window.length === 0 ? "none" : "ok", points, recent: window, games: window.length, average: mean(window.map((g) => g[market])), isSmallSample: window.length > 0 && window.length < SMALL_SAMPLE_BELOW };
 }
 
+/** Why games in an opponent window carry no starter figure, one count per reason (opponentStarter.ts). A game with a figure is in none of them. */
+export interface StarterGaps {
+  /** Two or more starters at the position, so no single player is chosen. */
+  multiple: number;
+  /** Every starter has a position estimate and none is at the position. */
+  none: number;
+  /** A starter has no position estimate, so who holds the position is unclear. */
+  uncertain: number;
+  /** The source gave no (or an inconsistent) starter status for the game. */
+  unavailable: number;
+}
+
+export const NO_STARTER_GAPS: StarterGaps = Object.freeze({ multiple: 0, none: 0, uncertain: 0, unavailable: 0 });
+
 export interface OpponentLastTen {
   /**
-   * "stale": the board predates sequences. "no-position" / "no-opponent": the row has nothing to look up. "none": the
-   * defense has no completed game this season (or none with an attributed position).
+   * "stale": the board predates opponent box scores. "no-position" / "no-opponent": the row has nothing to look up. "no-starters":
+   * the board's box scores carry no starter status (built before it was carried). "none": the defense has no completed game this
+   * season, or none with exactly one identified starter at the position.
    */
-  status: "ok" | "none" | "stale" | "no-position" | "no-opponent";
+  status: "ok" | "none" | "stale" | "no-position" | "no-opponent" | "no-starters";
+  /** One point per game in the window, oldest to newest; `value` is the matched starter's figure, null for a gap. */
   points: RecentPoint[];
   /** Games in the window (at most ten), and how many of them carry a figure. */
   games: number;
   gamesWithFigure: number;
-  /** Mean allowed per game over the games that carry a figure; null with none. */
+  /** Mean of the matched starters' figures per game; null with none. */
   average: number | null;
-  /** Attributed share of the window's opposing-player minutes (0-1); null with no minutes. */
-  coverage: number | null;
-  /** Completed games the defense has this season before the matchup (may exceed the window). */
-  seasonGames: number;
+  gaps: StarterGaps;
   isSmallSample: boolean;
 }
 
-const EMPTY_OPPONENT: Omit<OpponentLastTen, "status"> = { points: [], games: 0, gamesWithFigure: 0, average: null, coverage: null, seasonGames: 0, isSmallSample: false };
+const EMPTY_OPPONENT: Omit<OpponentLastTen, "status"> = { points: [], games: 0, gamesWithFigure: 0, average: null, gaps: NO_STARTER_GAPS, isSmallSample: false };
 
 export function opponentLastTenUnavailable(status: Exclude<OpponentLastTen["status"], "ok">): OpponentLastTen {
   return { status, ...EMPTY_OPPONENT };
-}
-
-export function opponentLastTen(sequence: OpponentRecentSequence | undefined | null, market: BoardMarket): OpponentLastTen {
-  if (!sequence) return opponentLastTenUnavailable("none");
-  const window = sequence.games.slice(-L10_GAMES);
-  const points: RecentPoint[] = window.map((g) => ({
-    date: g.date,
-    versus: venue(g.defenseIsHome, g.versus),
-    value: marketValue(g, market),
-    detail: g.totalMinutes > 0 ? `${Math.round((g.attributedMinutes / g.totalMinutes) * 100)}% of opposing minutes attributed to a position` : "no opposing minutes",
-  }));
-  const figures = window.flatMap((g) => (marketValue(g, market) === null ? [] : [marketValue(g, market) as number]));
-  const totalMinutes = window.reduce((sum, g) => sum + g.totalMinutes, 0);
-  const attributed = window.reduce((sum, g) => sum + g.attributedMinutes, 0);
-  return {
-    status: figures.length === 0 ? "none" : "ok",
-    points,
-    games: window.length,
-    gamesWithFigure: figures.length,
-    average: mean(figures),
-    coverage: totalMinutes > 0 ? attributed / totalMinutes : null,
-    seasonGames: sequence.seasonGames,
-    isSmallSample: window.length < SMALL_SAMPLE_BELOW,
-  };
 }

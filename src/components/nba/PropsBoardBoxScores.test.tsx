@@ -340,10 +340,10 @@ describe("Player Last 10 box-score table", () => {
       expect(text(cells[0])).toMatch(/^[A-Z][a-z]{2} \d+$/);
       expect(text(cells[1])).toContain(expected[i].opponent);
       expect(tr.querySelector("[data-testid='box-home-away']")?.getAttribute("data-site")).toBe(expected[i].isHome ? "home" : "away");
-      expect(text(cells[3])).toBe(String(expected[i].minutes));
-      expect(text(cells[4])).toBe(String(expected[i].pts));
-      expect(text(cells[5])).toBe(String(expected[i].reb));
-      expect(text(cells[6])).toBe(String(expected[i].ast));
+      expect(text(cells[4])).toBe(String(expected[i].minutes));
+      expect(text(cells[5])).toBe(String(expected[i].pts));
+      expect(text(cells[6])).toBe(String(expected[i].reb));
+      expect(text(cells[7])).toBe(String(expected[i].ast));
     });
   });
 
@@ -429,7 +429,7 @@ describe("Player Last 10 box-score table", () => {
     open("Demo Guard One");
     const t = within(screen.getByTestId("player-box-table"));
     const heads = t.getAllByRole("columnheader");
-    expect(heads.map((h) => text(h))).toEqual(["Date", "Opp", "Result", "MIN", "PTS", "REB", "AST", "PTS vs line"]);
+    expect(heads.map((h) => text(h))).toEqual(["Date", "Opp", "DEF RTG", "Result", "MIN", "PTS", "REB", "AST", "PTS vs line"]);
     expect(heads.slice(0, 2).every((h) => /\btext-left\b/.test(h.className))).toBe(true);
     expect(heads.slice(2).every((h) => /\btext-center\b/.test(h.className))).toBe(true);
     const cells = within(screen.getAllByTestId("player-box-row")[0]).getAllByRole("cell");
@@ -438,24 +438,149 @@ describe("Player Last 10 box-score table", () => {
   });
 });
 
-describe("Opponent Last 10 vs. position box-score table", () => {
+describe("Player Last 10 box-score table: opponent DEF RTG", () => {
+  const cells = () => screen.getAllByTestId("player-box-defense");
+  const withDefense = (teamDefense: PropsBoardArtifact["teamDefense"]): PropsBoardArtifact => (({ teamDefense: _removed, ...rest }) => (teamDefense ? { ...rest, teamDefense } : rest))(board);
+
+  it("adds a DEF RTG column after the opponent, one rating per game, newest first, matching the board's pregame data", () => {
+    render(<PropsBoardView board={board} />);
+    open("Demo Guard One");
+    expect(within(screen.getByTestId("player-box-table")).getAllByRole("columnheader").map(text).slice(0, 4)).toEqual(["Date", "Opp", "DEF RTG", "Result"]);
+    const rows = rowData("Demo Guard One").playerBox.rows;
+    expect(cells()).toHaveLength(rows.length);
+    rows.forEach((r, i) => {
+      if (r.defense === null) return;
+      expect(cells()[i].getAttribute("data-state")).toBe("rated");
+      expect(text(cells()[i])).toContain(r.defense.rating.toFixed(1));
+      expect(text(cells()[i])).toContain(`#${r.defense.rank}`);
+    });
+    expect(rows.some((r) => r.defense !== null)).toBe(true);
+  });
+
+  it("gives a strong / average / weak label only from five prior games, and shows the sample size below that", () => {
+    render(<PropsBoardView board={board} />);
+    open("Demo Guard One");
+    const rows = rowData("Demo Guard One").playerBox.rows.flatMap((r, i) => (r.defense ? [{ r, cell: cells()[i] }] : []));
+    const enough = rows.filter(({ r }) => (r.defense?.games ?? 0) >= 5);
+    const small = rows.filter(({ r }) => (r.defense?.games ?? 0) < 5);
+    expect(enough.length).toBeGreaterThan(0);
+    expect(small.length).toBeGreaterThan(0);
+    for (const { r, cell } of enough) {
+      expect(cell.getAttribute("data-strength")).toBe(r.strength);
+      expect(["strong", "average", "weak"]).toContain(cell.getAttribute("data-strength"));
+      expect(cell.querySelector("[role=img]")).toBeNull();
+    }
+    for (const { r, cell } of small) {
+      expect(cell.getAttribute("data-strength")).toBe("none");
+      expect(cell.querySelector("[role=img]")?.getAttribute("aria-label")).toMatch(/noisy, so it has no strong/);
+      expect(text(cell)).toContain(`${r.defense?.games}g`);
+      expect(cell.getAttribute("title")).toMatch(/no strong \/ average \/ weak label/);
+    }
+    expect(new Set(enough.map(({ cell }) => cell.getAttribute("data-strength"))).size).toBeGreaterThan(1);
+  });
+
+  it("reads the strongest third as strong and the weakest third as weak, with the words available to a screen reader", () => {
+    render(<PropsBoardView board={board} />);
+    open("Demo Guard One");
+    const rows = rowData("Demo Guard One").playerBox.rows;
+    rows.forEach((r, i) => {
+      if (r.strength === null || r.defense === null) return;
+      expect(r.strength).toBe(r.defense.rank <= 10 ? "strong" : r.defense.rank > 20 ? "weak" : "average");
+      expect(cells()[i].textContent).toContain(`${r.strength[0].toUpperCase()}${r.strength.slice(1)} defense`);
+    });
+  });
+
+  it("leaves a game blank, with the reason, when the opponent had no earlier usable game", () => {
+    render(<PropsBoardView board={board} />);
+    open("Demo Wing Two");
+    const rows = rowData("Demo Wing Two").playerBox.rows;
+    const blank = rows.findIndex((r) => r.defense === null);
+    expect(blank).toBeGreaterThanOrEqual(0);
+    expect(text(cells()[blank])).toBe("–");
+    expect(cells()[blank].getAttribute("data-state")).toBe("none");
+    expect(cells()[blank].getAttribute("title")).toMatch(/no earlier usable game/);
+  });
+
+  it("averages the opponents' ratings in the footer, over the games that have one", () => {
+    render(<PropsBoardView board={board} />);
+    open("Demo Guard One");
+    const { playerBox } = rowData("Demo Guard One");
+    expect(text(screen.getByTestId("player-box-defense-average"))).toBe((playerBox.defenseAverage ?? NaN).toFixed(1));
+    expect(screen.getByTestId("player-box-defense-average").getAttribute("title")).toContain(`${playerBox.defenseKnown} of 10 games`);
+  });
+
+  it("states what the rating is: pregame only, per 100 estimated possessions, lower is stronger, and not a model input", () => {
+    render(<PropsBoardView board={board} />);
+    open("Demo Guard One");
+    const note = text(screen.getByTestId("player-box-defense-note"));
+    expect(note).toMatch(/points allowed per 100 estimated possessions/);
+    expect(note).toMatch(/before that date, so it never includes the game itself or any later one/);
+    expect(note).toMatch(/Lower is a stronger defense/);
+    expect(note).toMatch(/Context, not a projection input/);
+    expect(within(screen.getByTestId("player-box-table")).getByRole("columnheader", { name: "DEF RTG" }).getAttribute("title")).toMatch(/Lower is a stronger defense/);
+  });
+
+  it("says when the board predates DEF RTG, or was built from data without possession inputs, instead of showing blanks as ratings", () => {
+    render(<PropsBoardView board={withDefense(undefined)} />);
+    open("Demo Guard One");
+    expect(cells().every((c) => c.getAttribute("data-state") === "stale")).toBe(true);
+    expect(screen.getByTestId("player-box-defense-note").textContent).toMatch(/built before DEF RTG existed/);
+    expect(text(screen.getByTestId("player-box-defense-average"))).toBe("–");
+    cleanup();
+    render(<PropsBoardView board={withDefense({ season: "2026-27", asOf: {}, usableGames: 0, unusableGames: 180 })} />);
+    open("Demo Guard One");
+    expect(cells().every((c) => c.getAttribute("data-state") === "no-inputs")).toBe(true);
+    expect(screen.getByTestId("player-box-defense-note").textContent).toMatch(/no possession inputs/);
+  });
+
+  it("changes nothing else in the table when the market changes: DEF RTG is the opponent's, whatever stat is shown", () => {
+    render(<PropsBoardView board={board} />);
+    open("Demo Guard One");
+    const before = cells().map(text);
+    showMarket("Rebounds");
+    open("Demo Guard One");
+    expect(cells().map(text)).toEqual(before);
+  });
+});
+
+describe("Opponent Last 10 box-score table: points allowed and the starter at the position", () => {
   const groups = () => screen.getAllByTestId("opp-box-game");
   const playersOf = (gameId: string) => screen.queryAllByTestId("opp-box-player").filter((tr) => tr.getAttribute("data-game") === gameId);
-  const numbers = (tr: HTMLElement) => within(tr).getAllByRole("cell").map(text);
+  const totalOf = (gameId: string) => screen.getAllByTestId("opp-box-total").find((tr) => tr.getAttribute("data-game") === gameId) as HTMLElement;
+  const cellsOf = (tr: HTMLElement): string[] => within(tr).getAllByRole("cell").map(text);
+  /** The BOS demo window, newest first: games 9..0. Game 6 has two PG starters, 7 none, 8 an unclassified starter, 4 no usable starter status. */
+  const MATCH_BY_GAME = ["matched", "uncertain", "none", "multiple", "matched", "unavailable", "matched", "matched", "matched", "matched"];
+  const withoutStarterStatus = (b: PropsBoardArtifact): PropsBoardArtifact => ({
+    ...b,
+    opponentBoxScores: Object.fromEntries(Object.entries(b.opponentBoxScores ?? {}).map(([key, games]) => [key, games.map((g) => ({ ...g, players: g.players.map(({ starter: _starter, ...rest }) => rest) }))])),
+  });
 
-  it("groups the opponent's last ten games, newest first, collapsed to a subtotal row each", () => {
+  it("groups the opponent's last ten games, newest first, collapsed to one row each with the team points allowed", () => {
     render(<PropsBoardView board={board} />);
     open("Demo Guard One");
     expect(groups()).toHaveLength(10);
-    const dates = groups().map((g) => text(within(g).getAllByRole("rowheader")[0]));
-    expect(dates[0]).not.toBe(dates[9]);
     const row = rowData("Demo Guard One");
     expect(row.opponentBox.games.map((g) => g.date)).toEqual([...row.opponentL10.points].reverse().map((p) => p.date));
+    groups().forEach((g, i) => expect(figure(within(g).getByTestId("opp-box-team-pts"))).toBe(row.opponentBox.games[i].teamPtsAllowed));
     expect(screen.queryAllByTestId("opp-box-player")).toHaveLength(0);
     expect(groups().every((g) => g.getAttribute("aria-expanded") === "false")).toBe(true);
   });
 
-  it("opens a game to its individual opposing players, all at the player's estimated position, whose totals are the game's subtotal", () => {
+  it("keeps team points allowed and the starter's points apart, each labelled, and never adds one into the other", () => {
+    render(<PropsBoardView board={board} />);
+    open("Demo Guard One");
+    const t = within(screen.getByTestId("opp-box-table"));
+    expect(t.getByRole("columnheader", { name: "Team PTS allowed" })).toBeInTheDocument();
+    expect(t.getByRole("columnheader", { name: "PG starter" })).toBeInTheDocument();
+    const game = rowData("Demo Guard One").opponentBox.games[0];
+    const row = within(groups()[0]);
+    expect(figure(row.getByTestId("opp-box-team-pts"))).toBe(game.teamPtsAllowed);
+    expect(figure(row.getByTestId("opp-box-starter-pts"))).toBe(game.starter?.pts);
+    expect(game.teamPtsAllowed).toBeGreaterThan(game.starter?.pts ?? Infinity);
+    expect(text(row.getByTestId("opp-box-starter"))).toBe(game.starter?.name);
+  });
+
+  it("opens a game to the complete opposing box score: every player and position, with minutes, points, rebounds and assists", () => {
     render(<PropsBoardView board={board} />);
     open("Demo Guard One");
     const game = rowData("Demo Guard One").opponentBox.games[0];
@@ -463,29 +588,37 @@ describe("Opponent Last 10 vs. position box-score table", () => {
     expect(groups()[0]).toHaveAttribute("aria-expanded", "true");
     const lines = playersOf(game.gameId);
     expect(lines).toHaveLength(game.players.length);
-    expect(lines.length).toBeGreaterThan(0);
-    for (const tr of lines) {
-      const cells = within(tr).getAllByRole("cell");
-      expect(text(cells.find((c) => /^(PG|SG|SF|PF|C|n\/a)$/.test(text(c))) as HTMLElement)).toBe("PG");
-    }
-    const sum = (index: number) => lines.reduce((total, tr) => total + Number(text(within(tr).getAllByRole("cell")[index])), 0);
-    // Cells in a player row (the name is the row header): a spacer under date and team, Pos, MIN, PTS, REB, AST, result.
-    const subtotal = within(groups()[0]);
-    expect(Number(text(subtotal.getByTestId("opp-box-subtotal-pts")))).toBe(game.subtotal?.pts);
-    expect(sum(2)).toBe(game.subtotal?.minutes);
-    expect(sum(3)).toBe(game.subtotal?.pts);
-    expect(sum(4)).toBe(game.subtotal?.reb);
-    expect(sum(5)).toBe(game.subtotal?.ast);
-    expect(Number(text(subtotal.getByTestId("opp-box-subtotal-reb")))).toBe(game.subtotal?.reb);
-    expect(Number(text(subtotal.getByTestId("opp-box-subtotal-ast")))).toBe(game.subtotal?.ast);
+    expect(new Set(game.players.map((p) => p.position)).size).toBeGreaterThan(2);
+    // A player with no position estimate is listed too, marked n/a, not hidden.
+    expect(lines.some((tr) => within(tr).queryByText("n/a") !== null)).toBe(true);
+    const sum = (index: number) => lines.reduce((total, tr) => total + Number(cellsOf(tr)[index]), 0);
+    expect(sum(1)).toBe(240);
+    expect(sum(2)).toBe(game.teamPtsAllowed);
+    expect(sum(3)).toBe(game.players.reduce((total, p) => total + p.reb, 0));
+    expect(sum(4)).toBe(game.players.reduce((total, p) => total + p.ast, 0));
+    expect(cellsOf(totalOf(game.gameId)).slice(1)).toEqual(["240", String(game.teamPtsAllowed), String(sum(3)), String(sum(4))]);
   });
 
-  it("reconciles every game's subtotal and the average with the chart and the Opp L10 column", () => {
+  it("marks the five starters, lists them first, and highlights the one matched starter", () => {
+    render(<PropsBoardView board={board} />);
+    open("Demo Guard One");
+    const game = rowData("Demo Guard One").opponentBox.games[0];
+    fireEvent.click(groups()[0]);
+    const lines = playersOf(game.gameId);
+    expect(lines.filter((tr) => tr.getAttribute("data-starter") === "true")).toHaveLength(5);
+    expect(lines.slice(0, 5).every((tr) => tr.getAttribute("data-starter") === "true")).toBe(true);
+    const matched = lines.filter((tr) => tr.getAttribute("data-matched") === "true");
+    expect(matched).toHaveLength(1);
+    expect(text(within(matched[0]).getByRole("rowheader"))).toContain(game.starter?.name ?? "never");
+    expect(text(within(matched[0]).getByRole("rowheader"))).toContain("matched");
+  });
+
+  it("reconciles every game's starter figure and the average with the chart and the Opp L10 column", () => {
     render(<PropsBoardView board={board} />);
     open("Demo Guard One");
     const row = rowData("Demo Guard One");
     const bars = [...row.opponentL10.points].reverse();
-    groups().forEach((g, i) => expect(figure(within(g).getByTestId("opp-box-subtotal-pts"))).toBe(bars[i].value));
+    groups().forEach((g, i) => expect(figure(within(g).getByTestId("opp-box-starter-pts"))).toBe(bars[i].value));
     expect(text(screen.getByTestId("opp-box-average-pts"))).toBe((row.opponentL10.average ?? NaN).toFixed(1));
     expect(text(col("Demo Guard One", "oppLast10"))).toContain((row.opponentL10.average ?? NaN).toFixed(1));
     for (const market of ["reb", "ast"] as const) {
@@ -493,92 +626,103 @@ describe("Opponent Last 10 vs. position box-score table", () => {
       open("Demo Guard One");
       const r = rowData("Demo Guard One", market);
       expect(text(screen.getByTestId(`opp-box-average-${market}`))).toBe((r.opponentL10.average ?? NaN).toFixed(1));
-      groups().forEach((g, i) => expect(figure(within(g).getByTestId(`opp-box-subtotal-${market}`))).toBe([...r.opponentL10.points].reverse()[i].value));
+      groups().forEach((g, i) => expect(figure(within(g).getByTestId(`opp-box-starter-${market}`))).toBe([...r.opponentL10.points].reverse()[i].value));
     }
   });
 
-  it("uses the player's estimated position and no other: a shooting guard sees only shooting guards", () => {
+  it("uses the player's estimated position and no other: a shooting guard sees the opposing shooting guard", () => {
     render(<PropsBoardView board={board} />);
     open("Demo Wing Two");
-    expect(screen.getByTestId("opp-box-card").getAttribute("aria-label")).toMatch(/allowed to SG/);
-    fireEvent.click(screen.getByTestId("opp-box-expand-all"));
-    const shown = screen.getAllByTestId("opp-box-player");
-    expect(shown.length).toBeGreaterThan(0);
-    for (const tr of shown) expect(within(tr).getAllByRole("cell").map(text)).toContain("SG");
-    for (const tr of shown) expect(within(tr).getByRole("rowheader").textContent).toMatch(/ SG /);
-    expect(screen.getByTestId("opp-box-average").textContent).toContain("SG");
+    expect(screen.getByTestId("opp-box-card").getAttribute("aria-label")).toMatch(/the SG starter/);
+    expect(within(screen.getByTestId("opp-box-table")).getByRole("columnheader", { name: "SG starter" })).toBeInTheDocument();
+    const matched = rowData("Demo Wing Two").opponentBox.games.flatMap((g) => (g.starter ? [g.starter] : []));
+    expect(matched.length).toBeGreaterThan(0);
+    expect(matched.every((p) => p.position === "SG")).toBe(true);
+    expect(matched.every((p) => p.starter === true)).toBe(true);
   });
 
-  it("shows attributed-minutes coverage on every game, partial games flagged and complete ones not", () => {
+  it("shows why a game has no single starter, in plain words, with dashes rather than zeros or a guess", () => {
+    render(<PropsBoardView board={board} />);
+    open("Demo Guard One");
+    expect(groups().map((g) => g.getAttribute("data-match"))).toEqual(MATCH_BY_GAME);
+    const label = (i: number) => text(within(groups()[i]).getByTestId("opp-box-starter"));
+    expect(label(1)).toBe("Position unclear");
+    expect(label(2)).toBe("No PG starter");
+    expect(label(3)).toBe("2 PG starters");
+    expect(label(5)).toBe("Starter n/a");
+    for (const i of [1, 2, 3, 5]) {
+      for (const id of ["pts", "reb", "ast"]) expect(text(within(groups()[i]).getByTestId(`opp-box-starter-${id}`))).toBe("–");
+      expect(within(groups()[i]).getByTestId("opp-box-starter").getAttribute("title")).toMatch(/./);
+    }
+    expect(within(groups()[3]).getByTestId("opp-box-starter").getAttribute("title")).toMatch(/no single player is chosen/);
+    // The team's points allowed are still known for every one of those games.
+    for (const i of [1, 2, 3, 5]) expect(figure(within(groups()[i]).getByTestId("opp-box-team-pts"))).not.toBeNull();
+  });
+
+  it("lists every candidate when several starters share the position, and names none of them the match", () => {
+    render(<PropsBoardView board={board} />);
+    open("Demo Guard One");
+    const game = rowData("Demo Guard One").opponentBox.games[3];
+    fireEvent.click(groups()[3]);
+    const lines = playersOf(game.gameId);
+    expect(lines.filter((tr) => tr.getAttribute("data-matched") === "true")).toHaveLength(0);
+    const notChosen = lines.filter((tr) => /not chosen/.test(text(tr)));
+    expect(notChosen).toHaveLength(2);
+    expect(notChosen.every((tr) => tr.getAttribute("data-starter") === "true")).toBe(true);
+  });
+
+  it("counts the identified games, leaves the rest out of the starter average, and gives each reason", () => {
     render(<PropsBoardView board={board} />);
     open("Demo Guard One");
     const box = rowData("Demo Guard One").opponentBox;
-    box.games.forEach((g, i) => {
-      const coverage = within(groups()[i]).getByTestId("opp-box-coverage");
-      expect(groups()[i].getAttribute("data-incomplete")).toBe(g.isIncomplete ? "true" : "false");
-      if (g.subtotal === null) expect(coverage.textContent).toContain("no positions assigned, not a shutout");
-      else expect(coverage.textContent).toContain(g.isIncomplete ? `partial ${Math.round((g.coverage ?? 0) * 100)}%` : "100% attributed");
-    });
-    expect(box.games.some((g) => g.isIncomplete)).toBe(true);
-    expect(box.games.some((g) => !g.isIncomplete)).toBe(true);
-    expect(screen.getByTestId("opp-box-coverage-summary").textContent).toMatch(new RegExp(`Attributed minutes: ${Math.round((box.coverage ?? 0) * 100)}% of the opposing players' minutes`));
-    expect(screen.getByTestId("opp-box-coverage-summary").textContent).toMatch(/a floor, not a full total/);
+    expect(box.gamesWithFigure).toBe(6);
+    expect(box.gaps).toEqual({ multiple: 1, none: 1, uncertain: 1, unavailable: 1 });
+    expect(text(screen.getByTestId("opp-box-average-starters"))).toBe("6 of 10 games");
+    const summary = text(screen.getByTestId("opp-box-coverage-summary"));
+    expect(summary).toContain("PG starter identified in 6 of 10 games");
+    for (const reason of ["1 game with several PG starters", "1 game with no PG starter", "1 game where a starter has no position estimate", "1 game without usable starter status"]) expect(summary).toContain(reason);
+    expect(summary).toMatch(/never filled by a guess/);
+    const identified = box.games.flatMap((g) => (g.starter ? [g.starter.pts] : []));
+    expect(Number(text(screen.getByTestId("opp-box-average-pts")))).toBeCloseTo(identified.reduce((a, b) => a + b, 0) / identified.length, 1);
   });
 
-  it("treats a game with no assigned positions as missing data, never a shutout, and leaves it out of the average", () => {
-    render(<PropsBoardView board={board} />);
-    open("Demo Big Four");
-    const box = rowData("Demo Big Four").opponentBox;
-    expect(box.gamesWithFigure).toBe(9);
-    const gapIndex = box.games.findIndex((g) => g.subtotal === null);
-    expect(gapIndex).toBeGreaterThanOrEqual(0);
-    const gap = groups()[gapIndex];
-    expect(gap.getAttribute("data-incomplete")).toBe("true");
-    expect(text(within(gap).getByTestId("opp-box-coverage"))).toMatch(/not a shutout/);
-    for (const id of ["pts", "reb", "ast"]) expect(text(within(gap).getByTestId(`opp-box-subtotal-${id}`))).toBe("–");
-    expect(text(gap)).not.toMatch(/\b0\b/);
-    expect(text(screen.getByTestId("opp-box-average"))).toMatch(/9 of 10 games with positions/);
-    fireEvent.click(gap);
-    expect(screen.getByTestId("opp-box-no-players").textContent).toMatch(/had an estimated position/);
-    expect(screen.getAllByTestId("opp-box-unmatched").length).toBeGreaterThan(0);
-  });
-
-  it("never grades a team-position subtotal against one player's line, and says so", () => {
+  it("does not grade any figure against a player's line: the table has no over / under pills", () => {
     render(<PropsBoardView board={board} />);
     open("Demo Guard One");
-    for (const pill of within(screen.getByTestId("opp-box-table")).getAllByTestId("box-selected")) {
-      expect(pill.getAttribute("data-line-result")).toBe("none");
-      expect(pill.textContent).not.toMatch(/line/);
-    }
-    expect(within(screen.getByTestId("opp-box-table")).getByRole("columnheader", { name: "PTS result" }).getAttribute("title")).toMatch(/never compared to one player's line/);
+    expect(within(screen.getByTestId("opp-box-table")).queryAllByTestId("box-selected")).toHaveLength(0);
     // The player's own table still reads each game against the line.
     expect(within(screen.getByTestId("player-box-table")).getAllByTestId("box-selected").some((p) => p.getAttribute("data-line-result") !== "none")).toBe(true);
   });
 
-  it("labels the average with a small sample and with how many games are partial floors", () => {
-    render(<PropsBoardView board={board} />);
-    open("Demo Guard Five");
+  it("flags an opposing box score that is not a complete game: its team points are unknown, not a floor", () => {
+    const [key] = Object.keys(board.opponentBoxScores ?? {}).filter((k) => k.endsWith("|BOS"));
+    const games = (board.opponentBoxScores ?? {})[key];
+    const newest = games.at(-1);
+    if (!newest) throw new Error("the demo has BOS games");
+    const trimmed = { ...newest, players: newest.players.filter((p) => p.starter !== true || p.position !== "C") };
+    const incomplete: PropsBoardArtifact = { ...board, opponentBoxScores: { ...board.opponentBoxScores, [key]: [...games.slice(0, -1), trimmed] } };
+    render(<PropsBoardView board={incomplete} />);
     open("Demo Guard One");
-    const notes = screen.getAllByTestId("opp-box-average-note").map(text);
-    const five = rowData("Demo Guard Five").opponentBox;
-    const one = rowData("Demo Guard One").opponentBox;
-    expect(notes.some((n) => n.includes("4 games, small sample") && n.includes(`${five.incompleteGames} partial (a floor)`))).toBe(true);
-    expect(notes.some((n) => n.includes(`${one.incompleteGames} partial (a floor)`) && !n.includes("small sample"))).toBe(true);
+    expect(text(within(groups()[0]).getByTestId("opp-box-team-pts"))).toBe("–");
+    expect(within(screen.getByTestId("opp-box-average-team-pts")).getByRole("img").getAttribute("aria-label")).toBe("Only 9 of 10 games have a complete opposing box score");
+    fireEvent.click(groups()[0]);
+    expect(totalOf(newest.gameId).textContent).toMatch(/incomplete box score/);
   });
 
-  it("lists a player with no position estimate as not counted, outside the subtotal", () => {
-    render(<PropsBoardView board={board} />);
+  it("explains a board whose box scores carry no starter status, still showing team points and the full box score", () => {
+    render(<PropsBoardView board={withoutStarterStatus(board)} />);
     open("Demo Guard One");
-    const game = rowData("Demo Guard One").opponentBox.games.find((g) => g.unmatched.length > 0 && g.players.length > 0);
-    if (!game) throw new Error("the demo has a game with unmatched players");
-    fireEvent.click(groups().find((g) => g.getAttribute("data-game") === game.gameId) as HTMLElement);
-    const unmatched = screen.getAllByTestId("opp-box-unmatched").filter((tr) => tr.getAttribute("data-game") === game.gameId);
-    expect(unmatched).toHaveLength(game.unmatched.length);
-    for (const tr of unmatched) expect(tr.textContent).toContain("not counted");
-    const counted = playersOf(game.gameId).reduce((total, tr) => total + Number(text(within(tr).getAllByRole("cell")[3])), 0);
-    expect(counted).toBe(game.subtotal?.pts);
-    const withUnmatched = counted + game.unmatched.reduce((total, p) => total + p.pts, 0);
-    expect(withUnmatched).toBeGreaterThan(counted);
+    expect(screen.getByTestId("opp-box-starter-note").textContent).toMatch(/no starter status/);
+    expect(groups()).toHaveLength(10);
+    expect(groups().every((g) => g.getAttribute("data-match") === "unavailable")).toBe(true);
+    expect(groups().every((g) => figure(within(g).getByTestId("opp-box-team-pts")) !== null)).toBe(true);
+    expect(text(screen.getByTestId("opp-box-average-pts"))).toBe("–");
+    fireEvent.click(groups()[0]);
+    expect(playersOf(rowData("Demo Guard One").opponentBox.games[0].gameId).length).toBeGreaterThan(8);
+    // The chart and the column say the same, and do not fall back to a position total.
+    expect(screen.getByTestId("opp-l10-note").textContent).toMatch(/no starter status/);
+    expect(screen.queryByTestId("opp-l10-chart")).toBeNull();
+    expect(text(col("Demo Guard One", "oppLast10"))).not.toMatch(/\d/);
   });
 
   it("expands and collapses all games, and each game from the keyboard", () => {
@@ -604,27 +748,28 @@ describe("Opponent Last 10 vs. position box-score table", () => {
     expect(rowOf("Demo Guard One")).toHaveAttribute("aria-expanded", "true");
   });
 
-  it("follows the market and keeps its figures consistent", () => {
+  it("follows the market: the highlighted column and the starter's figures switch, team points allowed do not", () => {
     render(<PropsBoardView board={board} />);
     open("Demo Guard One");
-    expect(screen.getByTestId("opp-box-card").getAttribute("aria-label")).toMatch(/PTS allowed to PG/);
+    const teamPts = figure(within(groups()[0]).getByTestId("opp-box-team-pts"));
     showMarket("Assists");
     open("Demo Guard One");
-    expect(screen.getByTestId("opp-box-card").getAttribute("aria-label")).toMatch(/AST allowed to PG/);
     expect(within(screen.getByTestId("opp-box-table")).getByRole("columnheader", { name: "AST" }).className).toMatch(/bg-blue-50/);
-    fireEvent.click(screen.getByTestId("opp-box-expand-all"));
+    expect(within(screen.getByTestId("opp-box-table")).getByRole("columnheader", { name: "PTS" }).className).not.toMatch(/bg-blue-50/);
     const first = rowData("Demo Guard One", "ast").opponentBox.games[0];
-    expect(playersOf(first.gameId).map((tr) => numbers(tr).at(-1))).toEqual(first.players.map((p) => String(p.ast)));
+    expect(figure(within(groups()[0]).getByTestId("opp-box-starter-ast"))).toBe(first.starter?.ast);
+    expect(figure(within(groups()[0]).getByTestId("opp-box-team-pts"))).toBe(teamPts);
   });
 
   it("shows a short window as it is, without padding to ten", () => {
     render(<PropsBoardView board={board} />);
     open("Demo Guard Five");
     expect(groups()).toHaveLength(4);
-    expect(text(screen.getByTestId("opp-box-average"))).toMatch(/4 games/);
+    expect(text(screen.getByTestId("opp-box-average"))).toMatch(/4 games, small sample/);
+    expect(text(screen.getByTestId("opp-box-average-starters"))).toBe("4 of 4 games");
   });
 
-  it("says why there is nothing to show when the position, the opponent's games or the data are missing", () => {
+  it("says why there is nothing to show when the position or the data is missing", () => {
     render(<PropsBoardView board={board} />);
     open("Demo Bench Seven");
     expect(screen.getByTestId("opp-box-note").textContent).toMatch(/No estimated position/);
@@ -633,20 +778,19 @@ describe("Opponent Last 10 vs. position box-score table", () => {
     render(<PropsBoardView board={stale} />);
     open("Demo Guard One");
     expect(screen.getByTestId("opp-box-note").textContent).toMatch(/built before opponent box scores existed/);
-    // The older chart still works on such a board.
-    expect(screen.getByTestId("opp-l10-chart")).toBeInTheDocument();
+    expect(screen.getByTestId("opp-l10-note").textContent).toMatch(/built before opponent box scores existed/);
   });
 
-  it("centers every numeric header and value, and left-aligns the date, team and player", () => {
+  it("aligns the date, team and starter name left and every number centered", () => {
     render(<PropsBoardView board={board} />);
     open("Demo Guard One");
     fireEvent.click(groups()[0]);
     const heads = within(screen.getByTestId("opp-box-table")).getAllByRole("columnheader");
-    expect(heads.map(text)).toEqual(["Date", "Opp team", "Player", "Pos", "MIN", "PTS", "REB", "AST", "PTS result"]);
-    expect(heads.slice(0, 3).every((h) => /\btext-left\b/.test(h.className))).toBe(true);
-    expect(heads.slice(3).every((h) => /\btext-center\b/.test(h.className))).toBe(true);
-    const game = within(groups()[0]);
-    expect(game.getAllByRole("cell").slice(3).every((c) => /\btext-center\b/.test(c.className) && /tabular-nums/.test(c.className))).toBe(true);
+    expect(heads.map(text)).toEqual(["Date", "Opp team", "Team PTS allowed", "PG starter", "MIN", "PTS", "REB", "AST"]);
+    expect(heads.filter((h) => /\btext-left\b/.test(h.className)).map(text)).toEqual(["Date", "Opp team", "PG starter"]);
+    expect(heads.filter((h) => /\btext-center\b/.test(h.className)).map(text)).toEqual(["Team PTS allowed", "MIN", "PTS", "REB", "AST"]);
+    const cells = within(groups()[0]).getAllByRole("cell");
+    expect(cells.filter((c) => /\btext-center\b/.test(c.className) && /tabular-nums/.test(c.className))).toHaveLength(5);
     const player = playersOf(rowData("Demo Guard One").opponentBox.games[0].gameId)[0];
     expect(within(player).getByRole("rowheader").className).toMatch(/\btext-left\b/);
     expect(within(player).getAllByRole("cell").slice(1).every((c) => /\btext-center\b/.test(c.className))).toBe(true);

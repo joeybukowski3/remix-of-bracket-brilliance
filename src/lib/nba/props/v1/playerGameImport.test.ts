@@ -54,6 +54,30 @@ describe("parsePlayerGameImport", () => {
   });
 });
 
+describe("optional starter and possession fields", () => {
+  const withInputs = { starter: true, fga: 10, fta: 4, oreb: 1, tov: 2 };
+
+  it("keeps them when present, and still accepts a file without them (older imports)", () => {
+    const imported = parsePlayerGameImport(file([row(withInputs), awayRow()]));
+    expect(imported.rows[0]).toMatchObject(withInputs);
+    expect(imported.rows[1]).not.toHaveProperty("starter");
+    expect(imported.rows[1]).not.toHaveProperty("fga");
+  });
+
+  it.each([
+    ["negative attempts", { fga: -1 }],
+    ["fractional free-throw attempts", { fta: 2.5 }],
+    ["negative turnovers", { tov: -2 }],
+    ["a starter flag that is not a boolean", { starter: "yes" }],
+  ])("rejects the whole file for %s", (_name, over) => {
+    expect(() => parsePlayerGameImport(file([row({ ...withInputs, ...over }), awayRow()]))).toThrow();
+  });
+
+  it("rejects a partial possession set, which would look complete downstream", () => {
+    expect(() => parsePlayerGameImport(file([row({ fga: 10, fta: 4 }), awayRow()]))).toThrow(/possession/i);
+  });
+});
+
 describe("season, date and game consistency", () => {
   it("rejects rows whose date falls outside their season's window, so a mislabelled season cannot take another season's positions", () => {
     expect(() => parsePlayerGameImport(file([row({ season: "2026-27", gameDate: "2025-11-04" }), awayRow({ season: "2026-27", gameDate: "2025-11-04" })]))).toThrow(/outside the 2026-27 season window/);

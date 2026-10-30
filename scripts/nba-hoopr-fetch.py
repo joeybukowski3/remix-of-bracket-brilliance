@@ -48,6 +48,8 @@ COLUMNS = {
         "game_id", "season", "season_type", "game_date", "game_date_time", "athlete_id", "athlete_display_name",
         "team_id", "team_abbreviation", "opponent_team_id", "opponent_team_abbreviation", "home_away", "minutes",
         "points", "rebounds", "assists", "starter", "did_not_play", "reason", "athlete_position_abbreviation",
+        # Possession inputs for the pregame DEF RTG context (v1/teamDefense.ts); the starter flag above feeds the starter matchup.
+        "field_goals_attempted", "free_throws_attempted", "offensive_rebounds", "turnovers",
     ],
     "schedule": ["id", "date", "game_date", "season", "season_type", "status_type_name", "status_type_state", "status_type_completed", "home_abbreviation", "away_abbreviation"],
 }

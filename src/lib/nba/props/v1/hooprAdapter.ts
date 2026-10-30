@@ -41,6 +41,11 @@ export interface HooprPlayerBoxRow {
   starter: boolean | null;
   did_not_play: boolean | null;
   athlete_position_abbreviation: string | null;
+  /** Possession inputs. Optional because files fetched before they were added to nba-hoopr-fetch.py do not carry them. */
+  field_goals_attempted?: number | null;
+  free_throws_attempted?: number | null;
+  offensive_rebounds?: number | null;
+  turnovers?: number | null;
 }
 
 export interface HooprManifestInfo {
@@ -103,6 +108,14 @@ interface Candidate {
   espnPosition: string | null;
 }
 
+const isCount = (value: number | null | undefined): value is number => typeof value === "number" && Number.isInteger(value) && value >= 0;
+
+/** All four possession inputs, or nothing: a partial set would look like a complete one when team totals are summed. */
+function possessionInputs(r: HooprPlayerBoxRow): Pick<ImportedPlayerGame, "fga" | "fta" | "oreb" | "tov"> {
+  const { field_goals_attempted: fga, free_throws_attempted: fta, offensive_rebounds: oreb, turnovers: tov } = r;
+  return isCount(fga) && isCount(fta) && isCount(oreb) && isCount(tov) ? { fga, fta, oreb, tov } : {};
+}
+
 function toCandidate(r: HooprPlayerBoxRow, season: "2025-26" | "2026-27", seasonType: NbaSeasonType): Candidate | "team" | "identity" {
   const team = canonicalTeamCode(r.team_abbreviation ?? "");
   const opponent = canonicalTeamCode(r.opponent_team_abbreviation ?? "");
@@ -112,7 +125,12 @@ function toCandidate(r: HooprPlayerBoxRow, season: "2025-26" | "2026-27", season
   const home = r.home_away === "home" ? true : r.home_away === "away" ? false : null;
   if (playerId === null || !name || home === null || r.points === null || r.rebounds === null || r.assists === null || r.minutes === null) return "identity";
   return {
-    row: { season, seasonType, gameId: String(r.game_id), gameDate: r.game_date, team, opponent, isHome: home, playerId, playerName: name, minutes: r.minutes, pts: r.points, reb: r.rebounds, ast: r.assists },
+    row: {
+      season, seasonType, gameId: String(r.game_id), gameDate: r.game_date, team, opponent, isHome: home, playerId, playerName: name, minutes: r.minutes, pts: r.points, reb: r.rebounds, ast: r.assists,
+      // Explicit source status only: a null flag is "not given", never "bench".
+      ...(typeof r.starter === "boolean" ? { starter: r.starter } : {}),
+      ...possessionInputs(r),
+    },
     starter: r.starter === true,
     espnPosition: r.athlete_position_abbreviation,
   };

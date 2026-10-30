@@ -14,6 +14,10 @@
  * buildOpponentBoxScores returns the same games with the individual opposing players (name, minutes, stats, estimated position),
  * collected in the same pass over the same rows, so a position's subtotal there is exactly the bar here.
  *
+ * The per-position sums in buildOpponentRecent are no longer what the page shows for the opponent's last ten: the dashboard
+ * reads the starter at the position from these box scores instead (opponentStarter.ts), because a position total adds several
+ * players together. The sequences are still built so a board stays readable by an older page.
+ *
  * Display context only. Nothing here changes a projection, a DvP row or a rank.
  */
 import { DVP_POSITIONS, classifyRosterLabel, type DvpPosition } from "../dvpPositions";
@@ -53,7 +57,7 @@ function defenseGames(rows: readonly ImportedPlayerGame[], positions: PositionEs
     games.set(key, game);
     game.totalMinutes += r.minutes;
     const position = classifyRosterLabel(dvpLabelFor(positions, r.season, r.playerId));
-    game.players.push({ name: r.playerName, minutes: r.minutes, pts: r.pts, reb: r.reb, ast: r.ast, position: position.ok ? position.primary : null });
+    game.players.push({ name: r.playerName, minutes: r.minutes, pts: r.pts, reb: r.reb, ast: r.ast, position: position.ok ? position.primary : null, ...(r.starter === undefined ? {} : { starter: r.starter }) });
     if (position.ok === false) continue;
     game.attributedMinutes += r.minutes;
     for (const [pos, weight] of Object.entries(position.weights) as [DvpPosition, number][]) {
