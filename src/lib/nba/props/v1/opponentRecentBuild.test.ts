@@ -29,6 +29,26 @@ function bostonGames(n: number): ImportedPlayerGame[] {
 const build = (rows: ImportedPlayerGame[], slate = [upcoming]) => buildOpponentRecent(rows, positions, slate, SEASON);
 const pg = (rows: ImportedPlayerGame[]) => build(rows)[opponentRecentKey(upcoming.gameKey, "BOS", "PG")];
 
+describe("buildOpponentBoxScores: the source's starter status", () => {
+  it("carries each opposing player's explicit starter status into the box line, and omits it when the import gave none", () => {
+    const rows = [
+      line({ playerId: "NYK-1", gameId: "g01", gameDate: "2026-10-20", starter: true }),
+      line({ playerId: "NYK-6", gameId: "g01", gameDate: "2026-10-20", starter: false }),
+      line({ playerId: "NYK-2", gameId: "g01", gameDate: "2026-10-20" }),
+    ];
+    const players = buildOpponentBoxScores(rows, positions, [upcoming], SEASON)[opponentBoxKey(upcoming.gameKey, "BOS")][0].players;
+    const by = Object.fromEntries(players.map((p) => [p.name, p]));
+    expect(by["NYK-1"].starter).toBe(true);
+    expect(by["NYK-6"].starter).toBe(false);
+    expect(by["NYK-2"]).not.toHaveProperty("starter");
+  });
+
+  it("does not use starter status to decide anything else: the position sums are unchanged", () => {
+    const flagged = bostonGames(3).map((r) => ({ ...r, starter: r.playerId === "NYK-1" }));
+    expect(pg(flagged).games.map((g) => g.pts)).toEqual(pg(bostonGames(3)).games.map((g) => g.pts));
+  });
+});
+
 describe("buildOpponentRecent: the defense's own ten games", () => {
   it("takes the opponent's last ten distinct games, oldest to newest, not the last ten player records", () => {
     const sequence = pg(bostonGames(12));

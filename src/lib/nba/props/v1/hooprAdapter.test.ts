@@ -127,6 +127,34 @@ describe("preseason rows do not decide a player's team, role or minutes", () => 
   });
 });
 
+describe("starter status and possession inputs", () => {
+  const possessions = { field_goals_attempted: 12, free_throws_attempted: 4, offensive_rebounds: 1, turnovers: 3 };
+
+  it("carries the source's explicit starter status per game, and leaves it absent when the source gives none", () => {
+    const rows = [row({ starter: true }), opp({ starter: false }), row({ athlete_id: 1002, athlete_display_name: "Demo No Flag", starter: null })];
+    const byId = new Map(run(rows).imported.rows.map((r) => [r.playerId, r]));
+    expect(byId.get("1001")?.starter).toBe(true);
+    expect(byId.get("2001")?.starter).toBe(false);
+    expect(byId.get("1002")).not.toHaveProperty("starter");
+  });
+
+  it("carries field-goal attempts, free-throw attempts, offensive rebounds and turnovers only when all four are present", () => {
+    const rows = [row(possessions), opp({ ...possessions, turnovers: null }), row({ athlete_id: 1002, athlete_display_name: "Demo Older Row" })];
+    const byId = new Map(run(rows).imported.rows.map((r) => [r.playerId, r]));
+    expect(byId.get("1001")).toMatchObject({ fga: 12, fta: 4, oreb: 1, tov: 3 });
+    // A partial set is dropped whole: a half-known possession total would look complete downstream.
+    expect(byId.get("2001")).not.toHaveProperty("fga");
+    expect(byId.get("2001")).not.toHaveProperty("tov");
+    expect(byId.get("1002")).not.toHaveProperty("fga");
+  });
+
+  it("does not exclude a row for lacking possession inputs: they are optional context, not identity", () => {
+    const { imported, report } = run(game(1));
+    expect(imported.rows).toHaveLength(2);
+    expect(report.excluded.unusableRows).toBe(0);
+  });
+});
+
 describe("source attribution and rights", () => {
   it("names hoopR, the commit, the file checksums and the unresolved ESPN terms, and does not call the decision ESPN's permission", () => {
     const text = hooprProvenance(MANIFEST);
