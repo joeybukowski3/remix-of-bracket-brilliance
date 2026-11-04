@@ -28,7 +28,10 @@ function nonFiniteNumbers(value: unknown, path = "$", out: string[] = []): strin
 
 /** First path where two JSON values differ, or null when equal. */
 export function firstDifference(actual: unknown, expected: unknown, path = "$"): string | null {
-  if (Object.is(actual, expected)) return null;
+  // JSON serialization normalizes -0 to 0. Compare JSON-equivalent numeric
+  // values with === so a fresh rebuild cannot fail solely on signed zero.
+  // Retain Object.is for other values and the recursive structural checks below.
+  if (actual === expected || Object.is(actual, expected)) return null;
   if (typeof actual !== typeof expected || actual === null || expected === null || typeof actual !== "object") {
     return `${path}: ${JSON.stringify(actual)} != expected ${JSON.stringify(expected)}`;
   }

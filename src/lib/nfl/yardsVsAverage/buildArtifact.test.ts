@@ -4,7 +4,7 @@ import { gameDelta } from "./aggregate";
 import { buildYardsVsAverageArtifact } from "./buildArtifact";
 import { playerWeek } from "./__fixtures__/playerWeek";
 import { YARDS_VS_AVERAGE_METRIC_KEYS, YARDS_VS_AVERAGE_SCHEMA_VERSION, type YardsVsAverageArtifact } from "./types";
-import { validateYardsVsAverageArtifact } from "./validate";
+import { firstDifference, validateYardsVsAverageArtifact } from "./validate";
 
 const TEAMS = ["aaa", "bbb", "ccc", "ddd"];
 // Round-robin pairings, cycled by week.
@@ -129,5 +129,15 @@ describe("validateYardsVsAverageArtifact", () => {
     const artifact = build(FULL_2026);
     const problems = validateYardsVsAverageArtifact({ ...artifact, rows: artifact.rows.slice(1) }, context(FULL_2026));
     expect(problems).toContain("missing team rows: aaa");
+  });
+});
+
+// The JSON writer serializes -0 as 0; validating that parsed artifact must not fail.
+describe("yards-vs-average JSON-equivalent comparisons", () => {
+  it("accepts signed zero after JSON serialization without masking real differences", () => {
+    const expected = { rows: [{ samples: { last8: { pass: { deltaYds: -0 } } } }] };
+    const actual = JSON.parse(JSON.stringify(expected));
+    expect(firstDifference(actual, expected)).toBeNull();
+    expect(firstDifference({ value: 1 }, { value: 2 })).not.toBeNull();
   });
 });
