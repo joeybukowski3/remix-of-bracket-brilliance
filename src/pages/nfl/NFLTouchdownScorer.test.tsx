@@ -78,6 +78,24 @@ describe("NFLTouchdownScorer matchup filter", () => {
     expect(screen.queryByText("Tua Tagovailoa")).not.toBeInTheDocument();
   });
 
+  it("shows the immediately previous week only with an archived warning", async () => {
+    currentSlate.week = 2;
+    stubFetch(artifact());
+    render(<NFLTouchdownScorer />);
+    await waitFor(() => expect(screen.getByText("Drake Maye")).toBeInTheDocument());
+    expect(screen.getByText("2026 Week 1 archived candidate board")).toBeInTheDocument();
+    expect(screen.getByRole("status")).toHaveTextContent("not current-week picks");
+    expect(screen.queryByText("2026 Week 2 candidate board")).not.toBeInTheDocument();
+  });
+
+  it("rejects an artifact older than the immediately previous week", async () => {
+    currentSlate.week = 3;
+    stubFetch(artifact());
+    render(<NFLTouchdownScorer />);
+    await waitFor(() => expect(screen.getByText(/Week 3 TD Scorer data unavailable/)).toBeInTheDocument());
+    expect(screen.queryByTestId("touchdown-table")).not.toBeInTheDocument();
+  });
+
   it("shows the correct candidates for a second matchup (BUF @ MIA)", async () => {
     stubFetch(artifact());
     render(<NFLTouchdownScorer />);
