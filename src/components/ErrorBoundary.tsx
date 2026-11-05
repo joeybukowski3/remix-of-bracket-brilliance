@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { isChunkLoadError } from "@/lib/chunkRecovery";
 
 interface Props {
   children: ReactNode;
@@ -46,6 +47,11 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   private handleRetry = () => {
+    // A lazy chunk that failed to load stays failed (React caches the rejection), so only a reload recovers it.
+    if (isChunkLoadError(this.state.error)) {
+      window.location.reload();
+      return;
+    }
     this.setState({ hasError: false, error: null });
   };
 
@@ -59,6 +65,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.props.silent) return null;
 
     const label = this.props.section ?? "This section";
+    const isStale = isChunkLoadError(this.state.error);
 
     return (
       <div
@@ -93,8 +100,9 @@ export class ErrorBoundary extends Component<Props, State> {
             lineHeight: 1.5,
           }}
         >
-          Something went wrong rendering this part of the page. The rest of the
-          site should still work.
+          {isStale
+            ? "The site was updated while this page was open. Reload to get the latest version."
+            : "Something went wrong rendering this part of the page. The rest of the site should still work."}
         </p>
         <button
           onClick={this.handleRetry}
@@ -109,7 +117,7 @@ export class ErrorBoundary extends Component<Props, State> {
             cursor: "pointer",
           }}
         >
-          Try Again
+          {isStale ? "Reload" : "Try Again"}
         </button>
       </div>
     );
