@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DvpPosition } from "./dvpPositions";
-import { matchStarter, teamPointsAllowed, teamPointsFor, type StarterCandidate } from "./opponentStarter";
+import { matchStarter, teamPointsAllowed, teamPointsFor, teamStatAllowed, type StarterCandidate } from "./opponentStarter";
 
 const p = (name: string, position: DvpPosition | null, starter: boolean | undefined, over: Partial<StarterCandidate> = {}): StarterCandidate => ({ name, position, starter, minutes: starter ? 32 : 12, pts: 10, ...over });
 
@@ -109,5 +109,38 @@ describe("teamPointsFor", () => {
     expect(teamPointsFor(fullGame)).toEqual({ points: 112, source: "box", complete: true, playerSum: 112 });
     expect(teamPointsFor(fullGame.slice(0, 7))).toEqual({ points: null, source: null, complete: false, playerSum: 106 });
     expect(teamPointsFor(fullGame, null).source).toBe("box");
+  });
+});
+
+describe("teamStatAllowed: the opposing team's total in one stat, never a position figure", () => {
+  const line = (name: string, minutes: number, pts: number, reb: number, ast: number) => ({ name, position: null, minutes, pts, reb, ast });
+  const fullGame = [line("A", 48, 30, 10, 6), line("B", 48, 25, 8, 9), line("C", 48, 22, 12, 4), line("D", 48, 20, 5, 3), line("E", 48, 15, 9, 2)];
+
+  it("is the official score for points, whatever the rows add up to", () => {
+    expect(teamStatAllowed(fullGame, "pts", 115)).toBe(115);
+    expect(teamStatAllowed(fullGame.slice(0, 4), "pts", 115)).toBe(115);
+  });
+
+  it("sums rebounds and assists over a complete box", () => {
+    expect(teamStatAllowed(fullGame, "reb", 112)).toBe(44);
+    expect(teamStatAllowed(fullGame, "ast", 112)).toBe(24);
+  });
+
+  it("is null for rebounds and assists when the listed points do not add up to the official score (a row is missing)", () => {
+    expect(teamStatAllowed(fullGame, "reb", 120)).toBeNull();
+    expect(teamStatAllowed(fullGame, "ast", 120)).toBeNull();
+  });
+
+  it("is null for rebounds and assists when the minutes do not make a game, even if the points match", () => {
+    const short = [...fullGame.slice(0, 4), line("E", 20, 15, 9, 2)];
+    expect(teamStatAllowed(short, "reb", 112)).toBeNull();
+  });
+
+  it("without an official score uses the minutes rule for every stat, and is null for an empty box", () => {
+    expect(teamStatAllowed(fullGame, "pts")).toBe(112);
+    expect(teamStatAllowed(fullGame, "reb")).toBe(44);
+    expect(teamStatAllowed(fullGame.slice(0, 3), "reb")).toBeNull();
+    expect(teamStatAllowed([], "pts", 100)).toBe(100);
+    expect(teamStatAllowed([], "reb", 100)).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 /**
- * Last-ten-game sequences for the props board: a player's own ten most recent results, and what the opposing team's starter at
- * the player's estimated position scored in the opponent's ten most recent games. Browser-safe types and arithmetic (no Node imports).
+ * Last-ten-game sequences for the props board: a player's own ten most recent results, and what the opposing team allowed, as a
+ * team, in the opponent's ten most recent games. Browser-safe types and arithmetic (no Node imports).
  *
  * Both sequences are oldest to newest, current season only, and exist only on a private preview board: they are
  * hoopR/ESPN-derived and may not be published (containsPrivateData in propsBoard.ts refuses a public board that has them).
@@ -205,23 +205,21 @@ export const NO_STARTER_GAPS: StarterGaps = Object.freeze({ multiple: 0, none: 0
 
 export interface OpponentLastTen {
   /**
-   * "stale": the board predates opponent box scores. "no-position" / "no-opponent": the row has nothing to look up. "no-starters":
-   * the board's box scores carry no starter status (built before it was carried). "none": the defense has no completed game this
-   * season, or none with exactly one identified starter at the position.
+   * "stale": the board predates opponent box scores. "no-opponent": the row has nothing to look up. "none": the defense has no
+   * completed game this season, or none whose box score makes a trustworthy team total in this stat.
    */
-  status: "ok" | "none" | "stale" | "no-position" | "no-opponent" | "no-starters";
-  /** One point per game in the window, oldest to newest; `value` is the matched starter's figure, null for a gap. */
+  status: "ok" | "none" | "stale" | "no-opponent";
+  /** One point per game in the window, oldest to newest; `value` is the team total the defense allowed in the stat, null for a gap. */
   points: RecentPoint[];
-  /** Games in the window (at most ten), and how many of them carry a figure. */
+  /** Games in the window (at most ten), and how many of them carry a team total. */
   games: number;
   gamesWithFigure: number;
-  /** Mean of the matched starters' figures per game; null with none. */
+  /** Mean of the team totals per game; null with none. */
   average: number | null;
-  gaps: StarterGaps;
   isSmallSample: boolean;
 }
 
-const EMPTY_OPPONENT: Omit<OpponentLastTen, "status"> = { points: [], games: 0, gamesWithFigure: 0, average: null, gaps: NO_STARTER_GAPS, isSmallSample: false };
+const EMPTY_OPPONENT: Omit<OpponentLastTen, "status"> = { points: [], games: 0, gamesWithFigure: 0, average: null, isSmallSample: false };
 
 export function opponentLastTenUnavailable(status: Exclude<OpponentLastTen["status"], "ok">): OpponentLastTen {
   return { status, ...EMPTY_OPPONENT };

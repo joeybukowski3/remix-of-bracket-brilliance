@@ -16,7 +16,7 @@
  * Only a matched game carries a figure. Nothing here ever adds players together into a single-player matchup number.
  */
 import type { DvpPosition } from "./dvpPositions";
-import { isCompleteTeamMinutes } from "./v1/gameResults";
+import { SCORE_CHECKED_MINUTES_TOLERANCE, isCompleteTeamMinutes } from "./v1/gameResults";
 
 /** Starters a team puts on the floor to open a game. A flag set that names any other count is not trusted. */
 export const STARTERS_PER_TEAM = 5;
@@ -82,4 +82,21 @@ export function teamPointsFor(players: readonly Pick<StarterCandidate, "minutes"
   if (typeof officialScore === "number" && Number.isFinite(officialScore)) return { points: officialScore, source: "official", complete: playerSum === officialScore, playerSum };
   const points = teamPointsAllowed(players);
   return { points, source: points === null ? null : "box", complete: points !== null, playerSum };
+}
+
+/** The stats a team total is kept for. */
+export type TeamStat = "pts" | "reb" | "ast";
+
+/**
+ * The opposing team's total in one stat: what the defense allowed as a team, never a position figure. Points are the official
+ * final score when known (teamPointsFor). Rebounds and assists have no official total here, so they are the sum of the listed
+ * players, accepted only when the box is complete: the player points add up to the official score (or the minutes make a full
+ * game without one) and the minutes make a full game within the score-checked tolerance. Null, never a floor, otherwise.
+ */
+export function teamStatAllowed<P extends Pick<StarterCandidate, "minutes" | "pts"> & { reb: number; ast: number }>(players: readonly P[], stat: TeamStat, officialScore?: number | null): number | null {
+  const points = teamPointsFor(players, officialScore);
+  if (stat === "pts") return points.points;
+  if (players.length === 0 || !points.complete) return null;
+  if (!isCompleteTeamMinutes(players.reduce((sum, x) => sum + x.minutes, 0), SCORE_CHECKED_MINUTES_TOLERANCE)) return null;
+  return players.reduce((sum, x) => sum + x[stat], 0);
 }

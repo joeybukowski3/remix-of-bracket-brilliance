@@ -10,7 +10,8 @@ import { compareDvp, DVP_SEASONS, type DvpComparison, type DvpRow, type DvpSeaso
 import { classifyRosterLabel, type DvpPosition, type PositionClassification } from "./dvpPositions";
 import { NO_OVERRIDE, overrideView, playerOverrideKey, type OverrideView } from "./minutesOverride";
 import { opponentBoxTable, opponentLastTenFromBox, playerBoxTable, type OpponentBoxTable, type PlayerBoxTable } from "./boxScoreTables";
-import { playerLastTen, type OpponentBoxScores, type OpponentLastTen, type OpponentRecentSequence, type PlayerLastTen, type TeamDefenseTable } from "./recentForm";
+import { defenseStrength, playerLastTen, teamDefenseKey, type DefenseStrength, type OpponentBoxScores, type OpponentLastTen, type OpponentRecentSequence, type PlayerLastTen, type TeamDefenseEntry, type TeamDefenseTable } from "./recentForm";
+import { PROVISIONAL_NAME, researchProfile, researchRank, TIER_NAME, type ResearchProfile } from "./researchTier";
 import { marketRates, recentPerGame, seasonColumns, type SeasonColumns, type SeasonStatsView } from "./seasonStats";
 
 export const BOARD_SCHEMA_VERSION = "nba-props-board-v1";
@@ -137,6 +138,28 @@ export type DvpState =
   | { kind: "no-opponent" }
   | { kind: "no-dvp-data"; position: DvpPosition };
 
+/** The opponent's own defensive rating before this game, for the DEF RTG column. */
+export interface OpponentDefenseView {
+  /** "stale": the board predates DEF RTG. "no-opponent": nothing to look up. "none": the opponent has no usable earlier game. */
+  status: "stale" | "no-opponent" | "none" | "ok";
+  entry: TeamDefenseEntry | null;
+  /** Strong / average / weak by league rank, only from MIN_GAMES_FOR_STRENGTH prior games. */
+  strength: DefenseStrength | null;
+}
+
+/** The Eastern game date inside a canonical game key (`YYYY-MM-DD|AWY@HOM`), or null for anything else. */
+export function gameDateOf(gameKey: string): string | null {
+  return /^(\d{4}-\d{2}-\d{2})\|/.exec(gameKey)?.[1] ?? null;
+}
+
+export function opponentDefenseFor(entry: Pick<BoardEntry, "opponent" | "gameKey">, teamDefense: TeamDefenseTable | null | undefined): OpponentDefenseView {
+  if (teamDefense == null) return { status: "stale", entry: null, strength: null };
+  const date = gameDateOf(entry.gameKey);
+  if (!entry.opponent || date === null) return { status: "no-opponent", entry: null, strength: null };
+  const found = teamDefense.asOf[teamDefenseKey(entry.opponent, date)] ?? null;
+  return found === null ? { status: "none", entry: null, strength: null } : { status: "ok", entry: found, strength: defenseStrength(found) };
+}
+
 /** The player's JKB projection in each market for this game (null where the board has none). */
 export type JkbTriple = Record<BoardMarket, number | null>;
 
@@ -149,14 +172,18 @@ export interface BoardRow {
   season: SeasonColumns | null;
   /** The player's last ten games in this market (oldest to newest) with their average. */
   playerL10: PlayerLastTen;
-  /** The opponent's last ten games in this market, for the opposing starter at the player's estimated position (not a position total). */
+  /** What the opponent allowed as a team per game in this market over its last ten games (never a position total or a chosen player). */
   opponentL10: OpponentLastTen;
-  /** The same ten games as box-score tables: the player's own lines (with each opponent's pregame DEF RTG), and the opponent's games with the starter at the estimated position. */
+  /** The same ten games as box-score tables: the player's own lines (with each opponent's pregame DEF RTG), and the opponent's games with team totals allowed and every opposing player. */
   playerBox: PlayerBoxTable;
   opponentBox: OpponentBoxTable;
   /** The viewer's minutes override applied to this row (all null while none is active). The JKB values above stay as they were. */
   override: OverrideView;
   jkbTriple: JkbTriple;
+  /** Core / Rotation / Variable and the minutes consistency behind it (researchTier.ts); null when the board carries no season statistics. */
+  research: ResearchProfile | null;
+  /** The opponent's DEF RTG before this game: context only, never a projection input. */
+  opponentDefense: OpponentDefenseView;
 }
 
 const hasDvpData = (rows: readonly DvpRow[], team: string, position: DvpPosition, stat: DvpStat): boolean =>
@@ -171,9 +198,9 @@ export function dvpStateFor(entry: BoardEntry, rows: readonly DvpRow[]): DvpStat
   return { kind: "ok", position: position.primary, isMultiPosition: position.isMultiPosition, comparison: compareDvp(rows, entry.opponent, position.primary, stat) };
 }
 
-/** The opponent's last-ten window for this row: the opposing starter at the player's primary estimated position, from the board's box scores. */
+/** The opponent's last-ten window for this row: team totals allowed in the row's market, from the board's box scores. */
 export function opponentL10For(entry: BoardEntry, artifact: Pick<PropsBoardArtifact, "opponentBoxScores">): OpponentLastTen {
-  return opponentLastTenFromBox(opponentBoxTable(entry, artifact));
+  return opponentLastTenFromBox(opponentBoxTable(entry, artifact), entry.market);
 }
 
 /** Each player's JKB projection by market, keyed like the minutes override. */
@@ -206,13 +233,15 @@ export function buildBoardRows(artifact: PropsBoardArtifact, market: BoardMarket
         dvp: dvpStateFor(entry, artifact.dvpRows),
         season,
         playerL10,
-        opponentL10: opponentLastTenFromBox(opponentBox),
+        opponentL10: opponentLastTenFromBox(opponentBox, market),
         playerBox: playerBoxTable(playerL10, entry.market, artifact.teamDefense),
         opponentBox,
         override: minutes.has(key)
           ? overrideView({ jkbProjection: entry.projection?.value ?? null, jkbMinutes: entry.projection?.minutes ?? null, line: entry.line?.line ?? null, seasonPerMinute: marketRates(season?.current ?? null, market).perMinute, userMinutes: minutes.get(key) ?? null })
           : NO_OVERRIDE,
         jkbTriple: triples.get(key) ?? { pts: null, reb: null, ast: null },
+        research: researchProfile(entry.seasonStats),
+        opponentDefense: opponentDefenseFor(entry, artifact.teamDefense),
       };
     });
 }
@@ -243,29 +272,38 @@ export const BOARD_SORT_KEYS = [
   "lastTen",
   "oppLastTen",
   "dvpAllowed",
+  "research",
+  "minutesStability",
+  "oppDefRtg",
 ] as const;
 export type BoardSortKey = (typeof BOARD_SORT_KEYS)[number];
 export type SortDirection = "asc" | "desc";
+
+/** Which research tier to list: one tier, the Provisional group (20+ MPG over fewer than five games), or everyone. */
+export type TierFilter = "core" | "rotation" | "provisional" | "all";
 
 export interface BoardFilters {
   search: string;
   team: string | null;
   position: DvpPosition | null;
+  tier: TierFilter;
   onlyWithLine: boolean;
   onlyWithProjection: boolean;
 }
 
-export const DEFAULT_FILTERS: BoardFilters = Object.freeze({ search: "", team: null, position: null, onlyWithLine: false, onlyWithProjection: false });
+export const DEFAULT_FILTERS: BoardFilters = Object.freeze({ search: "", team: null, position: null, tier: "all", onlyWithLine: false, onlyWithProjection: false });
 
 export function filterBoardRows(rows: readonly BoardRow[], filters: BoardFilters): BoardRow[] {
   const needle = filters.search.trim().toLowerCase();
-  return rows.filter(({ entry }) => {
+  return rows.filter((row) => {
+    const { entry } = row;
     if (needle && !entry.playerName.toLowerCase().includes(needle)) return false;
     if (filters.team && entry.team !== filters.team && entry.opponent !== filters.team) return false;
     if (filters.position) {
       const position = classifyRosterLabel(entry.positionLabel);
       if (!position.ok || !(filters.position in position.weights)) return false;
     }
+    if (filters.tier === "provisional" ? !row.research?.provisional : filters.tier !== "all" && row.research?.tier !== filters.tier) return false;
     if (filters.onlyWithLine && !entry.line) return false;
     if (filters.onlyWithProjection && !entry.projection) return false;
     return true;
@@ -310,12 +348,82 @@ const sortValue = (row: BoardRow, key: BoardSortKey): number | string | null => 
       return row.opponentL10.average;
     case "dvpAllowed":
       return row.dvp.kind === "ok" ? row.dvp.comparison.blended?.allowedPerGame ?? null : null;
+    case "research":
+      return researchRank(row.research);
+    case "minutesStability":
+      return row.research?.consistency.last5?.within ?? null;
+    case "oppDefRtg":
+      return row.opponentDefense.entry?.rating ?? null;
   }
 };
 
-/** Sort without mutating the input. Rows missing the sort value always go last, in either direction. */
+const nullsLast = (a: number | null, b: number | null, sign: 1 | -1): number => (a === null && b === null ? 0 : a === null ? 1 : b === null ? -1 : sign * (a - b));
+
+/**
+ * The research order: Core, then Rotation, then Variable, then players with no tier; within a tier the largest gap between the JKB
+ * projection and the line first, then the higher projection. An ordering aid only: the gap is not an edge estimate and no price is used.
+ */
+function researchCompare(a: BoardRow, b: BoardRow): number {
+  const abs = (row: BoardRow): number | null => (row.difference === null ? null : Math.abs(row.difference));
+  return (
+    researchRank(a.research) - researchRank(b.research) ||
+    nullsLast(abs(a), abs(b), -1) ||
+    nullsLast(a.entry.projection?.value ?? null, b.entry.projection?.value ?? null, -1) ||
+    a.entry.entryKey.localeCompare(b.entry.entryKey)
+  );
+}
+
+export interface TierOption {
+  value: TierFilter;
+  label: string;
+  count: number;
+}
+
+/**
+ * Choices for the tier filter with how many rows each lists, in the order shown (Core, Rotation, Provisional, then everyone).
+ * Provisional is offered only while someone is in it, so a full-season board shows the same three choices as before.
+ */
+export function tierFilterOptions(rows: readonly BoardRow[]): TierOption[] {
+  const count = (tier: "core" | "rotation"): number => rows.filter((r) => r.research?.tier === tier).length;
+  const provisional = rows.filter((r) => r.research?.provisional).length;
+  return [
+    { value: "core", label: TIER_NAME.core, count: count("core") },
+    { value: "rotation", label: TIER_NAME.rotation, count: count("rotation") },
+    ...(provisional > 0 ? [{ value: "provisional" as const, label: PROVISIONAL_NAME, count: provisional }] : []),
+    { value: "all", label: "All players", count: rows.length },
+  ];
+}
+
+/** Why the tier shown is not simply the one asked for. */
+export type TierNotice =
+  | { kind: "default"; shown: TierFilter }
+  | { kind: "fallback"; requested: TierFilter; shown: TierFilter };
+
+export interface ResolvedTier {
+  tier: TierFilter;
+  /** Null when the tier shown is the one the reader asked for (or the opening default, Core, has players). */
+  notice: TierNotice | null;
+}
+
+/**
+ * The tier to list. With no choice yet the board opens on Core; with no Core players it opens on Rotation, and with neither on
+ * everyone. A choice of a tier that has no players in the current market (an early-season board, another market, another
+ * board) is not obeyed into an empty table: the same fallback applies, and the notice says so. The choice itself is never
+ * rewritten, so it comes back as soon as that tier has players again, and nothing here is stored.
+ */
+export function resolveTierFilter(choice: TierFilter | null, options: readonly TierOption[]): ResolvedTier {
+  const has = (tier: TierFilter): boolean => (options.find((o) => o.value === tier)?.count ?? 0) > 0;
+  const automatic: TierFilter = has("core") ? "core" : has("rotation") ? "rotation" : "all";
+  if (choice === null) return { tier: automatic, notice: automatic === "core" ? null : { kind: "default", shown: automatic } };
+  if (choice === "all" || has(choice)) return { tier: choice, notice: null };
+  return { tier: automatic, notice: { kind: "fallback", requested: choice, shown: automatic } };
+}
+
+/** Sort without mutating the input. Rows missing the sort value always go last, in either direction, except for "research", which is one fixed order that "asc" simply reverses. */
 export function sortBoardRows(rows: readonly BoardRow[], key: BoardSortKey, direction: SortDirection): BoardRow[] {
   const sign = direction === "asc" ? 1 : -1;
+  // "desc" is the natural research order (best first); "asc" is its reverse.
+  if (key === "research") return [...rows].sort((a, b) => -sign * researchCompare(a, b));
   return [...rows].sort((a, b) => {
     const av = sortValue(a, key);
     const bv = sortValue(b, key);

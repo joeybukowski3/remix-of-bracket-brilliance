@@ -8,10 +8,11 @@ import { MinutesEditor } from "@/components/nba/MinutesEditor";
 import OpponentLastTenTable from "@/components/nba/OpponentLastTenTable";
 import PlayerLastTenTable from "@/components/nba/PlayerLastTenTable";
 import RecentFormPanel from "@/components/nba/RecentFormPanel";
+import ResearchNotes from "@/components/nba/ResearchNotes";
 
 /** Season and matchup lines shown for every player, on a phone because the table has no room for them. */
-const SEASON_LINES: readonly ColumnId[] = ["seasonSample", "mpg", "perGame", "perMinute", "last5", "last10", "lastSeason"];
-const MATCHUP_LINES: readonly ColumnId[] = ["oppLast10", "dvpAllowed", "dvpPrior", "dvpCurrent", "matchup"];
+const SEASON_LINES: readonly ColumnId[] = ["seasonSample", "tier", "mpg", "stability", "perGame", "perMinute", "last5", "last10", "lastSeason"];
+const MATCHUP_LINES: readonly ColumnId[] = ["oppDefRtg", "oppLast10", "dvpAllowed", "dvpPrior", "dvpCurrent", "matchup"];
 const LINE_LINES: readonly ColumnId[] = ["line", "overUnder", "jkbProjection", "modelEdge", "jkbMinutes", "jkbTriple", "source"];
 const RESULT_LINES: readonly ColumnId[] = ["adjustedProjection", "adjustedDifference", "seasonRateEstimate"];
 
@@ -91,9 +92,10 @@ export default function PropsRowDetail({ ctx, minutesInTable, hasSeasonStats }: 
       {hasSeasonStats ? (
         <Section title="This season">
           <Lines ids={SEASON_LINES} ctx={ctx} hasSeasonStats={hasSeasonStats} />
+          <ResearchNotes research={row.research} jkbMinutes={row.entry.projection?.minutes ?? null} />
         </Section>
       ) : null}
-      <Section title="Opponent (est. position)">
+      <Section title="Opponent">
         <Lines ids={MATCHUP_LINES} ctx={ctx} hasSeasonStats={hasSeasonStats} />
       </Section>
       <Section title="Line & JKB">

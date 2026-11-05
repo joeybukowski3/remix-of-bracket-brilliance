@@ -1,9 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import PropsBoardView from "@/components/nba/PropsBoardView";
 import { buildDemoBoard } from "@/lib/nba/props/__fixtures__/boardDemo";
 import { COLUMN_PREFERENCE_KEY } from "@/lib/nba/props/boardColumns";
-import { buildBoardRows, type BoardMarket, type PropsBoardArtifact } from "@/lib/nba/props/propsBoard";
+import { buildBoardRows, sortBoardRows, type BoardMarket, type PropsBoardArtifact } from "@/lib/nba/props/propsBoard";
+import { render as renderRaw } from "@testing-library/react";
+
+/**
+ * Renders the board and, when it has research tiers, lists every player: the page opens on Core props, and these tests are about
+ * rows and tables that must not depend on a player's tier. The Core default itself is tested in PropsBoardResearch.test.tsx.
+ */
+const render = (...args: Parameters<typeof renderRaw>): ReturnType<typeof renderRaw> => {
+  const result = renderRaw(...args);
+  const all = screen.queryByRole("button", { name: /^All players/ });
+  if (all) fireEvent.click(all);
+  return result;
+};
 
 // Each test renders a table in jsdom, several times for market switches: allow for a loaded machine.
 vi.setConfig({ testTimeout: 30_000 });
@@ -21,9 +33,11 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-/** The columns the table showed by default before the last-ten redesign: tests of L5 and Opp allows select them explicitly. */
-const DEFAULT_HEADERS = ["Player", "MPG", "PPG", "PTS/MIN", "L10 PTS", "Opp L10 PTS", "Matchup", "Vegas Line", "JKB proj"];
+/** The default table: research tier, minutes consistency, season and recent form, the opponent's DEF RTG and Opp L10, matchup, Vegas Line, JKB projection. */
+const DEFAULT_HEADERS = ["Player", "Tier", "MPG", "Min stable", "PPG", "PTS/MIN", "L5 PTS", "L10 PTS", "Opp DEF RTG", "Opp L10 PTS", "Matchup", "Vegas Line", "JKB proj"];
+/** The columns the table showed before research tiers: tests of L5 and Opp allows, and of the projection sort, select them explicitly. */
 const LEGACY_COLUMNS = ["mpg", "perGame", "perMinute", "last5", "dvpAllowed", "matchup", "jkbProjection"];
+const researchOrder = (market: BoardMarket = "pts"): string[] => sortBoardRows(buildBoardRows(board, market), "research", "desc").map((r) => r.entry.playerName);
 const renderWith = (columns: readonly string[], b: PropsBoardArtifact = buildDemoBoard()) => {
   localStorage.setItem(COLUMN_PREFERENCE_KEY, JSON.stringify({ version: 1, columns }));
   return render(<PropsBoardView board={b} />);
@@ -69,7 +83,7 @@ const withoutLastWindows: PropsBoardArtifact = { ...board, entries: board.entrie
 const publicLike: PropsBoardArtifact = { ...board, entries: board.entries.map(({ seasonStats: _removed, ...entry }) => entry) };
 
 describe("the compact default table", () => {
-  it("shows player, MPG, PPG, PTS/MIN, player L10, opponent L10 allowed, matchup, Vegas Line and JKB projection, in that order, and nothing else", () => {
+  it("shows player, tier, MPG, minutes consistency, PPG, PTS/MIN, L5, L10, opponent DEF RTG and Opp L10, matchup, Vegas Line and JKB projection, in that order, and nothing else", () => {
     render(<PropsBoardView board={board} />);
     expect(headers()).toEqual(DEFAULT_HEADERS);
   });
@@ -77,15 +91,15 @@ describe("the compact default table", () => {
   it("uses the selected market's own per-game, per-minute, L10 and opponent labels", () => {
     render(<PropsBoardView board={board} />);
     showMarket("Rebounds");
-    expect(headers()).toEqual(["Player", "MPG", "RPG", "REB/MIN", "L10 REB", "Opp L10 REB", "Matchup", "Vegas Line", "JKB proj"]);
+    expect(headers()).toEqual(["Player", "Tier", "MPG", "Min stable", "RPG", "REB/MIN", "L5 REB", "L10 REB", "Opp DEF RTG", "Opp L10 REB", "Matchup", "Vegas Line", "JKB proj"]);
     showMarket("Assists");
-    expect(headers()).toEqual(["Player", "MPG", "APG", "AST/MIN", "L10 AST", "Opp L10 AST", "Matchup", "Vegas Line", "JKB proj"]);
+    expect(headers()).toEqual(["Player", "Tier", "MPG", "Min stable", "APG", "AST/MIN", "L5 AST", "L10 AST", "Opp DEF RTG", "Opp L10 AST", "Matchup", "Vegas Line", "JKB proj"]);
   });
 
   it("keeps every optional field out of the default view", () => {
     render(<PropsBoardView board={board} />);
     const h = headers().join("|");
-    for (const absent of ["O / U", "JKB min", "Your min", "Adj proj", "Adj − line", "JKB − line", "L5", "Opp allows", "DvP", "Sample", "Season-rate", "Source"]) expect(h, absent).not.toContain(absent);
+    for (const absent of ["O / U", "JKB min", "Your min", "Adj proj", "Adj − line", "JKB − line", "Opp allows", "DvP", "Sample", "Season-rate", "Source"]) expect(h, absent).not.toContain(absent);
   });
 
   it("computes each cell from the player's own figures for the selected market", () => {
@@ -97,15 +111,15 @@ describe("the compact default table", () => {
     expect(col("Demo Guard One", "jkbProjection").textContent).toBe("26.1");
     showMarket("Rebounds");
     expect(col("Demo Big Four", "perGame").textContent).toBe("11.9");
-    expect(col("Demo Big Four", "perMinute").textContent).toBe((11.9 / 25.5).toFixed(2));
+    expect(col("Demo Big Four", "perMinute").textContent).toBe((11.9 / 22.4).toFixed(2));
     expect(col("Demo Big Four", "last10").textContent).toBe("12.3");
-    expect(col("Demo Big Four", "mpg").textContent).toBe("25.5");
+    expect(col("Demo Big Four", "mpg").textContent).toBe("22.4");
     showMarket("Assists");
     expect(col("Demo Guard One", "perGame").textContent).toBe("8.6");
     expect(col("Demo Guard One", "last10").textContent).toBe("8.9");
   });
 
-  it("shows what the opposing starter at the player's estimated position did over the opponent's last ten games", () => {
+  it("shows what the opponent allowed as a team over its last ten games", () => {
     render(<PropsBoardView board={board} />);
     for (const name of ["Demo Guard One", "Demo Big Four"]) {
       const l10 = rowsFor("pts").find((r) => r.entry.playerName === name)?.opponentL10;
@@ -117,16 +131,24 @@ describe("the compact default table", () => {
     expect(rowsFor("pts").find((r) => r.entry.playerName === "Demo Guard Five")?.opponentL10.games).toBe(4);
   });
 
-  it("starts sorted by the JKB projection, highest first, with the projection header marking it", () => {
+  it("starts in research order, Core first, with the Tier header marking it", () => {
     render(<PropsBoardView board={board} />);
+    expect(playerOrder()).toEqual(researchOrder());
+    expect(screen.getByTestId("head-tier")).toHaveAttribute("aria-sort", "descending");
+    expect(screen.getByTestId("head-jkbProjection")).toHaveAttribute("aria-sort", "none");
+  });
+
+  it("sorts by the JKB projection, highest first, when its header is chosen", () => {
+    render(<PropsBoardView board={board} />);
+    fireEvent.click(screen.getByRole("button", { name: "JKB proj" }));
     expect(playerOrder()[0]).toBe("Demo Guard One");
     expect(screen.getByTestId("head-jkbProjection")).toHaveAttribute("aria-sort", "descending");
   });
 
-  it("keeps only matchup, Vegas Line and the projection as table columns on a phone: the rest, L10 included, are hidden below the md breakpoint", () => {
+  it("keeps only tier, matchup, Vegas Line and the projection as table columns on a phone: the rest, L10 included, are hidden below the md breakpoint", () => {
     render(<PropsBoardView board={board} />);
-    const onPhone = ["matchup", "line", "jkbProjection"];
-    for (const id of ["mpg", "perGame", "perMinute", "last10", "oppLast10", "matchup", "line", "jkbProjection"]) {
+    const onPhone = ["tier", "matchup", "line", "jkbProjection"];
+    for (const id of ["tier", "mpg", "stability", "perGame", "perMinute", "last5", "last10", "oppDefRtg", "oppLast10", "matchup", "line", "jkbProjection"]) {
       // A tablet shows every default column but PTS/MIN (it arrives at lg); the expanded row carries it.
       const arrives = id === "perMinute" ? /\blg:table-cell\b/ : /\bmd:table-cell\b/;
       const hidden = /\bhidden\b/.test(screen.getByTestId(`head-${id}`).className) && arrives.test(screen.getByTestId(`head-${id}`).className);
@@ -278,16 +300,16 @@ describe("the Columns menu", () => {
   it("lists every optional field, with the defaults checked and the rest unchecked", () => {
     render(<PropsBoardView board={board} />);
     openColumns();
-    for (const id of ["mpg", "perGame", "perMinute", "last10", "oppLast10", "matchup", "line", "jkbProjection"]) expect(screen.getByTestId(`column-toggle-${id}`), id).toBeChecked();
-    for (const id of ["overUnder", "jkbMinutes", "userMinutes", "adjustedProjection", "modelEdge", "last5", "dvpAllowed", "dvpPrior", "dvpCurrent", "seasonRateEstimate", "seasonSample", "lastSeason"]) expect(screen.getByTestId(`column-toggle-${id}`), id).not.toBeChecked();
+    for (const id of ["tier", "mpg", "stability", "perGame", "perMinute", "last5", "last10", "oppDefRtg", "oppLast10", "matchup", "line", "jkbProjection"]) expect(screen.getByTestId(`column-toggle-${id}`), id).toBeChecked();
+    for (const id of ["overUnder", "jkbMinutes", "userMinutes", "adjustedProjection", "modelEdge", "dvpAllowed", "dvpPrior", "dvpCurrent", "seasonRateEstimate", "seasonSample", "lastSeason"]) expect(screen.getByTestId(`column-toggle-${id}`), id).not.toBeChecked();
   });
 
   it("adds an optional column, in its registry position, and removes it again", () => {
     render(<PropsBoardView board={board} />);
     openColumns();
-    toggleColumn("last5");
+    toggleColumn("seasonSample");
     toggleColumn("overUnder");
-    expect(headers()).toEqual(["Player", "MPG", "PPG", "PTS/MIN", "L5 PTS", "L10 PTS", "Opp L10 PTS", "Matchup", "Vegas Line", "JKB proj", "O / U"]);
+    expect(headers()).toEqual(["Player", "Sample", "Tier", "MPG", "Min stable", "PPG", "PTS/MIN", "L5 PTS", "L10 PTS", "Opp DEF RTG", "Opp L10 PTS", "Matchup", "Vegas Line", "JKB proj", "O / U"]);
     expect(col("Demo Guard One", "last5").textContent).toBe("28.6");
     expect(col("Demo Guard One", "last10").textContent).toBe("26.8");
     expect(col("Demo Guard One", "line").textContent).toBe("24.5");
@@ -324,7 +346,7 @@ describe("the Columns menu", () => {
     openColumns();
     // They are not shown, so they are not drawn as ticked.
     expect(screen.getByTestId("column-toggle-mpg")).not.toBeChecked();
-    for (const id of ["mpg", "last5", "last10", "oppLast10", "seasonSample"]) expect(screen.getByTestId(`column-toggle-${id}`), id).toBeDisabled();
+    for (const id of ["tier", "mpg", "stability", "last5", "last10", "oppDefRtg", "oppLast10", "seasonSample"]) expect(screen.getByTestId(`column-toggle-${id}`), id).toBeDisabled();
     // Vegas Line is on every board, public or private, and cannot be switched off.
     expect(screen.getByTestId("column-toggle-line")).toBeChecked();
     expect(screen.getByTestId("column-toggle-line")).toBeDisabled();
@@ -333,11 +355,11 @@ describe("the Columns menu", () => {
   it("returns to the default columns, and reports the shown count", () => {
     render(<PropsBoardView board={board} />);
     openColumns();
-    expect(screen.getByTestId("columns-menu-trigger").textContent).toContain("(8)");
+    expect(screen.getByTestId("columns-menu-trigger").textContent).toContain("(12)");
     expect(screen.getByTestId("columns-reset")).toBeDisabled();
     toggleColumn("dvpAllowed");
     toggleColumn("mpg");
-    expect(screen.getByTestId("columns-menu-trigger").textContent).toContain("(8)");
+    expect(screen.getByTestId("columns-menu-trigger").textContent).toContain("(12)");
     expect(screen.getByTestId("columns-reset")).toBeEnabled();
     fireEvent.click(screen.getByTestId("columns-reset"));
     expect(headers()).toEqual(DEFAULT_HEADERS);
@@ -345,12 +367,14 @@ describe("the Columns menu", () => {
 
   it("falls back to the first shown sortable column when the projection column itself is hidden, and comes back with it", () => {
     render(<PropsBoardView board={board} />);
+    fireEvent.click(screen.getByRole("button", { name: "JKB proj" }));
+    expect(screen.getByTestId("head-jkbProjection")).toHaveAttribute("aria-sort", "descending");
     openColumns();
     toggleColumn("jkbProjection");
     expect(screen.queryByTestId("head-jkbProjection")).toBeNull();
-    // Nothing is ordered by a column that is not on screen.
-    expect(screen.getByTestId("head-mpg")).toHaveAttribute("aria-sort", "descending");
-    expect(playerOrder()[0]).toBe("Demo Guard One");
+    // Nothing is ordered by a column that is not on screen: the first shown sortable column (the tier) takes over.
+    expect(screen.getByTestId("head-tier")).toHaveAttribute("aria-sort", "descending");
+    expect(playerOrder()).toEqual(researchOrder());
     toggleColumn("jkbProjection");
     expect(screen.getByTestId("head-jkbProjection")).toHaveAttribute("aria-sort", "descending");
   });
@@ -383,7 +407,7 @@ describe("remembering the column choice", () => {
     expect(setItem).toHaveBeenCalledTimes(1);
     const [key, value] = setItem.mock.calls[0];
     expect(key).toBe(COLUMN_PREFERENCE_KEY);
-    expect(JSON.parse(String(value))).toEqual({ version: 1, columns: ["mpg", "perGame", "perMinute", "last10", "oppLast10", "dvpAllowed", "matchup", "line", "jkbProjection"] });
+    expect(JSON.parse(String(value))).toEqual({ version: 1, columns: ["tier", "mpg", "stability", "perGame", "perMinute", "last5", "last10", "oppDefRtg", "oppLast10", "dvpAllowed", "matchup", "line", "jkbProjection"] });
     first.unmount();
     render(<PropsBoardView board={board} />);
     expect(headers()).toContain("Opp allows");
@@ -1015,18 +1039,27 @@ describe("player last 10", () => {
   });
 });
 
-describe("opponent last 10 vs. position", () => {
+describe("opponent last 10: what the opponent allowed as a team", () => {
   const OPP = "Demo Guard One"; // NYK PG, opponent BOS: ten games on file
   const SHORT = "Demo Guard Five"; // BOS SG, opponent NYK: four games on file
+  const withShortBox = (): PropsBoardArtifact => {
+    const [key] = Object.keys(board.opponentBoxScores ?? {}).filter((k) => k.endsWith("|BOS"));
+    const games = (board.opponentBoxScores ?? {})[key];
+    const newest = games.at(-1);
+    if (!newest) throw new Error("the demo has BOS games");
+    const trimmed = { ...newest, players: newest.players.slice(0, -1) };
+    return { ...board, opponentBoxScores: { ...board.opponentBoxScores, [key]: [...games.slice(0, -1), trimmed] } };
+  };
 
-  it("shows the opponent's own ten games, one bar per game, for the opposing starter at the player's estimated position", () => {
+  it("shows the opponent's own ten games, one bar per game, as the team total allowed", () => {
     render(<PropsBoardView board={board} />);
     const panel = open(OPP);
     const chart = within(panel).getByTestId("opp-l10-chart");
     expect(within(chart).getAllByTestId("opp-l10-chart-bar")).toHaveLength(10);
-    expect(within(panel).getByTestId("opp-l10-panel").textContent).toContain("BOS last 10 · PTS by the PG starter");
+    expect(within(panel).getByTestId("opp-l10-panel").textContent).toContain("BOS last 10 · team PTS allowed");
     const row = rowsFor("pts").find((r) => r.entry.playerName === OPP);
     expect(within(panel).getByTestId("opp-l10-summary").textContent).toContain((row?.opponentL10.average ?? Number.NaN).toFixed(1));
+    expect(within(panel).getByTestId("opp-l10-summary").textContent).toContain("PTS allowed per game");
   });
 
   it("is chronological, and each bar names the date, the team that faced the defense and the figure", () => {
@@ -1037,25 +1070,25 @@ describe("opponent last 10 vs. position", () => {
     expect(bars[0].getAttribute("aria-label")).toMatch(/^Oct \d+, (vs|@) [A-Z]{3}: [\d.]+ PTS$/);
   });
 
-  it("shows the sample size, which games carry no figure and why, and the method limits in the details", () => {
+  it("shows the sample size and the method limits in the details", () => {
     render(<PropsBoardView board={board} />);
     const limits = within(open(OPP)).getByTestId("opp-l10-limits").textContent ?? "";
     expect(limits).toMatch(/Sample: 10 games, the most recent of BOS's completed regular-season games/);
-    expect(within(open(OPP)).getByTestId("opp-l10-gaps").textContent).toBe(
-      "4 games without exactly one identified PG starter shown as gaps and left out of the average: 1 game with several PG starters; 1 game with no PG starter; 1 game where a starter has no position estimate; 1 game without usable starter status.",
-    );
-    expect(limits).toMatch(/One opposing starter per game, by the source's starter flag and the estimated primary position; never several players added together\. Context, not a projection input/);
+    expect(limits).toMatch(/The team's total allowed, never a position figure or a chosen player\. Context, not a projection input/);
+    expect(screen.queryByTestId("opp-l10-gaps")).toBeNull();
   });
 
-  it("charts one starter's own line per game and never a sum of players", () => {
+  it("charts the team total per game, whatever the starter flags or the player's position say", () => {
     render(<PropsBoardView board={board} />);
     open(OPP);
     const row = rowsFor("pts").find((r) => r.entry.playerName === OPP);
-    const starters = (row?.opponentBox.games ?? []).flatMap((g) => (g.starter ? [g.starter.pts] : []));
-    expect(row?.opponentL10.points.flatMap((p) => (p.value === null ? [] : [p.value])).sort((a, b) => a - b)).toEqual([...starters].sort((a, b) => a - b));
-    expect(row?.opponentL10.gamesWithFigure).toBe(6);
-    const bars = within(screen.getByTestId("opp-l10-chart")).getAllByTestId("opp-l10-chart-bar");
-    expect(bars.filter((b) => /no figure/.test(b.getAttribute("aria-label") ?? ""))).toHaveLength(4);
+    expect(row?.opponentL10.points.map((p) => p.value)).toEqual((row?.opponentBox.games ?? []).map((g) => g.teamAllowed.pts).reverse());
+    expect(row?.opponentL10.gamesWithFigure).toBe(10);
+    // The demo's starter gaps (several PG starters, none, unclear) do not touch the team total.
+    const same = (name: string) => rowsFor("pts").find((r) => r.entry.playerName === name)?.opponentL10.average;
+    expect(same("Demo Big Four")).toBe(same(OPP));
+    // Bench Seven has no estimated position and plays for BOS, so it reads the same NYK window as Guard Five.
+    expect(same("Demo Bench Seven")).toBe(same(SHORT));
   });
 
   it("shows the actual N with a small-sample warning when the opponent has fewer than ten games, and never pads", () => {
@@ -1069,26 +1102,23 @@ describe("opponent last 10 vs. position", () => {
     expect(within(panel).getByTestId("opp-l10-limits").textContent).toMatch(/a small sample, not padded to ten/);
   });
 
-  it("shows a game with no identifiable starter as a gap with its reason, left out of the average, never a zero", () => {
-    render(<PropsBoardView board={board} />);
-    const panel = open("Demo Big Four"); // NYK C, opponent BOS: game 4 has no usable starter status and game 8 a starter with no position estimate
+  it("shows a game whose box score is not complete as a gap with its reason, left out of the average, never a zero", () => {
+    render(<PropsBoardView board={withShortBox()} />);
+    const panel = open(OPP);
     const bars = within(within(panel).getByTestId("opp-l10-chart")).getAllByTestId("opp-l10-chart-bar");
-    expect(bars.filter((b) => /no figure/.test(b.getAttribute("aria-label") ?? ""))).toHaveLength(2);
-    expect(bars[4].getAttribute("aria-label")).toMatch(/no figure/);
-    expect(bars[8].getAttribute("aria-label")).toMatch(/no figure/);
-    expect(within(panel).getByTestId("opp-l10-summary").textContent).toMatch(/average of 8 of 10 games/);
-    expect(within(panel).getByTestId("opp-l10-gaps").textContent).toMatch(/2 games without exactly one identified C starter shown as gaps and left out of the average: 1 game where a starter has no position estimate; 1 game without usable starter status/);
-    const row = rowsFor("pts").find((r) => r.entry.playerName === "Demo Big Four");
-    expect(row?.opponentL10).toMatchObject({ games: 10, gamesWithFigure: 8 });
-    expect(row?.opponentL10.points[4].detail).toMatch(/flagged 0 starters instead of five/);
-    expect(row?.opponentL10.points[8].detail).toMatch(/no position estimate/);
+    expect(bars.filter((b) => /no figure/.test(b.getAttribute("aria-label") ?? ""))).toHaveLength(1);
+    expect(bars.at(-1)?.getAttribute("aria-label")).toMatch(/no figure/);
+    expect(within(panel).getByTestId("opp-l10-summary").textContent).toMatch(/average of 9 of 10 games/);
+    expect(within(panel).getByTestId("opp-l10-gaps").textContent).toBe("1 game without a complete opposing box score shown as gaps and left out of the average.");
+    const row = buildBoardRows(withShortBox(), "pts").find((r) => r.entry.playerName === OPP);
+    expect(row?.opponentL10).toMatchObject({ games: 10, gamesWithFigure: 9 });
+    expect(row?.opponentL10.points.at(-1)?.detail).toMatch(/not a complete game/);
   });
 
-  it("explains N/A states instead of inventing a number: no position, no box scores on the board, no games", () => {
+  it("explains N/A states instead of inventing a number: no box scores on the board, no games", () => {
     render(<PropsBoardView board={board} />);
-    expect(col("Demo Bench Seven", "oppLast10").textContent).toBe("N/A");
-    expect(col("Demo Bench Seven", "oppLast10").querySelector("[title]")?.getAttribute("title")).toMatch(/No estimated position/);
-    expect(within(open("Demo Bench Seven")).getByTestId("opp-l10-note").textContent).toMatch(/No estimated position/);
+    // A player with no estimated position still gets the opponent's team totals.
+    expect(col("Demo Bench Seven", "oppLast10").textContent).toMatch(/\d/);
     cleanup();
     const { opponentBoxScores: _gone, ...old } = board;
     render(<PropsBoardView board={old} />);
@@ -1111,13 +1141,13 @@ describe("opponent last 10 vs. position", () => {
       // Two players can share an average; the board then orders them by entry key, so the expectation does too.
       .sort((a, b) => (b.opponentL10.average ?? 0) - (a.opponentL10.average ?? 0) || a.entry.entryKey.localeCompare(b.entry.entryKey))
       .map((r) => r.entry.playerName);
-    expect(playerOrder().slice(0, averages.length)).toEqual(averages);
-    expect(playerOrder().at(-1)).toBe("Demo Bench Seven");
+    expect(averages).toHaveLength(8);
+    expect(playerOrder()).toEqual(averages);
   });
 
   it("never changes a JKB projection: the same numbers with and without the windows", () => {
     const { opponentRecent: _gone, opponentBoxScores: _boxes, teamDefense: _defense, ...old } = board;
-    const strippedEntries = board.entries.map((e) => (e.seasonStats ? { ...e, seasonStats: { ...e.seasonStats, recentGames: undefined } } : e));
+    const strippedEntries = board.entries.map((e) => (e.seasonStats ? { ...e, seasonStats: { ...e.seasonStats, recentGames: undefined, availability: undefined } } : e));
     const withWindows = buildBoardRows(board, "pts").map((r) => [r.entry.projection, r.difference, r.jkbTriple]);
     const without = buildBoardRows({ ...old, entries: strippedEntries }, "pts").map((r) => [r.entry.projection, r.difference, r.jkbTriple]);
     expect(withWindows).toEqual(without);
