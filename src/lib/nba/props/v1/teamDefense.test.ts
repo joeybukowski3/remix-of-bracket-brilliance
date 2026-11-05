@@ -144,6 +144,43 @@ describe("buildTeamDefense", () => {
   });
 });
 
+describe("buildTeamDefense: the official team score", () => {
+  /** Stamps each team's official score on its rows, as the hoopR import does. */
+  const scored = (rows: ImportedPlayerGame[], scores: Record<string, number>): ImportedPlayerGame[] => rows.map((r) => ({ ...r, teamScore: scores[r.team] }));
+  const later = game("g2", "2026-10-22", side("AAA", 99), side("CCC", 110));
+  const key = teamDefenseKey("AAA", "2026-10-22");
+
+  it("keeps a game whose points match the official score even when the minutes are 3-5 off (rounding)", () => {
+    const rounded = game("g1", "2026-10-20", side("AAA", 105), side("BBB", 100)).map((r) => (r.playerId === "AAA-0" ? { ...r, minutes: 51 } : r)); // 243 minutes
+    const table = buildTeamDefense([...scored(rounded, { AAA: 105, BBB: 100 }), ...later], SEASON);
+    expect(table.unusableGames).toBe(0);
+    expect(table.asOf[key].games).toBe(1);
+  });
+
+  it("drops a game whose player points do not add up to the official score, however its minutes look (a missing scorer)", () => {
+    const table = buildTeamDefense([...scored(game("g1", "2026-10-20", side("AAA", 105), side("BBB", 100)), { AAA: 107, BBB: 100 }), ...later], SEASON);
+    expect(table.unusableGames).toBe(1);
+    expect(table.asOf[key]).toBeUndefined();
+  });
+
+  it("still refuses a roster more than 5 minutes off even when its points match", () => {
+    const short = game("g1", "2026-10-20", side("AAA", 105), side("BBB", 100)).map((r) => (r.playerId === "AAA-0" ? { ...r, minutes: 41 } : r)); // 233 minutes
+    const table = buildTeamDefense([...scored(short, { AAA: 105, BBB: 100 }), ...later], SEASON);
+    expect(table.unusableGames).toBe(1);
+  });
+
+  it("changes nothing without official scores: the 2-minute rule still decides", () => {
+    const off = (minutes: number) => game("g1", "2026-10-20", side("AAA", 105), side("BBB", 100)).map((r) => (r.playerId === "AAA-0" ? { ...r, minutes } : r));
+    expect(buildTeamDefense([...off(51), ...later], SEASON).unusableGames).toBe(1);
+    expect(buildTeamDefense([...off(50), ...later], SEASON).unusableGames).toBe(0);
+  });
+
+  it("falls back to the minutes rule when a team's rows do not all carry one score (never trusts a partial or conflicting score)", () => {
+    const partial = game("g1", "2026-10-20", side("AAA", 105), side("BBB", 100)).map((r) => (r.team === "AAA" && r.playerId === "AAA-0" ? { ...r, teamScore: 999 } : { ...r, teamScore: r.team === "AAA" ? 105 : 100 }));
+    expect(buildTeamDefense([...partial, ...later], SEASON).unusableGames).toBe(0);
+  });
+});
+
 describe("restrictTeamDefense", () => {
   it("keeps only the requested team-dates and the table's own counts, without changing the input", () => {
     const rows = [...game("g1", "2026-10-20", side("AAA", 105), side("BBB", 100)), ...game("g2", "2026-10-22", side("AAA", 99), side("CCC", 110)), ...game("g3", "2026-10-25", side("AAA", 101), side("BBB", 95))];

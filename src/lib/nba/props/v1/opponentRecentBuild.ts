@@ -39,6 +39,8 @@ interface DefenseGame {
   date: string;
   versus: string;
   defenseIsHome: boolean;
+  /** The opposing team's official score, when the import carries it. */
+  teamScore?: number;
   totalMinutes: number;
   attributedMinutes: number;
   allowed: Record<DvpPosition, { pts: number; reb: number; ast: number }>;
@@ -55,6 +57,7 @@ function defenseGames(rows: readonly ImportedPlayerGame[], positions: PositionEs
     const key = `${r.opponent}|${r.gameId}`;
     const game = games.get(key) ?? { gameId: r.gameId, date: r.gameDate, versus: r.team, defenseIsHome: !r.isHome, totalMinutes: 0, attributedMinutes: 0, allowed: emptyAllowed(), players: [] };
     games.set(key, game);
+    if (r.teamScore !== undefined) game.teamScore = r.teamScore;
     game.totalMinutes += r.minutes;
     const position = classifyRosterLabel(dvpLabelFor(positions, r.season, r.playerId));
     game.players.push({ name: r.playerName, minutes: r.minutes, pts: r.pts, reb: r.reb, ast: r.ast, position: position.ok ? position.primary : null, ...(r.starter === undefined ? {} : { starter: r.starter }) });
@@ -110,7 +113,7 @@ export function buildOpponentRecent(rows: readonly ImportedPlayerGame[], positio
   return out;
 }
 
-const toBoxGame = (game: DefenseGame): OpponentBoxScoreGame => ({ gameId: game.gameId, date: game.date, versus: game.versus, defenseIsHome: game.defenseIsHome, players: [...game.players].sort((a, b) => a.name.localeCompare(b.name) || b.minutes - a.minutes) });
+const toBoxGame = (game: DefenseGame): OpponentBoxScoreGame => ({ gameId: game.gameId, date: game.date, versus: game.versus, defenseIsHome: game.defenseIsHome, ...(game.teamScore === undefined ? {} : { teamScore: game.teamScore }), players: [...game.players].sort((a, b) => a.name.localeCompare(b.name) || b.minutes - a.minutes) });
 
 /**
  * The same last-ten window as buildOpponentRecent, with every opposing player who played, keyed by opponentBoxKey (one list per

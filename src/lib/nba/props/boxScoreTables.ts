@@ -12,7 +12,7 @@
  * Private-preview data only (the records come from a source not licensed for publication); display context, never a model input.
  */
 import { classifyRosterLabel, type DvpPosition } from "./dvpPositions";
-import { matchStarter, teamPointsAllowed, type StarterMatch } from "./opponentStarter";
+import { matchStarter, teamPointsFor, type StarterMatch } from "./opponentStarter";
 import {
   L10_GAMES, NO_STARTER_GAPS, SMALL_SAMPLE_BELOW, defenseStrength, mean, opponentBoxKey, opponentLastTenUnavailable, teamDefenseKey,
   type DefenseStrength, type GameResult, type OpponentBoxScoreGame, type OpponentBoxScores, type OpponentLastTen, type OpposingPlayerLine, type PlayerLastTen, type RecentPoint, type StarterGaps, type TeamDefenseEntry, type TeamDefenseTable,
@@ -113,8 +113,14 @@ export interface OpponentBoxGame {
   defenseIsHome: boolean;
   /** Every opposing player who played, starters first, then by minutes. The complete box score behind the figures. */
   players: OpponentBoxPlayer[];
-  /** Points the defense allowed (the opposing team's total); null when the opposing box score is not a complete game. */
+  /** Points the defense allowed: the official final score when the board carries it, else the opposing team's total; null when neither is trustworthy. */
   teamPtsAllowed: number | null;
+  /** Where `teamPtsAllowed` comes from; null when it is unknown. */
+  teamPtsSource: "official" | "box" | null;
+  /** False when the listed players do not account for the team's points (a player row is missing) or, without an official score, the minutes do not make a full game. */
+  boxComplete: boolean;
+  /** What the listed players' points add up to. */
+  playerPtsSum: number;
   /** Which opposing starter holds the player's position, or why none is identified. */
   starterMatch: StarterMatch<OpponentBoxPlayer>;
   /** The matched starter, when exactly one is identified. */
@@ -149,13 +155,17 @@ const startersFirst = (a: OpponentBoxPlayer, b: OpponentBoxPlayer): number => Nu
 function gameView(game: OpponentBoxScoreGame, position: DvpPosition, market: BoardMarket): OpponentBoxGame {
   const lines = game.players.map((p) => toPlayer(p, market));
   const starterMatch = matchStarter(lines, position);
+  const points = teamPointsFor(lines, game.teamScore);
   return {
     gameId: game.gameId,
     date: game.date,
     versus: game.versus,
     defenseIsHome: game.defenseIsHome,
     players: [...lines].sort(startersFirst),
-    teamPtsAllowed: teamPointsAllowed(lines),
+    teamPtsAllowed: points.points,
+    teamPtsSource: points.source,
+    boxComplete: points.complete,
+    playerPtsSum: points.playerSum,
     starterMatch,
     starter: starterMatch.kind === "matched" ? starterMatch.player : null,
   };

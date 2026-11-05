@@ -11,8 +11,10 @@
  * rebounds and turnovers, so the estimate runs slightly off an official figure; it is consistent across teams and dates, which
  * is what a league-relative reading needs. It is labelled an estimate wherever it is shown.
  *
- * A game is USABLE only when every player row of both teams carries all four possession inputs and each team's minutes add up
- * to a complete game (gameResults.ts, the W/L rule: within 2 minutes, so a missing player row is not mistaken for rounding). Any other game is left out of every rating, in numerator and denominator alike, and
+ * A game is USABLE only when every player row of both teams carries all four possession inputs and each box score is complete. With
+ * the official team score in the import, complete means the player points add up to it exactly (a missing scorer is then caught
+ * exactly) and the minutes are within 5 of a whole game; without it, the minutes must be within 2 (gameResults.ts, the W/L rule, so a
+ * missing player row is not mistaken for rounding). Any other game is left out of every rating, in numerator and denominator alike, and
  * counted, never repaired. An older import without the inputs therefore yields an empty table, and the page says so.
  *
  * Rank is among every team with at least one usable game before the date (1 = lowest rating, ties share a rank). The
@@ -20,7 +22,7 @@
  * MIN_GAMES_FOR_STRENGTH or more games. Display context only: nothing here changes a projection.
  */
 import { teamDefenseKey, type TeamDefenseEntry, type TeamDefenseTable } from "../recentForm";
-import { isCompleteTeamMinutes } from "./gameResults";
+import { SCORE_CHECKED_MINUTES_TOLERANCE, isCompleteTeamMinutes } from "./gameResults";
 import type { ImportedPlayerGame } from "./playerGameImport";
 
 const FREE_THROW_POSSESSION_WEIGHT = 0.44;
@@ -42,6 +44,8 @@ export const estimatedPossessions = (t: PossessionInputs): number => t.fga + FRE
 interface TeamTotals extends PossessionInputs {
   pts: number;
   minutes: number;
+  /** The team's official final score when every row carries the same one. */
+  score: number | undefined;
   /** False once any player row lacks the possession inputs. */
   complete: boolean;
 }
@@ -54,7 +58,9 @@ interface UsableGame {
 }
 
 function teamTotals(rows: readonly ImportedPlayerGame[]): TeamTotals {
-  const totals: TeamTotals = { pts: 0, minutes: 0, fga: 0, fta: 0, oreb: 0, tov: 0, complete: true };
+  const totals: TeamTotals = { pts: 0, minutes: 0, fga: 0, fta: 0, oreb: 0, tov: 0, complete: true, score: undefined };
+  const scores = new Set<number | undefined>(rows.map((r) => r.teamScore));
+  if (scores.size === 1) totals.score = [...scores][0];
   for (const r of rows) {
     totals.pts += r.pts;
     totals.minutes += r.minutes;
@@ -79,11 +85,17 @@ function groupGames(rows: readonly ImportedPlayerGame[], season: string): Map<st
   return games;
 }
 
+/** Every row carries the possession inputs, and the box score is complete: exact against the official score when there is one. */
+function isUsableBox(t: TeamTotals): boolean {
+  if (!t.complete) return false;
+  return t.score === undefined ? isCompleteTeamMinutes(t.minutes) : t.pts === t.score && isCompleteTeamMinutes(t.minutes, SCORE_CHECKED_MINUTES_TOLERANCE);
+}
+
 function toUsableGame(group: readonly ImportedPlayerGame[]): UsableGame | null {
   const teams = [...new Set(group.map((r) => r.team))];
   if (teams.length !== 2) return null;
   const [a, b] = teams.map((team) => ({ team, totals: teamTotals(group.filter((r) => r.team === team)) }));
-  if (![a, b].every((side) => side.totals.complete && isCompleteTeamMinutes(side.totals.minutes))) return null;
+  if (![a, b].every((side) => isUsableBox(side.totals))) return null;
   const possessions = (estimatedPossessions(a.totals) + estimatedPossessions(b.totals)) / 2;
   if (!(possessions > 0)) return null;
   return { date: group[0].gameDate, sides: [{ team: a.team, allowed: b.totals.pts }, { team: b.team, allowed: a.totals.pts }], possessions };

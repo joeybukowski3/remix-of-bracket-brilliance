@@ -148,6 +148,16 @@ describe("starter status and possession inputs", () => {
     expect(byId.get("1002")).not.toHaveProperty("fga");
   });
 
+  it("carries the team's official final score when it is a whole number, and leaves it absent otherwise", () => {
+    const rows = [row({ team_score: 110 }), opp({ team_score: 104 }), row({ athlete_id: 1002, athlete_display_name: "Demo No Score", team_score: null }), row({ athlete_id: 1003, athlete_display_name: "Demo Odd Score", team_score: 99.5 })];
+    // A row with no usable score does not fail the file: the score is optional and the other rows of the team still carry it.
+    const byId = new Map(run(rows).imported.rows.map((r) => [r.playerId, r]));
+    expect(byId.get("1001")?.teamScore).toBe(110);
+    expect(byId.get("2001")?.teamScore).toBe(104);
+    expect(byId.get("1002")).not.toHaveProperty("teamScore");
+    expect(byId.get("1003")).not.toHaveProperty("teamScore");
+  });
+
   it("does not exclude a row for lacking possession inputs: they are optional context, not identity", () => {
     const { imported, report } = run(game(1));
     expect(imported.rows).toHaveLength(2);

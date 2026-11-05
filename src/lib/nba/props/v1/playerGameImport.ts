@@ -60,6 +60,7 @@ const rowSchema = z
     fta: count.optional(),
     oreb: count.optional(),
     tov: count.optional(),
+    teamScore: count.optional(),
   })
   .superRefine((row, ctx) => {
     const present = POSSESSION_FIELDS.filter((field) => row[field] !== undefined).length;
@@ -99,6 +100,8 @@ export interface ImportedPlayerGame {
   fta?: number;
   oreb?: number;
   tov?: number;
+  /** The team's official final score in this game, the same on every row of the team. Lets a box score be checked for missing player rows. Absent in older imports. */
+  teamScore?: number;
 }
 
 export interface PlayerGameImport {
@@ -123,6 +126,8 @@ function teamProblems(key: string, group: readonly ImportedPlayerGame[], team: s
   const problems: string[] = [];
   if (new Set(rows.map((r) => r.opponent)).size > 1) problems.push(`game ${key}: ${team} rows disagree on the opponent`);
   if (new Set(rows.map((r) => r.isHome)).size > 1) problems.push(`game ${key}: ${team} rows disagree on home or away`);
+  // Rows without a score are tolerated (the score is optional); two different scores for one team in one game are not.
+  if (new Set(rows.flatMap((r) => (r.teamScore === undefined ? [] : [r.teamScore]))).size > 1) problems.push(`game ${key}: ${team} rows disagree on the team's official score`);
   return problems;
 }
 

@@ -43,6 +43,13 @@ describe("buildOpponentBoxScores: the source's starter status", () => {
     expect(by["NYK-2"]).not.toHaveProperty("starter");
   });
 
+  it("carries the opposing team's official score onto its box game, and leaves it off when the import has none", () => {
+    const rows = [line({ playerId: "NYK-1", gameId: "g01", gameDate: "2026-10-20", teamScore: 104 }), line({ playerId: "NYK-2", gameId: "g01", gameDate: "2026-10-20", teamScore: 104 }), line({ playerId: "NYK-1", gameId: "g02", gameDate: "2026-10-21" })];
+    const games = buildOpponentBoxScores(rows, positions, [upcoming], SEASON)[opponentBoxKey(upcoming.gameKey, "BOS")];
+    expect(games[0].teamScore).toBe(104);
+    expect(games[1]).not.toHaveProperty("teamScore");
+  });
+
   it("does not use starter status to decide anything else: the position sums are unchanged", () => {
     const flagged = bostonGames(3).map((r) => ({ ...r, starter: r.playerId === "NYK-1" }));
     expect(pg(flagged).games.map((g) => g.pts)).toEqual(pg(bostonGames(3)).games.map((g) => g.pts));

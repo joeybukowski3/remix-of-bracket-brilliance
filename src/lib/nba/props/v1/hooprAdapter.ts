@@ -46,6 +46,8 @@ export interface HooprPlayerBoxRow {
   free_throws_attempted?: number | null;
   offensive_rebounds?: number | null;
   turnovers?: number | null;
+  /** The player's team's official final score in this game (same on every row of the team). Optional for files fetched before it was added. */
+  team_score?: number | null;
 }
 
 export interface HooprManifestInfo {
@@ -130,6 +132,7 @@ function toCandidate(r: HooprPlayerBoxRow, season: "2025-26" | "2026-27", season
       // Explicit source status only: a null flag is "not given", never "bench".
       ...(typeof r.starter === "boolean" ? { starter: r.starter } : {}),
       ...possessionInputs(r),
+      ...(isCount(r.team_score) ? { teamScore: r.team_score } : {}),
     },
     starter: r.starter === true,
     espnPosition: r.athlete_position_abbreviation,

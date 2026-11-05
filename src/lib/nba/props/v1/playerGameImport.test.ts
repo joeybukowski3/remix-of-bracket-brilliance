@@ -73,6 +73,15 @@ describe("optional starter and possession fields", () => {
     expect(() => parsePlayerGameImport(file([row({ ...withInputs, ...over }), awayRow()]))).toThrow();
   });
 
+  it("keeps the official team score, and rejects a team whose rows disagree on it", () => {
+    const imported = parsePlayerGameImport(file([row({ teamScore: 110 }), row({ playerId: "p3", playerName: "Demo Three", teamScore: 110 }), awayRow({ teamScore: 104 })]));
+    expect(imported.rows.map((r) => r.teamScore)).toEqual([110, 110, 104]);
+    expect(() => parsePlayerGameImport(file([row({ teamScore: 110 }), row({ playerId: "p3", playerName: "Demo Three", teamScore: 111 }), awayRow()]))).toThrow(/official score/);
+    expect(() => parsePlayerGameImport(file([row({ teamScore: -1 }), awayRow()]))).toThrow();
+    // Some rows lacking the score is tolerated; only two different scores conflict.
+    expect(() => parsePlayerGameImport(file([row({ teamScore: 110 }), row({ playerId: "p3", playerName: "Demo Three" }), awayRow()]))).not.toThrow();
+  });
+
   it("rejects a partial possession set, which would look complete downstream", () => {
     expect(() => parsePlayerGameImport(file([row({ fga: 10, fta: 4 }), awayRow()]))).toThrow(/possession/i);
   });

@@ -136,6 +136,8 @@ export interface OpponentBoxScoreGame {
   versus: string;
   defenseIsHome: boolean;
   players: OpposingPlayerLine[];
+  /** The official final score of the team the players belong to, i.e. the points the defense allowed. Absent on a board built before it was carried. */
+  teamScore?: number;
 }
 
 /** The defense's last ten games (oldest to newest) before an upcoming game, by `gameKey|team`. */

@@ -50,6 +50,8 @@ COLUMNS = {
         "points", "rebounds", "assists", "starter", "did_not_play", "reason", "athlete_position_abbreviation",
         # Possession inputs for the pregame DEF RTG context (v1/teamDefense.ts); the starter flag above feeds the starter matchup.
         "field_goals_attempted", "free_throws_attempted", "offensive_rebounds", "turnovers",
+        # The team's official final score, to verify that a game's player rows are all there (points allowed, possessions).
+        "team_score",
     ],
     "schedule": ["id", "date", "game_date", "season", "season_type", "status_type_name", "status_type_state", "status_type_completed", "home_abbreviation", "away_abbreviation"],
 }

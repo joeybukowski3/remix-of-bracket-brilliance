@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DvpPosition } from "./dvpPositions";
-import { matchStarter, teamPointsAllowed, type StarterCandidate } from "./opponentStarter";
+import { matchStarter, teamPointsAllowed, teamPointsFor, type StarterCandidate } from "./opponentStarter";
 
 const p = (name: string, position: DvpPosition | null, starter: boolean | undefined, over: Partial<StarterCandidate> = {}): StarterCandidate => ({ name, position, starter, minutes: starter ? 32 : 12, pts: 10, ...over });
 
@@ -89,5 +89,25 @@ describe("teamPointsAllowed", () => {
 
   it("is null for an empty list", () => {
     expect(teamPointsAllowed([])).toBeNull();
+  });
+});
+
+describe("teamPointsFor", () => {
+  const rows = (pts: number[], minutes: number[]) => pts.map((p, i) => ({ pts: p, minutes: minutes[i] }));
+  const fullGame = rows([30, 22, 18, 12, 10, 8, 6, 4, 2], [40, 38, 36, 30, 28, 24, 20, 14, 10]); // 112 points, 240 minutes
+
+  it("uses the official score, exact even when the box is not a full game, and says the box is complete when the rows add up to it", () => {
+    expect(teamPointsFor(fullGame, 112)).toEqual({ points: 112, source: "official", complete: true, playerSum: 112 });
+  });
+
+  it("names a missing player row instead of understating the figure: the official score stands and the box is flagged", () => {
+    const missing = fullGame.slice(0, 8); // the 2-point reserve is gone
+    expect(teamPointsFor(missing, 112)).toEqual({ points: 112, source: "official", complete: false, playerSum: 110 });
+  });
+
+  it("falls back to the minutes rule, unchanged, when there is no official score", () => {
+    expect(teamPointsFor(fullGame)).toEqual({ points: 112, source: "box", complete: true, playerSum: 112 });
+    expect(teamPointsFor(fullGame.slice(0, 7))).toEqual({ points: null, source: null, complete: false, playerSum: 106 });
+    expect(teamPointsFor(fullGame, null).source).toBe("box");
   });
 });

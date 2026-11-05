@@ -51,12 +51,35 @@ export function matchStarter<P extends StarterCandidate>(players: readonly P[], 
 }
 
 /**
- * The points the defense allowed: the opposing team's total, the sum of its players' points. Only when the team's minutes make a
- * full game by the same rule as the W/L display (a missing player row would otherwise understate it); null, never a floor, otherwise.
- * A game whose minutes are 3-5 off is left out too: in 2025-26, 1 of 30 such team-games had player points that differed from the official score.
+ * The points the defense allowed, without an official score to check against: the opposing team's total, the sum of its players'
+ * points, only when the team's minutes make a full game by the same rule as the W/L display (a missing player row would otherwise
+ * understate it); null, never a floor, otherwise. A game whose minutes are 3-5 off is left out too: in 2025-26, 1 of 30 such
+ * team-games had player points that differed from the official score. See teamPointsFor for the exact path.
  */
 export function teamPointsAllowed(players: readonly Pick<StarterCandidate, "minutes" | "pts">[]): number | null {
   if (players.length === 0) return null;
   const minutes = players.reduce((sum, x) => sum + x.minutes, 0);
   return isCompleteTeamMinutes(minutes) ? players.reduce((sum, x) => sum + x.pts, 0) : null;
+}
+
+export interface TeamPointsAllowed {
+  /** The points the defense allowed; null when there is no official score and the box is not a complete game. */
+  points: number | null;
+  /** "official": the source's final score for the team. "box": the sum of the player rows, accepted because the minutes make a full game. */
+  source: "official" | "box" | null;
+  /** False when the player rows do not account for the points (official score known but the rows sum to something else) or the minutes do not make a full game. */
+  complete: boolean;
+  playerSum: number;
+}
+
+/**
+ * Points allowed with the official final score when the import carries it, which is exact whatever the box looks like; the player
+ * rows are then only checked against it, so a missing row is named instead of silently understating the figure. Without an official
+ * score it is teamPointsAllowed (minutes rule), unchanged.
+ */
+export function teamPointsFor(players: readonly Pick<StarterCandidate, "minutes" | "pts">[], officialScore?: number | null): TeamPointsAllowed {
+  const playerSum = players.reduce((sum, x) => sum + x.pts, 0);
+  if (typeof officialScore === "number" && Number.isFinite(officialScore)) return { points: officialScore, source: "official", complete: playerSum === officialScore, playerSum };
+  const points = teamPointsAllowed(players);
+  return { points, source: points === null ? null : "box", complete: points !== null, playerSum };
 }

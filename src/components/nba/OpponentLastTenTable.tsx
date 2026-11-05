@@ -83,7 +83,13 @@ function TeamTotalLine({ game, ctx }: { game: OpponentBoxGame; ctx: TableContext
       <td className={BODY_CELL} />
       <th scope="row" colSpan={3} className={cn(BODY_CELL, IDENTITY, "text-[10px] uppercase tracking-wide")}>
         {game.versus} total
-        {game.teamPtsAllowed === null ? <span className="ml-1 font-semibold normal-case text-slate-700" title="The listed minutes do not add up to a full game, so a player row may be missing and this is not the team's score">incomplete box score</span> : null}
+        {game.boxComplete ? null : game.teamPtsSource === "official" ? (
+          <span className="ml-1 font-semibold normal-case text-slate-700" title={`The official final score is ${game.teamPtsAllowed}, but the listed players' points add up to ${game.playerPtsSum}: a player row is missing from this box score`}>
+            rows sum to {game.playerPtsSum} of {game.teamPtsAllowed}
+          </span>
+        ) : (
+          <span className="ml-1 font-semibold normal-case text-slate-700" title="The listed minutes do not add up to a full game, so a player row may be missing and this is not the team's score">incomplete box score</span>
+        )}
       </th>
       <td className={cn(BODY_CELL, NUMERIC)}>{fmtStat(total("minutes"))}</td>
       <td className={cn(BODY_CELL, NUMERIC, selected("pts"))}>{fmtStat(total("pts"))}</td>
@@ -119,7 +125,7 @@ function GameGroup({ game, ctx, open, onToggle }: { game: OpponentBoxGame; ctx: 
         <td className={cn(BODY_CELL, IDENTITY)} title={`${ctx.opponent} ${game.defenseIsHome ? "hosted" : "visited"} ${game.versus}: the listed players are ${game.versus}'s`}>
           <TeamTag team={game.versus} prefix={game.defenseIsHome ? "vs" : "@"} />
         </td>
-        <td className={cn(BODY_CELL, NUMERIC, "font-bold text-slate-900")} data-testid="opp-box-team-pts" title={game.teamPtsAllowed === null ? `${ctx.opponent}'s points allowed are unknown: the ${game.versus} box score is not a complete game` : `${ctx.opponent} allowed ${game.teamPtsAllowed} points: ${game.versus}'s final score`}>
+        <td className={cn(BODY_CELL, NUMERIC, "font-bold text-slate-900")} data-testid="opp-box-team-pts" title={game.teamPtsAllowed === null ? `${ctx.opponent}'s points allowed are unknown: the ${game.versus} box score is not a complete game` : `${ctx.opponent} allowed ${game.teamPtsAllowed} points: ${game.versus}'s ${game.teamPtsSource === "official" ? "official final score" : "final score, summed from its players"}`}>
           {game.teamPtsAllowed === null ? dash : game.teamPtsAllowed}
         </td>
         <td className={cn(BODY_CELL, IDENTITY, "max-sm:leading-tight")}><StarterCell game={game} ctx={ctx} /></td>

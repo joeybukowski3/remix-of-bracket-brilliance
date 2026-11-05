@@ -158,6 +158,34 @@ describe("opponentBoxTable: team points allowed and the starter, kept apart", ()
   });
 });
 
+describe("opponentBoxTable: the official team score", () => {
+  const withScore = (g: OpponentBoxScoreGame, teamScore: number): OpponentBoxScoreGame => ({ ...g, teamScore });
+
+  it("takes points allowed from the official score and marks the box complete when the players add up to it", () => {
+    const g = opponentBoxTable(entry(), boxes([withScore(game(1, roster()), TEAM_PTS)])).games[0];
+    expect(g).toMatchObject({ teamPtsAllowed: TEAM_PTS, teamPtsSource: "official", boxComplete: true, playerPtsSum: TEAM_PTS });
+  });
+
+  it("still knows the points allowed when a player row is missing, and says the box is short by name of the difference", () => {
+    const missing = roster().filter((p) => p.name !== "Unrated"); // a 4-point row
+    const g = opponentBoxTable(entry(), boxes([withScore(game(1, missing), TEAM_PTS)])).games[0];
+    expect(g).toMatchObject({ teamPtsAllowed: TEAM_PTS, teamPtsSource: "official", boxComplete: false, playerPtsSum: TEAM_PTS - 4 });
+  });
+
+  it("recovers a game the minutes rule would have blanked, and averages it", () => {
+    const missing = roster().filter((p) => p.name !== "Unrated");
+    const table = opponentBoxTable(entry(), boxes([withScore(game(1, missing), TEAM_PTS), game(2, roster())]));
+    expect(table.teamPtsKnown).toBe(2);
+    expect(table.teamPtsAverage).toBe(TEAM_PTS);
+    const noScore = opponentBoxTable(entry(), boxes([game(1, missing), game(2, roster())]));
+    expect(noScore.games.find((x) => x.gameId === "g1")).toMatchObject({ teamPtsAllowed: null, teamPtsSource: null, boxComplete: false });
+  });
+
+  it("does not change a board without official scores: the box sum, accepted only for a full game", () => {
+    expect(opponentBoxTable(entry(), boxes([game(1, roster())])).games[0]).toMatchObject({ teamPtsAllowed: TEAM_PTS, teamPtsSource: "box", boxComplete: true });
+  });
+});
+
 describe("opponentBoxTable: starter outcomes and gaps", () => {
   const scenarios = (): OpponentBoxScoreGame[] => [
     game(1, roster()), // matched

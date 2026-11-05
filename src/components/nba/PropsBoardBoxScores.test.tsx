@@ -709,6 +709,25 @@ describe("Opponent Last 10 box-score table: points allowed and the starter at th
     expect(totalOf(newest.gameId).textContent).toMatch(/incomplete box score/);
   });
 
+  it("uses the official score for points allowed, and names a missing player row when the players do not add up to it", () => {
+    const [key] = Object.keys(board.opponentBoxScores ?? {}).filter((k) => k.endsWith("|BOS"));
+    const games = (board.opponentBoxScores ?? {})[key];
+    const newest = games.at(-1);
+    if (!newest) throw new Error("the demo has BOS games");
+    const official = newest.players.reduce((sum, p) => sum + p.pts, 0);
+    const missingRow = newest.players.find((p) => p.starter !== true && p.pts > 0);
+    if (!missingRow) throw new Error("the demo game has a bench scorer");
+    const trimmed = { ...newest, teamScore: official, players: newest.players.filter((p) => p !== missingRow) };
+    render(<PropsBoardView board={{ ...board, opponentBoxScores: { ...board.opponentBoxScores, [key]: [...games.slice(0, -1), trimmed] } }} />);
+    open("Demo Guard One");
+    // The official score stands even though the rows no longer add up to it.
+    expect(figure(within(groups()[0]).getByTestId("opp-box-team-pts"))).toBe(official);
+    expect(within(groups()[0]).getByTestId("opp-box-team-pts").getAttribute("title")).toMatch(/official final score/);
+    fireEvent.click(groups()[0]);
+    expect(totalOf(newest.gameId).textContent).toContain(`rows sum to ${official - missingRow.pts} of ${official}`);
+    expect(text(screen.getByTestId("opp-box-average-team-pts"))).not.toMatch(/g$/);
+  });
+
   it("explains a board whose box scores carry no starter status, still showing team points and the full box score", () => {
     render(<PropsBoardView board={withoutStarterStatus(board)} />);
     open("Demo Guard One");
