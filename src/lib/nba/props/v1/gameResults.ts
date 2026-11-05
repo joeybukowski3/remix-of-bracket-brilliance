@@ -16,12 +16,20 @@ const MINUTES_TOLERANCE = 2;
 /** Team points by `season|gameId`, only for games whose two box scores both look complete. */
 export type GameScores = ReadonlyMap<string, Readonly<Record<string, number>>>;
 
-/** True when a team's minutes are a whole number of 48-minute games plus 5-minute overtimes, within tolerance. */
-export function isCompleteTeamMinutes(minutes: number): boolean {
+/**
+ * The wider tolerance, for a box score that has ALSO been checked against the official team score. Whole-number player minutes leave
+ * a complete 13-15 man roster a few minutes off (2,560 of 2,604 team-games within 2, 35 more within 3-5), but on its own a 3-5 minute
+ * gap can hide a missing row (1 of 30 such games in 2025-26 had one). With the official score matching the player points, that case
+ * is excluded exactly, and the minutes bound only guards against a missing player who scored nothing.
+ */
+export const SCORE_CHECKED_MINUTES_TOLERANCE = 5;
+
+/** True when a team's minutes are a whole number of 48-minute games plus 5-minute overtimes, within tolerance (2 minutes by default). */
+export function isCompleteTeamMinutes(minutes: number, tolerance: number = MINUTES_TOLERANCE): boolean {
   const extra = minutes - REGULATION_MINUTES;
-  if (extra < -MINUTES_TOLERANCE) return false;
+  if (extra < -tolerance) return false;
   const overtimes = Math.max(0, Math.round(extra / OVERTIME_MINUTES));
-  return Math.abs(extra - overtimes * OVERTIME_MINUTES) <= MINUTES_TOLERANCE;
+  return Math.abs(extra - overtimes * OVERTIME_MINUTES) <= tolerance;
 }
 
 export function buildGameScores(rows: readonly ImportedPlayerGame[]): GameScores {

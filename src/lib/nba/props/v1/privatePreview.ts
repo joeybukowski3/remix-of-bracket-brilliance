@@ -19,7 +19,7 @@ import { normalizePlayerName } from "../pipeline/contracts";
 import type { DvpInput, ProjectionRecord, RosterRecord } from "../pipeline/boardBuild";
 import type { NbaLineCapture } from "../pipeline/lineCapture";
 import { BOARD_MARKETS, BOARD_SCHEMA_VERSION, type BoardEntry, type PropsBoardArtifact } from "../propsBoard";
-import type { OpponentBoxScores, OpponentRecentSequence } from "../recentForm";
+import type { OpponentBoxScores, OpponentRecentSequence, TeamDefenseTable } from "../recentForm";
 import type { SeasonStatsView } from "../seasonStats";
 import { SOURCE_LICENSES } from "../sources/licenses";
 import { effectivePermittedUses } from "../sources/registry";
@@ -43,6 +43,8 @@ export interface PrivatePreviewInput {
   opponentRecent?: Readonly<Record<string, OpponentRecentSequence>>;
   /** The individual opposing players behind those sequences by `gameKey|team` (v1/opponentRecentBuild.ts); shown only because this board is private. */
   opponentBoxScores?: Readonly<OpponentBoxScores>;
+  /** Each team's pregame defensive rating before each game it played (v1/teamDefense.ts); shown only because this board is private. */
+  teamDefense?: TeamDefenseTable;
   /** Stored odds captures (pipeline/lineCapture.ts) whose lines are joined to the entries; none means no lines (v1/privateLines.ts). */
   captures?: readonly NbaLineCapture[];
   /** Rights records; defaults to the repository registry. A test seam. */
@@ -155,6 +157,7 @@ export function buildPrivatePreviewBoard(input: PrivatePreviewInput): { artifact
     // Present even when empty (early season: no completed games yet) so the page can tell "no games" from "built before this existed".
     ...(input.opponentRecent ? { opponentRecent: { ...input.opponentRecent } } : {}),
     ...(input.opponentBoxScores ? { opponentBoxScores: { ...input.opponentBoxScores } } : {}),
+    ...(input.teamDefense ? { teamDefense: input.teamDefense } : {}),
     privatePreview: { notice: noticeFor(sources), attribution: attributionFor(sources, lineSources) },
   };
   return {

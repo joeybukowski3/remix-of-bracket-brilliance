@@ -58,6 +58,7 @@ describe("projectBoardForTier", () => {
     expect(out.dvpRows).toEqual([]);
     expect(out.opponentRecent).toBeUndefined();
     expect(out.opponentBoxScores).toBeUndefined();
+    expect(out.teamDefense).toBeUndefined();
     expect(out.sources).toEqual({ lines: ["the-odds-api"], dvp: null, dvpUpdatedUtc: null });
     expect(text).not.toContain("unknownTopLevel");
     expect(text).not.toContain("hoopr-espn");
@@ -81,6 +82,8 @@ describe("projectBoardForTier", () => {
     expect(out.dvpRows).toEqual(board.dvpRows);
     expect(out.opponentRecent).toEqual(board.opponentRecent);
     expect(out.opponentBoxScores).toEqual(board.opponentBoxScores);
+    expect(out.teamDefense).toEqual(board.teamDefense);
+    expect(Object.keys(out.teamDefense?.asOf ?? {}).length).toBeGreaterThan(0);
     expect(out.sources).toEqual(board.sources);
     expect(JSON.stringify(out)).not.toContain("unknownTopLevel");
     expect(out).not.toHaveProperty("privatePreview");
@@ -234,6 +237,7 @@ describe("planPublish", () => {
     const text = JSON.stringify(plan.envelope);
     expect(text).not.toContain("seasonStats");
     expect(text).not.toContain("opponentRecent");
+    expect(text).not.toContain("teamDefense");
     expect(text).not.toContain("hoopr-espn");
   });
 

@@ -84,6 +84,7 @@ export function projectBoardForTier(board: PropsBoardArtifact, tier: HostedTier)
       dvpRows: board.dvpRows,
       ...(board.opponentRecent ? { opponentRecent: board.opponentRecent } : {}),
       ...(board.opponentBoxScores ? { opponentBoxScores: board.opponentBoxScores } : {}),
+      ...(board.teamDefense ? { teamDefense: board.teamDefense } : {}),
     };
   }
   return {

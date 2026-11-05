@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { LowSample } from "@/components/nba/boardCells";
 import RecentBars from "@/components/nba/RecentBars";
 import { L10_GAMES, type OpponentLastTen, type PlayerLastTen } from "@/lib/nba/props/recentForm";
+import { describeStarterGaps } from "@/lib/nba/props/boxScoreTables";
 import type { BoardMarket, BoardRow } from "@/lib/nba/props/propsBoard";
 
 const STAT: Record<BoardMarket, string> = { pts: "PTS", reb: "REB", ast: "AST" };
@@ -56,35 +57,41 @@ function PlayerSide({ view, market, name }: { view: PlayerLastTen; market: Board
   );
 }
 
-const OPPONENT_NOTE: Record<Exclude<OpponentLastTen["status"], "ok">, string> = {
-  stale: "This board was built before opponent last-ten sequences existed. Rebuild the private preview board to add them.",
-  "no-position": "No estimated position for this player, so there is no opponent-vs-position window to show.",
+const OPPONENT_NOTE: Record<Exclude<OpponentLastTen["status"], "ok" | "none">, string> = {
+  stale: "This board was built before opponent box scores existed. Rebuild the private preview board to add them.",
+  "no-position": "No estimated position for this player, so there is no opposing starter at the player's position to show.",
   "no-opponent": "The opponent is unknown, so there is no window to show.",
-  none: "The opponent has no completed game this season with opposing minutes attributed to a position yet. Last season is never used to fill the window.",
+  "no-starters": "This board's box scores carry no starter status (it was built before that was added), so the opposing starter at this position cannot be named. Rebuild the private preview board to add it.",
 };
+
+/** The note for a window that has no starter figure at all: no games yet, or games none of which identify one starter. */
+function noFigureNote(view: OpponentLastTen, position: string): string {
+  if (view.games === 0) return "The opponent has no completed regular-season game this season yet. Last season is never used to fill the window.";
+  return `No game in this window identifies exactly one ${position} starter (${describeStarterGaps(view.gaps, position)}), so there is nothing to chart. Nothing is guessed.`;
+}
 
 function OpponentSide({ view, market, opponent, position }: { view: OpponentLastTen; market: BoardMarket; opponent: string; position: string }) {
   const stat = STAT[market];
   const gaps = view.games - view.gamesWithFigure;
   const body = () => {
+    if (view.status === "none") return <Note testId="opp-l10-note">{noFigureNote(view, position)}</Note>;
     if (view.status !== "ok") return <Note testId="opp-l10-note">{OPPONENT_NOTE[view.status]}</Note>;
     return (
       <>
-        <Summary average={view.average} n={view.games} small={view.isSmallSample} withFigure={view.gamesWithFigure} label={`${stat} allowed per game`} testId="opp-l10-summary" />
-        <RecentBars points={view.points} stat={stat} average={view.average} label={`${opponent} last ${view.games} games, ${stat} allowed to ${position}`} tone="opponent" testId="opp-l10-chart" />
+        <Summary average={view.average} n={view.games} small={view.isSmallSample} withFigure={view.gamesWithFigure} label={`${stat} by the ${position} starter`} testId="opp-l10-summary" />
+        <RecentBars points={view.points} stat={stat} average={view.average} label={`${opponent} last ${view.games} games, ${stat} by the opposing ${position} starter`} tone="opponent" testId="opp-l10-chart" />
         <ul className="mt-1 space-y-0.5 text-[10px] text-slate-600" data-testid="opp-l10-limits">
           <li>
-            Sample: {games(view.games)} of {opponent}'s {view.seasonGames} completed this season{view.isSmallSample ? " (a small sample, not padded to ten)" : ""}. Each bar is one {opponent} game.
+            Sample: {games(view.games)}, the most recent of {opponent}'s completed regular-season games{view.isSmallSample ? " (a small sample, not padded to ten)" : ""}. Each bar is one {opponent} game.
           </li>
-          <li>{view.coverage === null ? "No opposing minutes in this window." : `Attributed minutes: ${Math.round(view.coverage * 100)}% of opposing players' minutes had an estimated position; the rest are not counted, so each figure is a floor, not a full total.`}</li>
-          {gaps > 0 ? <li>{games(gaps)} with no attributed minutes shown as gaps and left out of the average.</li> : null}
-          <li>Estimated primary position, regular-season games only; context, not a projection input.</li>
+          {gaps > 0 ? <li data-testid="opp-l10-gaps">{games(gaps)} without exactly one identified {position} starter shown as gaps and left out of the average: {describeStarterGaps(view.gaps, position)}.</li> : null}
+          <li>One opposing starter per game, by the source's starter flag and the estimated primary position; never several players added together. Context, not a projection input.</li>
         </ul>
       </>
     );
   };
   return (
-    <Panel title={`${opponent} last 10 · ${stat} allowed to ${position}`} subtitle="The opponent's ten most recent completed games, one bar per game, summed over the opposing players at this estimated position." testId="opp-l10-panel">
+    <Panel title={`${opponent} last 10 · ${stat} by the ${position} starter`} subtitle="The opponent's ten most recent completed games, one bar per game: the single opposing starter estimated at this position." testId="opp-l10-panel">
       {body()}
     </Panel>
   );

@@ -9,8 +9,8 @@
 import { compareDvp, DVP_SEASONS, type DvpComparison, type DvpRow, type DvpSeason, type DvpStat } from "./dvp";
 import { classifyRosterLabel, type DvpPosition, type PositionClassification } from "./dvpPositions";
 import { NO_OVERRIDE, overrideView, playerOverrideKey, type OverrideView } from "./minutesOverride";
-import { opponentBoxTable, playerBoxTable, type OpponentBoxTable, type PlayerBoxTable } from "./boxScoreTables";
-import { opponentLastTen, opponentLastTenUnavailable, opponentRecentKey, playerLastTen, type OpponentBoxScores, type OpponentLastTen, type OpponentRecentSequence, type PlayerLastTen } from "./recentForm";
+import { opponentBoxTable, opponentLastTenFromBox, playerBoxTable, type OpponentBoxTable, type PlayerBoxTable } from "./boxScoreTables";
+import { playerLastTen, type OpponentBoxScores, type OpponentLastTen, type OpponentRecentSequence, type PlayerLastTen, type TeamDefenseTable } from "./recentForm";
 import { marketRates, recentPerGame, seasonColumns, type SeasonColumns, type SeasonStatsView } from "./seasonStats";
 
 export const BOARD_SCHEMA_VERSION = "nba-props-board-v1";
@@ -108,15 +108,22 @@ export interface PropsBoardArtifact {
   entries: BoardEntry[];
   dvpRows: DvpRow[];
   /**
-   * What each opponent allowed to each estimated position over its last ten completed games, by `gameKey|team|position`
-   * (recentForm.ts). Present only on a private preview board; the public board builder never sets it.
+   * What each opponent allowed to each estimated position over its last ten completed games, summed over the players at that
+   * position, by `gameKey|team|position` (recentForm.ts). No longer displayed: the page reads the starter at the position from
+   * `opponentBoxScores` instead. Still built so an older page can read the board. Private preview only.
    */
   opponentRecent?: Record<string, OpponentRecentSequence>;
   /**
-   * The individual opposing players behind each of those games, by `gameKey|team` (recentForm.ts). Private preview only, like
-   * `opponentRecent`, which it reconciles with exactly: a position's subtotal here is that position's bar there.
+   * Every opposing player in each of the opponent's last ten games, by `gameKey|team` (recentForm.ts), with the source's starter
+   * status when it was carried. The page derives team points allowed, the starter at the position, and the opponent charts from
+   * it. Private preview only.
    */
   opponentBoxScores?: OpponentBoxScores;
+  /**
+   * Each team's pregame defensive rating, rank and sample size before each game it played (v1/teamDefense.ts), for the player
+   * table's DEF RTG column. Absent on a board built before it existed. Derived from the same box scores, so private preview only.
+   */
+  teamDefense?: TeamDefenseTable;
   /**
    * Present only on a board built for local, private preview from a source whose rights allow private research but
    * not publication (v1/privatePreview.ts). The page must show the notice. Such a board is never written under public/.
@@ -142,9 +149,9 @@ export interface BoardRow {
   season: SeasonColumns | null;
   /** The player's last ten games in this market (oldest to newest) with their average. */
   playerL10: PlayerLastTen;
-  /** The opponent's last ten games allowed to the player's estimated position in this market. */
+  /** The opponent's last ten games in this market, for the opposing starter at the player's estimated position (not a position total). */
   opponentL10: OpponentLastTen;
-  /** The same ten games as box-score tables: the player's own lines, and the individual opposing players at the estimated position. */
+  /** The same ten games as box-score tables: the player's own lines (with each opponent's pregame DEF RTG), and the opponent's games with the starter at the estimated position. */
   playerBox: PlayerBoxTable;
   opponentBox: OpponentBoxTable;
   /** The viewer's minutes override applied to this row (all null while none is active). The JKB values above stay as they were. */
@@ -164,13 +171,9 @@ export function dvpStateFor(entry: BoardEntry, rows: readonly DvpRow[]): DvpStat
   return { kind: "ok", position: position.primary, isMultiPosition: position.isMultiPosition, comparison: compareDvp(rows, entry.opponent, position.primary, stat) };
 }
 
-/** The opponent's last-ten window for this row: the board's sequence for the opponent and the player's primary estimated position. */
-export function opponentL10For(entry: BoardEntry, artifact: Pick<PropsBoardArtifact, "opponentRecent">): OpponentLastTen {
-  if (artifact.opponentRecent === undefined) return opponentLastTenUnavailable("stale");
-  const position = classifyRosterLabel(entry.positionLabel);
-  if (position.ok === false) return opponentLastTenUnavailable("no-position");
-  if (!entry.opponent) return opponentLastTenUnavailable("no-opponent");
-  return opponentLastTen(artifact.opponentRecent[opponentRecentKey(entry.gameKey, entry.opponent, position.primary)], entry.market);
+/** The opponent's last-ten window for this row: the opposing starter at the player's primary estimated position, from the board's box scores. */
+export function opponentL10For(entry: BoardEntry, artifact: Pick<PropsBoardArtifact, "opponentBoxScores">): OpponentLastTen {
+  return opponentLastTenFromBox(opponentBoxTable(entry, artifact));
 }
 
 /** Each player's JKB projection by market, keyed like the minutes override. */
@@ -196,15 +199,16 @@ export function buildBoardRows(artifact: PropsBoardArtifact, market: BoardMarket
       const key = playerOverrideKey(entry);
       const season = seasonColumns(entry.seasonStats);
       const playerL10 = playerLastTen(entry.seasonStats?.recentGames, entry.market);
+      const opponentBox = opponentBoxTable(entry, artifact);
       return {
         entry,
         difference: entry.line && entry.projection ? entry.projection.value - entry.line.line : null,
         dvp: dvpStateFor(entry, artifact.dvpRows),
         season,
         playerL10,
-        opponentL10: opponentL10For(entry, artifact),
-        playerBox: playerBoxTable(playerL10, entry.market),
-        opponentBox: opponentBoxTable(entry, artifact),
+        opponentL10: opponentLastTenFromBox(opponentBox),
+        playerBox: playerBoxTable(playerL10, entry.market, artifact.teamDefense),
+        opponentBox,
         override: minutes.has(key)
           ? overrideView({ jkbProjection: entry.projection?.value ?? null, jkbMinutes: entry.projection?.minutes ?? null, line: entry.line?.line ?? null, seasonPerMinute: marketRates(season?.current ?? null, market).perMinute, userMinutes: minutes.get(key) ?? null })
           : NO_OVERRIDE,
@@ -218,7 +222,7 @@ export function buildBoardRows(artifact: PropsBoardArtifact, market: BoardMarket
  * public page refuses such a board at run time, so a private file copied into the published data folder cannot be shown.
  */
 export const containsPrivateData = (board: PropsBoardArtifact): boolean =>
-  board.privatePreview !== undefined || board.opponentRecent !== undefined || board.opponentBoxScores !== undefined || board.entries.some((e) => e.seasonStats !== undefined || e.lineDetail !== undefined);
+  board.privatePreview !== undefined || board.opponentRecent !== undefined || board.opponentBoxScores !== undefined || board.teamDefense !== undefined || board.entries.some((e) => e.seasonStats !== undefined || e.lineDetail !== undefined);
 
 export const BOARD_SORT_KEYS = [
   "player",

@@ -14,6 +14,10 @@
  * buildOpponentBoxScores returns the same games with the individual opposing players (name, minutes, stats, estimated position),
  * collected in the same pass over the same rows, so a position's subtotal there is exactly the bar here.
  *
+ * The per-position sums in buildOpponentRecent are no longer what the page shows for the opponent's last ten: the dashboard
+ * reads the starter at the position from these box scores instead (opponentStarter.ts), because a position total adds several
+ * players together. The sequences are still built so a board stays readable by an older page.
+ *
  * Display context only. Nothing here changes a projection, a DvP row or a rank.
  */
 import { DVP_POSITIONS, classifyRosterLabel, type DvpPosition } from "../dvpPositions";
@@ -35,6 +39,8 @@ interface DefenseGame {
   date: string;
   versus: string;
   defenseIsHome: boolean;
+  /** The opposing team's official score, when the import carries it. */
+  teamScore?: number;
   totalMinutes: number;
   attributedMinutes: number;
   allowed: Record<DvpPosition, { pts: number; reb: number; ast: number }>;
@@ -51,9 +57,10 @@ function defenseGames(rows: readonly ImportedPlayerGame[], positions: PositionEs
     const key = `${r.opponent}|${r.gameId}`;
     const game = games.get(key) ?? { gameId: r.gameId, date: r.gameDate, versus: r.team, defenseIsHome: !r.isHome, totalMinutes: 0, attributedMinutes: 0, allowed: emptyAllowed(), players: [] };
     games.set(key, game);
+    if (r.teamScore !== undefined) game.teamScore = r.teamScore;
     game.totalMinutes += r.minutes;
     const position = classifyRosterLabel(dvpLabelFor(positions, r.season, r.playerId));
-    game.players.push({ name: r.playerName, minutes: r.minutes, pts: r.pts, reb: r.reb, ast: r.ast, position: position.ok ? position.primary : null });
+    game.players.push({ name: r.playerName, minutes: r.minutes, pts: r.pts, reb: r.reb, ast: r.ast, position: position.ok ? position.primary : null, ...(r.starter === undefined ? {} : { starter: r.starter }) });
     if (position.ok === false) continue;
     game.attributedMinutes += r.minutes;
     for (const [pos, weight] of Object.entries(position.weights) as [DvpPosition, number][]) {
@@ -106,7 +113,7 @@ export function buildOpponentRecent(rows: readonly ImportedPlayerGame[], positio
   return out;
 }
 
-const toBoxGame = (game: DefenseGame): OpponentBoxScoreGame => ({ gameId: game.gameId, date: game.date, versus: game.versus, defenseIsHome: game.defenseIsHome, players: [...game.players].sort((a, b) => a.name.localeCompare(b.name) || b.minutes - a.minutes) });
+const toBoxGame = (game: DefenseGame): OpponentBoxScoreGame => ({ gameId: game.gameId, date: game.date, versus: game.versus, defenseIsHome: game.defenseIsHome, ...(game.teamScore === undefined ? {} : { teamScore: game.teamScore }), players: [...game.players].sort((a, b) => a.name.localeCompare(b.name) || b.minutes - a.minutes) });
 
 /**
  * The same last-ten window as buildOpponentRecent, with every opposing player who played, keyed by opponentBoxKey (one list per

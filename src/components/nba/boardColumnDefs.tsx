@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { DVP_SEASONS, SEASON_LABEL } from "@/lib/nba/props/dvp";
+import { describeStarterGaps } from "@/lib/nba/props/boxScoreTables";
 import { formatAmerican, type BoardMarket, type BoardRow, type BoardSortKey } from "@/lib/nba/props/propsBoard";
 import { RECENT_WINDOWS, EARLY_SEASON_GAMES, marketRates, recentPerGame, type RecentAverages } from "@/lib/nba/props/seasonStats";
 import type { ColumnId } from "@/lib/nba/props/boardColumns";
@@ -53,7 +54,8 @@ const CURRENT = DVP_SEASONS[1];
 
 const NO_SEASON = "No season statistics for this player on this board";
 const NO_GAMES = "No games this season yet";
-const STALE_OPPONENT_BOARD = "This board was built before opponent last-ten sequences existed; rebuild the private preview board to add them";
+const STALE_OPPONENT_BOARD = "This board was built before opponent box scores existed; rebuild the private preview board to add them";
+const NO_STARTERS_BOARD = "This board's box scores carry no starter status, so the opposing starter at this position cannot be named; rebuild the private preview board to add it";
 const STALE_BOARD = "This board was built before last-five averages existed; rebuild the private preview board to add them";
 
 const tierOf = (row: BoardRow) => (row.dvp.kind === "ok" ? row.dvp.comparison.tier : null);
@@ -80,8 +82,9 @@ function OpponentL10Cell({ row, market }: { row: BoardRow; market: BoardMarket }
   if (l10.status === "stale") return <NA why={STALE_OPPONENT_BOARD} />;
   if (l10.status === "no-position") return <NA why="No estimated position for this player, so there is no opponent-vs-position window" />;
   if (l10.status === "no-opponent") return <NA why="Opponent unknown" />;
-  if (l10.status === "none" || l10.average === null) return <span className="text-slate-500" title={`${opponent} has no completed game this season with opposing minutes attributed to a position`}>—</span>;
+  if (l10.status === "no-starters") return <NA why={NO_STARTERS_BOARD} />;
   const position = row.dvp.kind === "ok" ? row.dvp.position : "this position";
+  if (l10.status === "none" || l10.average === null) return <span className="text-slate-500" title={l10.games === 0 ? `${opponent} has no completed regular-season game this season yet` : `No ${opponent} game in the window identifies exactly one ${position} starter (${describeStarterGaps(l10.gaps, position)})`}>—</span>;
   return (
     <span className="inline-flex flex-col items-center md:inline md:flex-none" title={opponentTitle(l10, opponent, position, market)}>
       {l10.average.toFixed(1)}
@@ -92,8 +95,9 @@ function OpponentL10Cell({ row, market }: { row: BoardRow; market: BoardMarket }
 
 /** The plain-language reading of the Opp L10 figure, for a hover and for the detail panel's caption. */
 export function opponentTitle(l10: OpponentLastTen, opponent: string, position: string, market: BoardMarket): string {
-  const coverage = l10.coverage === null ? "" : ` ${Math.round(l10.coverage * 100)}% of opposing minutes were attributed to a position.`;
-  return `${opponent} allowed ${l10.average?.toFixed(1) ?? "—"} ${STAT[market]} per game to ${position} (estimated position) over its last ${gamesLabel(l10.games)}, one opposing game at a time.${coverage}`;
+  const sample = l10.gamesWithFigure < l10.games ? `${l10.gamesWithFigure} of ${gamesLabel(l10.games)}` : gamesLabel(l10.games);
+  const gaps = l10.gamesWithFigure < l10.games ? ` Not counted: ${describeStarterGaps(l10.gaps, position)}.` : "";
+  return `The opposing ${position} starter (estimated position, per the source's starter flag) averaged ${l10.average?.toFixed(1) ?? "—"} ${STAT[market]} against ${opponent} over ${sample} of its last ten. One player's line per game, never a position total.${gaps}`;
 }
 
 function RecentCell({ row, window }: { row: BoardRow; window: keyof typeof RECENT_WINDOWS }) {

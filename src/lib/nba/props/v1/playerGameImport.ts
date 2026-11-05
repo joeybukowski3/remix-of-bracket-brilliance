@@ -37,21 +37,35 @@ function isRealDate(value: string): boolean {
 
 const isRealInstant = (value: string): boolean => ISO_UTC.test(value) && !Number.isNaN(Date.parse(value));
 
-const rowSchema = z.object({
-  season: z.enum(IMPORT_SEASONS),
-  seasonType: z.enum(NBA_SEASON_TYPES),
-  gameId: z.string().min(1).max(40),
-  gameDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  team: z.string(),
-  opponent: z.string(),
-  isHome: z.boolean(),
-  playerId: z.string().regex(/^[A-Za-z0-9_.-]{1,40}$/),
-  playerName: z.string().min(1),
-  minutes: z.number().min(0).max(MAX_MINUTES),
-  pts: z.number().int().min(0),
-  reb: z.number().int().min(0),
-  ast: z.number().int().min(0),
-});
+const count = z.number().int().min(0);
+const POSSESSION_FIELDS = ["fga", "fta", "oreb", "tov"] as const;
+
+const rowSchema = z
+  .object({
+    season: z.enum(IMPORT_SEASONS),
+    seasonType: z.enum(NBA_SEASON_TYPES),
+    gameId: z.string().min(1).max(40),
+    gameDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    team: z.string(),
+    opponent: z.string(),
+    isHome: z.boolean(),
+    playerId: z.string().regex(/^[A-Za-z0-9_.-]{1,40}$/),
+    playerName: z.string().min(1),
+    minutes: z.number().min(0).max(MAX_MINUTES),
+    pts: count,
+    reb: count,
+    ast: count,
+    starter: z.boolean().optional(),
+    fga: count.optional(),
+    fta: count.optional(),
+    oreb: count.optional(),
+    tov: count.optional(),
+    teamScore: count.optional(),
+  })
+  .superRefine((row, ctx) => {
+    const present = POSSESSION_FIELDS.filter((field) => row[field] !== undefined).length;
+    if (present !== 0 && present !== POSSESSION_FIELDS.length) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "possession inputs (fga, fta, oreb, tov) must be given together or not at all" });
+  });
 
 export const playerGamesFileSchema = z.object({
   schemaVersion: z.literal(PLAYER_GAMES_SCHEMA),
@@ -79,6 +93,15 @@ export interface ImportedPlayerGame {
   pts: number;
   reb: number;
   ast: number;
+  /** The source's explicit starter status for this game. Absent when the source gives none: never inferred from minutes or points. */
+  starter?: boolean;
+  /** Possession inputs (field-goal and free-throw attempts, offensive rebounds, turnovers), given together or not at all. Absent in older imports. */
+  fga?: number;
+  fta?: number;
+  oreb?: number;
+  tov?: number;
+  /** The team's official final score in this game, the same on every row of the team. Lets a box score be checked for missing player rows. Absent in older imports. */
+  teamScore?: number;
 }
 
 export interface PlayerGameImport {
@@ -103,6 +126,8 @@ function teamProblems(key: string, group: readonly ImportedPlayerGame[], team: s
   const problems: string[] = [];
   if (new Set(rows.map((r) => r.opponent)).size > 1) problems.push(`game ${key}: ${team} rows disagree on the opponent`);
   if (new Set(rows.map((r) => r.isHome)).size > 1) problems.push(`game ${key}: ${team} rows disagree on home or away`);
+  // Rows without a score are tolerated (the score is optional); two different scores for one team in one game are not.
+  if (new Set(rows.flatMap((r) => (r.teamScore === undefined ? [] : [r.teamScore]))).size > 1) problems.push(`game ${key}: ${team} rows disagree on the team's official score`);
   return problems;
 }
 

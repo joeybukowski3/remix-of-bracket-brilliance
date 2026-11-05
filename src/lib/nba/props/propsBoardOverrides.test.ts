@@ -154,7 +154,7 @@ describe("sorting by the new columns", () => {
 describe("containsPrivateData: what the public page refuses at run time", () => {
   it("flags a board with season statistics or a private-preview notice, and passes a plain board", () => {
     expect(containsPrivateData(board)).toBe(true);
-    const { opponentRecent: _windows, opponentBoxScores: _boxes, ...withoutWindows } = board;
+    const { opponentRecent: _windows, opponentBoxScores: _boxes, teamDefense: _defense, ...withoutWindows } = board;
     const noStats: PropsBoardArtifact = { ...withoutWindows, entries: board.entries.map(({ seasonStats: _removed, ...entry }) => entry) };
     expect(containsPrivateData(noStats)).toBe(false);
     expect(containsPrivateData({ ...noStats, privatePreview: { notice: "PRIVATE PREVIEW", attribution: "Data: hoopR" } })).toBe(true);
@@ -170,6 +170,9 @@ describe("containsPrivateData: what the public page refuses at run time", () => 
     // So are the individual opposing players behind them.
     expect(containsPrivateData({ ...noStats, opponentBoxScores: {} })).toBe(true);
     expect(containsPrivateData({ ...noStats, opponentBoxScores: board.opponentBoxScores })).toBe(true);
+    // And the team defensive ratings derived from the same box scores, even when they are empty.
+    expect(containsPrivateData({ ...noStats, teamDefense: { season: "2026-27", asOf: {}, usableGames: 0, unusableGames: 0 } })).toBe(true);
+    expect(containsPrivateData({ ...noStats, teamDefense: board.teamDefense })).toBe(true);
     // Game-by-game results alone are refused as well.
     const gamesOnly: PropsBoardArtifact = { ...noStats, entries: noStats.entries.map((e, i) => (i === 0 ? { ...e, seasonStats: { current: null, previous: null, recentGames: [] } } : e)) };
     expect(containsPrivateData(gamesOnly)).toBe(true);

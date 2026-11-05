@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ImportedPlayerGame } from "./playerGameImport";
-import { buildGameScores, isCompleteTeamMinutes, resultFor } from "./gameResults";
+import { SCORE_CHECKED_MINUTES_TOLERANCE, buildGameScores, isCompleteTeamMinutes, resultFor } from "./gameResults";
 
 function row(over: Partial<ImportedPlayerGame> & { playerId: string; team: string; opponent: string }): ImportedPlayerGame {
   return { season: "2026-27", seasonType: "regular", gameId: "g1", gameDate: "2026-10-20", isHome: over.team === "BOS", playerName: over.playerId, minutes: 48, pts: 20, reb: 5, ast: 3, ...over };
@@ -37,5 +37,16 @@ describe("buildGameScores / resultFor", () => {
     const scores = buildGameScores([...side("BOS", "NYK", 112), ...side("NYK", "BOS", 104)]);
     expect(resultFor(scores, { ...BOS_AT_HOME, season: "2025-26" })).toBeUndefined();
     expect(resultFor(undefined, BOS_AT_HOME)).toBeUndefined();
+  });
+});
+
+describe("isCompleteTeamMinutes: the score-checked tolerance", () => {
+  it("keeps the W/L tolerance at 2 minutes by default and takes the wider one only when asked", () => {
+    expect(isCompleteTeamMinutes(243)).toBe(false);
+    expect(isCompleteTeamMinutes(243, SCORE_CHECKED_MINUTES_TOLERANCE)).toBe(true);
+    expect(isCompleteTeamMinutes(245, SCORE_CHECKED_MINUTES_TOLERANCE)).toBe(true);
+    expect(isCompleteTeamMinutes(246, SCORE_CHECKED_MINUTES_TOLERANCE)).toBe(false);
+    expect(isCompleteTeamMinutes(235, SCORE_CHECKED_MINUTES_TOLERANCE)).toBe(true);
+    expect(isCompleteTeamMinutes(228, SCORE_CHECKED_MINUTES_TOLERANCE)).toBe(false);
   });
 });
