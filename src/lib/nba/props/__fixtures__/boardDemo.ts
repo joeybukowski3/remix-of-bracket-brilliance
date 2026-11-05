@@ -35,7 +35,8 @@ function demoLines(season: DvpSeason, games: number): DvpPlayerGameLine[] {
 }
 
 const TIPOFF = "2026-11-10T00:30:00Z";
-const GAME_KEY = "2026-11-09|NYK@BOS";
+const GAME_DATE = "2026-11-09";
+const GAME_KEY = `${GAME_DATE}|NYK@BOS`;
 const CAPTURED = "2026-11-09T21:30:00Z";
 
 /** Invented season totals from per-game figures: games, minutes, points, rebounds and assists per game. Not real data. */
@@ -202,6 +203,8 @@ function demoTeamDefense(players: readonly DemoPlayer[]): TeamDefenseTable {
     const rank = 1 + ((idx * 7) % 30);
     asOf[key] = { rating: Math.round((104 + rank * 0.45) * 10) / 10, leagueRating: 112, rank, rankedOf: 30, games: 1 + ((idx * 5) % 12) };
   });
+  asOf[teamDefenseKey("BOS", GAME_DATE)] = { rating: 108.6, leagueRating: 112, rank: 5, rankedOf: 30, games: 12 };
+  asOf[teamDefenseKey("NYK", GAME_DATE)] = { rating: 114.2, leagueRating: 112, rank: 24, rankedOf: 30, games: 3 };
   return { season: CURRENT, asOf, usableGames: 200, unusableGames: 0 };
 }
 
@@ -214,8 +217,8 @@ const PLAYERS: DemoPlayer[] = [
   // Early in the season: three games, so last season is shown beside it, separately.
   { name: "Demo Wing Two", team: "NYK", label: "SG", minutes: 31.5, seasonStats: { current: totals(CURRENT, 3, 29.1, 15.3, 5.7, 3.0), previous: totals(PREVIOUS, 70, 32.4, 19.8, 5.3, 3.6), last5: recent(3, 29.1, 15.3, 5.7, 3.0), last10: recent(3, 29.1, 15.3, 5.7, 3.0), recentGames: demoGames(3, 29.1, 15.3, 5.7, 3.0) }, pts: [19.5, 17.9], reb: [5.5, 5.1], ast: [3.5, 3.2] },
   { name: "Demo Forward Three", team: "NYK", label: "PF", minutes: 29, seasonStats: { current: totals(CURRENT, 22, 28.4, 16.9, 8.1, 2.7), previous: totals(PREVIOUS, 66, 27.8, 15.2, 7.6, 2.4), last5: recent(5, 29.6, 19.4, 9.0, 2.2), last10: recent(10, 28.9, 17.8, 8.4, 2.5), recentGames: demoGames(10, 28.9, 17.8, 8.4, 2.5) }, pts: [16.5, 18.2], reb: [7.5, 8.4], ast: [2.5, 2.9] },
-  { name: "Demo Big Four", team: "NYK", label: "C", minutes: 26, seasonStats: { current: totals(CURRENT, 20, 25.5, 13.8, 11.9, 2.1), previous: totals(PREVIOUS, 61, 26.9, 14.6, 11.2, 2.3), last5: recent(5, 24.2, 11.2, 13.4, 1.8), last10: recent(10, 25.1, 12.9, 12.3, 2.0), recentGames: demoGames(10, 25.1, 12.9, 12.3, 2.0) }, pts: [14.5, 14.0], reb: [11.5, 12.3], ast: [2.5, 2.2] },
-  { name: "Demo Guard Five", team: "BOS", label: "SG", minutes: 33, seasonStats: { current: totals(CURRENT, 18, 32.6, 22.7, 4.1, 4.9), previous: totals(PREVIOUS, 72, 33.1, 21.9, 4.4, 4.6), last5: recent(5, 33.4, 21.2, 4.6, 5.8), last10: recent(10, 32.9, 22.1, 4.3, 5.2), recentGames: demoGames(10, 32.9, 22.1, 4.3, 5.2) }, pts: [22.5, 23.4], reb: [4.5, 4.2], ast: [4.5, 5.0] },
+  { name: "Demo Big Four", team: "NYK", label: "C", minutes: 26, seasonStats: { current: totals(CURRENT, 20, 22.4, 13.8, 11.9, 2.1), previous: totals(PREVIOUS, 61, 26.9, 14.6, 11.2, 2.3), last5: recent(5, 22.0, 11.2, 13.4, 1.8), last10: recent(10, 22.6, 12.9, 12.3, 2.0), recentGames: demoGames(10, 22.6, 12.9, 12.3, 2.0) }, pts: [14.5, 14.0], reb: [11.5, 12.3], ast: [2.5, 2.2] },
+  { name: "Demo Guard Five", team: "BOS", label: "SG", minutes: 33, seasonStats: { current: totals(CURRENT, 18, 32.6, 22.7, 4.1, 4.9), previous: totals(PREVIOUS, 72, 33.1, 21.9, 4.4, 4.6), last5: recent(5, 33.4, 21.2, 4.6, 5.8), last10: recent(10, 32.9, 22.1, 4.3, 5.2), recentGames: demoGames(10, 32.9, 22.1, 4.3, 5.2), availability: { teamGames: 10, played: 9, returning: false, roleChange: false, teamChangedRecently: false } }, pts: [22.5, 23.4], reb: [4.5, 4.2], ast: [4.5, 5.0] },
   // No games yet this season: only last season exists, shown on its own.
   { name: "Demo Wing Six", team: "BOS", label: "SF", minutes: 30, seasonStats: { current: null, previous: totals(PREVIOUS, 58, 30.2, 17.4, 6.4, 3.3), last5: null, last10: null, recentGames: [] }, pts: [18.5, null], reb: [6.5, null], ast: [3.5, null] },
   // No history at all: no season figures, and a projection with no minutes to scale from is still shown.

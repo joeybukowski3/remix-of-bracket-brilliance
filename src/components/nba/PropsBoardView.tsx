@@ -19,6 +19,7 @@ import {
   dvpPositionCoverage,
   filterBoardRows,
   sortBoardRows,
+  tierFilterOptions,
   type BoardFilters,
   type BoardMarket,
   type BoardSortKey,
@@ -27,6 +28,8 @@ import {
 } from "@/lib/nba/props/propsBoard";
 
 const TEXT_SORT_KEYS: readonly BoardSortKey[] = ["player", "team", "dvpRank"];
+/** A board with season statistics opens on Core props in research order; one without them has no minutes to tier by and lists everyone. */
+const hasSeasonStats = (board: PropsBoardArtifact): boolean => board.entries.some((e) => e.seasonStats !== undefined);
 /** Without a posted line there is no edge to sort by, and most boards have none: start from the model's own projection. */
 const DEFAULT_SORT: BoardSortKey = "projection";
 
@@ -35,7 +38,9 @@ const DEFAULT_SORT: BoardSortKey = "projection";
  * projection (or the first shown sortable column, or the player name) takes over. The stored sort is left alone: showing
  * the column again brings it back.
  */
-function resolveSort(key: BoardSortKey, direction: SortDirection, shown: readonly ColumnId[]): { key: BoardSortKey; direction: SortDirection } {
+function resolveSort(key: BoardSortKey, direction: SortDirection, shown: readonly ColumnId[], researchChosen: boolean): { key: BoardSortKey; direction: SortDirection } {
+  // The Research order button is an explicit choice, so it stands even when the Tier column is hidden; the opening default still follows the columns.
+  if (key === "research" && researchChosen) return { key, direction };
   const owner = Object.values(COLUMN_DEFS).find((def) => def.sortKey === key);
   if (!owner || shown.includes(owner.id)) return { key, direction };
   const fallback = shown.includes("jkbProjection") ? DEFAULT_SORT : shown.map((id) => COLUMN_DEFS[id].sortKey).find((k) => k !== undefined) ?? "player";
@@ -49,19 +54,24 @@ function resolveSort(key: BoardSortKey, direction: SortDirection, shown: readonl
  */
 export default function PropsBoardView({ board }: { board: PropsBoardArtifact }) {
   const [market, setMarket] = useState<BoardMarket>("pts");
-  const [filters, setFilters] = useState<BoardFilters>(DEFAULT_FILTERS);
-  const [sortKey, setSortKey] = useState<BoardSortKey>(DEFAULT_SORT);
+  const [filters, setFilters] = useState<BoardFilters>(() => ({ ...DEFAULT_FILTERS, tier: hasSeasonStats(board) ? "core" : "all" }));
+  const [sortKey, setSortKey] = useState<BoardSortKey>(() => (hasSeasonStats(board) ? "research" : DEFAULT_SORT));
   const [direction, setDirection] = useState<SortDirection>("desc");
+  const [researchChosen, setResearchChosen] = useState(false);
   const [drafts, setDrafts] = useState<MinutesDrafts>(clearAllDrafts);
   // Only the list of column ids is ever remembered (see boardColumns.ts); nothing about a player or a projection is stored.
   const [selected, setSelected] = useState<ReadonlySet<ColumnId>>(() => withFixedColumns(loadColumnPreference(browserStorage) ?? defaultSelection()));
   const teams = useMemo(() => boardTeams(board), [board]);
   const applied = useMemo(() => appliedMinutes(drafts), [drafts]);
-  const showSeason = useMemo(() => board.entries.some((e) => e.seasonStats !== undefined), [board]);
+  const showSeason = useMemo(() => hasSeasonStats(board), [board]);
   const columns = useMemo(() => visibleColumns(selected, showSeason), [selected, showSeason]);
   const isWide = useIsWide();
-  const sort = useMemo(() => resolveSort(sortKey, direction, columns), [sortKey, direction, columns]);
-  const rows = useMemo(() => sortBoardRows(filterBoardRows(buildBoardRows(board, market, applied), filters), sort.key, sort.direction), [board, market, applied, filters, sort]);
+  const sort = useMemo(() => resolveSort(sortKey, direction, columns, researchChosen), [sortKey, direction, columns, researchChosen]);
+  const marketRows = useMemo(() => buildBoardRows(board, market, applied), [board, market, applied]);
+  const tierOptions = useMemo(() => tierFilterOptions(marketRows), [marketRows]);
+  // A board without season statistics has no tiers (and no tier controls), so a tier chosen on an earlier board must not hide its rows.
+  const activeFilters = useMemo(() => (showSeason ? filters : { ...filters, tier: "all" as const }), [filters, showSeason]);
+  const rows = useMemo(() => sortBoardRows(filterBoardRows(marketRows, activeFilters), sort.key, sort.direction), [marketRows, activeFilters, sort]);
   const draftCount = Object.keys(drafts).length;
   const coverage = useMemo(() => dvpPositionCoverage(board.dvpRows), [board]);
   const dvpSample = useMemo(() => dvpCurrentSampleRange(board.dvpRows), [board]);
@@ -79,6 +89,7 @@ export default function PropsBoardView({ board }: { board: PropsBoardArtifact })
     clearColumnPreference(browserStorage);
   }, []);
   const onSort = (key: BoardSortKey) => {
+    setResearchChosen(false);
     if (key === sort.key) {
       setSortKey(sort.key);
       setDirection(sort.direction === "asc" ? "desc" : "asc");
@@ -97,6 +108,29 @@ export default function PropsBoardView({ board }: { board: PropsBoardArtifact })
           </Chip>
         ))}
       </div>
+      {showSeason ? (
+        <div className="mb-3 flex flex-wrap items-center gap-2" role="group" aria-label="Research tier" data-testid="tier-filter">
+          {tierOptions.map((option) => (
+            <Chip key={option.value} active={filters.tier === option.value} onClick={() => patch({ tier: option.value })}>
+              {option.label} <span className="font-normal opacity-80">({option.count})</span>
+            </Chip>
+          ))}
+          <button
+            type="button"
+            data-testid="research-order"
+            aria-pressed={sort.key === "research"}
+            onClick={() => {
+              setSortKey("research");
+              setDirection("desc");
+              setResearchChosen(true);
+            }}
+            className={cn("rounded border px-2.5 py-1 text-[11px] font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500", sort.key === "research" ? "border-slate-900 bg-slate-100 text-slate-900" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50")}
+            title="Core, then Rotation, then Variable; within a tier the largest gap between the JKB projection and the line first. An ordering aid, not an edge estimate."
+          >
+            Research order
+          </button>
+        </div>
+      ) : null}
       <div className="mb-3 flex flex-wrap items-end gap-3 text-[11px] text-slate-600">
         <label className="flex flex-col gap-1">
           Player
@@ -154,6 +188,14 @@ export default function PropsBoardView({ board }: { board: PropsBoardArtifact })
           Small sample: this season's DvP rests on {dvpSample.min === dvpSample.max ? `${dvpSample.max}` : `${dvpSample.min}–${dvpSample.max}`} {dvpSample.max === 1 ? "game" : "games"} per team, so Opp allows and Matchup lean mostly on last season.
         </p>
       ) : null}
+      {showSeason && rows.length === 0 && filters.tier !== "all" ? (
+        <p className="mb-2 rounded border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] text-slate-700" data-testid="tier-empty">
+          No {filters.tier === "core" ? "Core" : "Rotation"} players match these filters for this market.{" "}
+          <button type="button" className="font-semibold text-sky-800 underline" onClick={() => patch({ tier: "all" })}>
+            Show all players
+          </button>
+        </p>
+      ) : null}
       <PropsBoardTable
         rows={rows}
         sortKey={sort.key}
@@ -174,8 +216,13 @@ export default function PropsBoardView({ board }: { board: PropsBoardArtifact })
           <strong className="font-semibold text-indigo-900">Adj proj</strong> is the JKB projection × your minutes ÷ the JKB minutes (the model's rate at your minutes), and <strong className="font-semibold text-teal-900">Season-rate est</strong> is your minutes × this season's stat per minute (no model involved). Both are compared with the line. Your minutes stay in this page only: they are not saved, shared or sent anywhere, and reloading clears them.
         </p>
         {showSeason ? (
+          <p data-testid="tier-note">
+            <strong className="font-semibold text-slate-800">Tier</strong> ranks attention by role, using this season's minutes before the game: <strong className="font-semibold text-slate-800">Core</strong> is 25+ MPG with at least 4 of the last 5 games within ±20% of the five-game median minutes and no open flag, <strong className="font-semibold text-slate-800">Rotation</strong> is 20+ MPG (including a 25+ MPG player whose minutes or role just changed), and <strong className="font-semibold text-slate-800">Variable</strong> is under 20 MPG or fewer than 5 games. A ⚑ marks a flag (low sample, unsteady minutes, role or team change, return from absence, missed team games); open a row for the reasons. Last season is never used to rate a player. Tiers and <strong className="font-semibold text-slate-800">Min stable</strong> are context: they change no projection, and your own minutes still work on every row. <strong className="font-semibold text-slate-800">Research order</strong> lists Core first, then the largest gap between the JKB projection and the line; it is not an edge estimate.
+          </p>
+        ) : null}
+        {showSeason ? (
           <p>
-            MPG, per-game and per-minute figures are this season to date. <strong className="font-semibold text-slate-800">L10</strong> is the average over the player's last ten completed games this season (L5, the last five, is an optional column), all strictly before this game, with did-not-play and zero-minute games left out; early in the season the window is shorter and says so. <strong className="font-semibold text-slate-800">Opp L10</strong> is what the opponent allowed per game to the player's estimated position over the opponent's own last ten completed games, summed one opposing game at a time: ten opponent games, never ten player-games. Open a row for both ten-game charts (oldest to newest; hover, focus or tap a bar for the exact game), the sample size and how much of the opposing minutes had an estimated position. A small amber dot marks a small sample (under 15 games, or fewer games than the window). Last season is shown on its own and never blended into this season. A player with no games yet shows a dash, not a guess. These figures are context: they do not change the JKB projection.
+            MPG, per-game and per-minute figures are this season to date. <strong className="font-semibold text-slate-800">L10</strong> is the average over the player's last ten completed games this season (L5, the last five, is an optional column), all strictly before this game, with did-not-play and zero-minute games left out; early in the season the window is shorter and says so. <strong className="font-semibold text-slate-800">Opp L10</strong> is what the opponent allowed per game as a team (the official score for points; rebounds and assists summed from the listed players over a complete box score) in its own last ten completed games: ten opponent games, never ten player-games, and never a position or a single opposing player. <strong className="font-semibold text-slate-800">Opp DEF RTG</strong> is the opponent's points allowed per 100 estimated possessions before this game (lower is stronger). Open a row for both ten-game charts (oldest to newest; hover, focus or tap a bar for the exact game), the sample size and the full opposing box scores, with the opposing starter at the player's position as optional detail. A small amber dot marks a small sample (under 15 games, or fewer games than the window). Last season is shown on its own and never blended into this season. A player with no games yet shows a dash, not a guess. These figures are context: they do not change the JKB projection.
           </p>
         ) : null}
         <p>

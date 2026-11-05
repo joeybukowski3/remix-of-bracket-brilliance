@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { DVP_SEASONS, SEASON_LABEL } from "@/lib/nba/props/dvp";
-import { describeStarterGaps } from "@/lib/nba/props/boxScoreTables";
 import { formatAmerican, type BoardMarket, type BoardRow, type BoardSortKey } from "@/lib/nba/props/propsBoard";
 import { RECENT_WINDOWS, EARLY_SEASON_GAMES, marketRates, recentPerGame, type RecentAverages } from "@/lib/nba/props/seasonStats";
 import type { ColumnId } from "@/lib/nba/props/boardColumns";
 import { MinutesEditor, MinutesScale } from "@/components/nba/MinutesEditor";
 import { BASIS_LABEL, DvpSeasonCell, LowSample, NA, SeasonSampleCell, TIER_CELL, TIER_CHIP, TIER_GLYPH, TIER_LABEL, diffClass, dvpWhy, etTime, gamesLabel, signed } from "@/components/nba/boardCells";
 import { shortDate, type OpponentLastTen, type PlayerLastTen } from "@/lib/nba/props/recentForm";
+import { FLAG_LABEL, FLAG_WHY, STABLE_WINDOW, STABLE_MIN_WITHIN, STABLE_BAND, TIER_NAME, type ResearchTier } from "@/lib/nba/props/researchTier";
+import { DEFENSE_EMPTY, DefenseRating } from "@/components/nba/DefenseRating";
 
 /**
  * The props table's columns. Each cell renderer returns only the value, so the same renderer fills a table cell and a
@@ -55,7 +56,6 @@ const CURRENT = DVP_SEASONS[1];
 const NO_SEASON = "No season statistics for this player on this board";
 const NO_GAMES = "No games this season yet";
 const STALE_OPPONENT_BOARD = "This board was built before opponent box scores existed; rebuild the private preview board to add them";
-const NO_STARTERS_BOARD = "This board's box scores carry no starter status, so the opposing starter at this position cannot be named; rebuild the private preview board to add it";
 const STALE_BOARD = "This board was built before last-five averages existed; rebuild the private preview board to add them";
 
 const tierOf = (row: BoardRow) => (row.dvp.kind === "ok" ? row.dvp.comparison.tier : null);
@@ -80,13 +80,10 @@ function OpponentL10Cell({ row, market }: { row: BoardRow; market: BoardMarket }
   const l10 = row.opponentL10;
   const opponent = row.entry.opponent ?? "The opponent";
   if (l10.status === "stale") return <NA why={STALE_OPPONENT_BOARD} />;
-  if (l10.status === "no-position") return <NA why="No estimated position for this player, so there is no opponent-vs-position window" />;
   if (l10.status === "no-opponent") return <NA why="Opponent unknown" />;
-  if (l10.status === "no-starters") return <NA why={NO_STARTERS_BOARD} />;
-  const position = row.dvp.kind === "ok" ? row.dvp.position : "this position";
-  if (l10.status === "none" || l10.average === null) return <span className="text-slate-500" title={l10.games === 0 ? `${opponent} has no completed regular-season game this season yet` : `No ${opponent} game in the window identifies exactly one ${position} starter (${describeStarterGaps(l10.gaps, position)})`}>—</span>;
+  if (l10.status === "none" || l10.average === null) return <span className="text-slate-500" title={l10.games === 0 ? `${opponent} has no completed regular-season game this season yet` : `No ${opponent} box score in the window is complete enough for a team ${STAT[market]} total`}>—</span>;
   return (
-    <span className="inline-flex flex-col items-center md:inline md:flex-none" title={opponentTitle(l10, opponent, position, market)}>
+    <span className="inline-flex flex-col items-center md:inline md:flex-none" title={opponentTitle(l10, opponent, market)}>
       {l10.average.toFixed(1)}
       {l10.isSmallSample ? <LowSample why={`Only ${gamesLabel(l10.games)} of ${opponent}'s season so far`} games={l10.games} className="max-md:ml-0" /> : null}
     </span>
@@ -94,10 +91,9 @@ function OpponentL10Cell({ row, market }: { row: BoardRow; market: BoardMarket }
 }
 
 /** The plain-language reading of the Opp L10 figure, for a hover and for the detail panel's caption. */
-export function opponentTitle(l10: OpponentLastTen, opponent: string, position: string, market: BoardMarket): string {
+export function opponentTitle(l10: OpponentLastTen, opponent: string, market: BoardMarket): string {
   const sample = l10.gamesWithFigure < l10.games ? `${l10.gamesWithFigure} of ${gamesLabel(l10.games)}` : gamesLabel(l10.games);
-  const gaps = l10.gamesWithFigure < l10.games ? ` Not counted: ${describeStarterGaps(l10.gaps, position)}.` : "";
-  return `The opposing ${position} starter (estimated position, per the source's starter flag) averaged ${l10.average?.toFixed(1) ?? "—"} ${STAT[market]} against ${opponent} over ${sample} of its last ten. One player's line per game, never a position total.${gaps}`;
+  return `${opponent} allowed ${l10.average?.toFixed(1) ?? "—"} ${STAT[market]} per game as a team over ${sample} of its last ten. A team total, not a position or a single player.`;
 }
 
 function RecentCell({ row, window }: { row: BoardRow; window: keyof typeof RECENT_WINDOWS }) {
@@ -118,6 +114,49 @@ function RecentCell({ row, window }: { row: BoardRow; window: keyof typeof RECEN
   );
 }
 
+const TIER_TONE: Record<ResearchTier, string> = {
+  core: "bg-slate-800 text-white ring-slate-800",
+  rotation: "bg-sky-100 text-sky-900 ring-sky-300",
+  variable: "bg-slate-100 text-slate-600 ring-slate-200",
+};
+
+function TierCell({ research }: { research: BoardRow["research"] }) {
+  if (!research) return <NA why={NO_SEASON} />;
+  const flags = research.flags;
+  return (
+    <span className="inline-flex items-center justify-center gap-x-1 whitespace-nowrap" data-testid="research-tier" data-tier={research.tier} title={research.reason}>
+      <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-bold ring-1 ring-inset", TIER_TONE[research.tier])}>{TIER_NAME[research.tier]}</span>
+      {flags.length > 0 ? (
+        <span className="text-[10px] font-semibold text-slate-600" data-testid="research-flags" title={flags.map((f) => `${FLAG_LABEL[f]}: ${FLAG_WHY[f]}`).join("\n")}>
+          <span aria-hidden>⚑{flags.length}</span>
+          <span className="sr-only">{`Flags: ${flags.map((f) => FLAG_LABEL[f]).join(", ")}`}</span>
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
+function StabilityCell({ research }: { research: BoardRow["research"] }) {
+  if (!research) return <NA why={NO_SEASON} />;
+  const five = research.consistency.last5;
+  if (five === null) {
+    const why = research.flags.includes("no-minutes-log") ? FLAG_WHY["no-minutes-log"] : `Fewer than ${STABLE_WINDOW} completed games this season: no stability reading`;
+    return <span className="text-slate-500" title={why} data-testid="min-stability" data-state="none">—</span>;
+  }
+  return (
+    <span className="whitespace-nowrap" data-testid="min-stability" data-state={five.stable ? "stable" : "unstable"} title={research.reason}>
+      <span className={cn("font-semibold", five.stable ? "text-slate-900" : "text-slate-600")}>{five.within}/{STABLE_WINDOW}</span>{" "}
+      <span className="text-[10px] text-slate-500">{five.median.toFixed(0)}</span>
+    </span>
+  );
+}
+
+function OpponentDefenseCell({ row }: { row: BoardRow }) {
+  const view = row.opponentDefense;
+  const opponent = row.entry.opponent ?? "The opponent";
+  return <DefenseRating entry={view.entry} strength={view.strength} team={opponent} emptyWhy={view.status === "ok" ? "" : DEFENSE_EMPTY[view.status]} state={view.status} testId="opp-def-rtg" />;
+}
+
 export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
   seasonSample: {
     id: "seasonSample",
@@ -126,6 +165,16 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     title: () => "Which season the figures are from and how many games they cover",
     align: "left",
     render: ({ row }) => <SeasonSampleCell season={row.season} />,
+  },
+  tier: {
+    id: "tier",
+    group: "season",
+    label: () => "Tier",
+    title: () => `Research tier from this season's minutes: Core is 25+ MPG with steady minutes and no open role flag, Rotation is 20+ MPG, Variable is under 20 or too few games. A flag marks a low sample, unsteady minutes, a role or team change, a return from absence or missed team games.`,
+    sortKey: "research",
+    mobile: true,
+    align: "center",
+    render: ({ row }) => <TierCell research={row.research} />,
   },
   mpg: {
     id: "mpg",
@@ -146,6 +195,15 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
         </span>
       );
     },
+  },
+  stability: {
+    id: "stability",
+    group: "season",
+    label: () => "Min stable",
+    title: () => `Of the last ${STABLE_WINDOW} completed games, how many had minutes within ${STABLE_BAND * 100}% of the five-game median (${STABLE_MIN_WITHIN} or more is steady), and that median. Context, not a projection input.`,
+    sortKey: "minutesStability",
+    align: "center",
+    render: ({ row }) => <StabilityCell research={row.research} />,
   },
   perGame: {
     id: "perGame",
@@ -192,11 +250,21 @@ export const COLUMN_DEFS: Record<ColumnId, ColumnDef> = {
     align: "center",
     render: ({ row }) => <RecentCell row={row} window="last10" />,
   },
+  oppDefRtg: {
+    id: "oppDefRtg",
+    group: "matchup",
+    label: () => "Opp DEF RTG",
+    title: () => "The opponent's points allowed per 100 estimated possessions in its games before this one (lower is stronger), its league rank and, from 5 games, a strong / average / weak label. Context, not a projection input.",
+    sortKey: "oppDefRtg",
+    mobile: false,
+    align: "center",
+    render: ({ row }) => <OpponentDefenseCell row={row} />,
+  },
   oppLast10: {
     id: "oppLast10",
     group: "matchup",
     label: (m) => `Opp L10 ${STAT[m]}`,
-    title: (m) => `${STAT_WORD[m][0].toUpperCase()}${STAT_WORD[m].slice(1)} the opponent allowed per game to the player's estimated position over the opponent's last ten completed games this season. Ten opponent games, not ten player-games.`,
+    title: (m) => `${STAT_WORD[m][0].toUpperCase()}${STAT_WORD[m].slice(1)} the opponent allowed per game, as a team, over its last ten completed games this season. Ten opponent games, not ten player-games, and never a position or single-player figure. Points are the official score; rebounds and assists are the sum of the listed players over a complete box score.`,
     sortKey: "oppLastTen",
     align: "center",
     // No green/red wash here: the tier is the season-long blended rank, which this ten-game figure may disagree with. The Matchup column carries it, with a word, an arrow and the rank.

@@ -129,7 +129,13 @@ export function restrictTeamDefense(table: TeamDefenseTable, keys: ReadonlySet<s
   return { ...table, asOf: Object.fromEntries(Object.entries(table.asOf).filter(([key]) => keys.has(key))) };
 }
 
-export function buildTeamDefense(rows: readonly ImportedPlayerGame[], season: string): TeamDefenseTable {
+/** A team about to play: its rating as of the day before the game is wanted even though that game is not in the import yet. */
+export interface UpcomingTeamGame {
+  team: string;
+  date: string;
+}
+
+export function buildTeamDefense(rows: readonly ImportedPlayerGame[], season: string, upcoming: readonly UpcomingTeamGame[] = []): TeamDefenseTable {
   const groups = groupGames(rows, season);
   const usable: UsableGame[] = [];
   let unusableGames = 0;
@@ -141,6 +147,8 @@ export function buildTeamDefense(rows: readonly ImportedPlayerGame[], season: st
   // Teams that play on each date, from every game of the season (usable or not): a rating is shown for the game a player played.
   const playingOn = new Map<string, Set<string>>();
   for (const group of groups.values()) for (const r of group) playingOn.set(r.gameDate, (playingOn.get(r.gameDate) ?? new Set()).add(r.team));
+  // Upcoming games join the same pass, so their rating sees exactly the games strictly before their date (and no later one).
+  for (const u of upcoming) playingOn.set(u.date, (playingOn.get(u.date) ?? new Set()).add(u.team));
 
   const byDate = new Map<string, UsableGame[]>();
   for (const game of usable) byDate.set(game.date, [...(byDate.get(game.date) ?? []), game]);

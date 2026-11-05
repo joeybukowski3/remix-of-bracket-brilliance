@@ -211,7 +211,7 @@ function projectGame(
       continue;
     }
     const projected = projectBaseline(features, ctx.priors, ctx.params);
-    out.seasonStats[`${game.gameKey}|${normalizePlayerName(player.name)}`] = seasonStatsFor(history, { gameId: game.gameKey, cutoffDate: game.date, season: SLATE_SEASON }, ctx.scores);
+    out.seasonStats[`${game.gameKey}|${normalizePlayerName(player.name)}`] = seasonStatsFor(history, { gameId: game.gameKey, cutoffDate: game.date, season: SLATE_SEASON }, ctx.scores, { teamId: teamNumber(player.team), teamGameDates });
     bump(out.report.byHistoryTier, features.historyTier);
     out.report.playersProjected += 1;
     if (player.position === null) out.report.projectedWithoutPosition += 1;
@@ -283,7 +283,7 @@ export interface V1BuildArgs {
   params?: BaselineParams;
 }
 
-/** The (opponent, date) pairs the player Last 10 tables read: one per game in each player's window. */
+/** The (opponent, date) pairs the player Last 10 tables read: one per game in each player's window. The slate's own teams are added by the caller. */
 const ratingsRead = (seasonStats: Readonly<Record<string, SeasonStatsView>>): ReadonlySet<string> =>
   new Set(Object.values(seasonStats).flatMap((s) => (s.recentGames ?? []).map((g) => teamDefenseKey(g.opponent, g.date))));
 
@@ -332,10 +332,12 @@ export function buildV1Inputs(args: V1BuildArgs): V1Inputs {
   }
   if (slatePlayers.length === 0) warnings.push("no 2026-27 players: nobody is on the slate");
 
+  // Each slate team's own rating before its game, for the opponent DEF RTG column (the game is not in the import yet).
+  const upcoming = slate.flatMap((g) => [{ team: g.away, date: g.date }, { team: g.home, date: g.date }]);
   const lines = buildDvpLines(imported, positions, report.dvp);
   const dvp: DvpInput | null = lines.length > 0 ? { sourceId: imported.sourceId, lines } : null;
   const unlabeled = Object.values(report.dvp.linesWithoutPosition).reduce((a, b) => a + b, 0);
   if (report.dvp.teamSeasonsWithoutAnyPosition.length > 0) warnings.push(`${report.dvp.teamSeasonsWithoutAnyPosition.length} team-season(s) have no position estimate for any opposing player and are left out of DvP (no ranks are invented): ${report.dvp.teamSeasonsWithoutAnyPosition.slice(0, 6).join(", ")}${report.dvp.teamSeasonsWithoutAnyPosition.length > 6 ? ", ..." : ""}`);
   if (unlabeled > 0) warnings.push(`${unlabeled} regular-season player-games have no position estimate for their season; they are excluded from DvP, not guessed`);
-  return { projections, seasonStats, opponentRecent: buildOpponentRecent(imported.rows, positions, slate, SLATE_SEASON), opponentBoxScores: buildOpponentBoxScores(imported.rows, positions, slate, SLATE_SEASON), teamDefense: restrictTeamDefense(buildTeamDefense(imported.rows, SLATE_SEASON), ratingsRead(seasonStats)), roster: buildRoster(slatePlayers, warnings), dvp, report };
+  return { projections, seasonStats, opponentRecent: buildOpponentRecent(imported.rows, positions, slate, SLATE_SEASON), opponentBoxScores: buildOpponentBoxScores(imported.rows, positions, slate, SLATE_SEASON), teamDefense: restrictTeamDefense(buildTeamDefense(imported.rows, SLATE_SEASON, upcoming), new Set([...ratingsRead(seasonStats), ...upcoming.map((u) => teamDefenseKey(u.team, u.date))])), roster: buildRoster(slatePlayers, warnings), dvp, report };
 }

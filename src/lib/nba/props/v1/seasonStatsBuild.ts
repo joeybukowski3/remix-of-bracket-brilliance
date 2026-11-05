@@ -12,9 +12,9 @@
  *
  * The rows are hoopR/ESPN-derived: the result goes only into a private preview board (privatePreview.ts), never the public one.
  */
-import { selectPriorGames } from "../features";
+import { computePregameFeatures, selectPriorGames } from "../features";
 import { previousSeason } from "../seasonType";
-import { RECENT_WINDOWS, type RecentTotals, type SeasonStatsView, type SeasonTotals } from "../seasonStats";
+import { RECENT_WINDOWS, type RecentTotals, type SeasonAvailability, type SeasonStatsView, type SeasonTotals } from "../seasonStats";
 import { L10_GAMES, type PlayerRecentGame } from "../recentForm";
 import type { NbaPlayerGame } from "../types";
 import { resultFor, type GameScores } from "./gameResults";
@@ -50,11 +50,43 @@ function recentGamesOf(newestFirst: readonly NbaPlayerGame[], scores: GameScores
     .reverse();
 }
 
-export function seasonStatsFor(history: readonly NbaPlayerGame[], target: { gameId: string; cutoffDate: string; season: string }, scores?: GameScores): SeasonStatsView {
+/** The player's team and its competitive game dates (buildTeamGameDates), needed to see which team games the player missed. */
+export interface TeamSchedule {
+  teamId: number;
+  teamGameDates: ReadonlyMap<number, readonly string[]>;
+}
+
+/** Team games in the participation window. */
+const PARTICIPATION_TEAM_GAMES = 10;
+
+/**
+ * Missed team games from the schedule, and the three flags baseline v0 already computes (computePregameFeatures), so there is one
+ * definition of an absence, a role change and a team change. Games on or after the cutoff are invisible to both.
+ */
+function availabilityFor(history: readonly NbaPlayerGame[], target: { gameId: string; cutoffDate: string; season: string }, team: TeamSchedule): SeasonAvailability {
+  const pregame = { ...target, teamId: team.teamId };
+  const features = computePregameFeatures(history, pregame, team.teamGameDates);
+  const prior = selectPriorGames(history, pregame);
+  const stintEnd = prior.findIndex((row) => row.teamId !== team.teamId);
+  const stintSeason = (stintEnd === -1 ? prior : prior.slice(0, stintEnd)).filter((row) => row.season === target.season);
+  const stintStart = stintSeason.at(-1)?.gameDate;
+  const window = stintStart === undefined ? [] : (team.teamGameDates.get(team.teamId) ?? []).filter((date) => date >= stintStart && date < target.cutoffDate).slice(-PARTICIPATION_TEAM_GAMES);
+  const appeared = new Set(stintSeason.map((row) => row.gameDate));
+  return {
+    teamGames: window.length,
+    played: window.filter((date) => appeared.has(date)).length,
+    returning: features.returningFromAbsence,
+    roleChange: features.roleChange,
+    teamChangedRecently: features.teamChangedRecently,
+  };
+}
+
+export function seasonStatsFor(history: readonly NbaPlayerGame[], target: { gameId: string; cutoffDate: string; season: string }, scores?: GameScores, team?: TeamSchedule): SeasonStatsView {
   const played = selectPriorGames(history, { ...target, teamId: 0 }).filter((r) => Number.isFinite(r.minutes) && r.minutes > 0);
   const previous = previousSeason(target.season);
   const currentRows = played.filter((r) => r.season === target.season);
   return {
+    ...(team ? { availability: availabilityFor(history, target, team) } : {}),
     current: totalsOf(target.season, currentRows),
     previous: totalsOf(previous, played.filter((r) => r.season === previous && r.seasonType === "regular")),
     last5: recentTotals(currentRows, RECENT_WINDOWS.last5),

@@ -8,12 +8,15 @@
 /** In display order. Optional columns sit beside the default column they relate to. */
 export const COLUMN_IDS = [
   "seasonSample",
+  "tier",
   "mpg",
+  "stability",
   "perGame",
   "perMinute",
   "last5",
   "last10",
   "lastSeason",
+  "oppDefRtg",
   "oppLast10",
   "dvpAllowed",
   "dvpPrior",
@@ -35,10 +38,11 @@ export const COLUMN_IDS = [
 export type ColumnId = (typeof COLUMN_IDS)[number];
 
 /**
- * The compact table: MPG, per game, per minute, the player's last ten, what the opponent allowed over its last ten, matchup,
- * Vegas Line, JKB projection (the player column is always shown). Last five and the season-long Opp allows stay one click away.
+ * The compact table: research tier, MPG and minutes consistency, per game and per minute, the player's last five and ten, the
+ * opponent's DEF RTG and what it allowed over its last ten, matchup, Vegas Line, JKB projection (the player column is always
+ * shown). The season-long Opp allows and the rest stay one click away.
  */
-export const DEFAULT_COLUMNS: readonly ColumnId[] = Object.freeze(["mpg", "perGame", "perMinute", "last10", "oppLast10", "matchup", "line", "jkbProjection"] as const);
+export const DEFAULT_COLUMNS: readonly ColumnId[] = Object.freeze(["tier", "mpg", "stability", "perGame", "perMinute", "last5", "last10", "oppDefRtg", "oppLast10", "matchup", "line", "jkbProjection"] as const);
 
 /**
  * Columns that cannot be hidden. Vegas Line sits immediately before JKB Projection and is always there, because a projection
@@ -48,7 +52,7 @@ export const FIXED_COLUMNS: readonly ColumnId[] = Object.freeze(["line"] as cons
 export const isFixedColumn = (id: ColumnId): boolean => FIXED_COLUMNS.includes(id);
 
 /** Columns that exist only where the board carries season statistics (a private preview board). */
-const SEASON_ONLY: ReadonlySet<ColumnId> = new Set(["seasonSample", "mpg", "perGame", "perMinute", "last5", "last10", "lastSeason", "oppLast10", "seasonRateEstimate"]);
+const SEASON_ONLY: ReadonlySet<ColumnId> = new Set(["seasonSample", "tier", "mpg", "stability", "perGame", "perMinute", "last5", "last10", "lastSeason", "oppDefRtg", "oppLast10", "seasonRateEstimate"]);
 export const needsSeasonStats = (id: ColumnId): boolean => SEASON_ONLY.has(id);
 
 export const isColumnId = (value: unknown): value is ColumnId => typeof value === "string" && (COLUMN_IDS as readonly string[]).includes(value);
