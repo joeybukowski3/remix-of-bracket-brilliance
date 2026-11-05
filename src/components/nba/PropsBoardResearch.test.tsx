@@ -197,7 +197,7 @@ describe("role and minutes in the expanded row", () => {
     fireEvent.click(chip(/^All players/));
     const panel = open("Demo Wing Two");
     expect(within(panel).getByTestId("research-flag-list").textContent).toMatch(/Low sample\. Fewer than 5 completed games this season/);
-    expect(within(panel).getByTestId("research-reason").textContent).toMatch(/^Variable: /);
+    expect(within(panel).getByTestId("research-reason").textContent).toMatch(/^Provisional: /);
   });
 });
 
@@ -248,5 +248,154 @@ describe("what the tiers never touch", () => {
     fireEvent.change(input, { target: { value: "36" } });
     expect(within(panel).getByTestId("adjusted-value").textContent).toBe(((26.1 * 36) / 34).toFixed(1));
     expect(within(rowOf("Demo Guard One")).getByTestId("jkb-value").textContent).toBe("26.1");
+  });
+});
+
+/** The demo board as it would look a few games into a season: nobody has played five games, so nobody can be rated. */
+const earlySeason = (source: PropsBoardArtifact, games = 3): PropsBoardArtifact => ({
+  ...source,
+  entries: source.entries.map((entry) => {
+    const stats = entry.seasonStats;
+    if (!stats?.current) return entry;
+    const { availability: _availability, ...rest } = stats;
+    const mpg = stats.current.minutes / stats.current.games;
+    return { ...entry, seasonStats: { ...rest, current: { ...stats.current, games, minutes: mpg * games }, recentGames: (stats.recentGames ?? []).slice(-games) } };
+  }),
+});
+
+/** The demo board where every player with season minutes is held out of Core (returning from an absence): Rotation has players, Core has none. */
+const noCore = (source: PropsBoardArtifact): PropsBoardArtifact => ({
+  ...source,
+  entries: source.entries.map((entry) => (entry.seasonStats?.current ? { ...entry, seasonStats: { ...entry.seasonStats, availability: { teamGames: 10, played: 10, returning: true, roleChange: false, teamChangedRecently: false } } } : entry)),
+});
+
+const early = earlySeason(board);
+const earlyNames = (): string[] => buildBoardRows(early, "pts").map((r) => r.entry.playerName);
+const isProvisional = (name: string): boolean => within(rowOf(name)).getByTestId("research-tier").getAttribute("data-provisional") === "true";
+
+describe("an empty Core is never the opening view (early in the season)", () => {
+  it("opens on All players, in research order, with Provisional players first, when nobody has five games", () => {
+    render(<PropsBoardView board={early} />);
+    expect(chip(/^Core/).textContent).toContain("(0)");
+    expect(chip(/^Rotation/).textContent).toContain("(0)");
+    expect(chip(/^All players/)).toHaveAttribute("aria-pressed", "true");
+    expect(chip(/^Core/)).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByTestId("tier-notice").textContent).toMatch(/No Core or Rotation players yet.*Provisional/);
+    expect([...playerOrder()].sort()).toEqual([...earlyNames()].sort());
+    expect(screen.queryByTestId("tier-empty")).toBeNull();
+    expect(screen.getByText(/\d+ props?/).textContent).toMatch(/^[1-9]/);
+  });
+
+  it("lists 20+ MPG players with fewer than five games as Provisional, ahead of players with no season minutes", () => {
+    render(<PropsBoardView board={early} />);
+    const order = playerOrder();
+    expect(isProvisional("Demo Guard One")).toBe(true);
+    expect(isProvisional("Demo Wing Two")).toBe(true);
+    expect(isProvisional("Demo Wing Six")).toBe(false);
+    const flags = order.filter((n) => n !== "Demo Bench Seven").map(isProvisional);
+    expect(flags).toEqual([...flags].sort((a, b) => Number(b) - Number(a)));
+    expect(order.at(-1)).toBe("Demo Bench Seven");
+    expect(within(rowOf("Demo Guard One")).getByTestId("research-tier").textContent).toContain("Provisional");
+    expect(within(rowOf("Demo Wing Six")).getByTestId("research-tier").textContent).toContain("Variable");
+  });
+
+  it("offers a Provisional chip that lists exactly those players", () => {
+    render(<PropsBoardView board={early} />);
+    fireEvent.click(chip(/^Provisional/));
+    const shown = playerOrder();
+    expect(shown).toContain("Demo Guard One");
+    expect(shown).not.toContain("Demo Wing Six");
+    expect(shown).not.toContain("Demo Bench Seven");
+    expect(shown.every(isProvisional)).toBe(true);
+  });
+
+  it("gives a Provisional player no stability reading and no Core tier", () => {
+    render(<PropsBoardView board={early} />);
+    expect(text(col("Demo Guard One", "stability"))).toBe("—");
+    expect(screen.queryAllByTestId("research-tier").some((el) => el.getAttribute("data-tier") === "core")).toBe(false);
+  });
+
+  it("opens on Rotation, and says why, when there are Rotation players but no Core players", () => {
+    render(<PropsBoardView board={noCore(board)} />);
+    expect(chip(/^Core/).textContent).toContain("(0)");
+    expect(chip(/^Rotation/)).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("tier-notice").textContent).toMatch(/No Core players yet.*Rotation players are shown/);
+    expect(playerOrder().length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId("research-tier").every((el) => el.getAttribute("data-tier") === "rotation")).toBe(true);
+  });
+
+  it("keeps the normal Core opening, with no notice, once Core has players", () => {
+    render(<PropsBoardView board={board} />);
+    expect(screen.queryByTestId("tier-notice")).toBeNull();
+    expect(chip(/^Core/)).toHaveAttribute("aria-pressed", "true");
+  });
+});
+
+describe("a tier choice cannot leave a misleading empty table", () => {
+  it("falls back, saying what was asked for, when the chosen tier has no players on the board it now shows, and comes back with them", () => {
+    const view = render(<PropsBoardView board={board} />);
+    fireEvent.click(chip(/^Rotation/));
+    expect(chip(/^Rotation/)).toHaveAttribute("aria-pressed", "true");
+    view.rerender(<PropsBoardView board={early} />);
+    expect(chip(/^All players/)).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByTestId("tier-notice").textContent).toMatch(/No Rotation players on this board or market, so all players are shown/);
+    expect(playerOrder().length).toBeGreaterThan(0);
+    view.rerender(<PropsBoardView board={board} />);
+    expect(chip(/^Rotation/)).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByTestId("tier-notice")).toBeNull();
+    expect(new Set(playerOrder())).toEqual(new Set(namesWhere("rotation")));
+  });
+
+  it("lets a reader choose an empty tier without ever seeing an empty table, and All players always works", () => {
+    render(<PropsBoardView board={early} />);
+    fireEvent.click(chip(/^Core/));
+    expect(playerOrder().length).toBeGreaterThan(0);
+    expect(screen.getByTestId("tier-notice").textContent).toMatch(/No Core players on this board or market/);
+    fireEvent.click(chip(/^All players/));
+    expect(screen.queryByTestId("tier-notice")).toBeNull();
+    expect(playerOrder()).toHaveLength(earlyNames().length);
+  });
+
+  it("still explains an empty list that comes from the other filters, and offers a way out", () => {
+    render(<PropsBoardView board={early} />);
+    fireEvent.click(chip(/^Provisional/));
+    fireEvent.change(screen.getByRole("searchbox"), { target: { value: "Bench Seven" } });
+    expect(screen.getByTestId("tier-empty").textContent).toMatch(/No Provisional players match these filters/);
+    fireEvent.click(within(screen.getByTestId("tier-empty")).getByRole("button", { name: "Show all players" }));
+    expect(playerOrder()).toEqual(["Demo Bench Seven"]);
+  });
+});
+
+describe("saved preferences cannot hide players", () => {
+  const stored = (): Record<string, string> => Object.fromEntries(Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i) as string).map((key) => [key, localStorage.getItem(key) ?? ""]));
+
+  it("remembers no tier: choosing tiers writes nothing to storage", () => {
+    render(<PropsBoardView board={board} />);
+    expect(stored()).toEqual({});
+    fireEvent.click(chip(/^Rotation/));
+    fireEvent.click(chip(/^All players/));
+    expect(stored()).toEqual({});
+  });
+
+  it("opens an early-season board on its players with a saved column choice that hides the Tier column", () => {
+    localStorage.setItem(COLUMN_PREFERENCE_KEY, JSON.stringify({ version: 1, columns: ["mpg", "matchup"] }));
+    render(<PropsBoardView board={early} />);
+    expect(playerOrder()).toHaveLength(earlyNames().length);
+    expect(screen.getByTestId("tier-notice")).toBeInTheDocument();
+  });
+
+  it("guards against reading a tier or filter from a saved preference: one written there changes nothing", () => {
+    localStorage.setItem(COLUMN_PREFERENCE_KEY, JSON.stringify({ version: 1, columns: ["mpg", "matchup"], tier: "core", filters: { tier: "core", search: "zzz", onlyWithLine: true } }));
+    render(<PropsBoardView board={early} />);
+    expect(playerOrder()).toHaveLength(earlyNames().length);
+    expect(screen.getByRole("searchbox")).toHaveValue("");
+    expect(chip(/^All players/)).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("opens on its players with a corrupt saved preference", () => {
+    localStorage.setItem(COLUMN_PREFERENCE_KEY, "{not json");
+    render(<PropsBoardView board={noCore(board)} />);
+    expect(playerOrder().length).toBeGreaterThan(0);
+    expect(chip(/^Rotation/)).toHaveAttribute("aria-pressed", "true");
   });
 });

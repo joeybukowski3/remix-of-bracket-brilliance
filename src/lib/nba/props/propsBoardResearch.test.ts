@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildDemoBoard } from "./__fixtures__/boardDemo";
-import { DEFAULT_FILTERS, buildBoardRows, filterBoardRows, gameDateOf, sortBoardRows, tierFilterOptions, type BoardRow, type PropsBoardArtifact } from "./propsBoard";
+import { DEFAULT_FILTERS, buildBoardRows, filterBoardRows, gameDateOf, resolveTierFilter, sortBoardRows, tierFilterOptions, type BoardRow, type PropsBoardArtifact, type TierOption } from "./propsBoard";
 import { teamDefenseKey } from "./recentForm";
 
 const rowsOf = (board: PropsBoardArtifact, market: "pts" | "reb" | "ast" = "pts"): BoardRow[] => buildBoardRows(board, market);
@@ -49,9 +49,10 @@ describe("the tier filter", () => {
     expect(core.every((r) => r.entry.team === "NYK" || r.entry.opponent === "NYK")).toBe(true);
   });
 
-  it("offers Core, Rotation and All with the Core and Rotation counts for the market", () => {
+  it("offers Core, Rotation, Provisional (while someone is in it) and All with the counts for the market", () => {
     const options = tierFilterOptions(rows);
-    expect(options.map((o) => o.value)).toEqual(["core", "rotation", "all"]);
+    expect(options.map((o) => o.value)).toEqual(["core", "rotation", "provisional", "all"]);
+    expect(options.find((o) => o.value === "provisional")?.count).toBe(rows.filter((r) => r.research?.provisional).length);
     expect(options.find((o) => o.value === "all")?.count).toBe(rows.length);
     expect(options.find((o) => o.value === "core")?.count).toBe(rows.filter((r) => r.research?.tier === "core").length);
   });
@@ -132,5 +133,79 @@ describe("gameDateOf", () => {
   it("is null for anything else", () => {
     expect(gameDateOf("not-a-key")).toBeNull();
     expect(gameDateOf("")).toBeNull();
+  });
+});
+
+const option = (value: TierOption["value"], count: number): TierOption => ({ value, label: value, count });
+const FULL: TierOption[] = [option("core", 5), option("rotation", 3), option("all", 12)];
+
+describe("resolveTierFilter: an empty tier is never obeyed into an empty table", () => {
+  it("opens on Core when Core has players, with nothing to explain", () => {
+    expect(resolveTierFilter(null, FULL)).toEqual({ tier: "core", notice: null });
+  });
+
+  it("opens on Rotation when Core is empty, and says so", () => {
+    expect(resolveTierFilter(null, [option("core", 0), option("rotation", 3), option("all", 12)])).toEqual({ tier: "rotation", notice: { kind: "default", shown: "rotation" } });
+  });
+
+  it("opens on everyone when Core and Rotation are both empty, and says so", () => {
+    expect(resolveTierFilter(null, [option("core", 0), option("rotation", 0), option("provisional", 4), option("all", 12)])).toEqual({ tier: "all", notice: { kind: "default", shown: "all" } });
+  });
+
+  it("obeys a choice of a tier that has players, and always obeys All", () => {
+    expect(resolveTierFilter("rotation", FULL)).toEqual({ tier: "rotation", notice: null });
+    expect(resolveTierFilter("all", [option("core", 0), option("rotation", 0), option("all", 12)])).toEqual({ tier: "all", notice: null });
+    expect(resolveTierFilter("provisional", [...FULL.slice(0, 2), option("provisional", 2), option("all", 12)])).toEqual({ tier: "provisional", notice: null });
+  });
+
+  it("does not obey a choice whose tier has no players in this market: it falls back and says what was asked for", () => {
+    expect(resolveTierFilter("core", [option("core", 0), option("rotation", 3), option("all", 12)])).toEqual({ tier: "rotation", notice: { kind: "fallback", requested: "core", shown: "rotation" } });
+    expect(resolveTierFilter("rotation", [option("core", 0), option("rotation", 0), option("all", 12)])).toEqual({ tier: "all", notice: { kind: "fallback", requested: "rotation", shown: "all" } });
+    expect(resolveTierFilter("provisional", FULL)).toEqual({ tier: "core", notice: { kind: "fallback", requested: "provisional", shown: "core" } });
+  });
+
+  it("treats a board with no rows at all as everyone, so there is nothing to hide", () => {
+    expect(resolveTierFilter(null, [option("core", 0), option("rotation", 0), option("all", 0)]).tier).toBe("all");
+  });
+
+  it("does not change its input", () => {
+    const options = [option("core", 0), option("rotation", 2), option("all", 5)];
+    const frozen = JSON.stringify(options);
+    resolveTierFilter("core", options);
+    expect(JSON.stringify(options)).toBe(frozen);
+  });
+});
+
+describe("Provisional: 20+ MPG over fewer than five games stays ahead of the low-minute players", () => {
+  const rows = rowsOf(buildDemoBoard());
+  const provisional = rows.filter((r) => r.research?.provisional);
+
+  it("is only Variable-by-sample players averaging 20+ MPG, and leaves their tier as it was", () => {
+    expect(names(provisional)).toEqual(["Demo Wing Two"]);
+    expect(provisional.every((r) => r.research?.tier === "variable" && r.research.flags.includes("low-sample") && (r.research.mpg ?? 0) >= 20)).toBe(true);
+    expect(rows.filter((r) => r.research && !r.research.provisional && r.research.tier === "variable").every((r) => (r.research?.mpg ?? 0) < 20 || r.research?.games === 0)).toBe(true);
+  });
+
+  it("lists them after Core and Rotation and before every other Variable player", () => {
+    const ordered = sortBoardRows(rows, "research", "desc");
+    const kind = (r: BoardRow): string => (r.research === null ? "none" : r.research.provisional ? "provisional" : r.research.tier);
+    const order = ["core", "rotation", "provisional", "variable", "none"];
+    const ranks = ordered.map((r) => order.indexOf(kind(r)));
+    expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
+    expect(ranks).toContain(order.indexOf("provisional"));
+  });
+
+  it("filters to only those players", () => {
+    expect(names(filterBoardRows(rows, { ...DEFAULT_FILTERS, tier: "provisional" }))).toEqual(["Demo Wing Two"]);
+  });
+
+  it("does not make a one-game, 34-minute player Core: the tier is untouched", () => {
+    const board = buildDemoBoard();
+    const entries = board.entries.map((e) => {
+      const current = e.seasonStats?.current;
+      return e.playerName === "Demo Wing Two" && current ? { ...e, seasonStats: { ...e.seasonStats!, current: { ...current, games: 1, minutes: 34 }, recentGames: (e.seasonStats!.recentGames ?? []).slice(-1) } } : e;
+    });
+    const row = rowsOf({ ...board, entries }).find((r) => r.entry.playerName === "Demo Wing Two");
+    expect(row?.research).toMatchObject({ tier: "variable", provisional: true, games: 1 });
   });
 });

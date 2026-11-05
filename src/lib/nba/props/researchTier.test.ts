@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { PlayerRecentGame } from "./recentForm";
-import { CORE_MIN_MPG, MIN_GAMES_FOR_TIER, ROTATION_MIN_MPG, STABLE_BAND, medianOf, minutesConsistency, researchProfile, researchTierRank } from "./researchTier";
+import { CORE_MIN_MPG, MIN_GAMES_FOR_TIER, ROTATION_MIN_MPG, STABLE_BAND, medianOf, minutesConsistency, researchProfile, researchRank } from "./researchTier";
 import type { SeasonAvailability, SeasonStatsView } from "./seasonStats";
 
 const game = (i: number, minutes: number): PlayerRecentGame => ({ date: `2026-11-${String(i + 1).padStart(2, "0")}`, opponent: "NYK", isHome: true, minutes, pts: 10, reb: 4, ast: 3 });
@@ -169,11 +169,36 @@ describe("researchProfile: tiers", () => {
   });
 });
 
-describe("researchTierRank", () => {
-  it("orders Core before Rotation before Variable, and unrated last", () => {
-    expect([researchTierRank("variable"), researchTierRank("core"), researchTierRank(null), researchTierRank("rotation")].sort((a, b) => a - b)).toEqual([0, 1, 2, 3]);
-    expect(researchTierRank("core")).toBeLessThan(researchTierRank("rotation"));
-    expect(researchTierRank("rotation")).toBeLessThan(researchTierRank("variable"));
-    expect(researchTierRank("variable")).toBeLessThan(researchTierRank(null));
+describe("provisional: 20+ MPG over fewer than five games", () => {
+  it("marks a 20+ MPG player with fewer than five games, and keeps the tier Variable with the low-sample flag", () => {
+    const p = researchProfile(view([34, 35, 33, 36]));
+    expect(p).toMatchObject({ tier: "variable", provisional: true });
+    expect(p?.flags).toContain("low-sample");
+    expect(p?.reason).toMatch(/^Provisional: 34\.5 MPG over 4 games; fewer than 5 games is too few to rate the role\.$/);
+  });
+
+  it("includes exactly 20.0 MPG and excludes just under it", () => {
+    expect(researchProfile(view([20, 20, 20]))?.provisional).toBe(true);
+    expect(researchProfile(view([19.8, 19.8, 19.8]))?.provisional).toBe(false);
+    expect(researchProfile(view([19.8, 19.8, 19.8]))?.reason).toMatch(/^Variable:/);
+  });
+
+  it("is not provisional with no games this season, however many minutes last season", () => {
+    const p = researchProfile({ current: null, previous: { season: "2025-26", games: 70, minutes: 2200, pts: 0, reb: 0, ast: 0 }, recentGames: [] });
+    expect(p?.provisional).toBe(false);
+  });
+
+  it("is not provisional once there are five games: the ordinary tiers take over", () => {
+    expect(researchProfile(view([34, 35, 33, 36, 34]))).toMatchObject({ tier: "core", provisional: false });
+    expect(researchProfile(view([12, 12, 12, 12, 12]))).toMatchObject({ tier: "variable", provisional: false });
+  });
+});
+
+describe("researchRank", () => {
+  it("orders Core, Rotation, Provisional, Variable, then no profile", () => {
+    const rank = (tier: "core" | "rotation" | "variable", provisional = false) => researchRank({ tier, provisional });
+    expect([rank("variable"), researchRank(null), rank("core"), rank("variable", true), rank("rotation")].sort((a, b) => a - b)).toEqual([0, 1, 2, 3, 4]);
+    expect(rank("variable", true)).toBeLessThan(rank("variable"));
+    expect(rank("rotation")).toBeLessThan(rank("variable", true));
   });
 });

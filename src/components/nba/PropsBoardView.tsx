@@ -18,6 +18,7 @@ import {
   dvpCurrentSampleRange,
   dvpPositionCoverage,
   filterBoardRows,
+  resolveTierFilter,
   sortBoardRows,
   tierFilterOptions,
   type BoardFilters,
@@ -25,11 +26,25 @@ import {
   type BoardSortKey,
   type PropsBoardArtifact,
   type SortDirection,
+  type TierFilter,
+  type TierNotice,
 } from "@/lib/nba/props/propsBoard";
+import { PROVISIONAL_NAME, TIER_NAME } from "@/lib/nba/props/researchTier";
 
 const TEXT_SORT_KEYS: readonly BoardSortKey[] = ["player", "team", "dvpRank"];
-/** A board with season statistics opens on Core props in research order; one without them has no minutes to tier by and lists everyone. */
+/** A board with season statistics opens on Core props in research order (Rotation, then everyone, while Core is empty); one without them has no minutes to tier by and lists everyone. */
 const hasSeasonStats = (board: PropsBoardArtifact): boolean => board.entries.some((e) => e.seasonStats !== undefined);
+const TIER_FILTER_NAME: Record<TierFilter, string> = { core: TIER_NAME.core, rotation: TIER_NAME.rotation, provisional: PROVISIONAL_NAME, all: "All players" };
+
+/** One sentence for why the list is not the tier asked for, or the opening Core. */
+function tierNoticeText(notice: TierNotice): string {
+  const shown = notice.shown === "all" ? "all players" : `${TIER_FILTER_NAME[notice.shown]} players`;
+  if (notice.kind === "fallback") return `No ${TIER_FILTER_NAME[notice.requested]} players on this board or market, so ${shown} are shown.`;
+  return notice.shown === "rotation"
+    ? "No Core players yet (early in the season, or none with steady minutes), so Rotation players are shown."
+    : "No Core or Rotation players yet (early in the season), so all players are shown; players at 20+ MPG over fewer than five games are marked Provisional and listed first.";
+}
+
 /** Without a posted line there is no edge to sort by, and most boards have none: start from the model's own projection. */
 const DEFAULT_SORT: BoardSortKey = "projection";
 
@@ -54,7 +69,9 @@ function resolveSort(key: BoardSortKey, direction: SortDirection, shown: readonl
  */
 export default function PropsBoardView({ board }: { board: PropsBoardArtifact }) {
   const [market, setMarket] = useState<BoardMarket>("pts");
-  const [filters, setFilters] = useState<BoardFilters>(() => ({ ...DEFAULT_FILTERS, tier: hasSeasonStats(board) ? "core" : "all" }));
+  const [filters, setFilters] = useState<BoardFilters>(DEFAULT_FILTERS);
+  // The reader's own tier choice, in this page's state only (never stored). Null until they choose: the board then opens on the first tier that has players.
+  const [tierChoice, setTierChoice] = useState<TierFilter | null>(null);
   const [sortKey, setSortKey] = useState<BoardSortKey>(() => (hasSeasonStats(board) ? "research" : DEFAULT_SORT));
   const [direction, setDirection] = useState<SortDirection>("desc");
   const [researchChosen, setResearchChosen] = useState(false);
@@ -69,8 +86,9 @@ export default function PropsBoardView({ board }: { board: PropsBoardArtifact })
   const sort = useMemo(() => resolveSort(sortKey, direction, columns, researchChosen), [sortKey, direction, columns, researchChosen]);
   const marketRows = useMemo(() => buildBoardRows(board, market, applied), [board, market, applied]);
   const tierOptions = useMemo(() => tierFilterOptions(marketRows), [marketRows]);
-  // A board without season statistics has no tiers (and no tier controls), so a tier chosen on an earlier board must not hide its rows.
-  const activeFilters = useMemo(() => (showSeason ? filters : { ...filters, tier: "all" as const }), [filters, showSeason]);
+  // A board without season statistics has no tiers (and no tier controls), and a tier with no players in this market is not obeyed into an empty table.
+  const resolvedTier = useMemo(() => (showSeason ? resolveTierFilter(tierChoice, tierOptions) : { tier: "all" as const, notice: null }), [showSeason, tierChoice, tierOptions]);
+  const activeFilters = useMemo(() => ({ ...filters, tier: resolvedTier.tier }), [filters, resolvedTier]);
   const rows = useMemo(() => sortBoardRows(filterBoardRows(marketRows, activeFilters), sort.key, sort.direction), [marketRows, activeFilters, sort]);
   const draftCount = Object.keys(drafts).length;
   const coverage = useMemo(() => dvpPositionCoverage(board.dvpRows), [board]);
@@ -111,7 +129,7 @@ export default function PropsBoardView({ board }: { board: PropsBoardArtifact })
       {showSeason ? (
         <div className="mb-3 flex flex-wrap items-center gap-2" role="group" aria-label="Research tier" data-testid="tier-filter">
           {tierOptions.map((option) => (
-            <Chip key={option.value} active={filters.tier === option.value} onClick={() => patch({ tier: option.value })}>
+            <Chip key={option.value} active={resolvedTier.tier === option.value} onClick={() => setTierChoice(option.value)}>
               {option.label} <span className="font-normal opacity-80">({option.count})</span>
             </Chip>
           ))}
@@ -125,11 +143,16 @@ export default function PropsBoardView({ board }: { board: PropsBoardArtifact })
               setResearchChosen(true);
             }}
             className={cn("rounded border px-2.5 py-1 text-[11px] font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500", sort.key === "research" ? "border-slate-900 bg-slate-100 text-slate-900" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50")}
-            title="Core, then Rotation, then Variable; within a tier the largest gap between the JKB projection and the line first. An ordering aid, not an edge estimate."
+            title="Core, then Rotation, then Provisional, then the other Variable players; within a tier the largest gap between the JKB projection and the line first. An ordering aid, not an edge estimate."
           >
             Research order
           </button>
         </div>
+      ) : null}
+      {resolvedTier.notice ? (
+        <p className="mb-2 rounded border border-sky-200 bg-sky-50 px-3 py-2 text-[12px] text-sky-950" data-testid="tier-notice" role="status">
+          {tierNoticeText(resolvedTier.notice)}
+        </p>
       ) : null}
       <div className="mb-3 flex flex-wrap items-end gap-3 text-[11px] text-slate-600">
         <label className="flex flex-col gap-1">
@@ -188,10 +211,10 @@ export default function PropsBoardView({ board }: { board: PropsBoardArtifact })
           Small sample: this season's DvP rests on {dvpSample.min === dvpSample.max ? `${dvpSample.max}` : `${dvpSample.min}–${dvpSample.max}`} {dvpSample.max === 1 ? "game" : "games"} per team, so Opp allows and Matchup lean mostly on last season.
         </p>
       ) : null}
-      {showSeason && rows.length === 0 && filters.tier !== "all" ? (
+      {showSeason && rows.length === 0 && resolvedTier.tier !== "all" ? (
         <p className="mb-2 rounded border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] text-slate-700" data-testid="tier-empty">
-          No {filters.tier === "core" ? "Core" : "Rotation"} players match these filters for this market.{" "}
-          <button type="button" className="font-semibold text-sky-800 underline" onClick={() => patch({ tier: "all" })}>
+          No {TIER_FILTER_NAME[resolvedTier.tier]} players match these filters for this market.{" "}
+          <button type="button" className="font-semibold text-sky-800 underline" onClick={() => setTierChoice("all")}>
             Show all players
           </button>
         </p>
@@ -217,7 +240,7 @@ export default function PropsBoardView({ board }: { board: PropsBoardArtifact })
         </p>
         {showSeason ? (
           <p data-testid="tier-note">
-            <strong className="font-semibold text-slate-800">Tier</strong> ranks attention by role, using this season's minutes before the game: <strong className="font-semibold text-slate-800">Core</strong> is 25+ MPG with at least 4 of the last 5 games within ±20% of the five-game median minutes and no open flag, <strong className="font-semibold text-slate-800">Rotation</strong> is 20+ MPG (including a 25+ MPG player whose minutes or role just changed), and <strong className="font-semibold text-slate-800">Variable</strong> is under 20 MPG or fewer than 5 games. A ⚑ marks a flag (low sample, unsteady minutes, role or team change, return from absence, missed team games); open a row for the reasons. Last season is never used to rate a player. Tiers and <strong className="font-semibold text-slate-800">Min stable</strong> are context: they change no projection, and your own minutes still work on every row. <strong className="font-semibold text-slate-800">Research order</strong> lists Core first, then the largest gap between the JKB projection and the line; it is not an edge estimate.
+            <strong className="font-semibold text-slate-800">Tier</strong> ranks attention by role, using this season's minutes before the game: <strong className="font-semibold text-slate-800">Core</strong> is 25+ MPG with at least 4 of the last 5 games within ±20% of the five-game median minutes and no open flag, <strong className="font-semibold text-slate-800">Rotation</strong> is 20+ MPG (including a 25+ MPG player whose minutes or role just changed), and <strong className="font-semibold text-slate-800">Variable</strong> is under 20 MPG or fewer than 5 games (a player at 20+ MPG with fewer than 5 games is marked <strong className="font-semibold text-slate-800">Provisional</strong>: visible, listed ahead of the other Variable players, and not rated until five games). A ⚑ marks a flag (low sample, unsteady minutes, role or team change, return from absence, missed team games); open a row for the reasons. Last season is never used to rate a player. Tiers and <strong className="font-semibold text-slate-800">Min stable</strong> are context: they change no projection, and your own minutes still work on every row. <strong className="font-semibold text-slate-800">Research order</strong> lists Core first, then the largest gap between the JKB projection and the line; it is not an edge estimate.
           </p>
         ) : null}
         {showSeason ? (

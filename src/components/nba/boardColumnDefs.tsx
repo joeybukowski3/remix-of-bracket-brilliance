@@ -7,7 +7,7 @@ import type { ColumnId } from "@/lib/nba/props/boardColumns";
 import { MinutesEditor, MinutesScale } from "@/components/nba/MinutesEditor";
 import { BASIS_LABEL, DvpSeasonCell, LowSample, NA, SeasonSampleCell, TIER_CELL, TIER_CHIP, TIER_GLYPH, TIER_LABEL, diffClass, dvpWhy, etTime, gamesLabel, signed } from "@/components/nba/boardCells";
 import { shortDate, type OpponentLastTen, type PlayerLastTen } from "@/lib/nba/props/recentForm";
-import { FLAG_LABEL, FLAG_WHY, STABLE_WINDOW, STABLE_MIN_WITHIN, STABLE_BAND, TIER_NAME, type ResearchTier } from "@/lib/nba/props/researchTier";
+import { FLAG_LABEL, FLAG_WHY, PROVISIONAL_NAME, STABLE_WINDOW, STABLE_MIN_WITHIN, STABLE_BAND, TIER_NAME, type ResearchTier } from "@/lib/nba/props/researchTier";
 import { DEFENSE_EMPTY, DefenseRating } from "@/components/nba/DefenseRating";
 
 /**
@@ -120,12 +120,15 @@ const TIER_TONE: Record<ResearchTier, string> = {
   variable: "bg-slate-100 text-slate-600 ring-slate-200",
 };
 
+/** Outlined and italic, not filled and not amber (amber is the small-sample dot alone): a real-looking role that cannot be rated yet, apart from the low-minute Variable players. */
+const PROVISIONAL_TONE = "bg-white italic text-slate-700 ring-slate-500";
+
 function TierCell({ research }: { research: BoardRow["research"] }) {
   if (!research) return <NA why={NO_SEASON} />;
   const flags = research.flags;
   return (
-    <span className="inline-flex items-center justify-center gap-x-1 whitespace-nowrap" data-testid="research-tier" data-tier={research.tier} title={research.reason}>
-      <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-bold ring-1 ring-inset", TIER_TONE[research.tier])}>{TIER_NAME[research.tier]}</span>
+    <span className="inline-flex items-center justify-center gap-x-1 whitespace-nowrap" data-testid="research-tier" data-tier={research.tier} data-provisional={research.provisional ? "true" : undefined} title={research.reason}>
+      <span className={cn("rounded px-1.5 py-0.5 text-[10px] font-bold ring-1 ring-inset", research.provisional ? PROVISIONAL_TONE : TIER_TONE[research.tier])}>{research.provisional ? PROVISIONAL_NAME : TIER_NAME[research.tier]}</span>
       {flags.length > 0 ? (
         <span className="text-[10px] font-semibold text-slate-600" data-testid="research-flags" title={flags.map((f) => `${FLAG_LABEL[f]}: ${FLAG_WHY[f]}`).join("\n")}>
           <span aria-hidden>⚑{flags.length}</span>

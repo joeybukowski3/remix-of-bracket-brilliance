@@ -11,7 +11,7 @@ import { classifyRosterLabel, type DvpPosition, type PositionClassification } fr
 import { NO_OVERRIDE, overrideView, playerOverrideKey, type OverrideView } from "./minutesOverride";
 import { opponentBoxTable, opponentLastTenFromBox, playerBoxTable, type OpponentBoxTable, type PlayerBoxTable } from "./boxScoreTables";
 import { defenseStrength, playerLastTen, teamDefenseKey, type DefenseStrength, type OpponentBoxScores, type OpponentLastTen, type OpponentRecentSequence, type PlayerLastTen, type TeamDefenseEntry, type TeamDefenseTable } from "./recentForm";
-import { researchProfile, researchTierRank, TIER_NAME, type ResearchProfile } from "./researchTier";
+import { PROVISIONAL_NAME, researchProfile, researchRank, TIER_NAME, type ResearchProfile } from "./researchTier";
 import { marketRates, recentPerGame, seasonColumns, type SeasonColumns, type SeasonStatsView } from "./seasonStats";
 
 export const BOARD_SCHEMA_VERSION = "nba-props-board-v1";
@@ -279,8 +279,8 @@ export const BOARD_SORT_KEYS = [
 export type BoardSortKey = (typeof BOARD_SORT_KEYS)[number];
 export type SortDirection = "asc" | "desc";
 
-/** Which research tier to list: one tier, or everyone. */
-export type TierFilter = "core" | "rotation" | "all";
+/** Which research tier to list: one tier, the Provisional group (20+ MPG over fewer than five games), or everyone. */
+export type TierFilter = "core" | "rotation" | "provisional" | "all";
 
 export interface BoardFilters {
   search: string;
@@ -303,7 +303,7 @@ export function filterBoardRows(rows: readonly BoardRow[], filters: BoardFilters
       const position = classifyRosterLabel(entry.positionLabel);
       if (!position.ok || !(filters.position in position.weights)) return false;
     }
-    if (filters.tier !== "all" && row.research?.tier !== filters.tier) return false;
+    if (filters.tier === "provisional" ? !row.research?.provisional : filters.tier !== "all" && row.research?.tier !== filters.tier) return false;
     if (filters.onlyWithLine && !entry.line) return false;
     if (filters.onlyWithProjection && !entry.projection) return false;
     return true;
@@ -349,7 +349,7 @@ const sortValue = (row: BoardRow, key: BoardSortKey): number | string | null => 
     case "dvpAllowed":
       return row.dvp.kind === "ok" ? row.dvp.comparison.blended?.allowedPerGame ?? null : null;
     case "research":
-      return researchTierRank(row.research?.tier ?? null);
+      return researchRank(row.research);
     case "minutesStability":
       return row.research?.consistency.last5?.within ?? null;
     case "oppDefRtg":
@@ -366,21 +366,57 @@ const nullsLast = (a: number | null, b: number | null, sign: 1 | -1): number => 
 function researchCompare(a: BoardRow, b: BoardRow): number {
   const abs = (row: BoardRow): number | null => (row.difference === null ? null : Math.abs(row.difference));
   return (
-    researchTierRank(a.research?.tier ?? null) - researchTierRank(b.research?.tier ?? null) ||
+    researchRank(a.research) - researchRank(b.research) ||
     nullsLast(abs(a), abs(b), -1) ||
     nullsLast(a.entry.projection?.value ?? null, b.entry.projection?.value ?? null, -1) ||
     a.entry.entryKey.localeCompare(b.entry.entryKey)
   );
 }
 
-/** Choices for the tier filter with how many rows each lists, in the order shown (Core first, then Rotation, then everyone). */
-export function tierFilterOptions(rows: readonly BoardRow[]): Array<{ value: TierFilter; label: string; count: number }> {
+export interface TierOption {
+  value: TierFilter;
+  label: string;
+  count: number;
+}
+
+/**
+ * Choices for the tier filter with how many rows each lists, in the order shown (Core, Rotation, Provisional, then everyone).
+ * Provisional is offered only while someone is in it, so a full-season board shows the same three choices as before.
+ */
+export function tierFilterOptions(rows: readonly BoardRow[]): TierOption[] {
   const count = (tier: "core" | "rotation"): number => rows.filter((r) => r.research?.tier === tier).length;
+  const provisional = rows.filter((r) => r.research?.provisional).length;
   return [
     { value: "core", label: TIER_NAME.core, count: count("core") },
     { value: "rotation", label: TIER_NAME.rotation, count: count("rotation") },
+    ...(provisional > 0 ? [{ value: "provisional" as const, label: PROVISIONAL_NAME, count: provisional }] : []),
     { value: "all", label: "All players", count: rows.length },
   ];
+}
+
+/** Why the tier shown is not simply the one asked for. */
+export type TierNotice =
+  | { kind: "default"; shown: TierFilter }
+  | { kind: "fallback"; requested: TierFilter; shown: TierFilter };
+
+export interface ResolvedTier {
+  tier: TierFilter;
+  /** Null when the tier shown is the one the reader asked for (or the opening default, Core, has players). */
+  notice: TierNotice | null;
+}
+
+/**
+ * The tier to list. With no choice yet the board opens on Core; with no Core players it opens on Rotation, and with neither on
+ * everyone. A choice of a tier that has no players in the current market (an early-season board, another market, another
+ * board) is not obeyed into an empty table: the same fallback applies, and the notice says so. The choice itself is never
+ * rewritten, so it comes back as soon as that tier has players again, and nothing here is stored.
+ */
+export function resolveTierFilter(choice: TierFilter | null, options: readonly TierOption[]): ResolvedTier {
+  const has = (tier: TierFilter): boolean => (options.find((o) => o.value === tier)?.count ?? 0) > 0;
+  const automatic: TierFilter = has("core") ? "core" : has("rotation") ? "rotation" : "all";
+  if (choice === null) return { tier: automatic, notice: automatic === "core" ? null : { kind: "default", shown: automatic } };
+  if (choice === "all" || has(choice)) return { tier: choice, notice: null };
+  return { tier: automatic, notice: { kind: "fallback", requested: choice, shown: automatic } };
 }
 
 /** Sort without mutating the input. Rows missing the sort value always go last, in either direction, except for "research", which is one fixed order that "asc" simply reverses. */

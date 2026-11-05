@@ -62,8 +62,20 @@ const FLAG_ORDER: readonly ResearchFlag[] = Object.freeze(Object.keys(FLAG_LABEL
 
 export const TIER_NAME: Record<ResearchTier, string> = { core: "Core", rotation: "Rotation", variable: "Variable" };
 
-/** Tiers in research order, then a player with no tier (a board without season statistics) last. */
-export const researchTierRank = (tier: ResearchTier | null): number => (tier === null ? RESEARCH_TIERS.length : RESEARCH_TIERS.indexOf(tier));
+/**
+ * What the board calls a Variable player who already averages 20+ MPG over fewer than five games: a role that may well be real
+ * but cannot be rated yet. The tier stays Variable (so eligibility and the evaluation are unchanged); this only keeps such a
+ * player visible and ahead of the low-minute players in the research order.
+ */
+export const PROVISIONAL_NAME = "Provisional";
+
+/** Position in the research order: Core, Rotation, Provisional, Variable, then a player with no profile. */
+export function researchRank(profile: Pick<ResearchProfile, "tier" | "provisional"> | null): number {
+  if (profile === null) return 4;
+  if (profile.tier === "core") return 0;
+  if (profile.tier === "rotation") return 1;
+  return profile.provisional ? 2 : 3;
+}
 
 /** The middle value (the mean of the two middle values for an even count), without reordering the input; null for none. */
 export function medianOf(values: readonly number[]): number | null {
@@ -128,6 +140,8 @@ export function minutesConsistency(recent: readonly Pick<PlayerRecentGame, "minu
 
 export interface ResearchProfile {
   tier: ResearchTier;
+  /** Variable only because of the sample: 20+ MPG, but fewer than five completed games this season. */
+  provisional: boolean;
   /** Minutes per game this season to date; null before the first game. */
   mpg: number | null;
   /** Completed games this season behind it. */
@@ -160,7 +174,10 @@ const oneDecimal = (n: number): string => n.toFixed(1);
 function reasonFor(tier: ResearchTier, mpg: number | null, games: number, consistency: MinutesConsistency, flags: readonly ResearchFlag[]): string {
   if (mpg === null || games === 0) return "Variable: no completed game this season yet, so there is no role to rate.";
   const base = `${oneDecimal(mpg)} MPG over ${games} ${games === 1 ? "game" : "games"}`;
-  if (flags.includes("low-sample")) return `Variable: ${base}; fewer than ${MIN_GAMES_FOR_TIER} games is too few to rate the role.`;
+  if (flags.includes("low-sample")) {
+    const label = mpg >= ROTATION_MIN_MPG ? PROVISIONAL_NAME : "Variable";
+    return `${label}: ${base}; fewer than ${MIN_GAMES_FOR_TIER} games is too few to rate the role.`;
+  }
   const five = consistency.last5;
   const stability = five
     ? five.stable
@@ -191,6 +208,7 @@ export function researchProfile(view: SeasonStatsView | undefined | null): Resea
   const { availability } = view;
   return {
     tier,
+    provisional: tier === "variable" && flags.includes("low-sample") && mpg !== null && mpg >= ROTATION_MIN_MPG,
     mpg,
     games,
     baselineMinutes: consistency.last5?.median ?? null,
