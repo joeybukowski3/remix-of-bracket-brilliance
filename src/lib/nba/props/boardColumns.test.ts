@@ -27,8 +27,8 @@ function memoryStorage(initial: Record<string, string> = {}) {
 }
 
 describe("default columns", () => {
-  it("are, in order: MPG, per game, per minute, player L10, opponent L10 allowed, matchup, Vegas Line, JKB projection", () => {
-    expect([...DEFAULT_COLUMNS]).toEqual(["mpg", "perGame", "perMinute", "last10", "oppLast10", "matchup", "line", "jkbProjection"]);
+  it("are, in order: tier, MPG, minutes consistency, per game, per minute, L5, L10, opponent DEF RTG, opponent L10 allowed, matchup, Vegas Line, JKB projection", () => {
+    expect([...DEFAULT_COLUMNS]).toEqual(["tier", "mpg", "stability", "perGame", "perMinute", "last5", "last10", "oppDefRtg", "oppLast10", "matchup", "line", "jkbProjection"]);
   });
 
   it("put the Vegas Line immediately before the JKB projection, in the registry and in what is shown", () => {
@@ -47,7 +47,7 @@ describe("default columns", () => {
 
   it("leave the over/under prices, JKB minutes, your minutes, adjusted values and the edge as optional columns", () => {
     const optional = COLUMN_IDS.filter((id) => !DEFAULT_COLUMNS.includes(id));
-    for (const id of ["overUnder", "jkbMinutes", "userMinutes", "adjustedProjection", "adjustedDifference", "modelEdge", "last5", "dvpAllowed", "dvpPrior", "dvpCurrent", "seasonRateEstimate", "seasonSample", "lastSeason"] as const) {
+    for (const id of ["overUnder", "jkbMinutes", "userMinutes", "adjustedProjection", "adjustedDifference", "modelEdge", "dvpAllowed", "dvpPrior", "dvpCurrent", "seasonRateEstimate", "seasonSample", "lastSeason"] as const) {
       expect(optional).toContain(id);
     }
   });

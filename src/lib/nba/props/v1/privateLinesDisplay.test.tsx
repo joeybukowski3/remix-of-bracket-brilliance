@@ -3,11 +3,23 @@
  * difference all read the same captured line. Invented league, books and prices; nothing is fetched.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, screen, within } from "@testing-library/react";
 import PropsBoardView from "@/components/nba/PropsBoardView";
 import { boardWith, book, captureOf } from "@/lib/nba/props/__fixtures__/capturedLines";
 import { fixtureName } from "@/lib/nba/props/__fixtures__/v1Fixtures";
 import { COLUMN_PREFERENCE_KEY } from "@/lib/nba/props/boardColumns";
+import { render as renderRaw } from "@testing-library/react";
+
+/**
+ * Renders the board and, when it has research tiers, lists every player: the page opens on Core props, and these tests are about
+ * rows and tables that must not depend on a player's tier. The Core default itself is tested in PropsBoardResearch.test.tsx.
+ */
+const render = (...args: Parameters<typeof renderRaw>): ReturnType<typeof renderRaw> => {
+  const result = renderRaw(...args);
+  const all = screen.queryByRole("button", { name: /^All players/ });
+  if (all) fireEvent.click(all);
+  return result;
+};
 
 vi.setConfig({ testTimeout: 30_000 });
 

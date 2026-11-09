@@ -111,7 +111,7 @@ describe("playerBoxTable: opponent DEF RTG", () => {
   });
 });
 
-describe("opponentBoxTable: team points allowed and the starter, kept apart", () => {
+describe("opponentBoxTable: team totals allowed first, the starter as optional detail", () => {
   it("shows the opposing team's full score and, separately, the starter at the position", () => {
     const g = opponentBoxTable(entry(), boxes([game(1, roster())])).games[0];
     expect(g.teamPtsAllowed).toBe(TEAM_PTS);
@@ -131,11 +131,24 @@ describe("opponentBoxTable: team points allowed and the starter, kept apart", ()
     expect(g.starter?.pts).toBe(20); // not 20 + 25, the two PGs
   });
 
-  it("lists the complete opposing box score, starters first, then by minutes, then name", () => {
+  it("lists the complete opposing box score by minutes, then name, with no preference for starters", () => {
     const g = opponentBoxTable(entry(), boxes([game(1, roster())])).games[0];
-    expect(g.players.map((p) => p.name)).toEqual(["Point", "Wing", "Small", "Power", "Big", "Backup Point", "Backup Wing", "Unrated"]);
+    expect(g.players.map((p) => p.name)).toEqual(["Point", "Wing", "Small", "Backup Point", "Power", "Backup Wing", "Unrated", "Big"]);
     expect(g.players.reduce((sum, p) => sum + p.minutes, 0)).toBe(240);
     expect(g.players.find((p) => p.name === "Unrated")).toMatchObject({ position: null, starter: false });
+  });
+
+  it("marks who is in the game's rotation by minutes played in that game, not by the starter flag", () => {
+    const g = opponentBoxTable(entry(), boxes([game(1, roster({ Unrated: { minutes: 8 }, Big: { minutes: 14 }, "Backup Wing": { minutes: 15 } }))])).games[0];
+    const rotation = Object.fromEntries(g.players.map((p) => [p.name, p.inRotation]));
+    expect(rotation).toMatchObject({ Unrated: false, Big: false, "Backup Wing": true, Point: true });
+  });
+
+  it("totals rebounds and assists as the team's, over a complete box only", () => {
+    const complete = opponentBoxTable(entry(), boxes([game(1, roster())])).games[0];
+    expect(complete.teamAllowed).toEqual({ pts: TEAM_PTS, reb: 38, ast: 22 });
+    const missing = opponentBoxTable(entry(), boxes([game(1, roster().filter((p) => p.name !== "Unrated"))])).games[0];
+    expect(missing.teamAllowed).toEqual({ pts: null, reb: null, ast: null });
   });
 
   it("selects the market's stat as the starter's and each player's result", () => {
@@ -153,8 +166,9 @@ describe("opponentBoxTable: team points allowed and the starter, kept apart", ()
 
   it("averages team points over the games with a complete box score and says how many that is", () => {
     const table = opponentBoxTable(entry(), boxes([game(1, roster()), game(2, roster({ Point: { pts: 30 } })), game(3, roster().filter((p) => p.name !== "Unrated"))]));
-    expect(table.teamPtsKnown).toBe(2);
-    expect(table.teamPtsAverage).toBe((TEAM_PTS + TEAM_PTS + 10) / 2);
+    expect(table.teamKnown.pts).toBe(2);
+    expect(table.teamAverage.pts).toBe((TEAM_PTS + TEAM_PTS + 10) / 2);
+    expect(table.teamKnown.reb).toBe(2);
   });
 });
 
@@ -175,8 +189,10 @@ describe("opponentBoxTable: the official team score", () => {
   it("recovers a game the minutes rule would have blanked, and averages it", () => {
     const missing = roster().filter((p) => p.name !== "Unrated");
     const table = opponentBoxTable(entry(), boxes([withScore(game(1, missing), TEAM_PTS), game(2, roster())]));
-    expect(table.teamPtsKnown).toBe(2);
-    expect(table.teamPtsAverage).toBe(TEAM_PTS);
+    expect(table.teamKnown.pts).toBe(2);
+    expect(table.teamAverage.pts).toBe(TEAM_PTS);
+    // Only points have an official total: the short box still gives no rebound or assist total.
+    expect(table.teamKnown.reb).toBe(1);
     const noScore = opponentBoxTable(entry(), boxes([game(1, missing), game(2, roster())]));
     expect(noScore.games.find((x) => x.gameId === "g1")).toMatchObject({ teamPtsAllowed: null, teamPtsSource: null, boxComplete: false });
   });
@@ -207,12 +223,12 @@ describe("opponentBoxTable: starter outcomes and gaps", () => {
   it("gives a game with several starters at the position no single figure, and lists them all", () => {
     const g = opponentBoxTable(entry(), boxes([game(1, roster({ Wing: { position: "PG" } }))])).games[0];
     expect(g.starter).toBeNull();
-    expect(g.starterMatch.kind === "multiple" && g.starterMatch.players.map((p) => p.name).sort()).toEqual(["Point", "Wing"]);
-    expect(describeStarterMatch(g.starterMatch, "PG")).toMatch(/2 starters are estimated at PG.*no single player is chosen/);
+    expect(g.starterMatch?.kind === "multiple" && g.starterMatch.players.map((p) => p.name).sort()).toEqual(["Point", "Wing"]);
+    expect(describeStarterMatch(g.starterMatch!, "PG")).toMatch(/2 starters are estimated at PG.*no single player is chosen/);
   });
 
   it("explains each gap in words", () => {
-    const [matched, multiple, none, uncertain, unavailable] = opponentBoxTable(entry(), boxes(scenarios())).games.reverse().map((g) => describeStarterMatch(g.starterMatch, "PG"));
+    const [matched, multiple, none, uncertain, unavailable] = opponentBoxTable(entry(), boxes(scenarios())).games.reverse().map((g) => describeStarterMatch(g.starterMatch!, "PG"));
     expect(matched).toBe("Point started at PG");
     expect(multiple).toMatch(/no single player is chosen/);
     expect(none).toMatch(/positional substitution or an unconventional lineup/);
@@ -227,8 +243,9 @@ describe("opponentBoxTable: starter outcomes and gaps", () => {
     const table = opponentBoxTable(entry(), boxes([game(1, fourStarters), game(2, fourStarters)]));
     expect(table.starterData).toBe("all");
     expect(table.gaps.unavailable).toBe(2);
-    expect(opponentLastTenFromBox(table)).toMatchObject({ status: "none", gamesWithFigure: 0, games: 2 });
-    expect(describeStarterMatch(table.games[0].starterMatch, "PG")).toMatch(/flagged 4 starters instead of five/);
+    // The team totals do not depend on the starter flags at all.
+    expect(opponentLastTenFromBox(table, "pts")).toMatchObject({ status: "ok", gamesWithFigure: 2, games: 2 });
+    expect(describeStarterMatch(table.games[0].starterMatch!, "PG")).toMatch(/flagged 4 starters instead of five/);
   });
 
   it("reads a board built before starters were carried as having no starter data, still showing team points", () => {
@@ -262,8 +279,6 @@ describe("opponentBoxTable: window, ordering and unavailable states", () => {
 
   it("says why there is nothing to show instead of an empty table", () => {
     expect(opponentBoxTable(entry(), {}).status).toBe("stale");
-    expect(opponentBoxTable(entry({ positionLabel: null }), boxes([game(1, roster())])).status).toBe("no-position");
-    expect(opponentBoxTable(entry({ positionLabel: "G-C" }), boxes([game(1, roster())])).status).toBe("no-position");
     expect(opponentBoxTable(entry({ opponent: null }), boxes([game(1, roster())])).status).toBe("no-opponent");
     expect(opponentBoxTable(entry(), boxes([])).status).toBe("none");
     expect(opponentBoxTable(entry(), { opponentBoxScores: {} }).status).toBe("none");
@@ -281,58 +296,84 @@ describe("opponentBoxTable: the same position as DvP", () => {
     }
   });
 
-  it("never guesses a position from a generic label: unsupported labels have no table", () => {
-    for (const label of ["G-C", "", "  ", "X", "PG-F", "Guard"]) expect(opponentBoxTable(entry({ positionLabel: label }), boxes([game(1, roster())])).status, label).toBe("no-position");
+  it("never guesses a position from a generic label: the table still shows team totals, with no position detail", () => {
+    for (const label of ["G-C", "", "  ", "X", "PG-F", "Guard", null]) {
+      const table = opponentBoxTable(entry({ positionLabel: label }), boxes([game(1, roster())]));
+      expect(table.status, String(label)).toBe("ok");
+      expect(table.position, String(label)).toBeNull();
+      expect(table.games[0].starterMatch, String(label)).toBeNull();
+      expect(table.games[0].starter, String(label)).toBeNull();
+      expect(table.games[0].teamPtsAllowed, String(label)).toBe(TEAM_PTS);
+      expect(table.gamesWithFigure, String(label)).toBe(0);
+    }
   });
 });
 
 describe("opponentLastTenFromBox: the chart and the column read the very table", () => {
   const scenarios = (): OpponentBoxScoreGame[] => [game(1, roster({ Point: { pts: 11 } })), game(2, roster({ Wing: { position: "PG" } })), game(3, roster({ Point: { pts: 33 } }))];
 
-  it("plots the matched starter per game, oldest to newest, with a gap where none is identified", () => {
-    const l10 = opponentLastTenFromBox(opponentBoxTable(entry(), boxes(scenarios())));
-    expect(l10).toMatchObject({ status: "ok", games: 3, gamesWithFigure: 2, average: 22, isSmallSample: true });
-    expect(l10.points.map((p) => p.value)).toEqual([11, null, 33]);
-    expect(l10.points[0]).toMatchObject({ versus: "@ MIA", detail: "Point, 34 min" });
-    expect(l10.points[1].detail).toMatch(/2 starters are estimated at PG/);
-    expect(l10.gaps).toEqual({ multiple: 1, none: 0, uncertain: 0, unavailable: 0 });
+  it("plots what the defense allowed as a team per game, oldest to newest", () => {
+    const l10 = opponentLastTenFromBox(opponentBoxTable(entry(), boxes(scenarios())), "pts");
+    expect(l10).toMatchObject({ status: "ok", games: 3, gamesWithFigure: 3, isSmallSample: true });
+    expect(l10.points.map((p) => p.value)).toEqual([TEAM_PTS - 9, TEAM_PTS, TEAM_PTS + 13]);
+    expect(l10.average).toBe((TEAM_PTS * 3 + 4) / 3);
+    expect(l10.points[0]).toMatchObject({ versus: "@ MIA", detail: "Summed from the listed players" });
+  });
+
+  it("is a team total in rebounds and assists too, never one player's line", () => {
+    const table = opponentBoxTable(entry({ market: "reb" }), boxes([game(1, roster())]));
+    expect(opponentLastTenFromBox(table, "reb").points.map((p) => p.value)).toEqual([38]);
+    expect(opponentLastTenFromBox(table, "ast").points.map((p) => p.value)).toEqual([22]);
+  });
+
+  it("does not depend on the player's position or on the starter flags", () => {
+    const noFlags = roster().map(({ starter: _s, ...rest }) => rest);
+    const base = opponentLastTenFromBox(opponentBoxTable(entry(), boxes([game(1, roster())])), "pts");
+    expect(opponentLastTenFromBox(opponentBoxTable(entry({ positionLabel: null }), boxes([game(1, roster())])), "pts")).toEqual(base);
+    expect(opponentLastTenFromBox(opponentBoxTable(entry({ positionLabel: "C" }), boxes([game(1, roster())])), "pts")).toEqual(base);
+    expect(opponentLastTenFromBox(opponentBoxTable(entry(), boxes([game(1, noFlags)])), "pts")).toEqual(base);
   });
 
   it("is the same for opponentL10For, which the board rows use", () => {
-    const e = entry();
+    const e = entry({ market: "ast" });
     const full = { ...e, entryKey: "k", playerName: "x", team: "NYK", tipoffUtc: "", line: null, lineWithheldReason: null, projection: null, projectionUnavailableReason: null };
     const artifact = boxes(scenarios());
-    expect(opponentL10For(full, artifact)).toEqual(opponentLastTenFromBox(opponentBoxTable(e, artifact)));
+    expect(opponentL10For(full, artifact)).toEqual(opponentLastTenFromBox(opponentBoxTable(e, artifact), "ast"));
   });
 
-  it("agrees with the table game for game, for every position and market", () => {
-    const games = scenarios();
-    for (const position of ["PG", "SG", "SF", "PF", "C"] as const satisfies readonly DvpPosition[]) {
-      for (const market of ["pts", "reb", "ast"] as const) {
-        const table = opponentBoxTable(entry({ positionLabel: position, market }), boxes(games));
-        const l10 = opponentLastTenFromBox(table);
-        expect(l10.average, `${position} ${market}`).toBe(table.average?.selected ?? null);
-        expect(l10.points.map((p) => p.value), `${position} ${market}`).toEqual(table.games.map((g) => g.starter?.selected ?? null).reverse());
-      }
+  it("agrees with the table game for game, for every market", () => {
+    const table = opponentBoxTable(entry(), boxes(scenarios()));
+    for (const market of ["pts", "reb", "ast"] as const) {
+      const l10 = opponentLastTenFromBox(table, market);
+      expect(l10.average, market).toBe(table.teamAverage[market]);
+      expect(l10.points.map((p) => p.value), market).toEqual(table.games.map((g) => g.teamAllowed[market]).reverse());
     }
   });
 
-  it("has no figure, and says why, when no game identifies one starter", () => {
-    const l10 = opponentLastTenFromBox(opponentBoxTable(entry(), boxes([game(1, roster({ Wing: { position: "PG" } })), game(2, roster({ Point: { position: "SF" } }))])));
-    expect(l10).toMatchObject({ status: "none", average: null, gamesWithFigure: 0, games: 2, gaps: { multiple: 1, none: 1, uncertain: 0, unavailable: 0 } });
+  it("leaves a gap, with its reason, for a box score that is not a complete game", () => {
+    const short = roster().filter((p) => p.name !== "Unrated");
+    const l10 = opponentLastTenFromBox(opponentBoxTable(entry(), boxes([game(1, short), game(2, roster())])), "pts");
+    expect(l10).toMatchObject({ status: "ok", games: 2, gamesWithFigure: 1, average: TEAM_PTS });
+    expect(l10.points.map((p) => p.value)).toEqual([null, TEAM_PTS]);
+    expect(l10.points[0].detail).toMatch(/not a complete game/);
   });
 
-  it("reports a board without starter status as such, rather than falling back to a position total", () => {
-    const noFlags = roster().map(({ starter: _s, ...rest }) => rest);
-    const l10 = opponentLastTenFromBox(opponentBoxTable(entry(), boxes([game(1, noFlags)])));
-    expect(l10).toMatchObject({ status: "no-starters", average: null, games: 1 });
-    expect(l10.points).toEqual([]);
+  it("uses the official score for points even when the rows fall short, but not for rebounds or assists", () => {
+    const short = roster().filter((p) => p.name !== "Unrated");
+    const table = opponentBoxTable(entry(), boxes([{ ...game(1, short), teamScore: TEAM_PTS }]));
+    expect(opponentLastTenFromBox(table, "pts")).toMatchObject({ status: "ok", average: TEAM_PTS });
+    expect(opponentLastTenFromBox(table, "pts").points[0].detail).toBe("Official final score");
+    expect(opponentLastTenFromBox(table, "reb")).toMatchObject({ status: "none", average: null, gamesWithFigure: 0 });
+  });
+
+  it("has no figure when no box score in the window is complete", () => {
+    const short = roster().filter((p) => p.name !== "Unrated");
+    expect(opponentLastTenFromBox(opponentBoxTable(entry(), boxes([game(1, short), game(2, short)])), "pts")).toMatchObject({ status: "none", average: null, gamesWithFigure: 0, games: 2 });
   });
 
   it("passes the table's unavailable states through", () => {
-    expect(opponentLastTenFromBox(opponentBoxTable(entry(), {})).status).toBe("stale");
-    expect(opponentLastTenFromBox(opponentBoxTable(entry({ positionLabel: null }), boxes([game(1, roster())]))).status).toBe("no-position");
-    expect(opponentLastTenFromBox(opponentBoxTable(entry({ opponent: null }), boxes([game(1, roster())]))).status).toBe("no-opponent");
-    expect(opponentLastTenFromBox(opponentBoxTable(entry(), boxes([]))).status).toBe("none");
+    expect(opponentLastTenFromBox(opponentBoxTable(entry(), {}), "pts").status).toBe("stale");
+    expect(opponentLastTenFromBox(opponentBoxTable(entry({ opponent: null }), boxes([game(1, roster())])), "pts").status).toBe("no-opponent");
+    expect(opponentLastTenFromBox(opponentBoxTable(entry(), boxes([])), "pts").status).toBe("none");
   });
 });

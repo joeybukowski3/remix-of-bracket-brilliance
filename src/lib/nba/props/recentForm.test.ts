@@ -44,8 +44,8 @@ describe("playerLastTen", () => {
 });
 
 describe("opponentLastTenUnavailable", () => {
-  it("is an empty window with the stated reason and no gaps, never a zero average", () => {
-    expect(opponentLastTenUnavailable("no-starters")).toEqual({ status: "no-starters", points: [], games: 0, gamesWithFigure: 0, average: null, gaps: { multiple: 0, none: 0, uncertain: 0, unavailable: 0 }, isSmallSample: false });
+  it("is an empty window with the stated reason, never a zero average", () => {
+    expect(opponentLastTenUnavailable("no-opponent")).toEqual({ status: "no-opponent", points: [], games: 0, gamesWithFigure: 0, average: null, isSmallSample: false });
     expect(opponentLastTenUnavailable("stale").status).toBe("stale");
   });
 });

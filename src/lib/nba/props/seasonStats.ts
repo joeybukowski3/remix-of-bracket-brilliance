@@ -32,6 +32,24 @@ export interface RecentTotals {
   ast: number;
 }
 
+/**
+ * What the player's team schedule says about the player's recent availability, from games strictly before the matchup. The three
+ * flags are baseline v0's own (features.ts: returningFromAbsence, roleChange, teamChangedRecently), so the board and the
+ * projection agree on what an absence or a role change is. Absence semantics are the source's: a game logged for the team with no
+ * appearance by the player is "missed", and injury, rest, a coach's decision and a G League assignment cannot be told apart.
+ */
+export interface SeasonAvailability {
+  /** The team's last (at most ten) games since the player's current-season stint began, and how many of them the player appeared in. */
+  teamGames: number;
+  played: number;
+  /** Three or more team games missed since the player's last appearance, so minutes may still be ramping. */
+  returning: boolean;
+  /** Minutes over the last 5 games differ from the last 20 by 8 or more (at least 10 earlier games). */
+  roleChange: boolean;
+  /** True when the player joined the current team within the last ten games. */
+  teamChangedRecently: boolean;
+}
+
 export interface SeasonStatsView {
   /** This season to date, or null before the player's first game. */
   current: SeasonTotals | null;
@@ -50,6 +68,11 @@ export interface SeasonStatsView {
    * existed: the page then says the board must be rebuilt, instead of drawing a chart it cannot support.
    */
   recentGames?: PlayerRecentGame[];
+  /**
+   * Missed team games, a return from absence, a role change and a team change, for the research tiers (researchTier.ts). Absent on
+   * a board built before it existed: the page then shows the tier without those flags and says so.
+   */
+  availability?: SeasonAvailability;
 }
 
 /** Window sizes behind `last5` and `last10`. */

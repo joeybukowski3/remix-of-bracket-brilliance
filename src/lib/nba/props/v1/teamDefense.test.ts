@@ -144,6 +144,31 @@ describe("buildTeamDefense", () => {
   });
 });
 
+describe("buildTeamDefense: a game that is not in the import yet", () => {
+  const history = [...game("g1", "2026-10-20", side("AAA", 105), side("BBB", 100)), ...game("g2", "2026-10-22", side("AAA", 99), side("CCC", 110))];
+
+  it("rates an upcoming opponent from every game strictly before the game's date", () => {
+    const table = buildTeamDefense(history, SEASON, [{ team: "AAA", date: "2026-10-30" }]);
+    expect(table.asOf[teamDefenseKey("AAA", "2026-10-30")]).toMatchObject({ games: 2 });
+  });
+
+  it("does not look past the game's date when the import already holds later games", () => {
+    const later = [...history, ...game("g3", "2026-10-25", side("AAA", 130), side("DDD", 90)), ...game("g4", "2026-11-02", side("AAA", 80), side("BBB", 80))];
+    const upcoming = [{ team: "AAA", date: "2026-10-24" }];
+    expect(buildTeamDefense(later, SEASON, upcoming).asOf[teamDefenseKey("AAA", "2026-10-24")]).toEqual(buildTeamDefense(history, SEASON, upcoming).asOf[teamDefenseKey("AAA", "2026-10-24")]);
+  });
+
+  it("leaves every rating of the games already in the import unchanged", () => {
+    const base = buildTeamDefense(history, SEASON);
+    const withUpcoming = buildTeamDefense(history, SEASON, [{ team: "AAA", date: "2026-10-30" }]);
+    for (const [key, entry] of Object.entries(base.asOf)) expect(withUpcoming.asOf[key]).toEqual(entry);
+  });
+
+  it("gives a team with no earlier usable game no entry", () => {
+    expect(buildTeamDefense(history, SEASON, [{ team: "ZZZ", date: "2026-10-30" }]).asOf[teamDefenseKey("ZZZ", "2026-10-30")]).toBeUndefined();
+  });
+});
+
 describe("buildTeamDefense: the official team score", () => {
   /** Stamps each team's official score on its rows, as the hoopR import does. */
   const scored = (rows: ImportedPlayerGame[], scores: Record<string, number>): ImportedPlayerGame[] => rows.map((r) => ({ ...r, teamScore: scores[r.team] }));
