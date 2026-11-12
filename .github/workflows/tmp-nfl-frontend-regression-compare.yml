@@ -1,0 +1,155 @@
+name: TEMP NFL front-end regression comparison (PR 455)
+
+run-name: TEMP front-end comparison • base=${{ inputs.base_ref }}
+
+# TEMPORARY. Exists only to finish the pre-merge verification of PR #455 on GitHub-hosted runners,
+# because the NFL front-end Vitest suite (~335 files) repeatedly exhausted memory on the author's
+# machine. DELETE THIS FILE (and scripts/ci/tmp-compare/) once the comparison is recorded.
+#
+# What it does: runs the SAME NFL front-end test files with the SAME vitest.config.ts against two
+# isolated checkouts -- the base ref and this branch's head -- one worker, 12-file batches (each batch
+# is its own process so memory resets), then retries failing files to separate flaky/environment
+# failures from stable ones, and finally diffs results by test name AND error message.
+#
+# What it never does: write to the repository, regenerate any dataset, use any secret, or call any
+# paid provider. Tests only. Permissions are read-only. It is dispatch-only, so it cannot run on push.
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: "Baseline revision (branch, tag or SHA). Default: current main. Use the PR merge-base SHA to isolate the PR alone."
+        required: false
+        default: "main"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tmp-nfl-frontend-compare
+  cancel-in-progress: false
+
+env:
+  CI: "true"
+
+jobs:
+  test-main:
+    name: Tests on base (${{ inputs.base_ref }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - name: Check out the revision under test (base)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.base_ref }}
+          path: code
+          fetch-depth: 1
+      - name: Check out the harness (this branch, supplies the test list and vitest config)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: code/package-lock.json
+      - name: Install dependencies
+        working-directory: code
+        run: npm ci --no-audit --no-fund
+      - name: Run batches
+        run: |
+          {
+            echo "### Base revision under test"
+            echo "- code SHA: \`$(git -C code rev-parse HEAD)\` (requested \`${{ inputs.base_ref }}\`)"
+            echo "- harness SHA (test list + vitest.config.ts): \`$(git -C harness rev-parse HEAD)\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+          bash harness/scripts/ci/tmp-compare/run-batches.sh "$PWD/code" "$PWD/harness" "$PWD/results-main"
+      - name: Upload machine-readable results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-main
+          path: results-main
+          retention-days: 14
+
+  test-pr:
+    name: Tests on PR head
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    steps:
+      - name: Check out the revision under test (this branch)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: code
+          fetch-depth: 1
+      - name: Check out the harness (this branch, supplies the test list and vitest config)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: code/package-lock.json
+      - name: Install dependencies
+        working-directory: code
+        run: npm ci --no-audit --no-fund
+      - name: Run batches
+        run: |
+          {
+            echo "### PR head under test"
+            echo "- code SHA: \`$(git -C code rev-parse HEAD)\`"
+            echo "- harness SHA: \`$(git -C harness rev-parse HEAD)\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+          bash harness/scripts/ci/tmp-compare/run-batches.sh "$PWD/code" "$PWD/harness" "$PWD/results-pr"
+      - name: Upload machine-readable results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: results-pr
+          path: results-pr
+          retention-days: 14
+
+  compare:
+    name: Compare and classify
+    needs: [test-main, test-pr]
+    if: always() && needs.test-main.result != 'cancelled' && needs.test-pr.result != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: harness
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/download-artifact@v4
+        with:
+          name: results-main
+          path: results-main
+      - uses: actions/download-artifact@v4
+        with:
+          name: results-pr
+          path: results-pr
+      - name: Compare by test name and error message
+        id: compare
+        run: |
+          set +e
+          node harness/scripts/ci/tmp-compare/compare.cjs results-main results-pr harness report
+          rc=$?
+          cat report/comparison.md >> "$GITHUB_STEP_SUMMARY"
+          exit $rc
+      - name: Upload comparison report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: comparison-report
+          path: report
+          retention-days: 30
