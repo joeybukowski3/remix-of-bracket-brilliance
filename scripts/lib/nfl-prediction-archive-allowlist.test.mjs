@@ -43,6 +43,24 @@ describe("prediction archive commit-path allowlist (WU4C.1 Part 6)", () => {
     expect(isAllowedEvaluationPath("data/nfl/prediction-outcomes/2026/01/spread.jsonl")).toBe(false);
   });
 
+  it("accepts week-sharded WU3 evaluation paths (<type>/<season>/<WW>.jsonl) and rejects malformed or foreign shards", () => {
+    const root = "data/nfl/prediction-evaluations/jkb-football-evaluation-v1";
+    for (const type of ["spread", "passing", "rushing", "receiving", "team_opportunity", "team_total", "resolution-status"]) {
+      expect(isAllowedEvaluationPath(`${root}/${type}/2026/01.jsonl`)).toBe(true);
+      expect(isAllowedEvaluationPath(`${root}/${type}/2026/18.jsonl`)).toBe(true);
+    }
+    // Non-padded week, wrong extension, unknown dataset, nesting, and traversal are all refused.
+    expect(isAllowedEvaluationPath(`${root}/receiving/2026/1.jsonl`)).toBe(false);
+    expect(isAllowedEvaluationPath(`${root}/receiving/2026/01.json`)).toBe(false);
+    expect(isAllowedEvaluationPath(`${root}/receiving/2026/01.jsonl.tmp`)).toBe(false);
+    expect(isAllowedEvaluationPath(`${root}/forward-spread/2026/01.jsonl`)).toBe(false);
+    expect(isAllowedEvaluationPath(`${root}/receiving/2026/01/extra.jsonl`)).toBe(false);
+    expect(isAllowedEvaluationPath(`${root}/receiving/2026/../../../secrets/01.jsonl`)).toBe(false);
+    expect(isAllowedEvaluationPath("data/nfl/predictions/2026/01.jsonl")).toBe(false);
+    // The legacy monolith path stays allowed: the migration commit stages its deletion.
+    expect(isAllowedEvaluationPath(`${root}/receiving/2026.jsonl`)).toBe(true);
+  });
+
   it("accepts every WU4G forward-evaluation path and rejects an unversioned or mistyped variant", () => {
     for (const type of ["rushing", "receiving"]) {
       expect(isAllowedEvaluationPath(`data/nfl/prediction-evaluations/jkb-football-evaluation-v1/forward-${type}/2026.jsonl`)).toBe(true);
