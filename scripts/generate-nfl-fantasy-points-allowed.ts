@@ -37,6 +37,7 @@ import { resolveCurrentOpponents } from "../src/lib/nfl/fantasyAllowed/currentOp
 import type { FantasyAllowedArtifact } from "../src/lib/nfl/fantasyAllowed/types.ts";
 import { loadGames, loadPlayerWeekRows, loadTeamAbbrs, readJson, writeJsonAtomic } from "./lib/nflAllowedByPositionIo.ts";
 import { reportPlayerWeekCoverage } from "./lib/nfl-allowed-by-position-coverage.mjs";
+import { buildFantasyAllowedCoverage } from "./lib/nfl-fantasy-allowed-provenance.mjs";
 import { currentSeasonGamesByTeam } from "./lib/nfl-fantasy-allowed-coverage.mjs";
 import type { NflGameRecord } from "../src/lib/nfl/standings.ts";
 import type { HistoricalPlayerWeek } from "../src/lib/fantasy/weekly/history.ts";
@@ -151,6 +152,11 @@ function main() {
     slotWideSnapshot,
   });
 
+  // Provenance the page shows: which completed games the ranks actually reflect.
+  const resultsFile = join(DATA_DIR, String(currentSeason), "results.json");
+  const results = existsSync(resultsFile) ? (readJson(resultsFile).results ?? []) : [];
+  const coverage = buildFantasyAllowedCoverage({ season: currentSeason, games: currentSeasonGames, results, playerWeekRows: currentRows });
+
   const artifact: FantasyAllowedArtifact = {
     schemaVersion: FANTASY_POINTS_ALLOWED_SCHEMA_VERSION,
     generatedAt: args.generatedAt,
@@ -158,6 +164,7 @@ function main() {
     week,
     scoringVersion: FANTASY_SCORING_VERSION,
     rows,
+    coverage,
   };
 
   logArtifactChange(readPreviousArtifact(), artifact);

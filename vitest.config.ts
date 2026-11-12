@@ -61,6 +61,14 @@ export default defineConfig({
       "scripts/lib/nfl-roster-identity.test.mjs",
       "scripts/lib/nfl-market-archive.test.mjs",
       "scripts/lib/nfl-market-coverage.test.mjs",
+      // NFL current-week resolution -- calendar-aware fallback for stale `scheduled` statuses (issue 454).
+      "scripts/lib/nfl-current-week.test.mjs",
+      // NFL data-freshness verification (stale artifact vs upstream lag vs workflow failure vs deploy drift).
+      "scripts/lib/nfl-freshness.test.mjs",
+      // Fantasy Points Allowed artifact provenance (data-through week, games incorporated, lag attribution).
+      "scripts/lib/nfl-fantasy-allowed-provenance.test.mjs",
+      // Data-commit helper: oversized-file guard + non-retryable GH001 handling (real git, real bare remote).
+      "scripts/ci/commit-and-push.test.ts",
       // NFL Anytime TD market -- ParlayAPI canonical scorer-market pipeline.
       "scripts/lib/nfl-anytime-td-selection.test.mjs",
       // NFL yardage alt-market (secondary source) -- Kalshi ladder normalization.
@@ -108,6 +116,8 @@ export default defineConfig({
       "scripts/lib/nfl-slot-wide-defense-context-core.test.mjs",
       // WU4C.1 -- scheduled-workflow commit-path allowlist (predictions/outcomes/evaluations).
       "scripts/lib/nfl-prediction-archive-allowlist.test.mjs",
+      // Week-sharded WU3 evaluation storage (keeps every file under GitHub's 100 MB limit; issue 454).
+      "scripts/lib/nfl-evaluation-shards.test.ts",
       // WU4G -- forward evaluation (rushing shadow-vs-production / receiving role-conflict) operational layer.
       "scripts/lib/nfl-forward-evaluation.test.ts",
       "scripts/materialize-nfl-forward-evaluation.test.ts",
