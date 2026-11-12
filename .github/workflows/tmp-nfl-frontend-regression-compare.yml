@@ -1,6 +1,6 @@
 name: TEMP NFL front-end regression comparison (PR 455)
 
-run-name: TEMP front-end comparison • base=${{ inputs.base_ref }}
+run-name: TEMP front-end comparison • base=${{ inputs.base_ref || '6f15e16a47ba4774412ed55ca079346da347fc76' }}
 
 # TEMPORARY. Exists only to finish the pre-merge verification of PR #455 on GitHub-hosted runners,
 # because the NFL front-end Vitest suite (~335 files) repeatedly exhausted memory on the author's
@@ -12,15 +12,24 @@ run-name: TEMP front-end comparison • base=${{ inputs.base_ref }}
 # failures from stable ones, and finally diffs results by test name AND error message.
 #
 # What it never does: write to the repository, regenerate any dataset, use any secret, or call any
-# paid provider. Tests only. Permissions are read-only. It is dispatch-only, so it cannot run on push.
+# paid provider. Tests only. Permissions are read-only.
+#
+# Triggers: GitHub only lets a workflow_dispatch workflow be dispatched once it exists on the DEFAULT
+# branch, and this must not be put on main. So it ALSO runs on a push to the single throwaway branch
+# `ci/nfl-frontend-compare-455` (pushing that branch is the manual trigger). No other branch -- including
+# the PR branch itself -- can start it. The baseline defaults to the PR's merge-base with main
+# (6f15e16a4) so the only difference between the two checkouts is PR #455.
 
 on:
+  push:
+    branches:
+      - ci/nfl-frontend-compare-455
   workflow_dispatch:
     inputs:
       base_ref:
-        description: "Baseline revision (branch, tag or SHA). Default: current main. Use the PR merge-base SHA to isolate the PR alone."
+        description: "Baseline revision (branch, tag or SHA). Default: the PR merge-base with main."
         required: false
-        default: "main"
+        default: ""
 
 permissions:
   contents: read
@@ -34,14 +43,14 @@ env:
 
 jobs:
   test-main:
-    name: Tests on base (${{ inputs.base_ref }})
+    name: Tests on base (${{ inputs.base_ref || '6f15e16a47ba4774412ed55ca079346da347fc76' }})
     runs-on: ubuntu-latest
     timeout-minutes: 340
     steps:
       - name: Check out the revision under test (base)
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.base_ref }}
+          ref: ${{ inputs.base_ref || '6f15e16a47ba4774412ed55ca079346da347fc76' }}
           path: code
           fetch-depth: 1
       - name: Check out the harness (this branch, supplies the test list and vitest config)
@@ -62,7 +71,7 @@ jobs:
         run: |
           {
             echo "### Base revision under test"
-            echo "- code SHA: \`$(git -C code rev-parse HEAD)\` (requested \`${{ inputs.base_ref }}\`)"
+            echo "- code SHA: \`$(git -C code rev-parse HEAD)\` (requested \`${{ inputs.base_ref || '6f15e16a47ba4774412ed55ca079346da347fc76' }}\`)"
             echo "- harness SHA (test list + vitest.config.ts): \`$(git -C harness rev-parse HEAD)\`"
           } >> "$GITHUB_STEP_SUMMARY"
           bash harness/scripts/ci/tmp-compare/run-batches.sh "$PWD/code" "$PWD/harness" "$PWD/results-main"
