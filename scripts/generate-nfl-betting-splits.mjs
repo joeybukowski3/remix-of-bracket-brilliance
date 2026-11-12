@@ -98,7 +98,7 @@ export async function fetchMarket(market, loadPage = fetchPage) {
 }
 
 export function makeArtifact(pages, teams, schedule, season, generatedAt = new Date().toISOString()) {
-  const week = resolveCurrentWeek(schedule.filter((game) => game.season === season && game.seasonType === "REG"));
+  const week = resolveCurrentWeek(schedule.filter((game) => game.season === season && game.seasonType === "REG"), { now: new Date() });
   if (week == null) throw new Error(`No scheduled NFL week in canonical ${season} schedule`);
   const captures = pages.map((entry) => entry.fetchedAt).sort();
   const sourceCapturedAt = captures[0];
@@ -157,7 +157,7 @@ async function main() {
   if (manifest && !Array.isArray(manifest.requests)) throw new Error("Invalid capture manifest");
   const teams = JSON.parse(readFileSync(join(ROOT, "public/data/nfl/teams.json"), "utf8")).teams;
   const schedule = JSON.parse(readFileSync(join(ROOT, `public/data/nfl/${args.season}/games.json`), "utf8")).games;
-  const selectedWeek = resolveCurrentWeek(schedule.filter((game) => game.season === args.season && game.seasonType === "REG"));
+  const selectedWeek = resolveCurrentWeek(schedule.filter((game) => game.season === args.season && game.seasonType === "REG"), { now: new Date() });
   if (selectedWeek == null) {
     console.log(JSON.stringify({ mode, season: args.season, status: "no scheduled regular-season slate", publication: "skipped" }));
     return;

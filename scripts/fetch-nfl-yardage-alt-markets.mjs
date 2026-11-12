@@ -194,7 +194,7 @@ async function main() {
   const games = loadGames();
   const depthChartEntries = loadDepthChartEntries();
   const rosterIndex = buildRosterNameIndex(depthChartEntries);
-  const currentWeek = resolveCurrentWeek(games);
+  const currentWeek = resolveCurrentWeek(games, { now: new Date() });
 
   const canonical = {};
   for (const market of CANONICAL_MARKETS) canonical[market] = {};

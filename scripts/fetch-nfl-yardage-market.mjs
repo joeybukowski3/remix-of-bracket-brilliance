@@ -179,7 +179,7 @@ async function main() {
   // Computed up front (not just in the later coverage QA section) so identity
   // resolution can disambiguate a divisional-rematch team pair toward the
   // week this market is actually being built for -- see selectGameForPair.
-  const currentWeek = resolveCurrentWeek(games);
+  const currentWeek = resolveCurrentWeek(games, { now: new Date() });
 
   const quotesByMarket = {};
   for (const market of CANONICAL_MARKETS) quotesByMarket[market] = [];
