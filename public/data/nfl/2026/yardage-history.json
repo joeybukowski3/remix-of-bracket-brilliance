@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schemaVersion": "nfl-v0.1",
-    "generatedAt": "2026-11-11T21:30:07.522Z",
+    "generatedAt": "2026-11-12T21:32:54.188Z",
     "source": "nflverse stats_player_week + epa_team_game + nfldata games.csv + yardage market archive",
     "season": 2026,
     "week": 9,
@@ -79502,6 +79502,37 @@
       "market": "receiving",
       "position": "WR",
       "games": []
+    },
+    "gsis:00-0041472:receiving": {
+      "playerId": "gsis:00-0041472",
+      "playerName": "Marlin Klein",
+      "market": "receiving",
+      "position": "TE",
+      "games": [
+        {
+          "gameId": "2026_01_BUF_HOU",
+          "season": 2026,
+          "week": 1,
+          "dateUtc": "2026-09-13T17:00:00.000Z",
+          "opponentAbbr": "buf",
+          "homeAway": "home",
+          "oppDefRank": 14,
+          "oppDefRankPoolSize": 32,
+          "oppYdsAllowAvg": 37.3,
+          "stat": {
+            "targets": 1,
+            "receptions": 1,
+            "recTds": 0
+          },
+          "actualYards": 16,
+          "gameScore": {
+            "result": "L",
+            "teamScore": 31,
+            "oppScore": 36
+          },
+          "vegasLine": null
+        }
+      ]
     },
     "gsis:00-0041483:receiving": {
       "playerId": "gsis:00-0041483",
@@ -183371,7 +183402,7 @@
           "week": 6,
           "dateUtc": "2026-10-18T17:00:00.000Z",
           "playerId": "gsis:00-0039373",
-          "playerName": "Audric Estimé",
+          "playerName": "Audric Estime",
           "team": "cle",
           "opponent": "bal",
           "homeAway": "home",
@@ -211007,6 +211038,32 @@
         }
       ],
       "gsis:00-0041399:receiving": [],
+      "gsis:00-0041472:receiving": [
+        {
+          "rowId": "2026_01_BUF_HOU:gsis:00-0041472:receiving",
+          "gameId": "2026_01_BUF_HOU",
+          "season": 2026,
+          "week": 1,
+          "dateUtc": "2026-09-13T17:00:00.000Z",
+          "playerId": "gsis:00-0041472",
+          "playerName": "Marlin Klein",
+          "team": "hou",
+          "opponent": "buf",
+          "homeAway": "home",
+          "position": "TE",
+          "market": "receiving",
+          "actualYards": 16,
+          "historicalSportsbookLine": null,
+          "lineResult": "unavailable",
+          "temporalQuality": "event-time-reconstructed",
+          "comparison": "player-vs-aggregate-positional-allowance",
+          "opponentPregamePositionalAllowance": 37.3,
+          "opponentPregamePositionalAllowanceSampleSize": 10,
+          "allowanceScope": "entire-position-group-per-defense-game",
+          "actualMinusOpponentAllowance": -21.299999999999997,
+          "missingReferenceReason": null
+        }
+      ],
       "gsis:00-0041483:receiving": [
         {
           "rowId": "2026_08_PHI_WAS:gsis:00-0041483:receiving",
@@ -215530,7 +215587,7 @@
           "week": 6,
           "dateUtc": "2026-10-18T17:00:00.000Z",
           "playerId": "gsis:00-0039373",
-          "playerName": "Audric Estimé",
+          "playerName": "Audric Estime",
           "team": "cle",
           "opponent": "bal",
           "homeAway": "home",
@@ -257237,10 +257294,10 @@
     }
   },
   "provenance": {
-    "generatedAt": "2026-11-11T21:30:07.522Z",
-    "playersBuilt": 387,
+    "generatedAt": "2026-11-12T21:32:54.188Z",
+    "playersBuilt": 388,
     "opponentLogsBuilt": 169,
-    "archiveObservations": 8303,
+    "archiveObservations": 8531,
     "statSeasons": [
       2022,
       2023,
