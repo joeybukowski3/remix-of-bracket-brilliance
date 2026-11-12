@@ -34,7 +34,8 @@ fi
 
 oversized=()
 while IFS= read -r -d '' path; do
-  size="$(git cat-file -s ":${path}" 2>/dev/null || echo 0)"
+  # No `|| echo 0`: if the size cannot be read, fail (set -e) rather than treat the file as small.
+  size="$(git cat-file -s ":${path}")"
   if [ "${size}" -gt "${max_bytes}" ]; then
     oversized+=("${path} ($((size / 1048576)) MB)")
   fi
@@ -55,7 +56,9 @@ last_output=""
 for attempt in $(seq 1 "${attempts}"); do
   echo "Push attempt ${attempt}/${attempts}"
   git fetch -q origin "${branch}"
-  if ! git rebase -q "origin/${branch}"; then
+  # --autostash: a later commit stage's files may still be modified-but-unstaged
+  # in the work tree, and plain `git rebase` refuses to run with a dirty tree.
+  if ! git rebase -q --autostash "origin/${branch}"; then
     echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
     git rebase --abort || true
   elif last_output="$(git push origin "HEAD:${branch}" 2>&1)"; then
