@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-11T20:01:06.695Z",
+  "generatedAt": "2026-11-13T02:25:08.339Z",
   "schemaVersion": "nfl-yardage-alt-market-v1",
   "sport": "americanfootball_nfl",
   "sources": [
@@ -23,8 +23,8 @@
   },
   "diagnostics": {
     "matched": 0,
-    "unmatchedIdentityCount": 39,
-    "ladderRejectedCount": 119,
+    "unmatchedIdentityCount": 42,
+    "ladderRejectedCount": 207,
     "referenceLineModes": {
       "interpolated": 0,
       "exact_rung": 0,
@@ -32,18 +32,18 @@
     },
     "bySeries": {
       "KXNFLPASSYDS": {
-        "openMarkets": 143,
-        "playerGroups": 15,
+        "openMarkets": 257,
+        "playerGroups": 27,
         "matched": 0
       },
       "KXNFLRSHYDS": {
-        "openMarkets": 459,
-        "playerGroups": 51,
+        "openMarkets": 670,
+        "playerGroups": 76,
         "matched": 0
       },
       "KXNFLRECYDS": {
-        "openMarkets": 954,
-        "playerGroups": 92,
+        "openMarkets": 1432,
+        "playerGroups": 146,
         "matched": 0
       }
     },
@@ -70,17 +70,22 @@
       },
       {
         "market": "rushingYards",
+        "player": "Devin Singletary",
+        "reason": "ambiguous_repeated_matchup"
+      },
+      {
+        "market": "rushingYards",
+        "player": "J.J. McCarthy",
+        "reason": "ambiguous_repeated_matchup"
+      },
+      {
+        "market": "rushingYards",
         "player": "Aaron Rodgers",
         "reason": "ambiguous_repeated_matchup"
       },
       {
         "market": "rushingYards",
         "player": "Joe Burrow",
-        "reason": "ambiguous_repeated_matchup"
-      },
-      {
-        "market": "rushingYards",
-        "player": "J.J. McCarthy",
         "reason": "ambiguous_repeated_matchup"
       },
       {
@@ -110,11 +115,6 @@
       },
       {
         "market": "rushingYards",
-        "player": "Devin Singletary",
-        "reason": "ambiguous_repeated_matchup"
-      },
-      {
-        "market": "rushingYards",
         "player": "Austin Ekeler",
         "reason": "ambiguous_repeated_matchup"
       },
@@ -130,7 +130,62 @@
       },
       {
         "market": "receivingYards",
+        "player": "Malik Nabers",
+        "reason": "ambiguous_repeated_matchup"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Malachi Fields",
+        "reason": "ambiguous_repeated_matchup"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Stefon Diggs",
+        "reason": "ambiguous_repeated_matchup"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Darnell Mooney",
+        "reason": "ambiguous_repeated_matchup"
+      },
+      {
+        "market": "receivingYards",
         "player": "Cam Skattebo",
+        "reason": "ambiguous_repeated_matchup"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Devin Singletary",
+        "reason": "ambiguous_repeated_matchup"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Van Jefferson",
+        "reason": "ambiguous_repeated_matchup"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Austin Ekeler",
+        "reason": "ambiguous_repeated_matchup"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Rachaad White",
+        "reason": "ambiguous_repeated_matchup"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Samaje Perine",
+        "reason": "ambiguous_repeated_matchup"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Pat Freiermuth",
+        "reason": "ambiguous_repeated_matchup"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Treylon Burks",
         "reason": "ambiguous_repeated_matchup"
       },
       {
@@ -190,27 +245,7 @@
       },
       {
         "market": "receivingYards",
-        "player": "Devin Singletary",
-        "reason": "ambiguous_repeated_matchup"
-      },
-      {
-        "market": "receivingYards",
-        "player": "Van Jefferson",
-        "reason": "ambiguous_repeated_matchup"
-      },
-      {
-        "market": "receivingYards",
-        "player": "Austin Ekeler",
-        "reason": "ambiguous_repeated_matchup"
-      },
-      {
-        "market": "receivingYards",
         "player": "Antonio Williams",
-        "reason": "ambiguous_repeated_matchup"
-      },
-      {
-        "market": "receivingYards",
-        "player": "Rachaad White",
         "reason": "ambiguous_repeated_matchup"
       },
       {
@@ -220,31 +255,71 @@
       },
       {
         "market": "receivingYards",
-        "player": "Stefon Diggs",
-        "reason": "ambiguous_repeated_matchup"
-      },
-      {
-        "market": "receivingYards",
-        "player": "Malik Nabers",
-        "reason": "ambiguous_repeated_matchup"
-      },
-      {
-        "market": "receivingYards",
-        "player": "Malachi Fields",
-        "reason": "ambiguous_repeated_matchup"
-      },
-      {
-        "market": "receivingYards",
         "player": "Isaiah Likely",
-        "reason": "ambiguous_repeated_matchup"
-      },
-      {
-        "market": "receivingYards",
-        "player": "Darnell Mooney",
         "reason": "ambiguous_repeated_matchup"
       }
     ],
     "ladderRejected": [
+      {
+        "market": "passingYards",
+        "player": "Justin Herbert",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "passingYards",
+        "player": "Kirk Cousins",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "passingYards",
+        "player": "Matthew Stafford",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "passingYards",
+        "player": "Carson Beck",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "passingYards",
+        "player": "Jacoby Brissett",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "passingYards",
+        "player": "Kyle McCord",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "passingYards",
+        "player": "Daniel Jones",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "passingYards",
+        "player": "Cam Ward",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "passingYards",
+        "player": "Trevor Lawrence",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "passingYards",
+        "player": "C.J. Stroud",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "passingYards",
+        "player": "Deshaun Watson",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "passingYards",
+        "player": "Patrick Mahomes",
+        "reason": "off_target_week_10"
+      },
       {
         "market": "passingYards",
         "player": "Geno Smith",
@@ -298,6 +373,131 @@
       {
         "market": "passingYards",
         "player": "Jared Goff",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Jaylen Wright",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Justin Herbert",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Kirk Cousins",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Geno Smith",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Matthew Stafford",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Kyle McCord",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Justice Hill",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Zay Flowers",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Omarion Hampton",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Kimani Vidal",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Keaton Mitchell",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Jacoby Brissett",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Derrick Henry",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Kyren Williams",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Blake Corum",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Tyler Allgeier",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Carson Beck",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Ollie Gordon II",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Seth McGowan",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Jonathan Taylor",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Daniel Jones",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "James Cook III",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "MarShawn Lloyd",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Woody Marks",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "rushingYards",
+        "player": "Patrick Mahomes",
         "reason": "off_target_week_10"
       },
       {
@@ -493,6 +693,261 @@
       {
         "market": "rushingYards",
         "player": "Jahmyr Gibbs",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Ashton Dulin",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Brian Thomas Jr.",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Travis Hunter",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Josh Cameron",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Nate Boerkircher",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Ty Johnson",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Braelon Allen",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Ollie Gordon II",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Khalil Herbert",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Rashid Shaheed",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Tory Horton",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Jack Bech",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Noah Fant",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Tommy Tremble",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Laquon Treadwell",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Deion Burks",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Dawson Knox",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Mason Taylor",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Kenyon Sadiq",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Adonai Mitchell",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Demarcus Robinson",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Jordan Mason",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Tyler Allgeier",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Konata Mumpfield",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Tyler Higbee",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Tutu Atwell",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Omarion Hampton",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Kimani Vidal",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Keaton Mitchell",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Zay Flowers",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Rashod Bateman",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Mark Andrews",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Ja'Kobi Lane",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Justice Hill",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Josh Cuevas",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Derrick Henry",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Xavier Worthy",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Kyren Williams",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Blake Corum",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Trey McBride",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Simi Fehoko",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Reggie Virgil",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Elijah Higgins",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Malik Washington",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Greg Dulcich",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Caleb Douglas",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Tyler Warren",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Jonathan Taylor",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Josh Downs",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Woody Marks",
+        "reason": "off_target_week_10"
+      },
+      {
+        "market": "receivingYards",
+        "player": "Marvin Harrison Jr.",
         "reason": "off_target_week_10"
       },
       {
@@ -803,41 +1258,6 @@
       {
         "market": "receivingYards",
         "player": "Tucker Kraft",
-        "reason": "off_target_week_10"
-      },
-      {
-        "market": "receivingYards",
-        "player": "Matthew Golden",
-        "reason": "off_target_week_10"
-      },
-      {
-        "market": "receivingYards",
-        "player": "Christian Watson",
-        "reason": "off_target_week_10"
-      },
-      {
-        "market": "receivingYards",
-        "player": "Sam LaPorta",
-        "reason": "off_target_week_10"
-      },
-      {
-        "market": "receivingYards",
-        "player": "Jameson Williams",
-        "reason": "off_target_week_10"
-      },
-      {
-        "market": "receivingYards",
-        "player": "Jahmyr Gibbs",
-        "reason": "off_target_week_10"
-      },
-      {
-        "market": "receivingYards",
-        "player": "Isaac TeSlaa",
-        "reason": "off_target_week_10"
-      },
-      {
-        "market": "receivingYards",
-        "player": "Amon-Ra St. Brown",
         "reason": "off_target_week_10"
       }
     ]
