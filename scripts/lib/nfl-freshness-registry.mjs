@@ -35,9 +35,10 @@ export function artifactRegistry(season, currentWeek) {
       id: "betting-splits-current",
       path: `${nfl}/betting-splits/current.json`,
       kind: "current-week",
-      maxAgeHours: 96,
-      optional: true,
-      note: "publication is owner-gated by NFL_DK_SPLITS_LIVE_VERIFIED",
+      // Three scheduled refreshes a day; 48h tolerates the Tuesday gap before DraftKings posts next week's
+      // lines. The publication gate (NFL_DK_SPLITS_LIVE_VERIFIED) has been satisfied since 2026-09-25, so a
+      // stale or missing artifact is a real failure, not an expected one.
+      maxAgeHours: 48,
     },
     { id: "team-stats", path: `${nfl}/${season}/team-stats.json`, kind: "age", maxAgeHours: 120 },
     { id: "power-ratings", path: `${nfl}/${season}/power-ratings.json`, kind: "age", maxAgeHours: 120 },
@@ -55,13 +56,12 @@ export const PRODUCTION_ARTIFACT_IDS = [
   "fantasy-points-allowed",
   "yardage-projections",
   "tds-allowed-by-position",
+  "betting-splits-current",
 ];
 
 /**
  * Refresh workflows whose health is checked via the GitHub API. Excluded on
- * purpose: nfl-ai-handicap-v2 (skips by design behind an enable gate) and
- * nfl-betting-splits-refresh (publication is owner-gated, so red is expected
- * until NFL_DK_SPLITS_LIVE_VERIFIED is set).
+ * purpose: nfl-ai-handicap-v2 (skips by design behind an enable gate).
  */
 export const CRITICAL_WORKFLOWS = [
   { name: "nfl-schedules-results.yml", maxAgeHours: 36 },
@@ -72,6 +72,7 @@ export const CRITICAL_WORKFLOWS = [
   { name: "nfl-matchup-market.yml", maxAgeHours: 48 },
   { name: "nfl-yardage-market.yml", maxAgeHours: 48 },
   { name: "nfl-betting-lines-daily.yml", maxAgeHours: 48 },
+  { name: "nfl-betting-splits-refresh.yml", maxAgeHours: 36 },
   { name: "nfl-slot-wide-defense-context.yml", maxAgeHours: 72 },
   { name: "nfl-team-ratings.yml", maxAgeHours: 192 },
   { name: "nfl-matchup-metrics.yml", maxAgeHours: 192 },

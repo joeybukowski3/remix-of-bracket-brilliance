@@ -58,8 +58,9 @@ timestamps only.
 
 The scheduled workflow is `.github/workflows/nfl-betting-splits-refresh.yml`.
 It follows the existing NFL GitHub Actions pattern: Node 20, `npm ci`, the
-shared `main-data-writers` lock, one generator command, exact-path staging,
-and push/rebase retry. It runs at 08:37, 12:37, and 17:37 America/New_York
+its own `nfl-betting-splits-refresh` concurrency group (not the 28-workflow
+`main-data-writers` lock, whose single pending slot delayed and dropped these
+pregame runs), one generator command, exact-path staging, and push/rebase retry. It runs at 08:37, 12:37, and 17:37 America/New_York
 each day in September–January. The three daytime passes target morning,
 early-game pregame, and evening-game pregame windows. The off-hour minute
 reduces top-of-hour GitHub Actions queue contention, but scheduled jobs may
@@ -74,10 +75,12 @@ manual production publication fails until the repository variable
 `NFL_DK_SPLITS_LIVE_VERIFIED` is set to `true` after review. A successful
 production run validates the full eligible pregame slate, writes a temporary
 file, atomically renames it to `current.json`, and stages only that artifact.
-After a successful push, it calls the repository's existing reusable GitHub
-Pages deployment for the exact pushed commit. A `GITHUB_TOKEN` push alone would
-not trigger the `deploy.yml` push event. A dry run, failed run, or no-change
-run does not call deployment.
+After a successful push there is no separate deploy step: Vercel's Git
+integration builds every push to `main`, including this bot's data-only commits
+(verified: the 2026-11-09 splits commit 2e5278d7d has a successful Vercel Production deployment). The NFL
+freshness watchdog (`production:betting-splits-current`) compares what
+www.joeknowsball.com serves with the repository every three hours. A dry run,
+failed run, or no-change run publishes nothing.
 Fetch, parse, join, coverage, or validation failure exits nonzero and leaves
 the previous file and its timestamps untouched. No empty failure artifact or
 history file is created.
@@ -164,8 +167,7 @@ signals, not picks or inputs to JKB projections. The board shows DraftKings
 Network, `sourceCapturedAt`, and Fresh/Stale once above the cards. Stale values
 remain visible; unavailable and game-absent cards show neutral dashes.
 
-Repository deployment authority remains open (`OPEN-001` in
-`docs/DECISIONS.md`): Vercel configuration and GitHub Pages deployment both
-exist. The refresh workflow publishes a validated artifact to `main` and
-invokes the configured GitHub Pages path; confirming which host is authoritative
-and when the public site serves that commit remains an operational check.
+The public site is served by Vercel (a Production deployment is created for
+every push to `main`). `deploy.yml` publishes a separate GitHub Pages mirror and
+is not part of this workflow. `OPEN-001` in `docs/DECISIONS.md` can be closed
+for this artifact: Vercel is the authoritative host.

@@ -12,6 +12,7 @@ import {
   checkWorkflowHealth,
   summarizeFindings,
 } from "./nfl-freshness.mjs";
+import { CRITICAL_WORKFLOWS, PRODUCTION_ARTIFACT_IDS, artifactRegistry } from "./nfl-freshness-registry.mjs";
 
 const HOUR = 3600e3;
 const game = (id, week, dateUtc, status, home = "aaa", away = "bbb") => ({ gameId: id, season: 2026, seasonType: "REG", week, dateUtc, status, homeAbbr: home, awayAbbr: away });
@@ -444,5 +445,49 @@ describe("summarizeFindings", () => {
   });
   it("treats an empty check list as unknown rather than ok", () => {
     expect(summarizeFindings([]).status).toBe("unknown");
+  });
+});
+
+describe("DraftKings betting splits are monitored as a required, production-compared artifact", () => {
+  // The publication gate (NFL_DK_SPLITS_LIVE_VERIFIED) has been true since 2026-09-25, so these splits are no
+  // longer an "expected red" exception: stale Week 9 splits shown during Week 10 must alert.
+  const entry = artifactRegistry(2026, 10).find((e) => e.id === "betting-splits-current");
+  const base = { games: UPSTREAM_CURRENT.games, resolution: { week: 10, source: "status", statusWeek: 10, overdueGames: [] }, now: NOW };
+
+  it("is a required current-week artifact with no owner-gate exemption", () => {
+    expect(entry).toMatchObject({ kind: "current-week", maxAgeHours: 48 });
+    expect(entry.optional).toBeFalsy();
+    expect(entry.note ?? "").not.toMatch(/owner-gated/i);
+  });
+
+  it("fails the stale Week 9 artifact that was live on 2026-11-12 and fails when it is missing", () => {
+    const stale = { _meta: { generatedAt: "2026-11-09T23:09:19.657Z", week: 9 } };
+    const [stalled] = checkArtifacts({ ...base, registry: [entry], artifacts: { "betting-splits-current": stale } });
+    expect(stalled).toMatchObject({ severity: "fail", category: "stale_artifact" });
+    const [missing] = checkArtifacts({ ...base, registry: [entry], artifacts: { "betting-splits-current": null } });
+    expect(missing.severity).toBe("fail");
+  });
+
+  it("accepts a current Week 10 artifact", () => {
+    const fresh = { _meta: { generatedAt: "2026-11-12T13:00:00Z", week: 10 } };
+    expect(checkArtifacts({ ...base, registry: [entry], artifacts: { "betting-splits-current": fresh } })[0].severity).toBe("ok");
+  });
+
+  it("is compared with what production serves, so a repo/live mismatch is reported as deploy drift", () => {
+    expect(PRODUCTION_ARTIFACT_IDS).toContain("betting-splits-current");
+    const local = { "betting-splits-current": { _meta: { generatedAt: "2026-11-13T13:40:00Z", week: 10 } } };
+    const production = { "betting-splits-current": { _meta: { generatedAt: "2026-11-09T23:09:19Z", week: 9 } } };
+    expect(checkProduction({ local, production })[0]).toMatchObject({ severity: "fail", category: "deploy_drift" });
+  });
+
+  it("watches the refresh workflow itself, failing after repeated failures", () => {
+    const workflow = CRITICAL_WORKFLOWS.find((w) => w.name === "nfl-betting-splits-refresh.yml");
+    expect(workflow).toBeTruthy();
+    const runs = { "nfl-betting-splits-refresh.yml": [
+      { conclusion: "failure", created_at: "2026-11-13T02:50:00Z" },
+      { conclusion: "failure", created_at: "2026-11-12T21:01:00Z" },
+      { conclusion: "success", created_at: "2026-11-09T23:07:00Z" },
+    ] };
+    expect(checkWorkflowHealth({ workflows: [workflow], runs, now: at("2026-11-13T14:00:00Z") })[0]).toMatchObject({ severity: "fail", category: "workflow_failure" });
   });
 });
