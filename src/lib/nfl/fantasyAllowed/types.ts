@@ -58,6 +58,22 @@ export type FantasyAllowedRow = {
 
 export const FANTASY_ALLOWED_ARTIFACT_PATH = "/data/nfl/fantasy-points-allowed.json";
 
+/**
+ * How much of the completed schedule the ranks reflect. The player-week cache
+ * and results.json are independent publications that can lag each other, so the
+ * artifact says so (built by scripts/lib/nfl-fantasy-allowed-provenance.mjs).
+ *   missingFinalGameIds  final in results.json, not yet in the stats cache (stats lag)
+ *   notYetFinalGameIds   in the stats cache, not yet marked final in results.json (results lag)
+ */
+export type FantasyAllowedCoverage = {
+  status: "complete" | "partial";
+  finalGames: number;
+  incorporatedGames: number;
+  dataThroughWeek: number | null;
+  missingFinalGameIds: readonly string[];
+  notYetFinalGameIds: readonly string[];
+};
+
 export type FantasyAllowedArtifact = {
   schemaVersion: "nfl-fantasy-points-allowed-v2";
   generatedAt: string;
@@ -66,4 +82,6 @@ export type FantasyAllowedArtifact = {
   week: number | null;
   scoringVersion: string;
   rows: readonly FantasyAllowedRow[];
+  /** Optional: absent on artifacts generated before provenance existed. */
+  coverage?: FantasyAllowedCoverage;
 };

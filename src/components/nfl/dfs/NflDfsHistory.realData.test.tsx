@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import NflDfsHistory from "./NflDfsHistory";
-import { createDfsHistoryLoader, dfsHistoryLoader, type HistoryTarget } from "@/lib/nfl/dfs/historyDelivery";
+import { DFS_HISTORY_MARKETS, createDfsHistoryLoader, dfsHistoryLoader, type HistoryTarget } from "@/lib/nfl/dfs/historyDelivery";
 import type { DfsEnrichedAnalyzerRow } from "@/lib/nfl/dfs/slateAnalyzer";
 
 /** Renders the expanded history against the COMMITTED current-week artifacts (no mocked rows). */
@@ -20,31 +20,47 @@ const realLoader = createDfsHistoryLoader((async (input: RequestInfo | URL) => {
     : new Response(null, { status: 404 });
 }) as typeof fetch);
 
-const slateRow = (name: string, position: string) => {
-  const found = projections.rows.find((row) => row.week === week && row.playerName === name && row.position === position)!;
-  return { kind: "offense", dkId: found.playerId, playerName: name, position, playerId: found.playerId, team: found.team, opponent: found.opponent,
-    homeAway: "home", identityConflict: false } as unknown as DfsEnrichedAnalyzerRow;
-};
+type ProjectionRow = (typeof projections.rows)[number];
+
+const slateRow = (found: ProjectionRow) =>
+  ({ kind: "offense", dkId: found.playerId, playerName: found.playerName, position: found.position, playerId: found.playerId, team: found.team,
+    opponent: found.opponent, homeAway: "home", identityConflict: false }) as unknown as DfsEnrichedAnalyzerRow;
+
+/**
+ * First current-week player at `position` that actually has at least `minRows` history rows in the
+ * committed artifacts. Fixtures are chosen from the data instead of hard-coded by name: a named
+ * player stops being a valid fixture the moment he is benched, hurt or traded (the original test
+ * named a QB who did not play Week 9, so it failed on every refresh after that).
+ */
+async function playerWithHistory(position: "QB" | "TE", minRows: number): Promise<ProjectionRow> {
+  const detail = await realLoader.detail(target, await realLoader.index(target), position);
+  const market = DFS_HISTORY_MARKETS[position];
+  const found = projections.rows.find(
+    (row) => row.week === week && row.position === position && (detail.players[`${row.playerId}:${market}`]?.length ?? 0) >= minRows,
+  );
+  if (!found) throw new Error(`no ${position} with >= ${minRows} history rows in the committed week-${week} artifacts`);
+  return found;
+}
 
 afterEach(() => vi.restoreAllMocks());
 
 describe("expanded DFS history with real current-week artifacts", () => {
-  it("shows non-empty Player and Opponent Last 10 for Kyler Murray, then refreshes without leaking when the row changes", async () => {
+  it("shows non-empty Player and Opponent Last 10 for a current QB, then refreshes without leaking when the row changes", async () => {
     const index = await realLoader.index(target);
     vi.spyOn(dfsHistoryLoader, "detail").mockImplementation((t, i, position) => realLoader.detail(t, i, position));
-    const kyler = slateRow("Kyler Murray", "QB");
-    const { rerender } = render(<NflDfsHistory row={kyler} target={target} index={index} />);
+    const quarterback = await playerWithHistory("QB", 10);
+    const { rerender } = render(<NflDfsHistory row={slateRow(quarterback)} target={target} index={index} />);
     const playerRows = within(await screen.findByRole("table")).getAllByRole("row").length - 1;
     expect(playerRows).toBe(10);
     fireEvent.click(screen.getByRole("tab", { name: "Opponent Last 10" }));
     expect(within(screen.getByRole("table")).getAllByRole("row").length - 1).toBeGreaterThan(0);
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
 
-    rerender(<NflDfsHistory row={slateRow("Travis Kelce", "TE")} target={target} index={index} />);
+    rerender(<NflDfsHistory row={slateRow(await playerWithHistory("TE", 1))} target={target} index={index} />);
     // TE detail is a different file: previous QB rows must not remain while loading or after.
     fireEvent.click(await screen.findByRole("tab", { name: "Player Last 10" }));
     const table = await screen.findByRole("table");
     expect(within(table).getAllByRole("row").length - 1).toBeGreaterThan(0);
-    expect(table).not.toHaveTextContent("Kyler");
+    expect(table).not.toHaveTextContent(quarterback.playerName);
   });
 });

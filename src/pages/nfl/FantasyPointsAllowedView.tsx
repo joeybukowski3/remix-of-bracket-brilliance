@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { NflFilterChips } from "@/components/nfl/ui/NflFilterBar";
 import AllowedByPositionTable from "@/components/nfl/allowed-by-position/AllowedByPositionTable";
+import DataFreshnessNotice from "@/components/nfl/allowed-by-position/DataFreshnessNotice";
 import { renderAllowedByPositionTeamCell } from "@/components/nfl/allowed-by-position/TeamCell";
 import { DEFAULT_ALLOWED_BY_POSITION_SORT, type AllowedByPositionDisplayMode, type AllowedByPositionSortState } from "@/components/nfl/allowed-by-position/types";
 import { useNflFantasyPointsAllowed } from "@/hooks/useNflFantasyPointsAllowed";
@@ -65,6 +66,8 @@ export default function FantasyPointsAllowedView({
           ))}
         </div>
       </section>
+
+      {source.artifact ? <DataFreshnessNotice artifact={source.artifact} /> : null}
 
       <section className="mt-3">
         {source.loading ? (

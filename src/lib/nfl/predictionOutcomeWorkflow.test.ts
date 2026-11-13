@@ -13,9 +13,15 @@ describe("WU2.5 postgame workflow", () => {
     expect(workflow).toContain('timezone: "America/New_York"');
     expect(workflow).toContain("group: main-data-writers-${{ github.repository }}");
     expect(workflow).toContain("cancel-in-progress: false");
-    expect(workflow).toContain("for attempt in 1 2 3 4 5");
-    expect(workflow).toContain("git rebase origin/main");
-    expect(workflow).toContain("git push origin HEAD:main");
+    // The retry loop moved out of the workflow into the shared push helper (issue 454): both commit
+    // stages must go through it, and the helper must still retry, rebase onto main, and push to main.
+    expect(workflow.match(/bash scripts\/ci\/commit-and-push\.sh "[^"]+" main/g)).toHaveLength(2);
+    const helper = readFileSync(resolve(process.cwd(), "scripts/ci/commit-and-push.sh"), "utf8");
+    expect(helper).toMatch(/attempts="\$\{PUSH_ATTEMPTS:-5\}"/);
+    expect(helper).toContain('git rebase -q --autostash "origin/${branch}"');
+    expect(helper).toContain('git push origin "HEAD:${branch}"');
+    // A GitHub file-size rejection can never succeed on retry, so it must not be retried.
+    expect(helper).toContain("GH001");
   });
 
   it("orders results, player-week refresh, play-volume refresh, outcome resolution, and WU3 materialization", () => {
@@ -24,13 +30,18 @@ describe("WU2.5 postgame workflow", () => {
     const playVolume = workflow.indexOf("- name: Refresh 2026 play-volume-team-game cache");
     const resolver = workflow.indexOf("- name: Resolve archived 2026 production predictions");
     const materialize = workflow.indexOf("- name: Materialize WU3 evaluations");
-    const persistence = workflow.indexOf("- name: Commit and push refreshed data");
+    // Two-stage persistence (issue 454): core results first, derived artifacts only after core has landed.
+    const corePersistence = workflow.indexOf("- name: Commit and push core results");
+    const derivedPersistence = workflow.indexOf("- name: Commit and push derived artifacts");
     expect(schedule).toBeGreaterThan(-1);
     expect(schedule).toBeLessThan(stats);
     expect(stats).toBeLessThan(playVolume);
     expect(playVolume).toBeLessThan(resolver);
     expect(resolver).toBeLessThan(materialize);
-    expect(materialize).toBeLessThan(persistence);
+    expect(materialize).toBeLessThan(corePersistence);
+    expect(corePersistence).toBeGreaterThan(-1);
+    expect(corePersistence).toBeLessThan(derivedPersistence);
+    expect(workflow).toContain("steps.commit-core.outcome == 'success'");
     expect(workflow).toContain("npm run nfl:player-week-stats-cache --");
     expect(workflow).toContain("npm run nfl:play-volume-cache -- --seasons=2026");
     expect(workflow).toContain("npm run resolve:nfl-prediction-outcomes");

@@ -10,6 +10,7 @@
  * against projections in Phase 11.
  */
 import { classifyBook } from "./nfl-book-classification.mjs";
+import { resolveCurrentWeekDetailed } from "./nfl-current-week.mjs";
 import { MARKET_PLAUSIBLE_POSITIONS, PASSING_YARDS_MARKET, RECEIVING_YARDS_MARKET, RUSHING_YARDS_MARKET } from "./nfl-prop-line-selection.mjs";
 
 /**
@@ -36,8 +37,16 @@ const CANDIDATE_SLOT_RULES = Object.freeze({
   ]),
 });
 
-/** Earliest week among games not yet final -- i.e. the week the market is currently being posted for. */
-export function resolveCurrentWeek(games) {
+/**
+ * Earliest week among games not yet final -- i.e. the week the market is currently being posted for.
+ *
+ * Pass `{ now }` to make this calendar-aware (see nfl-current-week.mjs): games still
+ * `scheduled` long after kickoff no longer hold the week, so a stalled results refresh
+ * cannot pin a (paid) market fetch to a finished week. Without `{ now }` the legacy
+ * status-only rule applies unchanged.
+ */
+export function resolveCurrentWeek(games, { now } = {}) {
+  if (now) return resolveCurrentWeekDetailed(games, { now }).week;
   const upcoming = (Array.isArray(games) ? games : [])
     .filter((g) => g.status === "scheduled")
     .map((g) => g.week)

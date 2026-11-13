@@ -13,6 +13,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { canonicalJson, type JsonValue } from "./lib/nfl-production-prediction-archive";
 import type { ReceivingEvaluationRow, RushingEvaluationRow } from "./lib/nfl-evaluation-dataset";
+import { readEvaluationRows } from "./lib/nfl-evaluation-shards";
 import {
   buildReceivingForwardEvaluationSummary,
   buildReceivingRoleConflictRow,
@@ -87,8 +88,9 @@ export type ForwardEvaluationResult = {
 
 export function runForwardEvaluationMaterializer(args: ForwardEvaluationCliArgs): ForwardEvaluationResult {
   const versionRoot = join(args.evaluationRoot, "jkb-football-evaluation-v1");
-  const rushingRows = readJsonl<RushingEvaluationRow>(join(versionRoot, "rushing", `${args.season}.jsonl`));
-  const receivingRows = readJsonl<ReceivingEvaluationRow>(join(versionRoot, "receiving", `${args.season}.jsonl`));
+  // Week-sharded datasets (the legacy monolith is still read if not yet migrated).
+  const rushingRows = readEvaluationRows<RushingEvaluationRow>(versionRoot, "rushing", args.season);
+  const receivingRows = readEvaluationRows<ReceivingEvaluationRow>(versionRoot, "receiving", args.season);
 
   const selectedRushing = selectFinalPregameEvaluationRows(rushingRows);
   const selectedReceiving = selectFinalPregameEvaluationRows(receivingRows);

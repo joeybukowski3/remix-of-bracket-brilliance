@@ -26,6 +26,7 @@ import {
   type ResolutionStatusRow,
 } from "./nfl-evaluation-dataset";
 import { buildEvaluationRow, type EvaluationRowBuildContext } from "./nfl-evaluation-rows";
+import { writeEvaluationShards } from "./nfl-evaluation-shards";
 import { loadArchivedPredictions } from "../resolve-nfl-prediction-outcomes";
 
 const PREDICTION_TYPES: EvaluationPredictionType[] = ["spread", "passing", "rushing", "receiving", "team_opportunity", "team_total"];
@@ -189,21 +190,21 @@ export function materializeEvaluation(options: MaterializerOptions): Materialize
 
   for (const season of [...summarySeasons].sort((a, b) => a - b)) {
     seasonsTouched.add(season);
+    // Week-sharded (see nfl-evaluation-shards.ts): a single monolithic file per
+    // type outgrew GitHub's 100 MB push limit mid-season (issue 454).
     for (const type of activeTypes) {
       const rows = (evaluableSeasonMap.get(season) ?? []).filter((row) => row.prediction_type === type);
-      const path = join(versionRoot, type, `${season}.jsonl`);
       if (!options.dryRun) {
-        atomicWrite(path, serializeEvaluationRows(rows));
-        filesWritten.push(path);
+        const { written } = writeEvaluationShards(versionRoot, type, season, rows, serializeEvaluationRows);
+        filesWritten.push(...written);
       }
     }
     const ledgerForSeason = (ledgerSeasonMap.get(season) ?? []).filter(
       (row) => options.predictionType == null || row.prediction_type === options.predictionType,
     );
-    const ledgerPath = join(versionRoot, "resolution-status", `${season}.jsonl`);
     if (!options.dryRun) {
-      atomicWrite(ledgerPath, serializeResolutionStatusRows(ledgerForSeason));
-      filesWritten.push(ledgerPath);
+      const { written } = writeEvaluationShards(versionRoot, "resolution-status", season, ledgerForSeason, serializeResolutionStatusRows);
+      filesWritten.push(...written);
     }
 
     const summaryInput: EvaluationSummaryInput = {

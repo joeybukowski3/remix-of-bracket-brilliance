@@ -285,10 +285,31 @@ jobs:
             console.log('All generated NFL JSON files are valid.');
           "
 
-      # WU4C.1: outcome and evaluation path validation is delegated to
-      # scripts/lib/nfl-prediction-archive-allowlist.mjs (single source of
-      # truth, unit-tested) rather than a regex duplicated inline here.
-      - name: Commit and push refreshed data
+      # Freshness check on the core data BEFORE anything is committed (issue 454).
+      # Confirms results.json holds every final the upstream source has published
+      # and that nothing is stuck "scheduled" past its completion window. It fails
+      # only on defects of ours (stale_artifact / inconsistent_data); an upstream
+      # publication delay is annotated but never fails it.
+      # ADVISORY, deliberately: it does not gate the commits below. A failure is
+      # surfaced as error annotations and turns the run red via the final "Report
+      # refresh outcome" step, but a bug in the checker itself must not hold
+      # today's valid data hostage.
+      - name: Verify core results against upstream (freshness gate)
+        id: freshness-gate
+        if: steps.changes.outputs.changed == 'true'
+        continue-on-error: true
+        shell: bash
+        run: node scripts/check-nfl-freshness.mjs --checks=core --upstream --fail-on=stale_artifact,inconsistent_data
+
+      # STAGE 1 -- the load-bearing data. games/results, the source caches and the
+      # prediction outcomes are pushed in their OWN commit, ahead of every derived
+      # artifact. Previously everything shared one commit, so a single oversized
+      # evaluation file (GitHub rejects blobs > 100 MB) made the whole push fail and
+      # fresh results never reached main for days. Outcome and evaluation path
+      # validation is delegated to scripts/lib/nfl-prediction-archive-allowlist.mjs
+      # (single source of truth, unit-tested) rather than a regex duplicated here.
+      - name: Commit and push core results (games, results, source caches, outcomes)
+        id: commit-core
         if: steps.changes.outputs.changed == 'true'
         shell: bash
         run: |
@@ -324,8 +345,23 @@ jobs:
             git add -- "$outcome_path"
           done < <(git status --porcelain --untracked-files=all -- data/nfl/prediction-outcomes)
 
-          # WU4C.1 Part 11: WU3 derived evaluation datasets, staged only when
-          # the materializer step above actually ran successfully.
+          bash scripts/ci/commit-and-push.sh "data(nfl): refresh results and prediction outcomes" main
+
+      # STAGE 2 -- derived artifacts. Runs only after stage 1 has landed, so an
+      # oversized or otherwise un-pushable derived file can fail THIS step (and the
+      # job, visibly) without ever costing fresh results.
+      - name: Commit and push derived artifacts (evaluations, coaching, performance)
+        id: commit-derived
+        if: steps.changes.outputs.changed == 'true' && steps.commit-core.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # WU4C.1 Part 11: WU3 derived evaluation datasets (week-sharded; the legacy
+          # monolithic <season>.jsonl appears here only as a deletion), staged only
+          # when the materializer step above actually ran successfully.
           if [ "${{ steps.materialize.outcome }}" = "success" ]; then
             while IFS= read -r status_line; do
               evaluation_path="${status_line:3}"
@@ -385,30 +421,53 @@ jobs:
             fi
           done
 
-          if git diff --cached --quiet; then
-            echo "No staged NFL source or prediction-outcome changes."
-            exit 0
-          fi
+          bash scripts/ci/commit-and-push.sh "data(nfl): refresh prediction evaluations and performance artifacts" main
 
-          git commit -m "data(nfl): refresh results and prediction outcomes"
-
-          pushed=false
-          for attempt in 1 2 3 4 5; do
-            echo "Push attempt ${attempt}/5"
-            git fetch origin main
-            if ! git rebase origin/main; then
-              echo "Rebase failed on attempt ${attempt}; aborting before retry." >&2
-              git rebase --abort || true
-            elif git push origin HEAD:main; then
-              pushed=true
-              break
-            fi
-            sleep $((attempt * 10))
-          done
-
-          if [ "$pushed" != "true" ]; then
-            echo "ERROR: All push attempts failed — NFL data was not committed." >&2
+      # Make every outcome visible. Most derived steps above are continue-on-error
+      # so one bug cannot block results -- but that also made a failing materializer
+      # or generator indistinguishable from a healthy run. This step always runs,
+      # prints a per-step outcome table to the job summary, and fails the job if any
+      # step failed, so it can never look green while data is going stale.
+      - name: Report refresh outcome
+        if: always()
+        shell: bash
+        run: |
+          failed=()
+          {
+            echo "### NFL schedules and results refresh"
+            echo ""
+            echo "| Step | Outcome |"
+            echo "|---|---|"
+          } >> "$GITHUB_STEP_SUMMARY"
+          while IFS='=' read -r step outcome; do
+            [ -z "$step" ] && continue
+            icon="✅"
+            case "$outcome" in
+              failure) icon="❌"; failed+=("$step") ;;
+              skipped|cancelled|"") icon="➖" ;;
+            esac
+            echo "| ${step} | ${icon} ${outcome:-n/a} |" >> "$GITHUB_STEP_SUMMARY"
+          done <<'OUTCOMES'
+          player-week-stats=${{ steps.player-stats.outcome }}
+          play-volume-cache=${{ steps.play-volume.outcome }}
+          wu3-materialize-evaluation=${{ steps.materialize.outcome }}
+          wu4g-forward-evaluation=${{ steps.forward-evaluate.outcome }}
+          wu4-starter-prop-evaluations=${{ steps.starter-prop-evaluate.outcome }}
+          coaching-foundation=${{ steps.coaching-foundation.outcome }}
+          coaching-snapshots=${{ steps.coaching-snapshots.outcome }}
+          coaching-ratings=${{ steps.coaching-ratings.outcome }}
+          coaching-analysis-metadata=${{ steps.coaching-analysis-metadata.outcome }}
+          sides-performance=${{ steps.sides-performance.outcome }}
+          totals-performance=${{ steps.totals-performance.outcome }}
+          props-performance=${{ steps.props-performance.outcome }}
+          performance-overview=${{ steps.performance-overview.outcome }}
+          performance-health=${{ steps.performance-health.outcome }}
+          freshness-gate=${{ steps.freshness-gate.outcome }}
+          commit-core=${{ steps.commit-core.outcome }}
+          commit-derived=${{ steps.commit-derived.outcome }}
+          OUTCOMES
+          if [ "${#failed[@]}" -gt 0 ]; then
+            echo "::error title=NFL refresh had failing steps::${failed[*]}"
             exit 1
           fi
-
-          echo "NFL schedules and results pushed successfully."
+          echo "All NFL refresh steps succeeded or were intentionally skipped."

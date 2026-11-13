@@ -15,6 +15,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildNflMeta, toNflJsonFileString } from "./lib/nfl-data-meta.mjs";
 import { loadArchivedPredictions } from "./resolve-nfl-prediction-outcomes";
+import { hasEvaluationData, latestEvaluationMtimeMs, readEvaluationRows } from "./lib/nfl-evaluation-shards";
 import {
   buildCoachingHealthSection,
   buildPropsHealthSection,
@@ -27,7 +28,8 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PREDICTIONS_ROOT = join(ROOT, "data", "nfl", "predictions");
 const STARTER_COHORT_ROOT = join(ROOT, "data", "nfl", "starter-cohorts");
 const EVALUATION_SUMMARY_ROOT = join(ROOT, "data", "nfl", "prediction-evaluations", "jkb-football-evaluation-v1", "summary");
-const RESOLUTION_STATUS_ROOT = join(ROOT, "data", "nfl", "prediction-evaluations", "jkb-football-evaluation-v1", "resolution-status");
+const EVALUATION_VERSION_ROOT = join(ROOT, "data", "nfl", "prediction-evaluations", "jkb-football-evaluation-v1");
+const RESOLUTION_STATUS_DATASET = "resolution-status";
 const TOTALS_FILE = join(ROOT, "public", "data", "nfl", "performance", "totals.json");
 const PROPS_FILE = join(ROOT, "public", "data", "nfl", "performance", "props.json");
 const SIDES_FILE = join(ROOT, "public", "data", "nfl", "performance", "sides.json");
@@ -90,12 +92,13 @@ type ResolutionStatusRow = {
 };
 
 function loadResolutionStatusLedger(season: number): ResolutionStatusRow[] {
-  const filePath = join(RESOLUTION_STATUS_ROOT, `${season}.jsonl`);
-  if (!existsSync(filePath)) return [];
-  return readFileSync(filePath, "utf8")
-    .split(/\r?\n/)
-    .filter(Boolean)
-    .map((line) => JSON.parse(line) as ResolutionStatusRow);
+  // Week-sharded (legacy monolith still read if not yet migrated).
+  return readEvaluationRows<ResolutionStatusRow>(EVALUATION_VERSION_ROOT, RESOLUTION_STATUS_DATASET, season);
+}
+
+function resolutionStatusMtimeIso(season: number): string | null {
+  const ms = latestEvaluationMtimeMs(EVALUATION_VERSION_ROOT, RESOLUTION_STATUS_DATASET, season);
+  return ms == null ? null : new Date(ms).toISOString();
 }
 
 /** A genuine backlog: the game is final but the ledger still has no resolved outcome for this prediction. Never counts a not-yet-final game -- that is expected pregame state, not degradation. */
@@ -197,11 +200,10 @@ export function buildPerformanceHealthArtifact(generatedAt: string) {
   const spreadPredictions = allPredictions.filter((p) => p.prediction_type === "spread");
   const spreadModelVersions = [...new Set(spreadPredictions.map((p) => p.model_version))].sort();
   const evaluationSummaryFile = join(EVALUATION_SUMMARY_ROOT, `${season}.json`);
-  const resolutionStatusFile = join(RESOLUTION_STATUS_ROOT, `${season}.jsonl`);
 
   const sides = loadJsonIfExists<{ _meta: { generatedAt: string }; summary: { graded_games: number } }>(SIDES_FILE);
   const sidesSection = buildSidesHealthSection({
-    ledgerExists: existsSync(resolutionStatusFile),
+    ledgerExists: hasEvaluationData(EVALUATION_VERSION_ROOT, RESOLUTION_STATUS_DATASET, season),
     latestSpreadPredictionTimestamp: latestTimestamp(spreadPredictions),
     latestSpreadEvaluationTimestamp: mtimeIsoOrNull(evaluationSummaryFile),
     evaluationAgeMs: ageMs(generatedAt, mtimeIsoOrNull(evaluationSummaryFile)),
@@ -268,7 +270,7 @@ export function buildPerformanceHealthArtifact(generatedAt: string) {
     "public/data/nfl/performance/props.json": props?._meta.generatedAt ?? null,
     "public/data/nfl/performance/sides.json": sides?._meta.generatedAt ?? null,
     "data/nfl/prediction-evaluations/jkb-football-evaluation-v1/summary": mtimeIsoOrNull(evaluationSummaryFile),
-    "data/nfl/prediction-evaluations/jkb-football-evaluation-v1/resolution-status": mtimeIsoOrNull(resolutionStatusFile),
+    "data/nfl/prediction-evaluations/jkb-football-evaluation-v1/resolution-status": resolutionStatusMtimeIso(season),
     "public/data/nfl/coaching-ratings.json": coachingRatings?._meta?.generatedAt ?? null,
   });
 

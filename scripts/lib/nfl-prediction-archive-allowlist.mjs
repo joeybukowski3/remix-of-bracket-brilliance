@@ -53,12 +53,17 @@ export function isAllowedEvaluationPath(path) {
   const versionedFile = /^data\/nfl\/prediction-evaluations\/jkb-football-evaluation-v1\/(spread|passing|rushing|receiving|team_opportunity|team_total)\/[0-9]{4}\.jsonl$/;
   const ledgerFile = /^data\/nfl\/prediction-evaluations\/jkb-football-evaluation-v1\/resolution-status\/[0-9]{4}\.jsonl$/;
   const summaryFile = /^data\/nfl\/prediction-evaluations\/jkb-football-evaluation-v1\/summary\/[0-9]{4}\.json$/;
+  // Week-sharded layout (<dataset>/<season>/<WW>.jsonl) that replaced the
+  // monolithic <season>.jsonl once receiving/2026.jsonl outgrew GitHub's 100 MB
+  // push limit (issue 454). The legacy monolith paths above stay allowed
+  // because the migration commit stages their deletion.
+  const shardFile = /^data\/nfl\/prediction-evaluations\/jkb-football-evaluation-v1\/(spread|passing|rushing|receiving|team_opportunity|team_total|resolution-status)\/[0-9]{4}\/[0-9]{2}\.jsonl$/;
   // WU4G: cumulative rushing shadow-vs-production / receiving role-conflict
   // forward-evaluation datasets. Derived-only from the WU3 files above,
   // written by a separate materializer; never a source/prediction/outcome path.
   const forwardRowsFile = /^data\/nfl\/prediction-evaluations\/jkb-football-evaluation-v1\/forward-(rushing|receiving)\/[0-9]{4}\.jsonl$/;
   const forwardSummaryFile = /^data\/nfl\/prediction-evaluations\/jkb-football-evaluation-v1\/forward-(rushing|receiving)-summary\/[0-9]{4}\.json$/;
-  return versionedFile.test(path) || ledgerFile.test(path) || summaryFile.test(path) || forwardRowsFile.test(path) || forwardSummaryFile.test(path);
+  return versionedFile.test(path) || ledgerFile.test(path) || shardFile.test(path) || summaryFile.test(path) || forwardRowsFile.test(path) || forwardSummaryFile.test(path);
 }
 
 /**

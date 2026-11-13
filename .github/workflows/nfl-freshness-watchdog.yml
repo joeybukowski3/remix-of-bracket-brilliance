@@ -1,0 +1,142 @@
+name: NFL Data Freshness Watchdog
+
+run-name: NFL Data Freshness Watchdog • ${{ github.event_name }}
+
+# An independent check that NFL data is current -- deliberately NOT part of any
+# build, deploy or data-refresh workflow. On 2026-11-12 every NFL page served
+# Week 9 data during Week 10 while deploys stayed green, because the only thing
+# that failed was a data push nobody was watching (issue 454). This workflow:
+#   * compares committed results with the upstream source (nflverse) so a stale
+#     artifact is told apart from an upstream publication delay,
+#   * checks that the refresh workflows are actually succeeding,
+#   * checks that week-pinned artifacts and displayed opponents match the
+#     current week,
+#   * checks that production (www.joeknowsball.com) serves what the repo has,
+#   * warns before a tracked file reaches GitHub's 100 MB push limit.
+# On failure it fails the run, annotates every failing check, and opens (or
+# updates) ONE rolling issue labelled nfl-freshness; when healthy again it
+# comments and closes it.
+#
+# Read-only against the repository: it never writes data, so it is not part of
+# the main-data-writers concurrency group. Free sources only; no paid provider.
+# No `npm ci`: the checker uses only Node built-ins, so a broken dependency
+# install cannot blind it.
+
+on:
+  schedule:
+    # Every 3 hours during the NFL season window (Sep-Feb), Eastern time.
+    - cron: "17 */3 * 1,2,9,10,11,12 *"
+      timezone: "America/New_York"
+  workflow_dispatch:
+
+concurrency:
+  group: nfl-freshness-watchdog
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+  issues: write
+
+jobs:
+  check-freshness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run NFL freshness checks
+        id: freshness
+        continue-on-error: true
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # The checker exits non-zero exactly when data is stale, which is when the
+          # summary matters most, so capture the code instead of letting -e skip the cat.
+          rc=0
+          node scripts/check-nfl-freshness.mjs \
+            --upstream \
+            --github \
+            --production=https://www.joeknowsball.com \
+            --json="$RUNNER_TEMP/nfl-freshness-report.json" \
+            --summary="$RUNNER_TEMP/nfl-freshness-report.md" || rc=$?
+          if [ -f "$RUNNER_TEMP/nfl-freshness-report.md" ]; then
+            cat "$RUNNER_TEMP/nfl-freshness-report.md" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$rc"
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-freshness-report
+          path: |
+            ${{ runner.temp }}/nfl-freshness-report.json
+            ${{ runner.temp }}/nfl-freshness-report.md
+          if-no-files-found: warn
+          retention-days: 14
+
+      # One rolling issue, never a pile of duplicates. The body comes from a file
+      # (never interpolated into the shell), and is capped to GitHub's limit.
+      - name: Open, update or close the freshness issue
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -uo pipefail
+          report="$RUNNER_TEMP/nfl-freshness-report.json"
+          if [ ! -f "$report" ]; then
+            echo "::error title=NFL freshness check did not produce a report::The checker crashed before writing a report. See this run's log."
+            exit 0
+          fi
+          status="$(node -p "JSON.parse(require('fs').readFileSync(process.argv[1],'utf8')).status" "$report")"
+          echo "freshness status: $status"
+
+          gh label create nfl-freshness --color B60205 --description "NFL data freshness alert (automated)" --force >/dev/null 2>&1 || true
+          existing="$(gh issue list --label nfl-freshness --state open --json number --jq '.[0].number // empty' 2>/dev/null || true)"
+
+          if [ "$status" = "fail" ]; then
+            {
+              echo "Automated alert from the NFL Data Freshness Watchdog. Run: ${RUN_URL}"
+              echo ""
+              echo "Failing checks are grouped by cause: \`upstream_lag\` (source not published yet), \`workflow_failure\` (a refresh workflow is failing), \`stale_artifact\` (source current, committed data behind), \`deploy_drift\` (production behind the repo), \`inconsistent_data\`, \`storage_risk\`."
+              echo ""
+              head -c 60000 "$RUNNER_TEMP/nfl-freshness-report.md"
+            } > "$RUNNER_TEMP/issue-body.md"
+            if [ -n "$existing" ]; then
+              gh issue edit "$existing" --body-file "$RUNNER_TEMP/issue-body.md"
+              echo "Updated issue #$existing"
+            else
+              gh issue create --title "NFL data is stale: freshness checks failing" --label nfl-freshness --body-file "$RUNNER_TEMP/issue-body.md"
+            fi
+          elif [ -n "$existing" ] && { [ "$status" = "ok" ] || [ "$status" = "degraded" ]; }; then
+            # Close only when every check that matters actually passed. "unknown" (a check
+            # could not run, e.g. an upstream outage) must NOT close a real alert.
+            gh issue comment "$existing" --body "Freshness checks are passing again (status: ${status}). Run: ${RUN_URL}"
+            gh issue close "$existing" --reason completed
+          fi
+
+      # Fail the run when data is stale so the failure is visible in Actions and
+      # in notification emails -- independent of any deploy status.
+      - name: Fail if data is stale
+        if: always()
+        shell: bash
+        run: |
+          if [ "${{ steps.freshness.outcome }}" != "success" ]; then
+            echo "::error title=NFL data freshness checks failed::See the job summary for which checks failed and why."
+            exit 1
+          fi

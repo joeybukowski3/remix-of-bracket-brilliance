@@ -19,6 +19,31 @@ describe("resolveCurrentWeek", () => {
     expect(resolveCurrentWeek(games)).toBe(2);
   });
 
+  describe("calendar-aware mode ({ now })", () => {
+    const stale = [
+      { week: 9, status: "scheduled", dateUtc: "2026-11-08T18:00:00Z" },
+      { week: 10, status: "scheduled", dateUtc: "2026-11-15T18:00:00Z" },
+    ];
+    const now = new Date("2026-11-12T15:00:00Z");
+
+    it("is opt-in: without { now } the legacy status-only rule is unchanged (still week 9)", () => {
+      expect(resolveCurrentWeek(stale)).toBe(9);
+    });
+
+    it("skips a week whose scheduled games are all long past kickoff (stale statuses)", () => {
+      expect(resolveCurrentWeek(stale, { now })).toBe(10);
+    });
+
+    it("keeps the earliest week while any of its games is still upcoming", () => {
+      const live = [{ week: 9, status: "scheduled", dateUtc: "2026-11-12T20:00:00Z" }, ...stale.slice(1)];
+      expect(resolveCurrentWeek(live, { now })).toBe(9);
+    });
+
+    it("returns null when nothing is pending (all overdue) rather than a stale week", () => {
+      expect(resolveCurrentWeek([stale[0]], { now })).toBeNull();
+    });
+  });
+
   it("returns null when there are no scheduled games", () => {
     expect(resolveCurrentWeek([{ week: 1, status: "final" }])).toBeNull();
     expect(resolveCurrentWeek([])).toBeNull();

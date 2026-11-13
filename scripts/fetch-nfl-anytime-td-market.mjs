@@ -122,7 +122,7 @@ async function main() {
   const marketPlausiblePositions = { [ANYTIME_TD_MARKET]: ANYTIME_TD_PLAUSIBLE_POSITIONS };
   // Disambiguates a divisional-rematch team pair toward the week this
   // market is actually being built for -- see selectGameForPair.
-  const currentWeek = resolveCurrentWeek(games);
+  const currentWeek = resolveCurrentWeek(games, { now: new Date() });
 
   const { quotes, rejections: buildRejections, marketKeyCounts } = buildAnytimeTdQuotes(rows);
   const { quotes: dedupedQuotes, collapsedCount: bovadaDuplicatesCollapsed } = dedupeBovadaAliasQuotes(quotes);
