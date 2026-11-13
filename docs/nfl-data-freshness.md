@@ -62,7 +62,6 @@ check set can never report `ok`.
 
 ## Known, intentional exceptions
 
-- `nfl-betting-splits-refresh.yml` is owner-gated by `NFL_DK_SPLITS_LIVE_VERIFIED`; red is expected until it is set.
 - `nfl-ai-handicap-v2.yml` skips by design behind its enable gate.
 - Archive-writing steps (`nfl:totals`, `nfl:starter-cohort`, the paid market fetches) are
   owned by CI so prediction archives are frozen pregame by the scheduled run, not by a local checkout.

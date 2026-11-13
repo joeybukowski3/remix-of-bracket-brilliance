@@ -28,12 +28,29 @@ test("publication is gated by live verification and stages only current.json", (
   assert.match(publish.run, /git add -- public\/data\/nfl\/betting-splits\/current\.json/);
   assert.doesNotMatch(publish.run, /git add\s+(?:\.|-A|--all)\b/);
   assert.match(publish.run, /git diff --cached --quiet/);
-  assert.match(workflow, /main-data-writers-\$\{\{ github\.repository \}\}/);
   assert.doesNotMatch(workflow, /continue-on-error/);
   assert.doesNotMatch(fetch.run, /\|\| true/);
-  const deploy = parsed.jobs["deploy-pages"];
-  assert.equal(deploy.uses, "./.github/workflows/deploy.yml");
-  assert.equal(deploy.if, "needs.refresh-nfl-betting-splits.outputs.deploy_ref != ''");
-  assert.equal(deploy.with.ref, "${{ needs.refresh-nfl-betting-splits.outputs.deploy_ref }}");
-  assert.match(publish.run, /pushed_commit=\$\(git rev-parse HEAD\)/);
+});
+
+test("uses its own concurrency group instead of the 28-workflow shared writer lock", () => {
+  // GitHub keeps one pending run per group and cancels older pending runs, so behind long data writers
+  // these pregame refreshes were delayed 1-4 h or dropped. The workflow writes one file and its push
+  // loop rebases over concurrent pushes; runs of this workflow still never overlap each other.
+  assert.deepEqual(parsed.concurrency, {
+    group: "nfl-betting-splits-refresh-${{ github.repository }}",
+    "cancel-in-progress": false,
+  });
+  const withoutComments = workflow.replace(/^\s*#.*$/gm, "");
+  assert.doesNotMatch(withoutComments, /main-data-writers/);
+  const publish = step("Commit and push validated current artifact");
+  assert.match(publish.run, /git rebase origin\/main/);
+  assert.match(publish.run, /for attempt in 1 2 3 4 5/);
+});
+
+test("deployment is Vercel's push-triggered build, not a GitHub Pages workflow call", () => {
+  // The site is served by Vercel, which builds every push to main (data-only commits included).
+  // A Pages deploy here only rebuilt an unused github.io mirror, so there must be no such job.
+  assert.deepEqual(Object.keys(parsed.jobs), ["refresh-nfl-betting-splits"]);
+  assert.doesNotMatch(workflow, /deploy\.yml|deploy-pages|pages:\s*write/);
+  assert.equal(parsed.jobs["refresh-nfl-betting-splits"].outputs, undefined);
 });

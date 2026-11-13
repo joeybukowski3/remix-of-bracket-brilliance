@@ -16,8 +16,14 @@ on:
         required: false
         default: true
 
+# Deliberately NOT the shared main-data-writers group. 28 workflows share that group and GitHub
+# keeps only ONE pending run per group (an older pending run is cancelled when a newer one queues),
+# so behind long data writers these pregame splits runs were delayed 1-4 h, the 8:37 AM run
+# effectively never fired, and a run sat "queued" for 43 h. This workflow writes exactly one file
+# and its push loop below already rebases over concurrent pushes to main, so it does not need the
+# lock. Runs of this workflow still never overlap each other.
 concurrency:
-  group: main-data-writers-${{ github.repository }}
+  group: nfl-betting-splits-refresh-${{ github.repository }}
   cancel-in-progress: false
 
 permissions:
@@ -27,8 +33,6 @@ jobs:
   refresh-nfl-betting-splits:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    outputs:
-      deploy_ref: ${{ steps.commit.outputs.pushed_commit }}
     steps:
       - name: Check out main
         uses: actions/checkout@v4
@@ -115,17 +119,7 @@ jobs:
             echo "::error::Validated NFL betting splits could not be pushed; published artifact remains unchanged."
             exit 1
           fi
-          echo "Validated NFL betting-splits artifact pushed to main."
-          echo "pushed_commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
-  deploy-pages:
-    name: Deploy changed NFL betting-splits artifact to GitHub Pages
-    needs: refresh-nfl-betting-splits
-    if: needs.refresh-nfl-betting-splits.outputs.deploy_ref != ''
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    uses: ./.github/workflows/deploy.yml
-    with:
-      ref: ${{ needs.refresh-nfl-betting-splits.outputs.deploy_ref }}
+          # No separate deploy step: www.joeknowsball.com is deployed by Vercel's Git integration, which
+          # builds every push to main (data-only commits included). The NFL freshness watchdog compares
+          # what production serves with this file (production:betting-splits-current) every 3 hours.
+          echo "Validated NFL betting-splits artifact pushed to main; Vercel deploys it from the push."
