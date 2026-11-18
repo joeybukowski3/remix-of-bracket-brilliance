@@ -2,7 +2,7 @@
   "coverage": {
     "evaluable_by_type": {
       "passing": 1277,
-      "receiving": 11450,
+      "receiving": 11446,
       "rushing": 5079,
       "spread": 5793,
       "team_opportunity": 1368,
@@ -10,13 +10,13 @@
     },
     "ledger_by_status": {
       "identity_unresolved": 3,
-      "inactive": 1699,
+      "inactive": 1703,
       "not_applicable": 312,
-      "pending_game": 6954,
-      "resolved": 26239
+      "pending_game": 7501,
+      "resolved": 26235
     },
     "non_production_skipped": 0,
-    "predictions_loaded": 35207
+    "predictions_loaded": 35754
   },
   "evaluation_mode": "production",
   "filters": {
@@ -1383,17 +1383,17 @@
       "receiving": {
         "candidate__depth_chart_rank": {
           "1": {
-            "bias": -1.117977434686483,
+            "bias": -1.183850334552047,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 2.354955386736595,
-              "yards_mae": 24.637321237987614,
+              "targets_mae": 2.3484926935693373,
+              "yards_mae": 24.600732361627074,
               "ypr_error_mean": null,
               "ypt_error_mean": -0.13354232007008143
             },
-            "correlation": 0.5277468292582093,
+            "correlation": 0.5297223614152498,
             "correlation_insufficient_sample": false,
-            "mae": 24.637321237987614,
+            "mae": 24.600732361627074,
             "market_direction": {
               "graded_n": 2075,
               "insufficient_sample": false,
@@ -1402,26 +1402,26 @@
               "push": 0,
               "under": 1056
             },
-            "median_absolute_error": 20.422234631280354,
-            "n": 3522,
-            "rmse": 32.84362701210145,
+            "median_absolute_error": 20.403710311026444,
+            "n": 3518,
+            "rmse": 32.80639925704251,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 3395,
               "non_zero_volume_yards_mae": 24.346780712192828,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 127,
-              "zero_volume_yards_mae": 32.40413293147865
+              "zero_volume_n": 123,
+              "zero_volume_yards_mae": 31.610210815524198
             }
           },
           "2": {
             "bias": -1.845044642341443,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.7426715531083738,
+              "targets_mae": 1.7440609244178562,
               "yards_mae": 17.48575266526785,
               "ypr_error_mean": null,
-              "ypt_error_mean": -0.16888646074943275
+              "ypt_error_mean": -0.1671474082641116
             },
             "correlation": 0.5589994657328292,
             "correlation_insufficient_sample": false,
@@ -1609,17 +1609,17 @@
         },
         "candidate__limited_history": {
           "false": {
-            "bias": -0.5483172907822037,
+            "bias": -0.568854498439184,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.793196200390627,
-              "yards_mae": 18.16209591919819,
+              "targets_mae": 1.791318209581731,
+              "yards_mae": 18.148257149994617,
               "ypr_error_mean": null,
-              "ypt_error_mean": -0.18054746316665896
+              "ypt_error_mean": -0.1800493567413428
             },
-            "correlation": 0.6049434975906156,
+            "correlation": 0.6059150401670295,
             "correlation_insufficient_sample": false,
-            "mae": 18.16209591919819,
+            "mae": 18.148257149994617,
             "market_direction": {
               "graded_n": 3807,
               "insufficient_sample": false,
@@ -1628,32 +1628,32 @@
               "push": 0,
               "under": 1874
             },
-            "median_absolute_error": 12.231521569994865,
-            "n": 11177,
-            "rmse": 25.85718351179871,
+            "median_absolute_error": 12.229562922186222,
+            "n": 11173,
+            "rmse": 25.839457878230416,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 8655,
               "non_zero_volume_yards_mae": 20.32613645137026,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 2522,
-              "zero_volume_yards_mae": 10.735541277663906
+              "zero_volume_n": 2518,
+              "zero_volume_yards_mae": 10.662337629181913
             }
           }
         },
         "candidate__no_history": {
           "false": {
-            "bias": -0.9897010949014815,
+            "bias": -1.0147528561547772,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.8672939798930421,
-              "yards_mae": 19.06233311988399,
+              "targets_mae": 1.8650527664380276,
+              "yards_mae": 19.045971297618685,
               "ypr_error_mean": null,
-              "ypt_error_mean": -0.15270976664475588
+              "ypt_error_mean": -0.15213890977093292
             },
-            "correlation": 0.5989519354862292,
+            "correlation": 0.6000526265494999,
             "correlation_insufficient_sample": false,
-            "mae": 19.06233311988399,
+            "mae": 19.045971297618685,
             "market_direction": {
               "graded_n": 3508,
               "insufficient_sample": false,
@@ -1662,16 +1662,16 @@
               "push": 0,
               "under": 1732
             },
-            "median_absolute_error": 12.956617403748117,
-            "n": 9234,
-            "rmse": 26.945987478987675,
+            "median_absolute_error": 12.955763909394866,
+            "n": 9230,
+            "rmse": 26.925859310050857,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 7552,
               "non_zero_volume_yards_mae": 20.723065259027713,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 1682,
-              "zero_volume_yards_mae": 11.605823539138454
+              "zero_volume_n": 1678,
+              "zero_volume_yards_mae": 11.498049011229181
             }
           },
           "true": {
@@ -1741,17 +1741,17 @@
             }
           },
           "true": {
-            "bias": -0.5669722976858259,
+            "bias": -0.5875345874985156,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.7928639288517363,
-              "yards_mae": 18.160196006061902,
+              "targets_mae": 1.7909841366458823,
+              "yards_mae": 18.146344159070583,
               "ypr_error_mean": null,
-              "ypt_error_mean": -0.18437349218664428
+              "ypt_error_mean": -0.18387486726053842
             },
-            "correlation": 0.6052079688087993,
+            "correlation": 0.6061807223474563,
             "correlation_insufficient_sample": false,
-            "mae": 18.160196006061902,
+            "mae": 18.146344159070583,
             "market_direction": {
               "graded_n": 3804,
               "insufficient_sample": false,
@@ -1760,16 +1760,16 @@
               "push": 0,
               "under": 1871
             },
-            "median_absolute_error": 12.231353521537137,
-            "n": 11167,
-            "rmse": 25.85909066986292,
+            "median_absolute_error": 12.229562922186222,
+            "n": 11163,
+            "rmse": 25.841351145126726,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 8646,
               "non_zero_volume_yards_mae": 20.329183568372553,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 2521,
-              "zero_volume_yards_mae": 10.721454846308573
+              "zero_volume_n": 2517,
+              "zero_volume_yards_mae": 10.648199728071356
             }
           }
         },
@@ -1778,10 +1778,10 @@
             "bias": -0.2862215328683102,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.5347356054447798,
+              "targets_mae": 1.5352581397360927,
               "yards_mae": 15.182900155282228,
               "ypr_error_mean": null,
-              "ypt_error_mean": -0.2108863340436278
+              "ypt_error_mean": -0.21006673117079297
             },
             "correlation": 0.533102887185864,
             "correlation_insufficient_sample": false,
@@ -1807,17 +1807,17 @@
             }
           },
           "true": {
-            "bias": -1.117977434686483,
+            "bias": -1.183850334552047,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 2.354955386736595,
-              "yards_mae": 24.637321237987614,
+              "targets_mae": 2.3484926935693373,
+              "yards_mae": 24.600732361627074,
               "ypr_error_mean": null,
               "ypt_error_mean": -0.13354232007008143
             },
-            "correlation": 0.5277468292582093,
+            "correlation": 0.5297223614152498,
             "correlation_insufficient_sample": false,
-            "mae": 24.637321237987614,
+            "mae": 24.600732361627074,
             "market_direction": {
               "graded_n": 2075,
               "insufficient_sample": false,
@@ -1826,32 +1826,32 @@
               "push": 0,
               "under": 1056
             },
-            "median_absolute_error": 20.422234631280354,
-            "n": 3522,
-            "rmse": 32.84362701210145,
+            "median_absolute_error": 20.403710311026444,
+            "n": 3518,
+            "rmse": 32.80639925704251,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 3395,
               "non_zero_volume_yards_mae": 24.346780712192828,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 127,
-              "zero_volume_yards_mae": 32.40413293147865
+              "zero_volume_n": 123,
+              "zero_volume_yards_mae": 31.610210815524198
             }
           }
         },
         "candidate__team_changed": {
           "false": {
-            "bias": -1.1087806195572747,
+            "bias": -1.1335671059144146,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.804358530825665,
-              "yards_mae": 18.46143168586175,
+              "targets_mae": 1.8021186782383682,
+              "yards_mae": 18.445019274089727,
               "ypr_error_mean": null,
-              "ypt_error_mean": -0.3120719094866403
+              "ypt_error_mean": -0.3114748026845473
             },
-            "correlation": 0.6144880520174089,
+            "correlation": 0.6156084800538443,
             "correlation_insufficient_sample": false,
-            "mae": 18.46143168586175,
+            "mae": 18.445019274089727,
             "market_direction": {
               "graded_n": 3277,
               "insufficient_sample": false,
@@ -1860,16 +1860,16 @@
               "push": 0,
               "under": 1584
             },
-            "median_absolute_error": 12.367953489302197,
-            "n": 9352,
-            "rmse": 26.520794895192214,
+            "median_absolute_error": 12.355736447259085,
+            "n": 9348,
+            "rmse": 26.500418490806844,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 7220,
               "non_zero_volume_yards_mae": 20.795813359162715,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 2132,
-              "zero_volume_yards_mae": 10.556067857891373
+              "zero_volume_n": 2128,
+              "zero_volume_yards_mae": 10.469110771163578
             }
           },
           "true": {
@@ -1907,17 +1907,17 @@
         },
         "division_game": {
           "false": {
-            "bias": -1.7541300456268831,
+            "bias": -1.7849773757349565,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.8590687290787664,
-              "yards_mae": 18.577705062126938,
+              "targets_mae": 1.856340710488505,
+              "yards_mae": 18.55756574260886,
               "ypr_error_mean": null,
-              "ypt_error_mean": -0.36840464453203675
+              "ypt_error_mean": -0.36767369995572075
             },
-            "correlation": 0.6133817420389633,
+            "correlation": 0.6148320251004572,
             "correlation_insufficient_sample": false,
-            "mae": 18.577705062126938,
+            "mae": 18.55756574260886,
             "market_direction": {
               "graded_n": 2746,
               "insufficient_sample": false,
@@ -1926,16 +1926,16 @@
               "push": 0,
               "under": 1309
             },
-            "median_absolute_error": 12.320358101819478,
-            "n": 7599,
-            "rmse": 26.682936630539324,
+            "median_absolute_error": 12.300189518588622,
+            "n": 7595,
+            "rmse": 26.658092696236345,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 5898,
               "non_zero_volume_yards_mae": 20.95054951124906,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 1701,
-              "zero_volume_yards_mae": 10.35017034083219
+              "zero_volume_n": 1697,
+              "zero_volume_yards_mae": 10.240642780063196
             }
           },
           "true": {
@@ -2072,10 +2072,10 @@
             "bias": -28.89415345893726,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 3.41943374523972,
+              "targets_mae": 3.472767078573053,
               "yards_mae": 44.77789264175485,
               "ypr_error_mean": null,
-              "ypt_error_mean": -1.1279271899676573
+              "ypt_error_mean": -1.0704457084861758
             },
             "correlation": -0.058292738236670354,
             "correlation_insufficient_sample": false,
@@ -2490,10 +2490,10 @@
             "bias": -16.226680751561254,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 2.6010987475055303,
+              "targets_mae": 2.603691100065478,
               "yards_mae": 29.824187320678888,
               "ypr_error_mean": null,
-              "ypt_error_mean": -1.3052546082734218
+              "ypt_error_mean": -1.3023976757942228
             },
             "correlation": 0.49531257579730714,
             "correlation_insufficient_sample": false,
@@ -2521,17 +2521,17 @@
         },
         "home_away": {
           "away": {
-            "bias": -0.8118835325776952,
+            "bias": -0.8517998072302705,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.7871606210520337,
-              "yards_mae": 18.313033545033228,
+              "targets_mae": 1.7828304160952984,
+              "yards_mae": 18.28636396619198,
               "ypr_error_mean": null,
               "ypt_error_mean": -0.33597865865907617
             },
-            "correlation": 0.5947768876907704,
+            "correlation": 0.5967214364067417,
             "correlation_insufficient_sample": false,
-            "mae": 18.313033545033228,
+            "mae": 18.28636396619198,
             "market_direction": {
               "graded_n": 1963,
               "insufficient_sample": false,
@@ -2540,26 +2540,26 @@
               "push": 0,
               "under": 984
             },
-            "median_absolute_error": 12.22262674316748,
-            "n": 5779,
-            "rmse": 26.094314182924553,
+            "median_absolute_error": 12.220847307432575,
+            "n": 5775,
+            "rmse": 26.06048493501473,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 4491,
               "non_zero_volume_yards_mae": 20.644285849166707,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 1288,
-              "zero_volume_yards_mae": 10.184420115014998
+              "zero_volume_n": 1284,
+              "zero_volume_yards_mae": 10.039146539058414
             }
           },
           "home": {
             "bias": -0.22229184733727195,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.7938095179089326,
+              "targets_mae": 1.7945148608819532,
               "yards_mae": 17.95965206840329,
               "ypr_error_mean": null,
-              "ypt_error_mean": -0.029068321068389857
+              "ypt_error_mean": -0.02808292424299301
             },
             "correlation": 0.6158186348679033,
             "correlation_insufficient_sample": false,
@@ -2587,17 +2587,17 @@
         },
         "market_input_available": {
           "false": {
-            "bias": 1.5023533746514053,
+            "bias": 1.4731942367376327,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.5399236107876892,
-              "yards_mae": 15.249885801225416,
+              "targets_mae": 1.5364976906946208,
+              "yards_mae": 15.22797364930351,
               "ypr_error_mean": null,
               "ypt_error_mean": 0.04461528724453369
             },
-            "correlation": 0.5825728674820306,
+            "correlation": 0.5845766614980293,
             "correlation_insufficient_sample": false,
-            "mae": 15.249885801225416,
+            "mae": 15.22797364930351,
             "market_direction": {
               "graded_n": 0,
               "insufficient_sample": true,
@@ -2606,26 +2606,26 @@
               "push": 0,
               "under": 0
             },
-            "median_absolute_error": 10.25948033303716,
-            "n": 7592,
-            "rmse": 21.303218900422518,
+            "median_absolute_error": 10.251482083487685,
+            "n": 7588,
+            "rmse": 21.268865217780426,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 5165,
               "non_zero_volume_yards_mae": 17.719220252838504,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 2427,
-              "zero_volume_yards_mae": 9.994792087759564
+              "zero_volume_n": 2423,
+              "zero_volume_yards_mae": 9.917495437475917
             }
           },
           "true": {
             "bias": -4.499315402117573,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 2.283461625718283,
+              "targets_mae": 2.2844984323538458,
               "yards_mae": 23.821429428138654,
               "ypr_error_mean": null,
-              "ypt_error_mean": -0.5043209995488049
+              "ypt_error_mean": -0.5031561492080562
             },
             "correlation": 0.4940014373326065,
             "correlation_insufficient_sample": false,
@@ -2653,17 +2653,17 @@
         },
         "neutral_site": {
           "false": {
-            "bias": -0.6821997515196778,
+            "bias": -0.7032502504208668,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.8053329677007937,
-              "yards_mae": 18.25106285192232,
+              "targets_mae": 1.803416965116266,
+              "yards_mae": 18.23694380555763,
               "ypr_error_mean": null,
-              "ypt_error_mean": -0.21401121742299187
+              "ypt_error_mean": -0.2135012681550582
             },
-            "correlation": 0.6053534097303038,
+            "correlation": 0.6063517056477021,
             "correlation_insufficient_sample": false,
-            "mae": 18.25106285192232,
+            "mae": 18.23694380555763,
             "market_direction": {
               "graded_n": 3697,
               "insufficient_sample": false,
@@ -2672,16 +2672,16 @@
               "push": 0,
               "under": 1805
             },
-            "median_absolute_error": 12.271362966319908,
-            "n": 10930,
-            "rmse": 25.99361877626644,
+            "median_absolute_error": 12.263593568743513,
+            "n": 10926,
+            "rmse": 25.975637346175105,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 8454,
               "non_zero_volume_yards_mae": 20.457492784618477,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 2476,
-              "zero_volume_yards_mae": 10.717476967021955
+              "zero_volume_n": 2472,
+              "zero_volume_yards_mae": 10.642881884449048
             }
           },
           "true": {
@@ -2783,17 +2783,17 @@
             }
           },
           "WR": {
-            "bias": -2.8500859194014154,
+            "bias": -2.8952798780580937,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 2.1720924475272954,
-              "yards_mae": 23.2448070551024,
+              "targets_mae": 2.1684061747912144,
+              "yards_mae": 23.21937821136676,
               "ypr_error_mean": null,
-              "ypt_error_mean": -0.8530095900865777
+              "ypt_error_mean": -0.8520701455210706
             },
-            "correlation": 0.5394167542817174,
+            "correlation": 0.5408998579996663,
             "correlation_insufficient_sample": false,
-            "mae": 23.2448070551024,
+            "mae": 23.21937821136676,
             "market_direction": {
               "graded_n": 2149,
               "insufficient_sample": false,
@@ -2802,16 +2802,16 @@
               "push": 0,
               "under": 1014
             },
-            "median_absolute_error": 16.80644038841323,
-            "n": 5285,
-            "rmse": 31.849194567902725,
+            "median_absolute_error": 16.798166909996276,
+            "n": 5281,
+            "rmse": 31.822859169419825,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 4589,
               "non_zero_volume_yards_mae": 24.31463727622316,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 696,
-              "zero_volume_yards_mae": 16.1909983126841
+              "zero_volume_n": 692,
+              "zero_volume_yards_mae": 15.956164557282982
             }
           }
         },
@@ -2916,10 +2916,10 @@
             "bias": -0.15228296857382828,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 2.108882661988804,
+              "targets_mae": 2.1105341896518923,
               "yards_mae": 23.45249090462295,
               "ypr_error_mean": null,
-              "ypt_error_mean": -0.006007148415445586
+              "ypt_error_mean": -0.0041888813926235025
             },
             "correlation": 0.1504650490601984,
             "correlation_insufficient_sample": false,
@@ -2977,17 +2977,17 @@
             }
           },
           "8-10": {
-            "bias": -8.00565193718473,
+            "bias": -8.399712058365656,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 3.1442218170430976,
-              "yards_mae": 34.67389300737124,
+              "targets_mae": 3.1144669707799006,
+              "yards_mae": 34.539283007433816,
               "ypr_error_mean": null,
               "ypt_error_mean": -1.5741251579929516
             },
-            "correlation": 0.2556725597019554,
+            "correlation": 0.24594159913794925,
             "correlation_insufficient_sample": false,
-            "mae": 34.67389300737124,
+            "mae": 34.539283007433816,
             "market_direction": {
               "graded_n": 441,
               "insufficient_sample": false,
@@ -2997,15 +2997,15 @@
               "under": 219
             },
             "median_absolute_error": 29.211583516924932,
-            "n": 662,
-            "rmse": 45.42692197915414,
+            "n": 658,
+            "rmse": 45.3489317336243,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 649,
               "non_zero_volume_yards_mae": 34.14578484877893,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 13,
-              "zero_volume_yards_mae": 61.03867723247894
+              "zero_volume_n": 9,
+              "zero_volume_yards_mae": 62.91487244821269
             }
           }
         },
@@ -3043,17 +3043,17 @@
             }
           },
           "projected": {
-            "bias": -0.9519002654848138,
+            "bias": -0.976324380594237,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.865004255173487,
-              "yards_mae": 19.032934989671254,
+              "targets_mae": 1.8628167951704575,
+              "yards_mae": 19.016960228860597,
               "ypr_error_mean": null,
-              "ypt_error_mean": -0.15166979132519892
+              "ypt_error_mean": -0.15111301602995017
             },
-            "correlation": 0.5990517430131779,
+            "correlation": 0.6001257083360985,
             "correlation_insufficient_sample": false,
-            "mae": 19.032934989671254,
+            "mae": 19.016960228860597,
             "market_direction": {
               "graded_n": 3557,
               "insufficient_sample": false,
@@ -3063,15 +3063,15 @@
               "under": 1753
             },
             "median_absolute_error": 12.955763909394866,
-            "n": 9465,
-            "rmse": 26.90708282183017,
+            "n": 9461,
+            "rmse": 26.887401396566116,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 7743,
               "non_zero_volume_yards_mae": 20.687179742716676,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 1722,
-              "zero_volume_yards_mae": 11.594597519966632
+              "zero_volume_n": 1718,
+              "zero_volume_yards_mae": 11.489306156806883
             }
           }
         },
@@ -3109,17 +3109,17 @@
             }
           },
           "10-14": {
-            "bias": -0.901659859837665,
+            "bias": -1.338097650816234,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 2.0762379948945218,
-              "yards_mae": 20.911654784356166,
+              "targets_mae": 2.031151748902505,
+              "yards_mae": 20.640156990687196,
               "ypr_error_mean": null,
               "ypt_error_mean": -0.41568294380734533
             },
-            "correlation": 0.5501350921560261,
+            "correlation": 0.5687358330944279,
             "correlation_insufficient_sample": false,
-            "mae": 20.911654784356166,
+            "mae": 20.640156990687196,
             "market_direction": {
               "graded_n": 341,
               "insufficient_sample": false,
@@ -3128,26 +3128,26 @@
               "push": 0,
               "under": 167
             },
-            "median_absolute_error": 13.788865241509384,
-            "n": 533,
-            "rmse": 30.373235814110423,
+            "median_absolute_error": 13.720827905386189,
+            "n": 529,
+            "rmse": 30.08486775381265,
             "small_sample": false,
             "volume_decomposition": {
               "non_zero_volume_n": 423,
               "non_zero_volume_yards_mae": 22.999517647689412,
               "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-              "zero_volume_n": 110,
-              "zero_volume_yards_mae": 12.882873046265559
+              "zero_volume_n": 106,
+              "zero_volume_yards_mae": 11.22497248208395
             }
           },
           "5-9": {
             "bias": -0.47840117368945745,
             "component": {
               "receptions_mae": null,
-              "targets_mae": 1.7471875260169765,
+              "targets_mae": 1.7479263512848007,
               "yards_mae": 17.73118914081519,
               "ypr_error_mean": null,
-              "ypt_error_mean": -0.1161320218921648
+              "ypt_error_mean": -0.11509768621291548
             },
             "correlation": 0.6104030357137575,
             "correlation_insufficient_sample": false,
@@ -6516,17 +6516,17 @@
       {
         "fitted_model_hash": "8451d69f40e5f920b1f7c588f1a4a720e862834f5bcd6da8ce5a57cd98593413",
         "metrics": {
-          "bias": -0.5198682970319813,
+          "bias": -0.5399057271539837,
           "component": {
             "receptions_mae": null,
-            "targets_mae": 1.7904537122376658,
-            "yards_mae": 18.13800940931553,
+            "targets_mae": 1.7886195552168371,
+            "yards_mae": 18.124492292912326,
             "ypr_error_mean": null,
-            "ypt_error_mean": -0.18453124979834612
+            "ypt_error_mean": -0.1840449976991908
           },
-          "correlation": 0.6051830568433842,
+          "correlation": 0.6061316937583264,
           "correlation_insufficient_sample": false,
-          "mae": 18.13800940931553,
+          "mae": 18.124492292912326,
           "market_direction": {
             "graded_n": 3858,
             "insufficient_sample": false,
@@ -6535,16 +6535,16 @@
             "push": 0,
             "under": 1895
           },
-          "median_absolute_error": 12.229562922186222,
-          "n": 11450,
-          "rmse": 25.821393165295063,
+          "median_absolute_error": 12.226123561805876,
+          "n": 11446,
+          "rmse": 25.804053926064526,
           "small_sample": false,
           "volume_decomposition": {
             "non_zero_volume_n": 8866,
             "non_zero_volume_yards_mae": 20.296275712292307,
             "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-            "zero_volume_n": 2584,
-            "zero_volume_yards_mae": 10.732750492058344
+            "zero_volume_n": 2580,
+            "zero_volume_yards_mae": 10.661301674221102
           }
         },
         "model_name": "nfl-receiving-targets-x-shrunk-ypt",
@@ -6818,17 +6818,17 @@
       },
       {
         "metrics": {
-          "bias": -0.5198682970319813,
+          "bias": -0.5399057271539837,
           "component": {
             "receptions_mae": null,
-            "targets_mae": 1.7904537122376658,
-            "yards_mae": 18.13800940931553,
+            "targets_mae": 1.7886195552168371,
+            "yards_mae": 18.124492292912326,
             "ypr_error_mean": null,
-            "ypt_error_mean": -0.18453124979834612
+            "ypt_error_mean": -0.1840449976991908
           },
-          "correlation": 0.6051830568433842,
+          "correlation": 0.6061316937583264,
           "correlation_insufficient_sample": false,
-          "mae": 18.13800940931553,
+          "mae": 18.124492292912326,
           "market_direction": {
             "graded_n": 3858,
             "insufficient_sample": false,
@@ -6837,16 +6837,16 @@
             "push": 0,
             "under": 1895
           },
-          "median_absolute_error": 12.229562922186222,
-          "n": 11450,
-          "rmse": 25.821393165295063,
+          "median_absolute_error": 12.226123561805876,
+          "n": 11446,
+          "rmse": 25.804053926064526,
           "small_sample": false,
           "volume_decomposition": {
             "non_zero_volume_n": 8866,
             "non_zero_volume_yards_mae": 20.296275712292307,
             "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-            "zero_volume_n": 2584,
-            "zero_volume_yards_mae": 10.732750492058344
+            "zero_volume_n": 2580,
+            "zero_volume_yards_mae": 10.661301674221102
           }
         },
         "model_name": "nfl-receiving-targets-x-shrunk-ypt",
@@ -7081,17 +7081,17 @@
         }
       },
       "receiving": {
-        "bias": -0.5198682970319813,
+        "bias": -0.5399057271539837,
         "component": {
           "receptions_mae": null,
-          "targets_mae": 1.7904537122376658,
-          "yards_mae": 18.13800940931553,
+          "targets_mae": 1.7886195552168371,
+          "yards_mae": 18.124492292912326,
           "ypr_error_mean": null,
-          "ypt_error_mean": -0.18453124979834612
+          "ypt_error_mean": -0.1840449976991908
         },
-        "correlation": 0.6051830568433842,
+        "correlation": 0.6061316937583264,
         "correlation_insufficient_sample": false,
-        "mae": 18.13800940931553,
+        "mae": 18.124492292912326,
         "market_direction": {
           "graded_n": 3858,
           "insufficient_sample": false,
@@ -7100,16 +7100,16 @@
           "push": 0,
           "under": 1895
         },
-        "median_absolute_error": 12.229562922186222,
-        "n": 11450,
-        "rmse": 25.821393165295063,
+        "median_absolute_error": 12.226123561805876,
+        "n": 11446,
+        "rmse": 25.804053926064526,
         "small_sample": false,
         "volume_decomposition": {
           "non_zero_volume_n": 8866,
           "non_zero_volume_yards_mae": 20.296275712292307,
           "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-          "zero_volume_n": 2584,
-          "zero_volume_yards_mae": 10.732750492058344
+          "zero_volume_n": 2580,
+          "zero_volume_yards_mae": 10.661301674221102
         }
       },
       "rushing": {
@@ -7251,17 +7251,17 @@
       },
       {
         "metrics": {
-          "bias": -0.5198682970319813,
+          "bias": -0.5399057271539837,
           "component": {
             "receptions_mae": null,
-            "targets_mae": 1.7904537122376658,
-            "yards_mae": 18.13800940931553,
+            "targets_mae": 1.7886195552168371,
+            "yards_mae": 18.124492292912326,
             "ypr_error_mean": null,
-            "ypt_error_mean": -0.18453124979834612
+            "ypt_error_mean": -0.1840449976991908
           },
-          "correlation": 0.6051830568433842,
+          "correlation": 0.6061316937583264,
           "correlation_insufficient_sample": false,
-          "mae": 18.13800940931553,
+          "mae": 18.124492292912326,
           "market_direction": {
             "graded_n": 3858,
             "insufficient_sample": false,
@@ -7270,16 +7270,16 @@
             "push": 0,
             "under": 1895
           },
-          "median_absolute_error": 12.229562922186222,
-          "n": 11450,
-          "rmse": 25.821393165295063,
+          "median_absolute_error": 12.226123561805876,
+          "n": 11446,
+          "rmse": 25.804053926064526,
           "small_sample": false,
           "volume_decomposition": {
             "non_zero_volume_n": 8866,
             "non_zero_volume_yards_mae": 20.296275712292307,
             "note": "Zero-volume rows are recorded/ACT-confirmed zeros; aggregate MAE must be read with this decomposition (EVALUATION_STANDARDS).",
-            "zero_volume_n": 2584,
-            "zero_volume_yards_mae": 10.732750492058344
+            "zero_volume_n": 2580,
+            "zero_volume_yards_mae": 10.661301674221102
           }
         },
         "prediction_type": "receiving",
