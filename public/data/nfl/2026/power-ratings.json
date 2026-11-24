@@ -1,7 +1,7 @@
 {
   "_meta": {
     "schemaVersion": "nfl-v0.1",
-    "generatedAt": "2026-11-17T21:19:29.677Z",
+    "generatedAt": "2026-11-24T22:46:05.574Z",
     "source": "derived from public/data/nfl/<season>/results.json (nflverse pipeline) + nflverse stats_team weekly release, regular season only",
     "season": 2026,
     "week": null,
@@ -49,86 +49,40 @@
       "abbr": "jax",
       "name": "Jacksonville Jaguars",
       "season": 2026,
-      "rating": 80.69,
+      "rating": 81.38,
       "rank": 1,
-      "offenseRating": 83.98,
-      "defenseRating": 86.08,
-      "scheduleAdjustment": 20.7,
+      "offenseRating": 71.84,
+      "defenseRating": 100,
+      "scheduleAdjustment": 30.11,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": 13.889,
+          "raw": 12,
           "normalized": 100,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": 0.146,
-          "normalized": 83.98,
+          "raw": 0.12,
+          "normalized": 71.84,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": -0.089,
-          "normalized": 86.08,
-          "weight": 0.2
-        },
-        "scheduleAdjustment": {
-          "raw": 20.7,
-          "normalized": 20.7,
-          "weight": 0.15
-        },
-        "winPercentage": {
-          "raw": 0.778,
-          "normalized": 85.73,
-          "weight": 0.1
-        },
-        "pointsAllowedPerGame": {
-          "raw": 16,
-          "normalizedInverted": 86.58,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.2",
-      "notes": "Experimental v0.2-epa rating; not validated."
-    },
-    {
-      "teamId": "nfl-buf",
-      "slug": "buffalo-bills",
-      "abbr": "buf",
-      "name": "Buffalo Bills",
-      "season": 2026,
-      "rating": 71.84,
-      "rank": 2,
-      "offenseRating": 81.51,
-      "defenseRating": 51.57,
-      "scheduleAdjustment": 40.77,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": 9.778,
-          "normalized": 83.18,
-          "weight": 0.35
-        },
-        "offensiveEpaPerPlay": {
-          "raw": 0.137,
-          "normalized": 81.51,
-          "weight": 0.2
-        },
-        "defensiveEpaPerPlay": {
-          "raw": -0.004,
-          "normalized": 51.57,
-          "weight": 0.2
-        },
-        "scheduleAdjustment": {
-          "raw": 40.77,
-          "normalized": 40.77,
-          "weight": 0.15
-        },
-        "winPercentage": {
-          "raw": 0.889,
+          "raw": -0.099,
           "normalized": 100,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 30.11,
+          "normalized": 30.11,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.7,
+          "normalized": 75,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 22.111,
-          "normalizedInverted": 45.56,
+          "raw": 16.7,
+          "normalizedInverted": 95.6,
           "weight": 0
         }
       },
@@ -141,40 +95,40 @@
       "abbr": "sf",
       "name": "San Francisco 49ers",
       "season": 2026,
-      "rating": 71.72,
-      "rank": 3,
+      "rating": 79.29,
+      "rank": 2,
       "offenseRating": 100,
-      "defenseRating": 48.02,
-      "scheduleAdjustment": 23.2,
+      "defenseRating": 54.08,
+      "scheduleAdjustment": 32.87,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": 9.444,
-          "normalized": 81.82,
+          "raw": 11,
+          "normalized": 95.83,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": 0.205,
+          "raw": 0.215,
           "normalized": 100,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": 0.005,
-          "normalized": 48.02,
+          "raw": 0,
+          "normalized": 54.08,
           "weight": 0.2
         },
         "scheduleAdjustment": {
-          "raw": 23.2,
-          "normalized": 23.2,
+          "raw": 32.87,
+          "normalized": 32.87,
           "weight": 0.15
         },
         "winPercentage": {
-          "raw": 0.889,
+          "raw": 0.9,
           "normalized": 100,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 21.778,
-          "normalizedInverted": 47.8,
+          "raw": 20.6,
+          "normalizedInverted": 66.98,
           "weight": 0
         }
       },
@@ -182,45 +136,45 @@
       "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-cin",
-      "slug": "cincinnati-bengals",
-      "abbr": "cin",
-      "name": "Cincinnati Bengals",
+      "teamId": "nfl-buf",
+      "slug": "buffalo-bills",
+      "abbr": "buf",
+      "name": "Buffalo Bills",
       "season": 2026,
-      "rating": 70.12,
-      "rank": 4,
-      "offenseRating": 84.85,
-      "defenseRating": 46.35,
-      "scheduleAdjustment": 44.48,
+      "rating": 75.67,
+      "rank": 3,
+      "offenseRating": 75.05,
+      "defenseRating": 65.25,
+      "scheduleAdjustment": 31.96,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": 9.444,
-          "normalized": 81.82,
+          "raw": 10.5,
+          "normalized": 93.75,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": 0.149,
-          "normalized": 84.85,
+          "raw": 0.131,
+          "normalized": 75.05,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": 0.009,
-          "normalized": 46.35,
+          "raw": -0.024,
+          "normalized": 65.25,
           "weight": 0.2
         },
         "scheduleAdjustment": {
-          "raw": 44.48,
-          "normalized": 44.48,
+          "raw": 31.96,
+          "normalized": 31.96,
           "weight": 0.15
         },
         "winPercentage": {
-          "raw": 0.778,
-          "normalized": 85.73,
+          "raw": 0.9,
+          "normalized": 100,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 21.444,
-          "normalizedInverted": 50.04,
+          "raw": 20.8,
+          "normalizedInverted": 65.51,
           "weight": 0
         }
       },
@@ -233,25 +187,25 @@
       "abbr": "kc",
       "name": "Kansas City Chiefs",
       "season": 2026,
-      "rating": 67.31,
-      "rank": 5,
-      "offenseRating": 75.54,
-      "defenseRating": 78.15,
+      "rating": 74.19,
+      "rank": 4,
+      "offenseRating": 73.82,
+      "defenseRating": 87.14,
       "scheduleAdjustment": 0,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": 9,
-          "normalized": 80,
+          "raw": 10.8,
+          "normalized": 95,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": 0.115,
-          "normalized": 75.54,
+          "raw": 0.127,
+          "normalized": 73.82,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": -0.069,
-          "normalized": 78.15,
+          "raw": -0.071,
+          "normalized": 87.14,
           "weight": 0.2
         },
         "scheduleAdjustment": {
@@ -260,59 +214,13 @@
           "weight": 0.15
         },
         "winPercentage": {
-          "raw": 0.778,
-          "normalized": 85.73,
+          "raw": 0.8,
+          "normalized": 87.5,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 17.333,
-          "normalizedInverted": 77.63,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.2",
-      "notes": "Experimental v0.2-epa rating; not validated."
-    },
-    {
-      "teamId": "nfl-min",
-      "slug": "minnesota-vikings",
-      "abbr": "min",
-      "name": "Minnesota Vikings",
-      "season": 2026,
-      "rating": 65.01,
-      "rank": 6,
-      "offenseRating": 17.68,
-      "defenseRating": 100,
-      "scheduleAdjustment": 65.54,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": 5.556,
-          "normalized": 65.91,
-          "weight": 0.35
-        },
-        "offensiveEpaPerPlay": {
-          "raw": -0.099,
-          "normalized": 17.68,
-          "weight": 0.2
-        },
-        "defensiveEpaPerPlay": {
-          "raw": -0.123,
-          "normalized": 100,
-          "weight": 0.2
-        },
-        "scheduleAdjustment": {
-          "raw": 65.54,
-          "normalized": 65.54,
-          "weight": 0.15
-        },
-        "winPercentage": {
-          "raw": 0.778,
-          "normalized": 85.73,
-          "weight": 0.1
-        },
-        "pointsAllowedPerGame": {
-          "raw": 14,
-          "normalizedInverted": 100,
+          "raw": 16.3,
+          "normalizedInverted": 98.53,
           "weight": 0
         }
       },
@@ -325,40 +233,86 @@
       "abbr": "lar",
       "name": "LA Rams",
       "season": 2026,
-      "rating": 64.08,
-      "rank": 7,
-      "offenseRating": 62.45,
-      "defenseRating": 94.45,
-      "scheduleAdjustment": 17.12,
+      "rating": 67.79,
+      "rank": 5,
+      "offenseRating": 59.64,
+      "defenseRating": 97.25,
+      "scheduleAdjustment": 25.07,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 6.1,
-          "normalized": 68.14,
+          "normalized": 75.42,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": 0.066,
-          "normalized": 62.45,
+          "raw": 0.078,
+          "normalized": 59.64,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": -0.109,
-          "normalized": 94.45,
+          "raw": -0.093,
+          "normalized": 97.25,
           "weight": 0.2
         },
         "scheduleAdjustment": {
-          "raw": 17.12,
-          "normalized": 17.12,
+          "raw": 25.07,
+          "normalized": 25.07,
           "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.6,
-          "normalized": 62.85,
+          "normalized": 62.5,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 18.7,
-          "normalizedInverted": 68.46,
+          "normalizedInverted": 80.92,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-cin",
+      "slug": "cincinnati-bengals",
+      "abbr": "cin",
+      "name": "Cincinnati Bengals",
+      "season": 2026,
+      "rating": 67.3,
+      "rank": 6,
+      "offenseRating": 77.73,
+      "defenseRating": 45.04,
+      "scheduleAdjustment": 37.6,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 8.3,
+          "normalized": 84.58,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.14,
+          "normalized": 77.73,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.019,
+          "normalized": 45.04,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 37.6,
+          "normalized": 37.6,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.7,
+          "normalized": 75,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 21.5,
+          "normalizedInverted": 60.37,
           "weight": 0
         }
       },
@@ -371,40 +325,40 @@
       "abbr": "chi",
       "name": "Chicago Bears",
       "season": 2026,
-      "rating": 60.43,
-      "rank": 8,
-      "offenseRating": 54.06,
-      "defenseRating": 56.68,
-      "scheduleAdjustment": 36.82,
+      "rating": 62.73,
+      "rank": 7,
+      "offenseRating": 42.81,
+      "defenseRating": 68,
+      "scheduleAdjustment": 32.26,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": 6.333,
-          "normalized": 69.09,
+          "raw": 6.5,
+          "normalized": 77.08,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": 0.035,
-          "normalized": 54.06,
+          "raw": 0.021,
+          "normalized": 42.81,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": -0.017,
-          "normalized": 56.68,
+          "raw": -0.03,
+          "normalized": 68,
           "weight": 0.2
         },
         "scheduleAdjustment": {
-          "raw": 36.82,
-          "normalized": 36.82,
+          "raw": 32.26,
+          "normalized": 32.26,
           "weight": 0.15
         },
         "winPercentage": {
-          "raw": 0.778,
-          "normalized": 85.73,
+          "raw": 0.8,
+          "normalized": 87.5,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 20.444,
-          "normalizedInverted": 56.75,
+          "raw": 19.7,
+          "normalizedInverted": 73.58,
           "weight": 0
         }
       },
@@ -417,86 +371,40 @@
       "abbr": "det",
       "name": "Detroit Lions",
       "season": 2026,
-      "rating": 58.61,
-      "rank": 9,
-      "offenseRating": 71.33,
-      "defenseRating": 37.44,
-      "scheduleAdjustment": 26.29,
+      "rating": 62.31,
+      "rank": 8,
+      "offenseRating": 73.32,
+      "defenseRating": 35.72,
+      "scheduleAdjustment": 28.92,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": 6.444,
-          "normalized": 69.55,
+          "raw": 6.8,
+          "normalized": 78.33,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": 0.099,
-          "normalized": 71.33,
+          "raw": 0.125,
+          "normalized": 73.32,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": 0.03,
-          "normalized": 37.44,
+          "raw": 0.039,
+          "normalized": 35.72,
           "weight": 0.2
         },
         "scheduleAdjustment": {
-          "raw": 26.29,
-          "normalized": 26.29,
+          "raw": 28.92,
+          "normalized": 28.92,
           "weight": 0.15
         },
         "winPercentage": {
-          "raw": 0.778,
-          "normalized": 85.73,
+          "raw": 0.8,
+          "normalized": 87.5,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 22.111,
-          "normalizedInverted": 45.56,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.2",
-      "notes": "Experimental v0.2-epa rating; not validated."
-    },
-    {
-      "teamId": "nfl-den",
-      "slug": "denver-broncos",
-      "abbr": "den",
-      "name": "Denver Broncos",
-      "season": 2026,
-      "rating": 58.41,
-      "rank": 10,
-      "offenseRating": 41.27,
-      "defenseRating": 47.77,
-      "scheduleAdjustment": 100,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": 1.333,
-          "normalized": 48.64,
-          "weight": 0.35
-        },
-        "offensiveEpaPerPlay": {
-          "raw": -0.012,
-          "normalized": 41.27,
-          "weight": 0.2
-        },
-        "defensiveEpaPerPlay": {
-          "raw": 0.005,
-          "normalized": 47.77,
-          "weight": 0.2
-        },
-        "scheduleAdjustment": {
-          "raw": 100,
-          "normalized": 100,
-          "weight": 0.15
-        },
-        "winPercentage": {
-          "raw": 0.778,
-          "normalized": 85.73,
-          "weight": 0.1
-        },
-        "pointsAllowedPerGame": {
-          "raw": 20.667,
-          "normalizedInverted": 55.26,
+          "raw": 22,
+          "normalizedInverted": 56.7,
           "weight": 0
         }
       },
@@ -509,40 +417,40 @@
       "abbr": "sea",
       "name": "Seattle Seahawks",
       "season": 2026,
-      "rating": 57.55,
-      "rank": 11,
-      "offenseRating": 38.99,
-      "defenseRating": 82.93,
-      "scheduleAdjustment": 32.62,
+      "rating": 60.55,
+      "rank": 9,
+      "offenseRating": 30.92,
+      "defenseRating": 90.22,
+      "scheduleAdjustment": 37.14,
       "components": {
         "pointDifferentialPerGame": {
           "raw": 4.8,
-          "normalized": 62.82,
+          "normalized": 70,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": -0.02,
-          "normalized": 38.99,
+          "raw": -0.019,
+          "normalized": 30.92,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": -0.081,
-          "normalized": 82.93,
+          "raw": -0.078,
+          "normalized": 90.22,
           "weight": 0.2
         },
         "scheduleAdjustment": {
-          "raw": 32.62,
-          "normalized": 32.62,
+          "raw": 37.14,
+          "normalized": 37.14,
           "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.6,
-          "normalized": 62.85,
+          "normalized": 62.5,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 17.5,
-          "normalizedInverted": 76.51,
+          "normalizedInverted": 89.73,
           "weight": 0
         }
       },
@@ -550,45 +458,45 @@
       "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-tb",
-      "slug": "tampa-bay-buccaneers",
-      "abbr": "tb",
-      "name": "Tampa Bay Buccaneers",
+      "teamId": "nfl-den",
+      "slug": "denver-broncos",
+      "abbr": "den",
+      "name": "Denver Broncos",
       "season": 2026,
-      "rating": 57.41,
-      "rank": 12,
-      "offenseRating": 22.75,
-      "defenseRating": 99.63,
-      "scheduleAdjustment": 74.35,
+      "rating": 60.19,
+      "rank": 10,
+      "offenseRating": 37.04,
+      "defenseRating": 51.61,
+      "scheduleAdjustment": 82.8,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": 2.667,
-          "normalized": 54.09,
+          "raw": 2.6,
+          "normalized": 60.83,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": -0.08,
-          "normalized": 22.75,
+          "raw": 0.002,
+          "normalized": 37.04,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": -0.122,
-          "normalized": 99.63,
+          "raw": 0.005,
+          "normalized": 51.61,
           "weight": 0.2
         },
         "scheduleAdjustment": {
-          "raw": 74.35,
-          "normalized": 74.35,
+          "raw": 82.8,
+          "normalized": 82.8,
           "weight": 0.15
         },
         "winPercentage": {
-          "raw": 0.333,
-          "normalized": 28.53,
+          "raw": 0.8,
+          "normalized": 87.5,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 19.778,
-          "normalizedInverted": 61.22,
+          "raw": 21,
+          "normalizedInverted": 64.04,
           "weight": 0
         }
       },
@@ -596,45 +504,45 @@
       "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-gb",
-      "slug": "green-bay-packers",
-      "abbr": "gb",
-      "name": "Green Bay Packers",
+      "teamId": "nfl-min",
+      "slug": "minnesota-vikings",
+      "abbr": "min",
+      "name": "Minnesota Vikings",
       "season": 2026,
-      "rating": 54.9,
-      "rank": 13,
-      "offenseRating": 49.66,
-      "defenseRating": 62.19,
-      "scheduleAdjustment": 69.43,
+      "rating": 59.12,
+      "rank": 11,
+      "offenseRating": 12.47,
+      "defenseRating": 87.8,
+      "scheduleAdjustment": 69.47,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": 0.5,
-          "normalized": 45.23,
+          "raw": 2.5,
+          "normalized": 60.42,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": 0.019,
-          "normalized": 49.66,
+          "raw": -0.082,
+          "normalized": 12.47,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": -0.03,
-          "normalized": 62.19,
+          "raw": -0.072,
+          "normalized": 87.8,
           "weight": 0.2
         },
         "scheduleAdjustment": {
-          "raw": 69.43,
-          "normalized": 69.43,
+          "raw": 69.47,
+          "normalized": 69.47,
           "weight": 0.15
         },
         "winPercentage": {
-          "raw": 0.6,
-          "normalized": 62.85,
+          "raw": 0.7,
+          "normalized": 75,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 22.1,
-          "normalizedInverted": 45.64,
+          "raw": 16.1,
+          "normalizedInverted": 100,
           "weight": 0
         }
       },
@@ -647,40 +555,40 @@
       "abbr": "hou",
       "name": "Houston Texans",
       "season": 2026,
-      "rating": 50.6,
-      "rank": 14,
-      "offenseRating": 55.61,
-      "defenseRating": 49,
-      "scheduleAdjustment": 63.19,
+      "rating": 55.95,
+      "rank": 12,
+      "offenseRating": 48.46,
+      "defenseRating": 62.79,
+      "scheduleAdjustment": 47,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": 1.556,
-          "normalized": 49.55,
+          "raw": 3.7,
+          "normalized": 65.42,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": 0.041,
-          "normalized": 55.61,
+          "raw": 0.04,
+          "normalized": 48.46,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": 0.002,
-          "normalized": 49,
+          "raw": -0.019,
+          "normalized": 62.79,
           "weight": 0.2
         },
         "scheduleAdjustment": {
-          "raw": 63.19,
-          "normalized": 63.19,
+          "raw": 47,
+          "normalized": 47,
           "weight": 0.15
         },
         "winPercentage": {
-          "raw": 0.333,
-          "normalized": 28.53,
+          "raw": 0.4,
+          "normalized": 37.5,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 24.333,
-          "normalizedInverted": 30.65,
+          "raw": 22.2,
+          "normalizedInverted": 55.24,
           "weight": 0
         }
       },
@@ -688,91 +596,91 @@
       "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-pit",
-      "slug": "pittsburgh-steelers",
-      "abbr": "pit",
-      "name": "Pittsburgh Steelers",
+      "teamId": "nfl-gb",
+      "slug": "green-bay-packers",
+      "abbr": "gb",
+      "name": "Green Bay Packers",
       "season": 2026,
-      "rating": 50.28,
-      "rank": 15,
-      "offenseRating": 39.53,
-      "defenseRating": 51.2,
-      "scheduleAdjustment": 48.89,
+      "rating": 55.06,
+      "rank": 13,
+      "offenseRating": 42.57,
+      "defenseRating": 65.49,
+      "scheduleAdjustment": 59.82,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": 1.778,
-          "normalized": 50.45,
-          "weight": 0.35
-        },
-        "offensiveEpaPerPlay": {
-          "raw": -0.018,
-          "normalized": 39.53,
-          "weight": 0.2
-        },
-        "defensiveEpaPerPlay": {
-          "raw": -0.003,
-          "normalized": 51.2,
-          "weight": 0.2
-        },
-        "scheduleAdjustment": {
-          "raw": 48.89,
-          "normalized": 48.89,
-          "weight": 0.15
-        },
-        "winPercentage": {
-          "raw": 0.667,
-          "normalized": 71.47,
-          "weight": 0.1
-        },
-        "pointsAllowedPerGame": {
-          "raw": 20.222,
-          "normalizedInverted": 58.24,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.2",
-      "notes": "Experimental v0.2-epa rating; not validated."
-    },
-    {
-      "teamId": "nfl-ne",
-      "slug": "new-england-patriots",
-      "abbr": "ne",
-      "name": "New England Patriots",
-      "season": 2026,
-      "rating": 45.66,
-      "rank": 16,
-      "offenseRating": 53.43,
-      "defenseRating": 22.17,
-      "scheduleAdjustment": 89.57,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -2.1,
-          "normalized": 34.59,
-          "weight": 0.35
-        },
-        "offensiveEpaPerPlay": {
-          "raw": 0.033,
-          "normalized": 53.43,
-          "weight": 0.2
-        },
-        "defensiveEpaPerPlay": {
-          "raw": 0.068,
-          "normalized": 22.17,
-          "weight": 0.2
-        },
-        "scheduleAdjustment": {
-          "raw": 89.57,
-          "normalized": 89.57,
-          "weight": 0.15
-        },
-        "winPercentage": {
           "raw": 0.5,
-          "normalized": 50,
+          "normalized": 52.08,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.02,
+          "normalized": 42.57,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.025,
+          "normalized": 65.49,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 59.82,
+          "normalized": 59.82,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.6,
+          "normalized": 62.5,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 24.2,
-          "normalizedInverted": 31.54,
+          "raw": 22.1,
+          "normalizedInverted": 55.97,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-tb",
+      "slug": "tampa-bay-buccaneers",
+      "abbr": "tb",
+      "name": "Tampa Bay Buccaneers",
+      "season": 2026,
+      "rating": 54.77,
+      "rank": 14,
+      "offenseRating": 17.06,
+      "defenseRating": 92.87,
+      "scheduleAdjustment": 71.64,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": 1.4,
+          "normalized": 55.83,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.066,
+          "normalized": 17.06,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.083,
+          "normalized": 92.87,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 71.64,
+          "normalized": 71.64,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.3,
+          "normalized": 25,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 20.9,
+          "normalizedInverted": 64.78,
           "weight": 0
         }
       },
@@ -785,40 +693,40 @@
       "abbr": "nyg",
       "name": "NY Giants",
       "season": 2026,
-      "rating": 44.26,
-      "rank": 17,
-      "offenseRating": 48.36,
-      "defenseRating": 53.7,
-      "scheduleAdjustment": 7.99,
+      "rating": 51.05,
+      "rank": 15,
+      "offenseRating": 34.77,
+      "defenseRating": 63.06,
+      "scheduleAdjustment": 35.76,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": 0.778,
-          "normalized": 46.36,
+          "raw": 1.2,
+          "normalized": 55,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": 0.014,
-          "normalized": 48.36,
+          "raw": -0.006,
+          "normalized": 34.77,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": -0.009,
-          "normalized": 53.7,
+          "raw": -0.019,
+          "normalized": 63.06,
           "weight": 0.2
         },
         "scheduleAdjustment": {
-          "raw": 7.99,
-          "normalized": 7.99,
+          "raw": 35.76,
+          "normalized": 35.76,
           "weight": 0.15
         },
         "winPercentage": {
-          "raw": 0.611,
-          "normalized": 64.27,
+          "raw": 0.65,
+          "normalized": 68.75,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 21.778,
-          "normalizedInverted": 47.8,
+          "raw": 21.4,
+          "normalizedInverted": 61.11,
           "weight": 0
         }
       },
@@ -826,91 +734,91 @@
       "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-car",
-      "slug": "carolina-panthers",
-      "abbr": "car",
-      "name": "Carolina Panthers",
+      "teamId": "nfl-pit",
+      "slug": "pittsburgh-steelers",
+      "abbr": "pit",
+      "name": "Pittsburgh Steelers",
       "season": 2026,
-      "rating": 42.26,
-      "rank": 18,
-      "offenseRating": 49.55,
-      "defenseRating": 42.59,
-      "scheduleAdjustment": 47.63,
+      "rating": 48.92,
+      "rank": 16,
+      "offenseRating": 29.27,
+      "defenseRating": 61.81,
+      "scheduleAdjustment": 33.71,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": -1.889,
-          "normalized": 35.45,
+          "raw": 1.3,
+          "normalized": 55.42,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": 0.019,
-          "normalized": 49.55,
+          "raw": -0.025,
+          "normalized": 29.27,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": 0.018,
-          "normalized": 42.59,
+          "raw": -0.017,
+          "normalized": 61.81,
           "weight": 0.2
         },
         "scheduleAdjustment": {
-          "raw": 47.63,
-          "normalized": 47.63,
-          "weight": 0.15
-        },
-        "winPercentage": {
-          "raw": 0.444,
-          "normalized": 42.8,
-          "weight": 0.1
-        },
-        "pointsAllowedPerGame": {
-          "raw": 26.222,
-          "normalizedInverted": 17.97,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.2",
-      "notes": "Experimental v0.2-epa rating; not validated."
-    },
-    {
-      "teamId": "nfl-cle",
-      "slug": "cleveland-browns",
-      "abbr": "cle",
-      "name": "Cleveland Browns",
-      "season": 2026,
-      "rating": 41.12,
-      "rank": 19,
-      "offenseRating": 33.56,
-      "defenseRating": 51.25,
-      "scheduleAdjustment": 48.92,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -3.2,
-          "normalized": 30.09,
-          "weight": 0.35
-        },
-        "offensiveEpaPerPlay": {
-          "raw": -0.04,
-          "normalized": 33.56,
-          "weight": 0.2
-        },
-        "defensiveEpaPerPlay": {
-          "raw": -0.003,
-          "normalized": 51.25,
-          "weight": 0.2
-        },
-        "scheduleAdjustment": {
-          "raw": 48.92,
-          "normalized": 48.92,
+          "raw": 33.71,
+          "normalized": 33.71,
           "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.6,
-          "normalized": 62.85,
+          "normalized": 62.5,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 22,
-          "normalizedInverted": 46.31,
+          "raw": 20.1,
+          "normalizedInverted": 70.65,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-ne",
+      "slug": "new-england-patriots",
+      "abbr": "ne",
+      "name": "New England Patriots",
+      "season": 2026,
+      "rating": 45.21,
+      "rank": 17,
+      "offenseRating": 46.93,
+      "defenseRating": 23.52,
+      "scheduleAdjustment": 77.87,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -2.1,
+          "normalized": 41.25,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.035,
+          "normalized": 46.93,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.066,
+          "normalized": 23.52,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 77.87,
+          "normalized": 77.87,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.5,
+          "normalized": 50,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 24.2,
+          "normalizedInverted": 40.56,
           "weight": 0
         }
       },
@@ -923,40 +831,86 @@
       "abbr": "dal",
       "name": "Dallas Cowboys",
       "season": 2026,
-      "rating": 38.17,
-      "rank": 20,
-      "offenseRating": 73.26,
+      "rating": 44.22,
+      "rank": 18,
+      "offenseRating": 76.46,
       "defenseRating": 0,
-      "scheduleAdjustment": 27.41,
+      "scheduleAdjustment": 24.51,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": 0.4,
-          "normalized": 44.82,
+          "raw": 2.273,
+          "normalized": 59.47,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": 0.106,
-          "normalized": 73.26,
+          "raw": 0.136,
+          "normalized": 76.46,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": 0.122,
+          "raw": 0.116,
           "normalized": 0,
           "weight": 0.2
         },
         "scheduleAdjustment": {
-          "raw": 27.41,
-          "normalized": 27.41,
+          "raw": 24.51,
+          "normalized": 24.51,
           "weight": 0.15
         },
         "winPercentage": {
-          "raw": 0.4,
-          "normalized": 37.15,
+          "raw": 0.455,
+          "normalized": 44.38,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 28.2,
-          "normalizedInverted": 4.7,
+          "raw": 28.364,
+          "normalizedInverted": 10,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-car",
+      "slug": "carolina-panthers",
+      "abbr": "car",
+      "name": "Carolina Panthers",
+      "season": 2026,
+      "rating": 43.44,
+      "rank": 19,
+      "offenseRating": 43.22,
+      "defenseRating": 40.1,
+      "scheduleAdjustment": 43.12,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -1.5,
+          "normalized": 43.75,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.022,
+          "normalized": 43.22,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.03,
+          "normalized": 40.1,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 43.12,
+          "normalized": 43.12,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.5,
+          "normalized": 50,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 26.9,
+          "normalizedInverted": 20.75,
           "weight": 0
         }
       },
@@ -969,40 +923,86 @@
       "abbr": "wsh",
       "name": "Washington Commanders",
       "season": 2026,
-      "rating": 37.25,
-      "rank": 21,
-      "offenseRating": 44.85,
-      "defenseRating": 29.77,
-      "scheduleAdjustment": 52.87,
+      "rating": 42.17,
+      "rank": 20,
+      "offenseRating": 38.75,
+      "defenseRating": 31.3,
+      "scheduleAdjustment": 66.21,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": -3,
-          "normalized": 30.91,
+          "raw": -2.5,
+          "normalized": 39.58,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": 0.002,
-          "normalized": 44.85,
+          "raw": 0.007,
+          "normalized": 38.75,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
           "raw": 0.049,
-          "normalized": 29.77,
+          "normalized": 31.3,
           "weight": 0.2
         },
         "scheduleAdjustment": {
-          "raw": 52.87,
-          "normalized": 52.87,
+          "raw": 66.21,
+          "normalized": 66.21,
           "weight": 0.15
         },
         "winPercentage": {
-          "raw": 0.389,
-          "normalized": 35.73,
+          "raw": 0.45,
+          "normalized": 43.75,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 24.778,
-          "normalizedInverted": 27.66,
+          "raw": 24.3,
+          "normalizedInverted": 39.83,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-cle",
+      "slug": "cleveland-browns",
+      "abbr": "cle",
+      "name": "Cleveland Browns",
+      "season": 2026,
+      "rating": 41.9,
+      "rank": 21,
+      "offenseRating": 24.27,
+      "defenseRating": 55.89,
+      "scheduleAdjustment": 45.22,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -3.2,
+          "normalized": 36.67,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.042,
+          "normalized": 24.27,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": -0.004,
+          "normalized": 55.89,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 45.22,
+          "normalized": 45.22,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.6,
+          "normalized": 62.5,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 22,
+          "normalizedInverted": 56.7,
           "weight": 0
         }
       },
@@ -1015,40 +1015,40 @@
       "abbr": "atl",
       "name": "Atlanta Falcons",
       "season": 2026,
-      "rating": 36.25,
+      "rating": 35.51,
       "rank": 22,
-      "offenseRating": 24.65,
-      "defenseRating": 39.08,
-      "scheduleAdjustment": 94.19,
+      "offenseRating": 17.24,
+      "defenseRating": 38.15,
+      "scheduleAdjustment": 84.98,
       "components": {
         "pointDifferentialPerGame": {
           "raw": -5.7,
-          "normalized": 19.86,
+          "normalized": 26.25,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": -0.073,
-          "normalized": 24.65,
+          "raw": -0.066,
+          "normalized": 17.24,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": 0.026,
-          "normalized": 39.08,
+          "raw": 0.034,
+          "normalized": 38.15,
           "weight": 0.2
         },
         "scheduleAdjustment": {
-          "raw": 94.19,
-          "normalized": 94.19,
+          "raw": 84.98,
+          "normalized": 84.98,
           "weight": 0.15
         },
         "winPercentage": {
           "raw": 0.3,
-          "normalized": 24.29,
+          "normalized": 25,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
           "raw": 25.8,
-          "normalizedInverted": 20.81,
+          "normalizedInverted": 28.82,
           "weight": 0
         }
       },
@@ -1061,86 +1061,40 @@
       "abbr": "bal",
       "name": "Baltimore Ravens",
       "season": 2026,
-      "rating": 34.36,
+      "rating": 34.81,
       "rank": 23,
-      "offenseRating": 46.51,
-      "defenseRating": 31.36,
-      "scheduleAdjustment": 47.46,
+      "offenseRating": 41.37,
+      "defenseRating": 31.35,
+      "scheduleAdjustment": 42.38,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": -5,
-          "normalized": 22.73,
+          "raw": -4.727,
+          "normalized": 30.3,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": 0.008,
-          "normalized": 46.51,
+          "raw": 0.016,
+          "normalized": 41.37,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": 0.045,
-          "normalized": 31.36,
+          "raw": 0.049,
+          "normalized": 31.35,
           "weight": 0.2
         },
         "scheduleAdjustment": {
-          "raw": 47.46,
-          "normalized": 47.46,
+          "raw": 42.38,
+          "normalized": 42.38,
           "weight": 0.15
         },
         "winPercentage": {
-          "raw": 0.4,
-          "normalized": 37.15,
+          "raw": 0.364,
+          "normalized": 33,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 25.9,
-          "normalizedInverted": 20.13,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.2",
-      "notes": "Experimental v0.2-epa rating; not validated."
-    },
-    {
-      "teamId": "nfl-lv",
-      "slug": "las-vegas-raiders",
-      "abbr": "lv",
-      "name": "Las Vegas Raiders",
-      "season": 2026,
-      "rating": 34.22,
-      "rank": 24,
-      "offenseRating": 42.3,
-      "defenseRating": 13.07,
-      "scheduleAdjustment": 65.08,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -3.8,
-          "normalized": 27.64,
-          "weight": 0.35
-        },
-        "offensiveEpaPerPlay": {
-          "raw": -0.008,
-          "normalized": 42.3,
-          "weight": 0.2
-        },
-        "defensiveEpaPerPlay": {
-          "raw": 0.09,
-          "normalized": 13.07,
-          "weight": 0.2
-        },
-        "scheduleAdjustment": {
-          "raw": 65.08,
-          "normalized": 65.08,
-          "weight": 0.15
-        },
-        "winPercentage": {
-          "raw": 0.4,
-          "normalized": 37.15,
-          "weight": 0.1
-        },
-        "pointsAllowedPerGame": {
-          "raw": 28.9,
-          "normalizedInverted": 0,
+          "raw": 26.727,
+          "normalizedInverted": 22.02,
           "weight": 0
         }
       },
@@ -1153,40 +1107,86 @@
       "abbr": "no",
       "name": "New Orleans Saints",
       "season": 2026,
-      "rating": 33.47,
-      "rank": 25,
-      "offenseRating": 36.41,
-      "defenseRating": 34.26,
-      "scheduleAdjustment": 45.2,
+      "rating": 34.63,
+      "rank": 24,
+      "offenseRating": 28.95,
+      "defenseRating": 37.77,
+      "scheduleAdjustment": 49.43,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": -3.778,
-          "normalized": 27.73,
+          "raw": -4.2,
+          "normalized": 32.5,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": -0.03,
-          "normalized": 36.41,
+          "raw": -0.026,
+          "normalized": 28.95,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": 0.038,
-          "normalized": 34.26,
+          "raw": 0.035,
+          "normalized": 37.77,
           "weight": 0.2
         },
         "scheduleAdjustment": {
-          "raw": 45.2,
-          "normalized": 45.2,
+          "raw": 49.43,
+          "normalized": 49.43,
           "weight": 0.15
         },
         "winPercentage": {
-          "raw": 0.333,
-          "normalized": 28.53,
+          "raw": 0.3,
+          "normalized": 25,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 26.222,
-          "normalizedInverted": 17.97,
+          "raw": 25.7,
+          "normalizedInverted": 29.55,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-lv",
+      "slug": "las-vegas-raiders",
+      "abbr": "lv",
+      "name": "Las Vegas Raiders",
+      "season": 2026,
+      "rating": 33.39,
+      "rank": 25,
+      "offenseRating": 38.89,
+      "defenseRating": 8.2,
+      "scheduleAdjustment": 67.11,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -4.727,
+          "normalized": 30.3,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": 0.008,
+          "normalized": 38.89,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.098,
+          "normalized": 8.2,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 67.11,
+          "normalized": 67.11,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.364,
+          "normalized": 33,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 29.727,
+          "normalizedInverted": 0,
           "weight": 0
         }
       },
@@ -1199,178 +1199,40 @@
       "abbr": "nyj",
       "name": "NY Jets",
       "season": 2026,
-      "rating": 30.58,
+      "rating": 32.11,
       "rank": 26,
-      "offenseRating": 41.95,
-      "defenseRating": 25.68,
-      "scheduleAdjustment": 62.59,
+      "offenseRating": 41.01,
+      "defenseRating": 23.2,
+      "scheduleAdjustment": 47.73,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": -6,
-          "normalized": 18.64,
+          "raw": -5.182,
+          "normalized": 28.41,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": -0.009,
-          "normalized": 41.95,
+          "raw": 0.015,
+          "normalized": 41.01,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": 0.059,
-          "normalized": 25.68,
+          "raw": 0.066,
+          "normalized": 23.2,
           "weight": 0.2
         },
         "scheduleAdjustment": {
-          "raw": 62.59,
-          "normalized": 62.59,
+          "raw": 47.73,
+          "normalized": 47.73,
           "weight": 0.15
         },
         "winPercentage": {
-          "raw": 0.2,
-          "normalized": 11.44,
+          "raw": 0.273,
+          "normalized": 21.63,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 25.4,
-          "normalizedInverted": 23.49,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.2",
-      "notes": "Experimental v0.2-epa rating; not validated."
-    },
-    {
-      "teamId": "nfl-ind",
-      "slug": "indianapolis-colts",
-      "abbr": "ind",
-      "name": "Indianapolis Colts",
-      "season": 2026,
-      "rating": 28.95,
-      "rank": 27,
-      "offenseRating": 17.16,
-      "defenseRating": 36.71,
-      "scheduleAdjustment": 64.34,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -6.3,
-          "normalized": 17.41,
-          "weight": 0.35
-        },
-        "offensiveEpaPerPlay": {
-          "raw": -0.101,
-          "normalized": 17.16,
-          "weight": 0.2
-        },
-        "defensiveEpaPerPlay": {
-          "raw": 0.032,
-          "normalized": 36.71,
-          "weight": 0.2
-        },
-        "scheduleAdjustment": {
-          "raw": 64.34,
-          "normalized": 64.34,
-          "weight": 0.15
-        },
-        "winPercentage": {
-          "raw": 0.3,
-          "normalized": 24.29,
-          "weight": 0.1
-        },
-        "pointsAllowedPerGame": {
-          "raw": 27.1,
-          "normalizedInverted": 12.08,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.2",
-      "notes": "Experimental v0.2-epa rating; not validated."
-    },
-    {
-      "teamId": "nfl-mia",
-      "slug": "miami-dolphins",
-      "abbr": "mia",
-      "name": "Miami Dolphins",
-      "season": 2026,
-      "rating": 27.62,
-      "rank": 28,
-      "offenseRating": 28.48,
-      "defenseRating": 28.62,
-      "scheduleAdjustment": 87.87,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -8.444,
-          "normalized": 8.64,
-          "weight": 0.35
-        },
-        "offensiveEpaPerPlay": {
-          "raw": -0.059,
-          "normalized": 28.48,
-          "weight": 0.2
-        },
-        "defensiveEpaPerPlay": {
-          "raw": 0.052,
-          "normalized": 28.62,
-          "weight": 0.2
-        },
-        "scheduleAdjustment": {
-          "raw": 87.87,
-          "normalized": 87.87,
-          "weight": 0.15
-        },
-        "winPercentage": {
-          "raw": 0.111,
-          "normalized": 0,
-          "weight": 0.1
-        },
-        "pointsAllowedPerGame": {
-          "raw": 24.889,
-          "normalizedInverted": 26.92,
-          "weight": 0
-        }
-      },
-      "modelVersion": "nfl-power-v0.2",
-      "notes": "Experimental v0.2-epa rating; not validated."
-    },
-    {
-      "teamId": "nfl-ari",
-      "slug": "arizona-cardinals",
-      "abbr": "ari",
-      "name": "Arizona Cardinals",
-      "season": 2026,
-      "rating": 25.72,
-      "rank": 29,
-      "offenseRating": 29.84,
-      "defenseRating": 14.33,
-      "scheduleAdjustment": 95.83,
-      "components": {
-        "pointDifferentialPerGame": {
-          "raw": -10.5,
-          "normalized": 0.23,
-          "weight": 0.35
-        },
-        "offensiveEpaPerPlay": {
-          "raw": -0.054,
-          "normalized": 29.84,
-          "weight": 0.2
-        },
-        "defensiveEpaPerPlay": {
-          "raw": 0.087,
-          "normalized": 14.33,
-          "weight": 0.2
-        },
-        "scheduleAdjustment": {
-          "raw": 95.83,
-          "normalized": 95.83,
-          "weight": 0.15
-        },
-        "winPercentage": {
-          "raw": 0.3,
-          "normalized": 24.29,
-          "weight": 0.1
-        },
-        "pointsAllowedPerGame": {
-          "raw": 28.9,
-          "normalizedInverted": 0,
+          "raw": 25.273,
+          "normalizedInverted": 32.69,
           "weight": 0
         }
       },
@@ -1383,40 +1245,40 @@
       "abbr": "phi",
       "name": "Philadelphia Eagles",
       "season": 2026,
-      "rating": 23.8,
-      "rank": 30,
-      "offenseRating": 17.19,
-      "defenseRating": 23.36,
-      "scheduleAdjustment": 71.77,
+      "rating": 27.53,
+      "rank": 27,
+      "offenseRating": 6.3,
+      "defenseRating": 32.28,
+      "scheduleAdjustment": 66.81,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": -8.111,
-          "normalized": 10,
+          "raw": -7,
+          "normalized": 20.83,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": -0.1,
-          "normalized": 17.19,
+          "raw": -0.103,
+          "normalized": 6.3,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": 0.065,
-          "normalized": 23.36,
+          "raw": 0.047,
+          "normalized": 32.28,
           "weight": 0.2
         },
         "scheduleAdjustment": {
-          "raw": 71.77,
-          "normalized": 71.77,
+          "raw": 66.81,
+          "normalized": 66.81,
           "weight": 0.15
         },
         "winPercentage": {
-          "raw": 0.222,
-          "normalized": 14.27,
+          "raw": 0.3,
+          "normalized": 25,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 24.556,
-          "normalizedInverted": 29.15,
+          "raw": 23.7,
+          "normalizedInverted": 44.23,
           "weight": 0
         }
       },
@@ -1424,45 +1286,137 @@
       "notes": "Experimental v0.2-epa rating; not validated."
     },
     {
-      "teamId": "nfl-ten",
-      "slug": "tennessee-titans",
-      "abbr": "ten",
-      "name": "Tennessee Titans",
+      "teamId": "nfl-ind",
+      "slug": "indianapolis-colts",
+      "abbr": "ind",
+      "name": "Indianapolis Colts",
       "season": 2026,
-      "rating": 20.92,
-      "rank": 31,
-      "offenseRating": 32.34,
-      "defenseRating": 17.56,
-      "scheduleAdjustment": 48.53,
+      "rating": 25.76,
+      "rank": 28,
+      "offenseRating": 4.35,
+      "defenseRating": 36.56,
+      "scheduleAdjustment": 62.13,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": -8,
-          "normalized": 10.45,
+          "raw": -7.818,
+          "normalized": 17.42,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": -0.045,
-          "normalized": 32.34,
+          "raw": -0.11,
+          "normalized": 4.35,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": 0.079,
-          "normalized": 17.56,
+          "raw": 0.037,
+          "normalized": 36.56,
           "weight": 0.2
         },
         "scheduleAdjustment": {
-          "raw": 48.53,
-          "normalized": 48.53,
+          "raw": 62.13,
+          "normalized": 62.13,
           "weight": 0.15
         },
         "winPercentage": {
-          "raw": 0.111,
+          "raw": 0.273,
+          "normalized": 21.63,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 27,
+          "normalizedInverted": 20.01,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-mia",
+      "slug": "miami-dolphins",
+      "abbr": "mia",
+      "name": "Miami Dolphins",
+      "season": 2026,
+      "rating": 25.25,
+      "rank": 29,
+      "offenseRating": 13.97,
+      "defenseRating": 28.23,
+      "scheduleAdjustment": 85.79,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -9.3,
+          "normalized": 11.25,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.077,
+          "normalized": 13.97,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.055,
+          "normalized": 28.23,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 85.79,
+          "normalized": 85.79,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.1,
           "normalized": 0,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 26.556,
-          "normalizedInverted": 15.73,
+          "raw": 25,
+          "normalizedInverted": 34.69,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-ari",
+      "slug": "arizona-cardinals",
+      "abbr": "ari",
+      "name": "Arizona Cardinals",
+      "season": 2026,
+      "rating": 22.24,
+      "rank": 30,
+      "offenseRating": 21.33,
+      "defenseRating": 4.05,
+      "scheduleAdjustment": 100,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -12,
+          "normalized": 0,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.052,
+          "normalized": 21.33,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.107,
+          "normalized": 4.05,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 100,
+          "normalized": 100,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.273,
+          "normalized": 21.63,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 29.364,
+          "normalizedInverted": 2.66,
           "weight": 0
         }
       },
@@ -1475,40 +1429,86 @@
       "abbr": "lac",
       "name": "LA Chargers",
       "season": 2026,
-      "rating": 20.75,
-      "rank": 32,
+      "rating": 20.09,
+      "rank": 31,
       "offenseRating": 0,
-      "defenseRating": 47.94,
-      "scheduleAdjustment": 74.42,
+      "defenseRating": 35.77,
+      "scheduleAdjustment": 64.85,
       "components": {
         "pointDifferentialPerGame": {
-          "raw": -10.556,
-          "normalized": 0,
+          "raw": -9.8,
+          "normalized": 9.17,
           "weight": 0.35
         },
         "offensiveEpaPerPlay": {
-          "raw": -0.164,
+          "raw": -0.124,
           "normalized": 0,
           "weight": 0.2
         },
         "defensiveEpaPerPlay": {
-          "raw": 0.005,
-          "normalized": 47.94,
+          "raw": 0.039,
+          "normalized": 35.77,
           "weight": 0.2
         },
         "scheduleAdjustment": {
-          "raw": 74.42,
-          "normalized": 74.42,
+          "raw": 64.85,
+          "normalized": 64.85,
           "weight": 0.15
         },
         "winPercentage": {
-          "raw": 0.111,
+          "raw": 0.1,
           "normalized": 0,
           "weight": 0.1
         },
         "pointsAllowedPerGame": {
-          "raw": 26.556,
-          "normalizedInverted": 15.73,
+          "raw": 26.6,
+          "normalizedInverted": 22.95,
+          "weight": 0
+        }
+      },
+      "modelVersion": "nfl-power-v0.2",
+      "notes": "Experimental v0.2-epa rating; not validated."
+    },
+    {
+      "teamId": "nfl-ten",
+      "slug": "tennessee-titans",
+      "abbr": "ten",
+      "name": "Tennessee Titans",
+      "season": 2026,
+      "rating": 17.17,
+      "rank": 32,
+      "offenseRating": 27.16,
+      "defenseRating": 0.98,
+      "scheduleAdjustment": 50.69,
+      "components": {
+        "pointDifferentialPerGame": {
+          "raw": -9.3,
+          "normalized": 11.25,
+          "weight": 0.35
+        },
+        "offensiveEpaPerPlay": {
+          "raw": -0.032,
+          "normalized": 27.16,
+          "weight": 0.2
+        },
+        "defensiveEpaPerPlay": {
+          "raw": 0.114,
+          "normalized": 0.98,
+          "weight": 0.2
+        },
+        "scheduleAdjustment": {
+          "raw": 50.69,
+          "normalized": 50.69,
+          "weight": 0.15
+        },
+        "winPercentage": {
+          "raw": 0.1,
+          "normalized": 0,
+          "weight": 0.1
+        },
+        "pointsAllowedPerGame": {
+          "raw": 29,
+          "normalizedInverted": 5.33,
           "weight": 0
         }
       },
